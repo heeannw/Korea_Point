@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>교통 상세</title>
+
+
+    <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
+
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 70vh;
+        }
+
+        #arrivalBox {
+            padding: 15px;
+            background: #f5f5f5;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- 지도 -->
+<div id="map"></div>
+
+<!-- 도착정보 -->
+<div id="arrivalBox">로딩중...</div>
+
+<!--<script>-->
+<!--    // =========================-->
+<!--    // 1. 지도 생성-->
+<!--    // =========================-->
+<!--    var container = document.getElementById('map');-->
+
+<!--    var options = {-->
+<!--        center: new kakao.maps.LatLng(37.5665, 126.9780), // 서울-->
+<!--        level: 5-->
+<!--    };-->
+
+<!--    var map = new kakao.maps.Map(container, options);-->
+
+<!--    // 마커-->
+<!--    var marker = new kakao.maps.Marker({-->
+<!--        position: new kakao.maps.LatLng(37.5665, 126.9780)-->
+<!--    });-->
+
+<!--    marker.setMap(map);-->
+
+<!--    var linePath = [-->
+<!--        new kakao.maps.LatLng(37.55, 126.97),-->
+<!--        new kakao.maps.LatLng(37.56, 126.98)-->
+<!--    ];-->
+
+<!--    var polyline = new kakao.maps.Polyline({-->
+<!--        path: linePath,-->
+<!--        strokeWeight: 5,-->
+<!--        strokeColor: '#FF0000',-->
+<!--        strokeOpacity: 0.7-->
+<!--    });-->
+
+<!--    polyline.setMap(map);-->
+
+
+<!--    // =========================-->
+<!--    // 2. 도착정보 API-->
+<!--    // =========================-->
+<!--    const station = "서울"; // 테스트용-->
+
+<!--    fetch(`/api/subway?station=${station}`)-->
+<!--        .then(res => res.json())-->
+<!--        .then(data => {-->
+<!--            console.log(data);-->
+
+<!--            const list = data.realtimeArrivalList || [];-->
+
+<!--            let html = "";-->
+
+<!--            if (list.length === 0) {-->
+<!--                html = "도착 정보 없음";-->
+<!--            } else {-->
+<!--                list.forEach(item => {-->
+<!--                    html += `-->
+<!--                        <div class="card">-->
+<!--                            <b>${item.trainLineNm}</b><br>-->
+<!--                            ${item.arvlMsg2}-->
+<!--                        </div>-->
+<!--                    `;-->
+<!--                });-->
+<!--            }-->
+
+<!--            document.getElementById("arrivalBox").innerHTML = html;-->
+<!--        })-->
+<!--        .catch(err => {-->
+<!--            console.log(err);-->
+<!--            document.getElementById("arrivalBox").innerHTML = "에러 발생";-->
+<!--        });-->
+
+<!--</script>-->
+
+<!--<script>-->
+
+<!--    // =========================-->
+<!--    // 0. URL에서 값 받기-->
+<!--    // =========================-->
+<!--    const urlParams = new URLSearchParams(window.location.search);-->
+<!--    const start = urlParams.get("start");-->
+<!--    const end = urlParams.get("end");-->
+
+<!--    // =========================-->
+<!--    // 1. 지도 생성-->
+<!--    // =========================-->
+<!--    var map = new kakao.maps.Map(document.getElementById('map'), {-->
+<!--        center: new kakao.maps.LatLng(37.5665, 126.9780),-->
+<!--        level: 5-->
+<!--    });-->
+
+<!--    // =========================-->
+<!--    // 2. 경로 API 호출 (원희꺼)-->
+<!--    // =========================-->
+<!--    fetch(`/api/route?start=${start}&end=${end}`)-->
+<!--        .then(res => res.json())-->
+<!--        .then(data => {-->
+
+<!--            const route = data.routes[0];-->
+
+<!--            let linePath = [];-->
+<!--            let lastStation = "";-->
+
+<!--            // =========================-->
+<!--            // 3. 경로 파싱-->
+<!--            // =========================-->
+<!--            route.steps.forEach(step => {-->
+
+<!--                // 좌표 → 지도-->
+<!--                if (step.path && step.path.length > 0) {-->
+<!--                    step.path.forEach(p => {-->
+<!--                        linePath.push(new kakao.maps.LatLng(p.lat, p.lng));-->
+<!--                    });-->
+<!--                }-->
+
+<!--                // 마지막 지하철역 찾기-->
+<!--                if (step.type === "subway" && step.to_station) {-->
+<!--                    lastStation = step.to_station;-->
+<!--                }-->
+<!--            });-->
+
+<!--            // =========================-->
+<!--            // 4. 지도 경로 그리기-->
+<!--            // =========================-->
+<!--            var polyline = new kakao.maps.Polyline({-->
+<!--                path: linePath,-->
+<!--                strokeWeight: 5,-->
+<!--                strokeColor: '#FF0000',-->
+<!--                strokeOpacity: 0.7-->
+<!--            });-->
+
+<!--            polyline.setMap(map);-->
+
+<!--            map.setCenter(linePath[0]);-->
+
+<!--            // =========================-->
+<!--            // 5. 도착정보 API 호출 (너꺼)-->
+<!--            // =========================-->
+<!--            fetch(`/api/subway?station=${lastStation}`)-->
+<!--                .then(res => res.json())-->
+<!--                .then(data => {-->
+
+<!--                    const list = data.realtimeArrivalList || [];-->
+<!--                    let html = "";-->
+
+<!--                    if (list.length === 0) {-->
+<!--                        html = "도착 정보 없음";-->
+<!--                    } else {-->
+<!--                        list.forEach(item => {-->
+<!--                            html += `-->
+<!--                                <div class="card">-->
+<!--                                    <b>${item.trainLineNm}</b><br>-->
+<!--                                    ${item.arvlMsg2}-->
+<!--                                </div>-->
+<!--                            `;-->
+<!--                        });-->
+<!--                    }-->
+
+<!--                    document.getElementById("arrivalBox").innerHTML = html;-->
+<!--                });-->
+
+<!--        });-->
+
+<!--</script>-->
+
+<script>
+
+    // =========================
+    // 0. URL 값
+    // =========================
+    const urlParams = new URLSearchParams(window.location.search);
+    const start = urlParams.get("start");
+    const end = urlParams.get("end");
+
+    // =========================
+    // 1. 지도 생성 (딱 1번만)
+    // =========================
+    var map = new kakao.maps.Map(document.getElementById('map'), {
+        center: new kakao.maps.LatLng(37.5665, 126.9780),
+        level: 5
+    });
+
+    // =========================
+    // 2. 경로 API
+    // =========================
+    fetch(`/api/route?start=${start}&end=${end}`)
+        .then(res => res.json())
+        .then(data => {
+
+            const route = data.routes[0];
+
+            let linePath = [];
+            let lastStation = "";
+
+            route.steps.forEach(step => {
+
+                // 좌표
+                if (step.path && step.path.length > 0) {
+                    step.path.forEach(p => {
+                        linePath.push(new kakao.maps.LatLng(p.lat, p.lng));
+                    });
+                }
+
+                // 마지막 지하철역
+                if (step.type === "subway" && step.to_station) {
+                    lastStation = step.to_station;
+                }
+            });
+
+            // =========================
+            // 3. 지도 경로
+            // =========================
+            var polyline = new kakao.maps.Polyline({
+                path: linePath,
+                strokeWeight: 5,
+                strokeColor: '#FF0000',
+                strokeOpacity: 0.7
+            });
+
+            polyline.setMap(map);
+
+            map.setCenter(linePath[0]);
+
+            // =========================
+            // 4. 도착정보
+            // =========================
+            fetch(`/api/subway?station=${lastStation}`)
+                .then(res => res.json())
+                .then(data => {
+
+                    const list = data.realtimeArrivalList || [];
+                    let html = "";
+
+                    if (list.length === 0) {
+                        html = "도착 정보 없음";
+                    } else {
+                        list.forEach(item => {
+                            html += `
+                                <div class="card">
+                                    <b>${item.trainLineNm}</b><br>
+                                    ${item.arvlMsg2}
+                                </div>
+                            `;
+                        });
+                    }
+
+                    document.getElementById("arrivalBox").innerHTML = html;
+                });
+
+        });
+
+</script>
+
+
+</body>
+</html>

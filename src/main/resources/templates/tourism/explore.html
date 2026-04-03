@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Explore — KoreaPoint</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:#3b9eff; --blue-dk:#1a7de0; --blue-lt:#eff6ff;
+  --dark:#0f172a; --mid:#334155; --gray:#64748b;
+  --border:#dbeafe; --white:#fff; --light:#f0f7ff;
+  --gold:#f59e0b; --green:#16a34a;
+  --r:12px; --sh:0 2px 16px rgba(59,158,255,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);display:flex;flex-direction:column}
+
+/* HEADER */
+header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;z-index:100}
+.logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--blue-dk);text-decoration:none}
+.logo span{color:var(--dark)}
+.header-right{display:flex;gap:8px;align-items:center}
+.h-btn{padding:7px 16px;border-radius:50px;border:1.5px solid var(--border);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--dark);transition:all .2s}
+.h-btn:hover,.h-btn.active{border-color:var(--blue);color:var(--blue)}
+.h-btn-fill{background:var(--blue);color:#fff;border-color:var(--blue)}
+.h-btn-fill:hover{background:var(--blue-dk);color:#fff}
+
+/* LAYOUT: sidebar + map */
+.app-body{flex:1;display:flex;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:380px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--white)}
+
+/* search bar */
+.search-bar{padding:14px 16px 0;flex-shrink:0}
+.search-wrap{position:relative}
+.search-wrap input{width:100%;padding:10px 42px 10px 16px;border:1.5px solid var(--border);border-radius:50px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--light);transition:border .2s;color:var(--dark)}
+.search-wrap input:focus{border-color:var(--blue);background:#fff}
+.search-wrap .si{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--gray);font-size:15px;cursor:pointer}
+
+/* filter row */
+.filter-row{padding:10px 16px 0;display:flex;gap:6px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.chip{padding:5px 14px;border-radius:50px;border:1.5px solid var(--border);background:var(--white);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:'DM Sans',sans-serif;color:var(--gray)}
+.chip:hover{border-color:var(--blue);color:var(--blue)}
+.chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* sort row */
+.sort-row{padding:10px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.result-count{font-size:13px;color:var(--gray)}
+.result-count strong{color:var(--dark)}
+.sort-btns{display:flex;gap:4px}
+.sort-btn{padding:4px 12px;border-radius:50px;border:1.5px solid var(--border);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s}
+.sort-btn.active{background:var(--blue-lt);color:var(--blue);border-color:var(--blue)}
+
+/* list */
+.place-list{flex:1;overflow-y:auto;padding:0 12px 12px}
+.place-list::-webkit-scrollbar{width:4px}
+.place-list::-webkit-scrollbar-track{background:transparent}
+.place-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.place-card{display:flex;gap:12px;padding:12px;border-radius:var(--r);cursor:pointer;transition:background .15s, box-shadow .15s;margin-bottom:4px;border:1.5px solid transparent}
+.place-card:hover{background:var(--light)}
+.place-card.active{background:var(--blue-lt);border-color:var(--blue)}
+.place-card .thumb{width:72px;height:72px;border-radius:10px;background-size:cover;background-position:center;flex-shrink:0;position:relative}
+.place-card .rank{position:absolute;top:-6px;left:-6px;width:20px;height:20px;background:var(--blue);color:#fff;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.card-info{flex:1;min-width:0}
+.card-name{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-cat{font-size:11px;color:var(--blue);font-weight:600;margin-bottom:4px}
+.card-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray)}
+.stars-s{color:var(--gold);font-size:11px}
+.card-dist{font-size:11px;color:var(--gray);background:var(--light);padding:2px 8px;border-radius:50px;white-space:nowrap}
+
+/* MAP */
+.map-area{flex:1;position:relative;background:#e8f0fe;overflow:hidden}
+
+/* Fake map canvas */
+.fake-map{position:absolute;inset:0;background:
+  linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px),
+  linear-gradient(rgba(59,158,255,.06) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(59,158,255,.06) 1px,transparent 1px),
+  #dde8f5;
+background-size:20px 20px,20px 20px,100px 100px,100px 100px;
+}
+
+/* Road lines - decorative SVG overlay */
+.map-roads{position:absolute;inset:0;pointer-events:none;opacity:.25}
+
+/* user pin */
+.user-pin{position:absolute;transform:translate(-50%,-50%);z-index:10;cursor:default}
+.user-ring{width:48px;height:48px;border-radius:50%;background:rgba(59,158,255,.18);border:2px solid rgba(59,158,255,.4);display:flex;align-items:center;justify-content:center;animation:ripple 2s infinite}
+.user-dot{width:16px;height:16px;background:var(--blue);border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(59,158,255,.5)}
+@keyframes ripple{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.5}}
+
+/* map pins */
+.map-pin-wrap{position:absolute;transform:translate(-50%,-100%);z-index:5;cursor:pointer;transition:transform .2s}
+.map-pin-wrap:hover,.map-pin-wrap.active{transform:translate(-50%,-100%) scale(1.15);z-index:20}
+.map-pin-wrap.active .mp-bubble{background:var(--blue);color:#fff;box-shadow:0 4px 16px rgba(59,158,255,.4)}
+.mp-bubble{background:#fff;border:2px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 12px rgba(0,0,0,.12);position:relative;transition:all .2s;color:var(--dark)}
+.mp-bubble::after{content:'';position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--border)}
+.map-pin-wrap.active .mp-bubble::after{border-top-color:var(--blue)}
+
+/* map controls */
+.map-controls{position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:30}
+.mc{width:36px;height:36px;background:#fff;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;box-shadow:var(--sh);transition:background .2s}
+.mc:hover{background:var(--light)}
+
+/* current location btn */
+.loc-btn{position:absolute;bottom:24px;right:16px;background:#fff;border:1px solid var(--border);border-radius:50px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--sh);color:var(--dark);font-family:'DM Sans',sans-serif;z-index:30;transition:all .2s}
+.loc-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* pop-up card on map */
+.map-popup{position:absolute;z-index:40;background:#fff;border-radius:var(--r);box-shadow:0 8px 32px rgba(0,0,0,.18);width:240px;display:none;overflow:hidden;animation:popIn .2s ease}
+.map-popup.show{display:block}
+@keyframes popIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.popup-img{height:110px;background-size:cover;background-position:center;position:relative}
+.popup-close{position:absolute;top:6px;right:8px;background:rgba(0,0,0,.4);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;line-height:1}
+.popup-body{padding:12px}
+.popup-name{font-size:14px;font-weight:700;margin-bottom:3px}
+.popup-meta{font-size:12px;color:var(--gray);margin-bottom:8px}
+.popup-btn{display:block;width:100%;padding:8px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;text-align:center;text-decoration:none}
+.popup-btn:hover{background:var(--blue-dk)}
+
+/* detail panel slide-in */
+.detail-panel{position:absolute;inset:0;background:#fff;z-index:50;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto}
+.detail-panel.open{transform:translateX(0)}
+.dp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:5}
+.dp-back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px;line-height:1}
+.dp-title{font-size:16px;font-weight:700;flex:1}
+.dp-img{width:100%;height:180px;object-fit:cover;background-size:cover;background-position:center;background-color:var(--light)}
+.dp-body{padding:16px}
+.dp-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.dp-badge{padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700}
+.db-blue{background:var(--blue-lt);color:var(--blue-dk)}
+.db-gold{background:#fef3c7;color:#92400e}
+.db-green{background:#f0fdf4;color:#166534}
+.dp-name{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;margin-bottom:2px}
+.dp-sub{font-size:14px;color:var(--gray);margin-bottom:12px}
+.dp-stars{display:flex;align-items:center;gap:6px;margin-bottom:14px}
+.dp-stars .s{color:var(--gold);font-size:16px}
+.dp-stars .sc{font-size:18px;font-weight:700}
+.dp-stars .sm{font-size:13px;color:var(--gray)}
+.dp-info-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.dp-info{background:var(--light);border-radius:10px;padding:12px 14px}
+.dp-info-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.dp-info-val{font-size:13px;font-weight:500;line-height:1.4}
+.dp-desc{font-size:14px;color:var(--mid);line-height:1.7;margin-bottom:16px}
+.dp-section-title{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--dark)}
+
+/* reviews in detail */
+.rev-summary{display:flex;align-items:center;gap:16px;background:var(--light);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.rev-score{font-size:42px;font-weight:900;font-family:'Playfair Display',serif;line-height:1}
+.rev-right{flex:1}
+.rev-bars{display:flex;flex-direction:column;gap:5px}
+.rev-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gray)}
+.rev-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.rev-fill{height:100%;background:var(--gold);border-radius:3px}
+.review-item{padding:12px 0;border-bottom:1px solid var(--border)}
+.review-item:last-child{border-bottom:none}
+.ri-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.ri-name{font-size:13px;font-weight:600}
+.ri-date{font-size:11px;color:var(--gray)}
+.ri-stars{font-size:12px;color:var(--gold)}
+.ri-text{font-size:13px;color:var(--mid);line-height:1.6}
+
+.dp-action{position:sticky;bottom:0;padding:12px 16px;background:#fff;border-top:1px solid var(--border)}
+.dp-action-btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
+.dp-action-btn:hover{background:var(--blue-dk)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <a class="logo" href="index.html">Korea<span>Point</span></a>
+  <div class="header-right">
+    <button class="h-btn active">EN</button>
+    <button class="h-btn">KR</button>
+    <button class="h-btn h-btn-fill">Login</button>
+  </div>
+</header>
+
+<!-- BODY -->
+<div class="app-body">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <!-- Search -->
+    <div class="search-bar">
+      <div class="search-wrap">
+        <input type="text" placeholder="Search in Seoul..." id="searchInput" oninput="filterPlaces()">
+        <span class="si">🔍</span>
+      </div>
+    </div>
+
+    <!-- Category chips -->
+    <div class="filter-row" id="filterRow">
+      <div class="chip active" onclick="setCategory('All')">All</div>
+      <div class="chip" onclick="setCategory('Palace')">🏯 Palace</div>
+      <div class="chip" onclick="setCategory('Village')">🏘️ Village</div>
+      <div class="chip" onclick="setCategory('Nature')">🌿 Nature</div>
+      <div class="chip" onclick="setCategory('Shopping')">🛍️ Shopping</div>
+      <div class="chip" onclick="setCategory('Theme Park')">🎡 Theme Park</div>
+      <div class="chip" onclick="setCategory('Museum')">🏛️ Museum</div>
+    </div>
+
+    <!-- Sort + count -->
+    <div class="sort-row">
+      <div class="result-count"><strong id="countDisplay">12</strong> places found</div>
+      <div class="sort-btns">
+        <button class="sort-btn active" onclick="setSort('recommended')">⭐ Recommended</button>
+        <button class="sort-btn" onclick="setSort('distance')">📍 Distance</button>
+      </div>
+    </div>
+
+    <!-- Place list -->
+    <div class="place-list" id="placeList"></div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-area" id="mapArea">
+    <div class="fake-map"></div>
+
+    <!-- SVG roads overlay -->
+    <svg class="map-roads" viewBox="0 0 900 700" preserveAspectRatio="none">
+      <path d="M0 320 Q200 280 450 310 Q700 340 900 300" stroke="#94a3b8" stroke-width="6" fill="none"/>
+      <path d="M0 480 Q300 440 500 460 Q700 480 900 450" stroke="#94a3b8" stroke-width="4" fill="none"/>
+      <path d="M200 0 Q220 200 210 400 Q200 600 215 700" stroke="#94a3b8" stroke-width="6" fill="none"/>
+      <path d="M550 0 Q560 150 540 350 Q520 550 545 700" stroke="#94a3b8" stroke-width="4" fill="none"/>
+      <path d="M0 180 Q400 160 900 190" stroke="#cbd5e1" stroke-width="3" fill="none"/>
+      <path d="M350 0 L340 700" stroke="#cbd5e1" stroke-width="2" fill="none"/>
+    </svg>
+
+    <!-- User location -->
+    <div class="user-pin" style="left:52%;top:48%" title="Your location">
+      <div class="user-ring"><div class="user-dot"></div></div>
+    </div>
+
+    <!-- Map pins injected by JS -->
+    <div id="mapPins"></div>
+
+    <!-- Map controls -->
+    <div class="map-controls">
+      <div class="mc" onclick="alert('Zoom in')">＋</div>
+      <div class="mc" onclick="alert('Zoom out')">－</div>
+    </div>
+
+    <button class="loc-btn" onclick="alert('Re-centering to current location')">
+      📍 My Location
+    </button>
+
+    <!-- Pop-up card -->
+    <div class="map-popup" id="mapPopup">
+      <div class="popup-img" id="popupImg">
+        <button class="popup-close" onclick="closePopup()">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-name" id="popupName"></div>
+        <div class="popup-meta" id="popupMeta"></div>
+        <a class="popup-btn" href="#" onclick="openDetail(currentPopup);return false">View Details →</a>
+      </div>
+    </div>
+
+    <!-- Detail slide panel -->
+    <div class="detail-panel" id="detailPanel">
+      <div class="dp-header">
+        <button class="dp-back" onclick="closeDetail()">←</button>
+        <div class="dp-title" id="dpTitle"></div>
+        <div style="font-size:20px;cursor:pointer" onclick="alert('Saved!')">🔖</div>
+      </div>
+      <div class="dp-img" id="dpImg"></div>
+      <div class="dp-body">
+        <div class="dp-badge-row" id="dpBadges"></div>
+        <div class="dp-name" id="dpName"></div>
+        <div class="dp-sub" id="dpSub"></div>
+        <div class="dp-stars" id="dpStars"></div>
+        <div class="dp-info-row" id="dpInfoRow"></div>
+        <div class="dp-desc" id="dpDesc"></div>
+        <!-- Reviews -->
+        <div class="dp-section-title">Reviews</div>
+        <div class="rev-summary" id="dpRevSummary"></div>
+        <div id="dpReviews"></div>
+      </div>
+      <div class="dp-action">
+        <button class="dp-action-btn" onclick="alert('Saved to itinerary!')">❤️ Save to Itinerary</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const PLACES = [
+  {
+    id:0, name:"Gyeongbokgung Palace", sub:"경복궁",
+    cat:"Palace", rating:4.9, reviews:2347, dist:0.3,
+    img:"https://images.unsplash.com/photo-1548115184-bc6544d06a58?w=600&q=80",
+    loc:{x:42,y:36},
+    addr:"161 Sajik-ro, Jongno-gu",
+    hours:"09:00–18:00 (Closed Tue)",
+    price:"₩3,000",
+    desc:"The largest of the Five Grand Palaces, built in 1395. Home to the Changing of the Guard ceremony, Gyeonghoeru Pavilion, and the National Palace Museum.",
+    badges:[{t:"Palace",c:"db-blue"},{t:"UNESCO",c:"db-gold"},{t:"Free in Hanbok",c:"db-green"}],
+    revData:{avg:4.9,bars:[88,9,2,1,0],items:[
+      {name:"TravellerMike 🇺🇸",date:"Mar 2025",stars:"★★★★★",text:"Wore hanbok and got free entry — absolutely stunning. Guard ceremony was a highlight!"},
+      {name:"SakuraWatcher 🇯🇵",date:"Oct 2024",stars:"★★★★★",text:"Autumn foliage backdrop made every photo look like a painting. Come early to beat crowds."},
+      {name:"FoodieJulia 🇫🇷",date:"Aug 2024",stars:"★★★★☆",text:"Very crowded in summer but a must-see. Kids loved the ceremony. Wear comfy shoes!"}
+    ]}
+  },
+  {
+    id:1, name:"Bukchon Hanok Village", sub:"북촌한옥마을",
+    cat:"Village", rating:4.8, reviews:1823, dist:1.2,
+    img:"https://images.unsplash.com/photo-1538485399081-7191377e8241?w=600&q=80",
+    loc:{x:55,y:30},
+    addr:"Bukchon-ro, Jongno-gu",
+    hours:"Always open (outdoor)",
+    price:"Free",
+    desc:"A living museum of 600-year-old hanok houses set on a hillside between two palaces. Early morning visits reward you with misty alleys and no crowds.",
+    badges:[{t:"Village",c:"db-blue"},{t:"Free",c:"db-green"}],
+    revData:{avg:4.8,bars:[82,12,4,2,0],items:[
+      {name:"ParisTraveller 🇫🇷",date:"Apr 2025",stars:"★★★★★",text:"So picturesque! Went at 7 AM and had the whole place to myself. Magical."},
+      {name:"JanelleK 🇺🇸",date:"Nov 2024",stars:"★★★★☆",text:"Beautiful but steep hills — wear good shoes. The hanok architecture is stunning."}
+    ]}
+  },
+  {
+    id:2, name:"Namsan Seoul Tower", sub:"남산서울타워",
+    cat:"Nature", rating:4.7, reviews:3102, dist:2.8,
+    img:"https://images.unsplash.com/photo-1601621915196-2621bfb0cd6e?w=600&q=80",
+    loc:{x:58,y:60},
+    addr:"105 Namsangongwon-gil, Yongsan-gu",
+    hours:"10:00–23:00 daily",
+    price:"₩21,000",
+    desc:"Iconic tower atop Namsan mountain with 360° views of Seoul. Famous love locks, sunset views, and cultural exhibitions. Accessible by cable car or hiking trail.",
+    badges:[{t:"Landmark",c:"db-blue"},{t:"Sunset View",c:"db-gold"}],
+    revData:{avg:4.7,bars:[75,18,5,2,0],items:[
+      {name:"LensWanderer 🇩🇪",date:"May 2025",stars:"★★★★★",text:"Night view of Seoul from the top is incredible. Go at sunset for the best shots."},
+      {name:"SeoulFirst 🇦🇺",date:"Jan 2025",stars:"★★★★☆",text:"Cable car was fun. Tower itself a bit pricey but the views are worth it in clear weather."}
+    ]}
+  },
+  {
+    id:3, name:"Myeongdong Shopping", sub:"명동",
+    cat:"Shopping", rating:4.5, reviews:4211, dist:2.2,
+    img:"https://images.unsplash.com/photo-1549114473-8a17d3b72e3e?w=600&q=80",
+    loc:{x:62,y:52},
+    addr:"Myeongdong, Jung-gu, Seoul",
+    hours:"10:00–22:00 daily",
+    price:"Free entry",
+    desc:"Seoul's premier shopping and street food district. Famous for K-beauty brands, international fashion, and an incredible array of street food stalls.",
+    badges:[{t:"Shopping",c:"db-blue"},{t:"Street Food",c:"db-gold"}],
+    revData:{avg:4.5,bars:[65,22,10,3,0],items:[
+      {name:"StreetFoodLover 🇺🇸",date:"Mar 2025",stars:"★★★★★",text:"Best street food I've had anywhere! Egg bread, tteokbokki, and so much more."},
+      {name:"KbeautyFan 🇬🇧",date:"Feb 2025",stars:"★★★★☆",text:"Amazing for skincare shopping. Crowds can be overwhelming on weekends though."}
+    ]}
+  },
+  {
+    id:4, name:"Changdeokgung Palace", sub:"창덕궁",
+    cat:"Palace", rating:4.8, reviews:1654, dist:1.5,
+    img:"https://images.unsplash.com/photo-1548115184-bc6544d06a58?w=600&q=80",
+    loc:{x:62,y:28},
+    addr:"99 Yulgok-ro, Jongno-gu",
+    hours:"09:00–18:00 (Closed Mon)",
+    price:"₩3,000",
+    desc:"UNESCO World Heritage palace set against a forested hillside. The Secret Garden (Huwon) tour is a must — 78 acres of pristine royal garden.",
+    badges:[{t:"Palace",c:"db-blue"},{t:"UNESCO",c:"db-gold"}],
+    revData:{avg:4.8,bars:[84,11,3,2,0],items:[
+      {name:"HistoryBuff 🇨🇦",date:"Apr 2025",stars:"★★★★★",text:"The Secret Garden tour was the highlight of my Seoul trip. Book in advance — it sells out!"},
+      {name:"EuroTripper 🇩🇪",date:"Oct 2024",stars:"★★★★★",text:"Less crowded than Gyeongbokgung but equally beautiful. Autumn colors were breathtaking."}
+    ]}
+  },
+  {
+    id:5, name:"Insadong Street", sub:"인사동",
+    cat:"Village", rating:4.5, reviews:987, dist:1.0,
+    img:"https://images.unsplash.com/photo-1538485399081-7191377e8241?w=600&q=80",
+    loc:{x:50,y:44},
+    addr:"Insadong-gil, Jongno-gu",
+    hours:"Always open",
+    price:"Free",
+    desc:"A charming cultural street lined with traditional tea houses, art galleries, craft shops, and street performers. Great for Korean souvenirs and antiques.",
+    badges:[{t:"Culture",c:"db-blue"},{t:"Free",c:"db-green"}],
+    revData:{avg:4.5,bars:[63,25,8,4,0],items:[
+      {name:"ArtLover 🇳🇱",date:"Feb 2025",stars:"★★★★☆",text:"Loved the art galleries and traditional craft shops. Great for unique souvenirs."}
+    ]}
+  },
+  {
+    id:6, name:"Lotte World", sub:"롯데월드",
+    cat:"Theme Park", rating:4.6, reviews:5321, dist:8.4,
+    img:"https://images.unsplash.com/photo-1601621915196-2621bfb0cd6e?w=600&q=80",
+    loc:{x:72,y:72},
+    addr:"240 Olympic-ro, Songpa-gu",
+    hours:"09:30–22:00 daily",
+    price:"₩62,000",
+    desc:"One of the world's largest indoor theme parks. Outdoor Magic Island and massive indoor complex packed with rides, shows, and seasonal events.",
+    badges:[{t:"Theme Park",c:"db-blue"},{t:"Indoor",c:"db-gold"}],
+    revData:{avg:4.6,bars:[70,20,7,3,0],items:[
+      {name:"CoasterKing 🇺🇸",date:"May 2025",stars:"★★★★★",text:"Incredible indoor park! French Revolution ride is a must. Go on weekdays to avoid lines."},
+      {name:"FamilyOf4 🇦🇺",date:"Dec 2024",stars:"★★★★☆",text:"Kids absolutely loved it. Long queues but great rides. Buy online tickets in advance."}
+    ]}
+  },
+  {
+    id:7, name:"National Museum of Korea", sub:"국립중앙박물관",
+    cat:"Museum", rating:4.7, reviews:1234, dist:4.1,
+    img:"https://images.unsplash.com/photo-1549114473-8a17d3b72e3e?w=600&q=80",
+    loc:{x:38,y:66},
+    addr:"137 Seobinggo-ro, Yongsan-gu",
+    hours:"10:00–18:00 (Sat until 21:00, Closed Mon)",
+    price:"Free (special exhibits extra)",
+    desc:"Korea's largest museum with over 220,000 artifacts spanning 5,000 years of Korean history. The outdoor garden and reflecting pool are beautifully landscaped.",
+    badges:[{t:"Museum",c:"db-blue"},{t:"Free",c:"db-green"}],
+    revData:{avg:4.7,bars:[77,16,5,2,0],items:[
+      {name:"HistoryNerd 🇬🇧",date:"Mar 2025",stars:"★★★★★",text:"Massive and free! Easily worth half a day. The ancient ceramics collection is world-class."}
+    ]}
+  },
+  {
+    id:8, name:"Hongdae Area", sub:"홍대",
+    cat:"Shopping", rating:4.4, reviews:2876, dist:5.6,
+    img:"https://images.unsplash.com/photo-1601621915196-2621bfb0cd6e?w=600&q=80",
+    loc:{x:22,y:48},
+    addr:"Hongdae, Mapo-gu, Seoul",
+    hours:"Always open (nightlife until late)",
+    price:"Free",
+    desc:"Vibrant university district famous for indie music, street art, night markets, and Korean BBQ. The younger, hipper side of Seoul with endless food and entertainment.",
+    badges:[{t:"Nightlife",c:"db-blue"},{t:"Street Art",c:"db-gold"}],
+    revData:{avg:4.4,bars:[60,25,10,5,0],items:[
+      {name:"MusicHead 🇺🇸",date:"Apr 2025",stars:"★★★★☆",text:"The live music scene here is incredible. So much energy especially on Friday nights."}
+    ]}
+  },
+  {
+    id:9, name:"Bukhansan National Park", sub:"북한산국립공원",
+    cat:"Nature", rating:4.8, reviews:743, dist:9.2,
+    img:"https://images.unsplash.com/photo-1538485399081-7191377e8241?w=600&q=80",
+    loc:{x:32,y:14},
+    addr:"Dobongsan-ro, Dobong-gu",
+    hours:"Sunrise–Sunset",
+    price:"Free",
+    desc:"Dramatic granite peaks rising above the city. Multiple hiking trails ranging from easy temple walks to challenging summit climbs with spectacular Seoul skyline views.",
+    badges:[{t:"Nature",c:"db-blue"},{t:"Hiking",c:"db-green"},{t:"Free",c:"db-green"}],
+    revData:{avg:4.8,bars:[83,13,3,1,0],items:[
+      {name:"HikingPro 🇦🇺",date:"Apr 2025",stars:"★★★★★",text:"Incredible that this wilderness exists inside a major city. Baegundae summit views are epic."}
+    ]}
+  },
+  {
+    id:10, name:"Gwangjang Market", sub:"광장시장",
+    cat:"Shopping", rating:4.6, reviews:1890, dist:1.8,
+    img:"https://images.unsplash.com/photo-1549114473-8a17d3b72e3e?w=600&q=80",
+    loc:{x:66,y:42},
+    addr:"88 Changgyeonggung-ro, Jongno-gu",
+    hours:"08:00–23:00 daily",
+    price:"Free entry",
+    desc:"Seoul's oldest and largest traditional market. Famous for bindaetteok (mung bean pancakes), mayak kimbap, and silk fabric. A vibrant, local food experience.",
+    badges:[{t:"Market",c:"db-blue"},{t:"Street Food",c:"db-gold"}],
+    revData:{avg:4.6,bars:[72,19,7,2,0],items:[
+      {name:"FoodieJulia 🇫🇷",date:"Mar 2025",stars:"★★★★★",text:"Best bindaetteok in Seoul! Cash only at most stalls. Go hungry and explore every aisle."}
+    ]}
+  },
+  {
+    id:11, name:"Everland Resort", sub:"에버랜드",
+    cat:"Theme Park", rating:4.7, reviews:4890, dist:40.0,
+    img:"https://images.unsplash.com/photo-1601621915196-2621bfb0cd6e?w=600&q=80",
+    loc:{x:82,y:82},
+    addr:"199 Everland-ro, Yongin, Gyeonggi-do",
+    hours:"10:00–22:00 (seasonal)",
+    price:"₩56,000",
+    desc:"Korea's largest theme park with T-Express wooden roller coaster, a safari, zootopia, and stunning seasonal flower festivals. About 1 hour from Seoul by bus.",
+    badges:[{t:"Theme Park",c:"db-blue"},{t:"Seasonal",c:"db-gold"}],
+    revData:{avg:4.7,bars:[78,15,5,2,0],items:[
+      {name:"ThemeQueen 🇬🇧",date:"May 2025",stars:"★★★★★",text:"T-Express is terrifying in the best way. Tulip festival in spring is gorgeous. Full day needed!"}
+    ]}
+  },
+];
+
+let activeCategory = 'All';
+let activeSort = 'recommended';
+let activePinId = null;
+let currentPopup = null;
+
+function getFiltered(){
+  let list = [...PLACES];
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  if(activeCategory !== 'All') list = list.filter(p => p.cat === activeCategory);
+  if(q) list = list.filter(p => p.name.toLowerCase().includes(q) || p.sub.toLowerCase().includes(q));
+  if(activeSort === 'recommended') list.sort((a,b) => b.rating - a.rating);
+  else list.sort((a,b) => a.dist - b.dist);
+  return list;
+}
+
+function setCategory(c){
+  activeCategory = c;
+  document.querySelectorAll('.chip').forEach(ch => ch.classList.toggle('active', ch.textContent.includes(c) || (c==='All' && ch.textContent==='All')));
+  render();
+}
+
+function setSort(s){
+  activeSort = s;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', (s==='recommended'&&b.textContent.includes('Recommended'))||(s==='distance'&&b.textContent.includes('Distance'))));
+  render();
+}
+
+function filterPlaces(){ render(); }
+
+function render(){
+  const list = getFiltered();
+  document.getElementById('countDisplay').textContent = list.length;
+  // List
+  const el = document.getElementById('placeList');
+  el.innerHTML = list.map((p,i) => `
+    <div class="place-card${activePinId===p.id?' active':''}" id="card-${p.id}" onclick="selectPlace(${p.id})">
+      <div class="thumb" style="background-image:url('${p.img}')">
+        <div class="rank">${i+1}</div>
+      </div>
+      <div class="card-info">
+        <div class="card-cat">${p.cat}</div>
+        <div class="card-name">${p.name}</div>
+        <div class="card-meta">
+          <span class="stars-s">★</span>${p.rating} (${(p.reviews/1000).toFixed(1)}k)
+          <span class="card-dist">📍 ${p.dist < 1 ? (p.dist*1000).toFixed(0)+'m' : p.dist.toFixed(1)+'km'}</span>
+        </div>
+      </div>
+    </div>`).join('');
+  // Pins
+  const pinsEl = document.getElementById('mapPins');
+  pinsEl.innerHTML = PLACES.map(p => `
+    <div class="map-pin-wrap${activePinId===p.id?' active':''}" id="pin-${p.id}" style="left:${p.loc.x}%;top:${p.loc.y}%" onclick="selectPin(${p.id})">
+      <div class="mp-bubble">${p.name.split(' ')[0]}</div>
+    </div>`).join('');
+}
+
+function selectPlace(id){
+  activePinId = id;
+  render();
+  // scroll card
+  const card = document.getElementById('card-'+id);
+  if(card) card.scrollIntoView({behavior:'smooth',block:'nearest'});
+  showPopup(id);
+}
+
+function selectPin(id){
+  activePinId = id;
+  render();
+  showPopup(id);
+  // scroll list
+  const card = document.getElementById('card-'+id);
+  if(card) card.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function showPopup(id){
+  const p = PLACES[id];
+  currentPopup = id;
+  const popup = document.getElementById('mapPopup');
+  const pin = document.getElementById('pin-'+id);
+  const pinRect = pin.getBoundingClientRect();
+  const mapRect = document.getElementById('mapArea').getBoundingClientRect();
+
+  document.getElementById('popupImg').style.backgroundImage = `url('${p.img}')`;
+  document.getElementById('popupName').textContent = p.name;
+  document.getElementById('popupMeta').textContent = `★ ${p.rating} · ${p.dist < 1 ? (p.dist*1000).toFixed(0)+'m away' : p.dist.toFixed(1)+'km away'} · ${p.cat}`;
+
+  // position near pin
+  let left = pinRect.left - mapRect.left - 100;
+  let top = pinRect.top - mapRect.top + 20;
+  if(left + 240 > mapRect.width - 16) left = mapRect.width - 256;
+  if(left < 8) left = 8;
+  if(top + 200 > mapRect.height) top = pinRect.top - mapRect.top - 220;
+  popup.style.left = left + 'px';
+  popup.style.top = top + 'px';
+  popup.classList.add('show');
+}
+
+function closePopup(){
+  document.getElementById('mapPopup').classList.remove('show');
+  activePinId = null;
+  render();
+}
+
+function openDetail(id){
+  const p = PLACES[id];
+  document.getElementById('mapPopup').classList.remove('show');
+  document.getElementById('dpTitle').textContent = p.name;
+  document.getElementById('dpImg').style.backgroundImage = `url('${p.img}')`;
+  document.getElementById('dpName').textContent = p.name;
+  document.getElementById('dpSub').textContent = p.sub;
+  document.getElementById('dpBadges').innerHTML = p.badges.map(b=>`<span class="dp-badge ${b.c}">${b.t}</span>`).join('');
+  document.getElementById('dpStars').innerHTML = `<span class="s">★★★★★</span><span class="sc">${p.rating}</span><span class="sm">/ 5.0 &nbsp;·&nbsp; ${p.reviews.toLocaleString()} reviews</span>`;
+  document.getElementById('dpInfoRow').innerHTML = `
+    <div class="dp-info"><div class="dp-info-label">Hours</div><div class="dp-info-val">${p.hours}</div></div>
+    <div class="dp-info"><div class="dp-info-label">Admission</div><div class="dp-info-val">${p.price}</div></div>
+    <div class="dp-info"><div class="dp-info-label">Distance</div><div class="dp-info-val">${p.dist < 1 ? (p.dist*1000).toFixed(0)+'m' : p.dist.toFixed(1)+'km'} away</div></div>
+    <div class="dp-info"><div class="dp-info-label">Address</div><div class="dp-info-val">${p.addr}</div></div>`;
+  document.getElementById('dpDesc').textContent = p.desc;
+
+  // Reviews
+  const rv = p.revData;
+  document.getElementById('dpRevSummary').innerHTML = `
+    <div><div class="rev-score">${rv.avg}</div><div style="color:var(--gold);font-size:14px;margin-top:4px">${'★'.repeat(Math.round(rv.avg))}</div></div>
+    <div class="rev-bars">${rv.bars.map((b,i)=>`<div class="rev-row"><span>${5-i}</span><div class="rev-track"><div class="rev-fill" style="width:${b}%"></div></div><span>${b}%</span></div>`).join('')}</div>`;
+  document.getElementById('dpReviews').innerHTML = rv.items.map(r=>`
+    <div class="review-item">
+      <div class="ri-top"><div><div class="ri-name">${r.name}</div><div class="ri-date">${r.date}</div></div><div class="ri-stars">${r.stars}</div></div>
+      <div class="ri-text">${r.text}</div>
+    </div>`).join('');
+
+  document.getElementById('detailPanel').classList.add('open');
+}
+
+function closeDetail(){
+  document.getElementById('detailPanel').classList.remove('open');
+}
+
+// close popup on map click
+document.getElementById('mapArea').addEventListener('click', function(e){
+  if(!e.target.closest('.map-pin-wrap') && !e.target.closest('.map-popup') && !e.target.closest('.detail-panel')){
+    closePopup();
+  }
+});
+
+// init
+render();
+</script>
+</body>
+</html>

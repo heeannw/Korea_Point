@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transport — KoreaPoint</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #3b9eff;
+            --red-dark: #1a7de0;
+            --gold: #38bdf8;
+            --dark: #0f172a;
+            --gray: #64748b;
+            --light: #f0f7ff;
+            --white: #ffffff;
+            --border: #dbeafe;
+            --radius: 14px;
+            --shadow: 0 4px 24px rgba(59,158,255,0.10);
+            --shadow-hover: 0 12px 40px rgba(59,158,255,0.20);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--white); color: var(--dark); overflow-x: hidden; }
+
+        /* ── HEADER ── */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 0 40px; height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .logo { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: #1a7de0; letter-spacing: -0.5px; cursor: pointer; text-decoration: none; }
+        .logo span { color: var(--dark); }
+        .header-search { flex: 1; max-width: 420px; margin: 0 32px; position: relative; }
+        .header-search input { width: 100%; padding: 10px 44px 10px 18px; border: 1.5px solid var(--border); border-radius: 50px; font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; background: var(--light); transition: border 0.2s; }
+        .header-search input:focus { border-color: var(--red); background: #fff; }
+        .header-search .search-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--gray); font-size: 16px; cursor: pointer; }
+        .header-nav { display: flex; align-items: center; gap: 8px; }
+        .lang-btn { padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 50px; background: transparent; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; color: var(--dark); }
+        .lang-btn:hover, .lang-btn.active { border-color: var(--red); color: var(--red); }
+        .login-btn { display: flex; align-items: center; gap: 8px; padding: 8px 18px; background: var(--red); color: #fff; border: none; border-radius: 50px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s; font-family: 'DM Sans', sans-serif; margin-left: 4px; }
+        .login-btn:hover { background: var(--red-dark); transform: translateY(-1px); }
+        .login-btn svg { width: 16px; height: 16px; }
+
+        /* ── PAGE HERO ── */
+        .page-hero {
+            background: linear-gradient(135deg, #0a1628 0%, #0f2a4a 55%, #0d4a8a 100%);
+            padding: 48px 40px 0;
+            position: relative; overflow: hidden;
+        }
+        .page-hero::before {
+            content: '';
+            position: absolute; top: -100px; right: -100px;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(59,158,255,0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .page-hero::after {
+            content: '';
+            position: absolute; bottom: 80px; left: 10%;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .page-hero-inner { max-width: 1140px; margin: 0 auto; }
+        .page-hero-label {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(59,158,255,0.15);
+            border: 1px solid rgba(59,158,255,0.3);
+            color: #93c5fd;
+            font-size: 12px; font-weight: 600;
+            padding: 5px 14px; border-radius: 50px;
+            margin-bottom: 16px; letter-spacing: 0.4px;
+        }
+        .page-hero h1 { font-family: 'Playfair Display', serif; font-size: 42px; font-weight: 900; color: #fff; line-height: 1.2; margin-bottom: 6px; }
+        .page-hero p { color: rgba(255,255,255,0.5); font-size: 15px; margin-bottom: 32px; }
+
+        /* ── SEARCH PANEL ── */
+        .search-panel {
+            background: var(--white);
+            border-radius: 16px 16px 0 0;
+            padding: 28px 32px 0;
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.2);
+        }
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 48px 1fr 156px;
+            gap: 12px; align-items: end;
+            margin-bottom: 20px;
+        }
+        .field-wrap { position: relative; }
+        .field-wrap label { display: block; font-size: 11px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+        .field-wrap input { width: 100%; padding: 13px 16px 13px 44px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--dark); outline: none; background: var(--light); transition: all 0.2s; }
+        .field-wrap input:focus { border-color: var(--red); background: #fff; box-shadow: 0 0 0 3px rgba(59,158,255,0.12); }
+        .field-icon { position: absolute; left: 14px; bottom: 14px; font-size: 16px; }
+        .swap-col { display: flex; align-items: flex-end; justify-content: center; }
+        .swap-btn { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--white); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; color: var(--red); }
+        .swap-btn:hover { background: var(--red); color: #fff; border-color: var(--red); transform: rotate(180deg); }
+        .search-btn-wrap { display: flex; align-items: flex-end; }
+        .search-btn { width: 100%; padding: 14px 0; background: var(--red); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+        .search-btn:hover { background: var(--red-dark); transform: translateY(-1px); }
+        .search-btn.loading { opacity: 0.7; pointer-events: none; }
+        .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .time-tabs { display: flex; gap: 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+        .time-tab { padding: 7px 16px; border-radius: 50px; border: 1.5px solid var(--border); font-size: 12px; font-weight: 600; cursor: pointer; background: transparent; color: var(--gray); font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+        .time-tab.active, .time-tab:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+        /* suggestions */
+        .suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--white); border: 1.5px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-hover); z-index: 50; display: none; }
+        .suggestion-item { padding: 10px 16px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.15s; }
+        .suggestion-item:first-child { border-radius: 10px 10px 0 0; }
+        .suggestion-item:last-child { border-radius: 0 0 10px 10px; }
+        .suggestion-item:hover { background: var(--light); }
+        .sug-icon { font-size: 14px; width: 20px; text-align: center; }
+        .sug-name { font-weight: 500; color: var(--dark); }
+        .sug-sub { font-size: 11px; color: var(--gray); margin-left: auto; white-space: nowrap; }
+
+        /* ── MAIN LAYOUT ── */
+        .main-bg { background: var(--light); min-height: 600px; }
+        .main-layout { max-width: 1140px; margin: 0 auto; padding: 32px 40px 60px; display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }
+
+        /* ── ROUTES ── */
+        .panel-title { font-size: 13px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+        .panel-title em { color: var(--dark); font-style: normal; font-size: 11px; }
+
+        .route-card { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px 20px; cursor: pointer; transition: all 0.25s; margin-bottom: 12px; background: var(--white); position: relative; overflow: hidden; }
+        .route-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--border); transition: background 0.2s; border-radius: 4px 0 0 4px; }
+        .route-card.active { border-color: var(--red); box-shadow: var(--shadow); }
+        .route-card.active::before, .route-card:hover::before { background: var(--red); }
+        .route-card:hover { border-color: rgba(59,158,255,0.5); box-shadow: var(--shadow); }
+
+        .recommend-badge { display: inline-block; background: #eff6ff; color: var(--red-dark); font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 50px; margin-bottom: 10px; letter-spacing: 0.4px; }
+        .route-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .route-time { font-size: 24px; font-weight: 700; color: var(--dark); font-family: 'Playfair Display', serif; }
+        .route-time small { font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif; color: var(--gray); margin-left: 2px; }
+        .route-cost { font-size: 13px; font-weight: 600; color: var(--gray); }
+        .route-cost strong { color: var(--dark); }
+
+        .route-pills { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+        .pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 50px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .pill-metro { background: #eff6ff; color: #1a7de0; }
+        .pill-bus   { background: #ecfdf5; color: #059669; }
+        .pill-walk  { background: #fffbeb; color: #d97706; }
+        .pill-taxi  { background: #fef3c7; color: #b45309; }
+        .pill-arrow { color: var(--gray); font-size: 10px; }
+
+        .crowd-row { display: flex; align-items: center; gap: 8px; }
+        .crowd-label { font-size: 12px; color: var(--gray); flex-shrink: 0; }
+        .crowd-bar { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+        .crowd-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+        .crowd-fill.low  { background: #10b981; }
+        .crowd-fill.mid  { background: #f59e0b; }
+        .crowd-fill.high { background: #ef4444; }
+        .crowd-text { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 50px; flex-shrink: 0; }
+        .crowd-text.low  { background: #d1fae5; color: #065f46; }
+        .crowd-text.mid  { background: #fef3c7; color: #92400e; }
+        .crowd-text.high { background: #fee2e2; color: #991b1b; }
+
+        /* ── MAP ── */
+        .map-wrap { border-radius: var(--radius); overflow: hidden; border: 1.5px solid var(--border); box-shadow: var(--shadow); position: sticky; top: 80px; }
+        .map-header { padding: 14px 20px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .map-header-title { font-size: 14px; font-weight: 600; color: var(--dark); display: flex; align-items: center; gap: 8px; }
+        .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+        .map-container { position: relative; width: 100%; height: 460px; background: #dde8f5; overflow: hidden; }
+        .svg-map { width: 100%; height: 100%; }
+        .map-legend { display: flex; gap: 14px; padding: 10px 16px; background: var(--white); border-top: 1px solid var(--border); font-size: 11px; color: var(--gray); flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        /* ── STEP DETAILS ── */
+        .step-details { background: var(--white); border-top: 1px solid var(--border); }
+        .step-tabs { display: flex; border-bottom: 1px solid var(--border); }
+        .step-tab { flex: 1; padding: 12px; font-size: 13px; font-weight: 600; text-align: center; cursor: pointer; color: var(--gray); border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .step-tab.active { color: var(--red); border-bottom-color: var(--red); }
+        .step-content { padding: 16px 20px; display: none; }
+        .step-content.active { display: block; }
+
+        .step-list { display: flex; flex-direction: column; }
+        .step-item { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+        .step-item:last-child { border-bottom: none; }
+        .step-dot-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 30px; }
+        .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+        .step-dot.metro { background: #eff6ff; }
+        .step-dot.bus   { background: #ecfdf5; }
+        .step-dot.walk  { background: #fffbeb; }
+        .step-dot.end   { background: #fee2e2; }
+        .step-line { width: 2px; flex: 1; background: var(--border); margin: 4px 0; }
+        .step-info strong { font-size: 14px; font-weight: 600; display: block; margin-bottom: 3px; }
+        .step-info p { font-size: 12px; color: var(--gray); line-height: 1.5; }
+
+        .crowd-detail-card { border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-bottom: 12px; }
+        .crowd-detail-card:last-child { margin-bottom: 0; }
+        .crowd-detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .crowd-detail-name { font-size: 14px; font-weight: 600; }
+        .crowd-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--gray); margin-bottom: 4px; }
+        .crowd-bar-lg { height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; margin-bottom: 10px; }
+        .crowd-fill-lg { height: 100%; border-radius: 5px; transition: width 1s ease; }
+        .crowd-fill-lg.low  { background: linear-gradient(90deg, #34d399, #10b981); }
+        .crowd-fill-lg.mid  { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+        .crowd-fill-lg.high { background: linear-gradient(90deg, #f87171, #ef4444); }
+        .crowd-tip { background: var(--light); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--gray); line-height: 1.6; }
+        .crowd-tip strong { color: var(--red-dark); }
+
+        /* ── EMPTY STATE ── */
+        .empty-state { text-align: center; padding: 64px 20px; }
+        .empty-state .big-icon { font-size: 52px; margin-bottom: 16px; }
+        .empty-state h3 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+        .empty-state p { font-size: 14px; color: var(--gray); line-height: 1.6; }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.4s ease forwards; }
+        .fade-in-1 { animation-delay: 0.05s; opacity: 0; }
+        .fade-in-2 { animation-delay: 0.15s; opacity: 0; }
+        .fade-in-3 { animation-delay: 0.25s; opacity: 0; }
+
+        /* ── FOOTER ── */
+        footer { background: var(--dark); color: rgba(255,255,255,0.5); padding: 40px; font-size: 13px; }
+        .footer-inner { max-width: 1140px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .footer-logo { font-family: 'Playfair Display', serif; font-size: 20px; color: #fff; }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <a class="logo" href="index.html">Korea<span>Point</span></a>
+    <div class="header-search">
+        <input type="text" placeholder="Search attractions, restaurants, tips...">
+        <span class="search-icon">🔍</span>
+    </div>
+    <nav class="header-nav">
+        <button class="lang-btn active">EN</button>
+        <button class="lang-btn">KR</button>
+        <button class="login-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Google Login
+        </button>
+    </nav>
+</header>
+
+<!-- PAGE HERO + SEARCH -->
+<div class="page-hero">
+    <div class="page-hero-inner">
+        <div class="page-hero-label">🚇 Smart Transport Guide</div>
+        <h1>Get There Easily</h1>
+        <p>Find the best routes by metro, bus &amp; taxi across Korea</p>
+
+        <div class="search-panel">
+            <div class="input-row">
+                <div class="field-wrap">
+                    <label>From</label>
+                    <span class="field-icon">📍</span>
+                    <input type="text" id="from-input" placeholder="e.g. Gyeongbokgung" autocomplete="off">
+                    <div class="suggestions" id="from-sug"></div>
+                </div>
+                <div class="swap-col">
+                    <button class="swap-btn" id="swap-btn" title="Swap">⇄</button>
+                </div>
+                <div class="field-wrap">
+                    <label>To</label>
+                    <span class="field-icon">🏁</span>
+                    <input type="text" id="to-input" placeholder="e.g. Myeongdong" autocomplete="off">
+                    <div class="suggestions" id="to-sug"></div>
+                </div>
+                <div class="search-btn-wrap">
+                    <button class="search-btn" id="search-btn" onclick="doSearch()">
+                        <span id="btn-text">Find Routes</span>
+                        <span id="btn-spinner" class="spinner"></span>
+                        <span>→</span>
+                    </button>
+                </div>
+            </div>
+            <div class="time-tabs">
+                <button class="time-tab active" onclick="setTimeTab(this,'now')">🕐 Depart Now</button>
+                <button class="time-tab" onclick="setTimeTab(this,'later')">📅 Depart Later</button>
+                <button class="time-tab" onclick="setTimeTab(this,'arrive')">🎯 Arrive By</button>
+                <input type="datetime-local" id="time-picker" style="display:none;margin-left:auto;padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;color:var(--dark);">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-bg">
+    <div class="main-layout">
+
+        <!-- LEFT: ROUTES -->
+        <div id="left-panel">
+            <div class="empty-state" id="empty-state">
+                <div class="big-icon">🗺️</div>
+                <h3>Plan Your Journey</h3>
+                <p>Enter a departure and destination<br>to see recommended routes.</p>
+            </div>
+            <div id="routes-list" style="display:none;">
+                <div class="panel-title">Recommended Routes <em id="route-count"></em></div>
+                <div id="route-cards"></div>
+            </div>
+        </div>
+
+        <!-- RIGHT: MAP -->
+        <div>
+            <div class="map-wrap">
+                <div class="map-header">
+                    <div class="map-header-title"><span class="live-dot"></span> Live Map</div>
+                    <div style="font-size:12px;color:var(--gray);" id="map-subtitle">Select a route to view directions</div>
+                </div>
+
+                <div class="map-container">
+                    <svg class="svg-map" id="svgMap" viewBox="0 0 680 460" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="680" height="460" fill="#dde8f5"/>
+                        <!-- grid roads -->
+                        <g stroke="#c8d8ef" stroke-width="1" fill="none">
+                            <line x1="0" y1="115" x2="680" y2="115"/>
+                            <line x1="0" y1="230" x2="680" y2="230"/>
+                            <line x1="0" y1="345" x2="680" y2="345"/>
+                            <line x1="136" y1="0" x2="136" y2="460"/>
+                            <line x1="272" y1="0" x2="272" y2="460"/>
+                            <line x1="408" y1="0" x2="408" y2="460"/>
+                            <line x1="544" y1="0" x2="544" y2="460"/>
+                        </g>
+                        <!-- major roads -->
+                        <g stroke="#b0c4d8" stroke-width="3.5" fill="none">
+                            <line x1="0" y1="190" x2="680" y2="190"/>
+                            <line x1="0" y1="295" x2="680" y2="295"/>
+                            <line x1="195" y1="0" x2="195" y2="460"/>
+                            <line x1="455" y1="0" x2="455" y2="460"/>
+                        </g>
+                        <!-- river han -->
+                        <path d="M0 305 Q170 295 340 315 Q510 335 680 305" stroke="#7ab8d8" stroke-width="22" fill="none" opacity="0.55"/>
+                        <path d="M0 305 Q170 295 340 315 Q510 335 680 305" stroke="#a8d0ea" stroke-width="16" fill="none" opacity="0.35"/>
+                        <text x="300" y="318" font-size="9" fill="#5090b0" font-family="DM Sans,sans-serif" opacity="0.7">Han River</text>
+                        <!-- parks -->
+                        <ellipse cx="120" cy="155" rx="48" ry="32" fill="#94cc8c" opacity="0.45"/>
+                        <ellipse cx="565" cy="390" rx="42" ry="28" fill="#94cc8c" opacity="0.45"/>
+                        <ellipse cx="340" cy="90" rx="35" ry="22" fill="#94cc8c" opacity="0.35"/>
+                        <!-- city blocks -->
+                        <g fill="#b8c8d8" opacity="0.45">
+                            <rect x="55" y="48" width="52" height="36" rx="3"/>
+                            <rect x="155" y="48" width="68" height="34" rx="3"/>
+                            <rect x="278" y="55" width="58" height="30" rx="3"/>
+                            <rect x="420" y="48" width="52" height="38" rx="3"/>
+                            <rect x="498" y="55" width="44" height="30" rx="3"/>
+                            <rect x="598" y="48" width="40" height="35" rx="3"/>
+                            <rect x="55" y="125" width="42" height="48" rx="3"/>
+                            <rect x="278" y="128" width="78" height="38" rx="3"/>
+                            <rect x="418" y="135" width="62" height="38" rx="3"/>
+                            <rect x="575" y="125" width="52" height="44" rx="3"/>
+                            <rect x="55" y="242" width="54" height="38" rx="3"/>
+                            <rect x="168" y="252" width="62" height="34" rx="3"/>
+                            <rect x="318" y="242" width="48" height="38" rx="3"/>
+                            <rect x="498" y="242" width="52" height="34" rx="3"/>
+                            <rect x="578" y="252" width="48" height="30" rx="3"/>
+                            <rect x="55" y="368" width="44" height="34" rx="3"/>
+                            <rect x="318" y="375" width="58" height="30" rx="3"/>
+                            <rect x="418" y="368" width="52" height="34" rx="3"/>
+                            <rect x="488" y="375" width="48" height="28" rx="3"/>
+                        </g>
+                        <!-- dynamic layers -->
+                        <g id="routePath"></g>
+                        <g id="markers"></g>
+                    </svg>
+                </div>
+
+                <div class="map-legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:#3b9eff"></div>Metro</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Bus</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Walk</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Start</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#3b9eff"></div>End</div>
+                </div>
+
+                <!-- TABS -->
+                <div class="step-details">
+                    <div class="step-tabs">
+                        <div class="step-tab active" onclick="switchTab(this,'steps')">📋 Step-by-step</div>
+                        <div class="step-tab" onclick="switchTab(this,'crowd')">👥 Congestion</div>
+                    </div>
+                    <div class="step-content active" id="tab-steps">
+                        <div style="text-align:center;padding:24px;color:var(--gray);font-size:13px;">Select a route to see directions.</div>
+                    </div>
+                    <div class="step-content" id="tab-crowd">
+                        <div style="text-align:center;padding:24px;color:var(--gray);font-size:13px;">Select a route to see congestion data.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-inner">
+        <div class="footer-logo">KoreaPoint</div>
+        <div>© 2025 KoreaPoint. All rights reserved.</div>
+        <div>Made for travelers ❤️</div>
+    </div>
+</footer>
+
+<script>
+    const PLACES = [
+        { name:'Gyeongbokgung Palace',   icon:'🏯', sub:'Jongno-gu',      x:195, y:155 },
+        { name:'Myeongdong',             icon:'🛍️', sub:'Jung-gu',        x:335, y:220 },
+        { name:'Hongdae',                icon:'🎨', sub:'Mapo-gu',        x:125, y:245 },
+        { name:'Gangnam Station',        icon:'🚇', sub:'Gangnam-gu',     x:395, y:375 },
+        { name:'Itaewon',                icon:'🌍', sub:'Yongsan-gu',     x:278, y:302 },
+        { name:'Bukchon Hanok Village',  icon:'🏘️', sub:'Jongno-gu',      x:338, y:125 },
+        { name:'Dongdaemun',             icon:'🏟️', sub:'Jung-gu',        x:460, y:175 },
+        { name:'Insadong',               icon:'🎎', sub:'Jongno-gu',      x:285, y:170 },
+        { name:'Namsan Tower',           icon:'🗼', sub:'Yongsan-gu',     x:328, y:265 },
+        { name:'Coex Mall',              icon:'🏬', sub:'Gangnam-gu',     x:448, y:362 },
+        { name:'Lotte World',            icon:'🎡', sub:'Songpa-gu',      x:540, y:375 },
+        { name:'Yeouido',                icon:'🌸', sub:'Yeongdeungpo-gu',x:165, y:330 },
+        { name:'Sinchon',                icon:'🏫', sub:'Seodaemun-gu',   x:145, y:205 },
+        { name:'Apgujeong',              icon:'💄', sub:'Gangnam-gu',     x:350, y:355 },
+    ];
+
+    const ROUTES = [
+        {
+            id:0, recommended:true,
+            tag:'⚡ Fastest', timeBase:28, costBase:1450,
+            pills:[{type:'metro',icon:'🚇',label:'Line 3'},{type:'metro',icon:'🚇',label:'Line 2'}],
+            steps:[
+                {type:'walk',  icon:'🚶', title:'Walk to nearest station',       detail:'~200m · 3 min'},
+                {type:'metro', icon:'🚇', title:'Line 3 (Orange) → Euljiro 3-ga',detail:'3 stops · 8 min'},
+                {type:'metro', icon:'🚇', title:'Transfer to Line 2 (Green)',    detail:'2 stops · 5 min · Exit 6'},
+                {type:'walk',  icon:'🚶', title:'Arrive at destination',         detail:'~350m · 5 min'},
+            ],
+            crowds:[
+                {name:'Departure Station', pct:28, tip:'Very quiet. Grab the 1st car for the fastest exit.'},
+                {name:'Euljiro 3-ga (Transfer)', pct:56, tip:'Moderate crowds. Use escalator on Platform B.'},
+                {name:'Arrival Exit', pct:22, tip:'No queue. Easy exit.'},
+            ],
+            color:'#3b9eff',
+        },
+        {
+            id:1, recommended:false,
+            tag:'🔁 Fewest Transfers', timeBase:36, costBase:1250,
+            pills:[{type:'bus',icon:'🚌',label:'Blue Bus 103'}],
+            steps:[
+                {type:'walk', icon:'🚶', title:'Walk to bus stop', detail:'~150m · 2 min'},
+                {type:'bus',  icon:'🚌', title:'Blue City Bus 103', detail:'8 stops · ~22 min'},
+                {type:'walk', icon:'🚶', title:'Walk to destination', detail:'~500m · 7 min'},
+            ],
+            crowds:[
+                {name:'Bus Stop (Departure)', pct:48, tip:'Next bus in ~4 min. Bus usually 60% full on board.'},
+                {name:'Arrival Bus Stop', pct:81, tip:'Very busy area. Consider alighting one stop early and walking.'},
+            ],
+            color:'#10b981',
+        },
+        {
+            id:2, recommended:false,
+            tag:'💰 Most Affordable', timeBase:52, costBase:0,
+            pills:[{type:'walk',icon:'🚶',label:'Walk'},{type:'metro',icon:'🚇',label:'Line 1'},{type:'walk',icon:'🚶',label:'Walk'}],
+            steps:[
+                {type:'walk',  icon:'🚶', title:'Walk to Anguk Station', detail:'~400m · 6 min'},
+                {type:'metro', icon:'🚇', title:'Line 1 (Blue) → Seoul Station', detail:'2 stops · 4 min'},
+                {type:'walk',  icon:'🚶', title:'Walk along Cheonggyecheon stream', detail:'~1.2km · 15 min — scenic!'},
+                {type:'walk',  icon:'🚶', title:'Arrive at destination', detail:'~300m · 4 min'},
+            ],
+            crowds:[
+                {name:'Anguk Station', pct:20, tip:'Very comfortable. Seats available.'},
+                {name:'Seoul Station (Transfer)', pct:62, tip:'Major hub — follow signs. Moderate wait.'},
+                {name:'Cheonggyecheon Path', pct:14, tip:'Calm pedestrian path. Great time for a stroll.'},
+            ],
+            color:'#f59e0b',
+        },
+    ];
+
+    let fromPlace = null, toPlace = null, activeRoute = null;
+
+    /* autocomplete */
+    function bindSuggest(inputId, sugId, setter) {
+        const inp = document.getElementById(inputId);
+        const box = document.getElementById(sugId);
+        inp.addEventListener('input', () => {
+            const q = inp.value.trim().toLowerCase();
+            if (!q) { box.style.display='none'; return; }
+            const res = PLACES.filter(p => p.name.toLowerCase().includes(q)).slice(0,5);
+            if (!res.length) { box.style.display='none'; return; }
+            box.innerHTML = res.map(p =>
+                `<div class="suggestion-item" data-name="${p.name}">
+                <span class="sug-icon">${p.icon}</span>
+                <span class="sug-name">${p.name}</span>
+                <span class="sug-sub">${p.sub}</span>
+            </div>`
+            ).join('');
+            box.querySelectorAll('.suggestion-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    inp.value = el.dataset.name;
+                    setter(PLACES.find(p => p.name === el.dataset.name));
+                    box.style.display = 'none';
+                });
+            });
+            box.style.display = 'block';
+        });
+        document.addEventListener('click', e => { if (!inp.contains(e.target) && !box.contains(e.target)) box.style.display='none'; });
+    }
+    bindSuggest('from-input','from-sug', p => fromPlace = p);
+    bindSuggest('to-input',  'to-sug',   p => toPlace   = p);
+
+    /* swap */
+    document.getElementById('swap-btn').addEventListener('click', () => {
+        const fi = document.getElementById('from-input');
+        const ti = document.getElementById('to-input');
+        [fi.value, ti.value] = [ti.value, fi.value];
+        [fromPlace, toPlace] = [toPlace, fromPlace];
+    });
+
+    /* time tabs */
+    function setTimeTab(btn, mode) {
+        document.querySelectorAll('.time-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('time-picker').style.display = mode !== 'now' ? 'block' : 'none';
+    }
+
+    /* search */
+    function doSearch() {
+        const from = document.getElementById('from-input').value.trim();
+        const to   = document.getElementById('to-input').value.trim();
+        const highlight = id => {
+            const el = document.getElementById(id);
+            el.style.borderColor = '#ef4444';
+            el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.15)';
+            setTimeout(() => { el.style.borderColor=''; el.style.boxShadow=''; }, 1500);
+        };
+        if (!from) { highlight('from-input'); return; }
+        if (!to)   { highlight('to-input');   return; }
+        const btn = document.getElementById('search-btn');
+        const txt = document.getElementById('btn-text');
+        const spn = document.getElementById('btn-spinner');
+        btn.classList.add('loading'); txt.textContent='Searching...'; spn.style.display='block';
+        setTimeout(() => {
+            btn.classList.remove('loading'); txt.textContent='Find Routes'; spn.style.display='none';
+            renderRoutes(from, to);
+        }, 1000);
+    }
+    ['from-input','to-input'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); }));
+
+    /* render route cards */
+    function renderRoutes(from, to) {
+        document.getElementById('empty-state').style.display = 'none';
+        document.getElementById('routes-list').style.display = 'block';
+        document.getElementById('route-count').textContent = `${ROUTES.length} routes found`;
+        const container = document.getElementById('route-cards');
+        container.innerHTML = '';
+        ROUTES.forEach((r, i) => {
+            const time = r.timeBase + Math.round(Math.random()*4);
+            const cost = r.costBase > 0 ? '₩' + r.costBase.toLocaleString() : 'Free';
+            const crowd = r.crowds[0];
+            const cls   = crowd.pct < 40 ? 'low' : crowd.pct < 70 ? 'mid' : 'high';
+            const word  = crowd.pct < 40 ? 'Uncrowded' : crowd.pct < 70 ? 'Moderate' : 'Busy';
+            const pills = r.pills.map((p,j) => (j>0?'<span class="pill-arrow">›</span>':'')+`<span class="pill pill-${p.type}">${p.icon} ${p.label}</span>`).join('');
+            const card  = document.createElement('div');
+            card.className = `route-card fade-in fade-in-${i+1}`;
+            card.dataset.id = r.id;
+            card.innerHTML = `
+            ${r.recommended ? '<div class="recommend-badge">⭐ RECOMMENDED</div>' : ''}
+            <div class="route-header">
+                <div class="route-time">${time}<small> min</small></div>
+                <div class="route-cost">Cost: <strong>${cost}</strong></div>
+            </div>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:10px;">${r.tag}</div>
+            <div class="route-pills">${pills}</div>
+            <div class="crowd-row">
+                <span class="crowd-label">Congestion:</span>
+                <div class="crowd-bar"><div class="crowd-fill ${cls}" style="width:${crowd.pct}%"></div></div>
+                <span class="crowd-text ${cls}">${word}</span>
+            </div>`;
+            card.addEventListener('click', () => selectRoute(r.id, from, to));
+            container.appendChild(card);
+        });
+        setTimeout(() => selectRoute(0, from, to), 350);
+    }
+
+    /* select route */
+    function selectRoute(id, from, to) {
+        activeRoute = id;
+        document.querySelectorAll('.route-card').forEach(c => c.classList.toggle('active', +c.dataset.id === id));
+        const r = ROUTES[id];
+        document.getElementById('map-subtitle').textContent = `${from} → ${to}`;
+        drawMap(r, from, to);
+        drawSteps(r);
+        drawCrowd(r);
+    }
+
+    /* draw map */
+    function drawMap(route, from, to) {
+        const fp = fromPlace || {x:195, y:155};
+        const tp = toPlace   || {x:335, y:220};
+
+        // build waypoints
+        const raw = [[fp.x,fp.y],[...getMid(fp,tp,0)],[tp.x,tp.y]];
+        const pathD = raw.map((p,i)=>`${i===0?'M':'L'}${p[0]},${p[1]}`).join(' ');
+
+        const strokeColor = route.color;
+
+        document.getElementById('routePath').innerHTML = `
+        <path d="${pathD}" stroke="#dbeafe" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path id="aPath" d="${pathD}" stroke="${strokeColor}" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"
+            stroke-dasharray="800" stroke-dashoffset="800" style="transition:stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1)"/>
+    `;
+        setTimeout(() => { const ap = document.getElementById('aPath'); if (ap) ap.style.strokeDashoffset='0'; }, 80);
+
+        document.getElementById('markers').innerHTML = `
+        <g>
+            <circle cx="${fp.x}" cy="${fp.y}" r="15" fill="#ef4444" opacity="0.18"/>
+            <circle cx="${fp.x}" cy="${fp.y}" r="9"  fill="#ef4444"/>
+            <circle cx="${fp.x}" cy="${fp.y}" r="4"  fill="white"/>
+            <text x="${fp.x}" y="${fp.y-22}" text-anchor="middle" font-size="11" font-family="DM Sans,sans-serif" fill="#0f172a" font-weight="600">${from.length>15?from.slice(0,14)+'…':from}</text>
+        </g>
+        <g>
+            <circle cx="${tp.x}" cy="${tp.y}" r="15" fill="#3b9eff" opacity="0.18"/>
+            <circle cx="${tp.x}" cy="${tp.y}" r="9"  fill="#3b9eff"/>
+            <circle cx="${tp.x}" cy="${tp.y}" r="4"  fill="white"/>
+            <text x="${tp.x}" y="${tp.y-22}" text-anchor="middle" font-size="11" font-family="DM Sans,sans-serif" fill="#0f172a" font-weight="600">${to.length>15?to.slice(0,14)+'…':to}</text>
+        </g>
+        <circle cx="${raw[1][0]}" cy="${raw[1][1]}" r="5" fill="white" stroke="${route.color}" stroke-width="2"/>
+    `;
+    }
+    function getMid(fp, tp, variant) {
+        const mx = (fp.x+tp.x)/2 + [0,30,-30][variant]||0;
+        const my = (fp.y+tp.y)/2 + [0,-20,20][variant]||0;
+        return [mx, my];
+    }
+
+    /* draw steps */
+    function drawSteps(route) {
+        document.getElementById('tab-steps').innerHTML = `<div class="step-list">${
+            route.steps.map((s,i) => {
+                const last = i===route.steps.length-1;
+                return `<div class="step-item">
+                <div class="step-dot-col">
+                    <div class="step-dot ${last?'end':s.type}">${s.icon}</div>
+                    ${!last?'<div class="step-line"></div>':''}
+                </div>
+                <div class="step-info"><strong>${s.title}</strong><p>${s.detail}</p></div>
+            </div>`;
+            }).join('')
+        }</div>`;
+    }
+
+    /* draw crowd */
+    function drawCrowd(route) {
+        document.getElementById('tab-crowd').innerHTML = route.crowds.map(c => {
+            const cls  = c.pct<40?'low':c.pct<70?'mid':'high';
+            const word = c.pct<40?'Uncrowded':c.pct<70?'Moderate':'Very Busy';
+            return `<div class="crowd-detail-card">
+            <div class="crowd-detail-header">
+                <span class="crowd-detail-name">📍 ${c.name}</span>
+                <span class="crowd-text ${cls}">${word}</span>
+            </div>
+            <div class="crowd-bar-label"><span>Congestion level</span><span>${c.pct}%</span></div>
+            <div class="crowd-bar-lg"><div class="crowd-fill-lg ${cls}" style="width:${c.pct}%"></div></div>
+            <div class="crowd-tip">💡 <strong>Tip:</strong> ${c.tip}</div>
+        </div>`;
+        }).join('');
+    }
+
+    /* tab switch */
+    function switchTab(btn, id) {
+        document.querySelectorAll('.step-tab').forEach(t=>t.classList.remove('active'));
+        document.querySelectorAll('.step-content').forEach(c=>c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-'+id).classList.add('active');
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korea Point | Discover Korea</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #3b9eff;
+            --red-dark: #1a7de0;
+            --gold: #38bdf8;
+            --dark: #0f172a;
+            --gray: #64748b;
+            --light: #f0f7ff;
+            --white: #ffffff;
+            --border: #dbeafe;
+            --radius: 14px;
+            --shadow: 0 4px 24px rgba(59, 158, 255, 0.10);
+            --shadow-hover: 0 12px 40px rgba(59, 158, 255, 0.20);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "DM Sans", sans-serif;
+            background: var(--white);
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 0 40px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .logo {
+            font-family: "Playfair Display", serif;
+            font-size: 22px;
+            font-weight: 900;
+            color: #1a7de0;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+        }
+
+        .logo span {
+            color: var(--dark);
+        }
+
+        .header-search {
+            flex: 1;
+            max-width: 420px;
+            margin: 0 32px;
+            position: relative;
+        }
+
+        .header-search input {
+            width: 100%;
+            padding: 10px 44px 10px 18px;
+            border: 1.5px solid var(--border);
+            border-radius: 50px;
+            font-size: 14px;
+            outline: none;
+            background: var(--light);
+            transition: border 0.2s;
+        }
+
+        .header-search input:focus {
+            border-color: var(--red);
+            background: #fff;
+        }
+
+        .header-search .search-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .lang-btn {
+            padding: 6px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 50px;
+            background: transparent;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--dark);
+        }
+
+        .lang-btn:hover,
+        .lang-btn.active {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        .login-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            background: var(--red);
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            margin-left: 4px;
+        }
+
+        .login-btn:hover {
+            background: var(--red-dark);
+            transform: translateY(-1px);
+        }
+
+        .hero {
+            position: relative;
+            height: 520px;
+            overflow: hidden;
+        }
+
+        .hero-slides {
+            display: flex;
+            height: 100%;
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hero-slide {
+            min-width: 100%;
+            height: 100%;
+            position: relative;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .hero-slide::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.55) 100%);
+        }
+
+        .hero-content {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: #fff;
+            z-index: 2;
+            width: 100%;
+            padding: 0 20px;
+            animation: fadeUp 0.8s ease;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .hero-content h1 {
+            font-family: "Playfair Display", serif;
+            font-size: 52px;
+            font-weight: 900;
+            line-height: 1.15;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-content p {
+            font-size: 16px;
+            opacity: 0.88;
+            margin-bottom: 28px;
+            font-weight: 300;
+        }
+
+        .hero-search {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border-radius: 50px;
+            padding: 6px 6px 6px 24px;
+            max-width: 560px;
+            margin: 0 auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero-search input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 15px;
+            color: var(--dark);
+            background: transparent;
+        }
+
+        .hero-search button {
+            padding: 12px 28px;
+            background: #3b9eff;
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .hero-search button:hover {
+            background: #1a7de0;
+        }
+
+        .hero-dots {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 3;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.45);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dot.active {
+            background: #fff;
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        .hero-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 3;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #fff;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: background 0.2s;
+        }
+
+        .hero-arrow:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .hero-arrow.left {
+            left: 20px;
+        }
+
+        .hero-arrow.right {
+            right: 20px;
+        }
+
+        .section {
+            padding: 48px 40px;
+        }
+
+        .container {
+            max-width: 1140px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-family: "Playfair Display", serif;
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--dark);
+        }
+
+        .section-sub {
+            font-size: 14px;
+            color: var(--gray);
+            margin-bottom: 28px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 28px;
+        }
+
+        .see-all {
+            font-size: 13px;
+            color: var(--red);
+            font-weight: 600;
+            text-decoration: none;
+            padding: 6px 16px;
+            border: 1.5px solid var(--red);
+            border-radius: 50px;
+            transition: all 0.2s;
+        }
+
+        .see-all:hover {
+            background: var(--red);
+            color: #fff;
+        }
+
+        .categories {
+            background: var(--white);
+            padding: 32px 40px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cat-grid {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .cat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 20px;
+            cursor: pointer;
+            border-radius: var(--radius);
+            transition: all 0.2s;
+            min-width: 96px;
+            text-decoration: none;
+            color: var(--dark);
+        }
+
+        .cat-item:hover {
+            background: var(--light);
+            transform: translateY(-3px);
+        }
+
+        .cat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+        }
+
+        .cat-icon.red {
+            background: #fff0f2;
+        }
+
+        .cat-icon.blue {
+            background: #eff6ff;
+        }
+
+        .cat-icon.green {
+            background: #f0fdf4;
+        }
+
+        .cat-icon.orange {
+            background: #fff7ed;
+        }
+
+        .cat-icon.purple {
+            background: #faf5ff;
+        }
+
+        .cat-icon.teal {
+            background: #f0fdfa;
+        }
+
+        .cat-item span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray);
+            text-align: center;
+        }
+
+        .card-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .attraction-card {
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: var(--white);
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .attraction-card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-4px);
+        }
+
+        .card-rel {
+            position: relative;
+        }
+
+        .rank-badge {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            background: #3b9eff;
+            color: #fff;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 4px 12px;
+            border-radius: 50px;
+            z-index: 1;
+        }
+
+        .card-img-placeholder {
+            width: 100%;
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .card-body {
+            padding: 16px 18px 20px;
+        }
+
+        .card-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            background: #eff6ff;
+            color: #1a7de0;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--dark);
+            line-height: 1.4;
+        }
+
+        .card-location {
+            font-size: 13px;
+            color: var(--gray);
+        }
+
+        .card-stars {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--gold);
+            font-weight: 600;
+        }
+
+        .community-section {
+            background: var(--light);
+        }
+
+        .post-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            background: var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .post-item {
+            background: var(--white);
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            text-decoration: none;
+            color: var(--dark);
+            transition: background 0.15s;
+        }
+
+        .post-item:hover {
+            background: #f0f7ff;
+        }
+
+        .post-category {
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .cat-review {
+            background: #eff6ff;
+            color: #3b9eff;
+        }
+
+        .cat-food {
+            background: #e0f2fe;
+            color: #0284c7;
+        }
+
+        .cat-tip {
+            background: #f0f9ff;
+            color: #0369a1;
+        }
+
+        .post-main {
+            flex: 1;
+        }
+
+        .post-title {
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .post-meta {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        .post-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .post-comments {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        .banner-strip {
+            background: linear-gradient(135deg, #3b9eff 0%, #60c8f5 100%);
+            padding: 18px 40px;
+            text-align: center;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        footer {
+            background: #f8fafc;
+            border-top: 1px solid var(--border);
+            padding: 36px 40px 28px;
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        .footer-top,
+        .footer-info,
+        .footer-links,
+        .footer-copy {
+            max-width: 1140px;
+            margin: 0 auto;
+        }
+
+        .footer-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .footer-logo {
+            font-family: "Playfair Display", serif;
+            font-size: 20px;
+            font-weight: 900;
+            color: #1a7de0;
+        }
+
+        .footer-info {
+            line-height: 1.9;
+            color: #94a3b8;
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .footer-links a {
+            text-decoration: none;
+            color: #64748b;
+        }
+
+        .footer-copy {
+            font-size: 11px;
+            color: #cbd5e1;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 36px;
+            right: 36px;
+            width: 56px;
+            height: 56px;
+            background: #3b9eff;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 26px;
+            text-decoration: none;
+            box-shadow: 0 6px 24px rgba(59, 158, 255, 0.4);
+            z-index: 99;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .fab:hover {
+            background: #1a7de0;
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 1024px) {
+            .card-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 16px 20px;
+                gap: 12px;
+                height: auto;
+                min-height: 64px;
+                flex-wrap: wrap;
+            }
+
+            .header-search {
+                order: 3;
+                margin: 0;
+                max-width: none;
+                width: 100%;
+            }
+
+            .hero-content h1 {
+                font-size: 36px;
+            }
+
+            .section,
+            .categories,
+            .banner-strip,
+            footer {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
+
+    <div class="header-search">
+        <input type="text" aria-label="Search" placeholder="Search attractions, restaurants, tips...">
+        <span class="search-icon">FIND</span>
+    </div>
+
+    <nav class="header-nav">
+        <button class="lang-btn active" type="button" onclick="setLang('EN')">EN</button>
+        <button class="lang-btn" type="button" onclick="setLang('KR')">KR</button>
+        <button class="login-btn" type="button" onclick="handleLogin()">Google Login</button>
+    </nav>
+</header>
+
+<section class="hero">
+    <div class="hero-slides" id="heroSlides">
+        <div class="hero-slide"
+             th:each="slide : ${slides}"
+             th:style="|background-image:url('${slide.imageUrl}')|"></div>
+    </div>
+
+    <button class="hero-arrow left" type="button" onclick="moveSlide(-1)" aria-label="Previous slide">&lt;</button>
+    <button class="hero-arrow right" type="button" onclick="moveSlide(1)" aria-label="Next slide">&gt;</button>
+
+    <div class="hero-content">
+        <h1 th:text="${heroTitle}">Discover Korea</h1>
+        <p th:text="${heroSubtitle}">Your gateway to the best attractions, food and travel tips.</p>
+        <form class="hero-search" th:action="@{/tourism}" method="get">
+            <input type="text" name="keyword" aria-label="Destination" placeholder="Where do you want to go?">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+    <div class="hero-dots" id="heroDots">
+        <div class="dot"
+             th:each="slide, iter : ${slides}"
+             th:classappend="${iter.index == 0} ? ' active' : ''"
+             th:onclick="|goSlide(${iter.index})|"></div>
+    </div>
+</section>
+
+<div class="categories">
+    <div class="container">
+        <div class="cat-grid">
+            <a class="cat-item" th:each="category : ${categories}" th:href="${category.link}">
+                <div class="cat-icon"
+                     th:classappend="| ${category.colorClass}|"
+                     th:text="${category.icon}">AT</div>
+                <span th:text="${category.label}">Attractions</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">Popular Attractions</h2>
+                <p class="section-sub">Top 3 places visitors love most</p>
+            </div>
+            <a class="see-all" th:href="@{/tourism}">See all</a>
+        </div>
+
+        <div class="card-row">
+            <article class="attraction-card" th:each="attraction : ${attractions}">
+                <div class="card-rel">
+                    <div class="rank-badge" th:text="|TOP ${attraction.rank}|">TOP 1</div>
+                    <div class="card-img-placeholder"
+                         th:style="|background-image:url('${attraction.imageUrl}')|"></div>
+                </div>
+                <div class="card-body">
+                    <span class="card-badge" th:text="${attraction.badge}">Palace</span>
+                    <div class="card-title" th:text="${attraction.title}">Gyeongbokgung Palace</div>
+                    <div class="card-location" th:text="${attraction.location}">Jongno-gu, Seoul</div>
+                    <div class="card-stars">
+                        <span th:text="${attraction.rating}">4.9</span>
+                        <span style="color:var(--gray);font-weight:400" th:text="|(${attraction.reviews})|">(2.3k)</span>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section community-section">
+    <div class="container">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">Community</h2>
+                <p class="section-sub">Latest travel reviews and tips from visitors</p>
+            </div>
+            <a class="see-all" th:href="@{/community}">See all</a>
+        </div>
+
+        <div class="post-list">
+            <a class="post-item" th:each="post : ${posts}" th:href="@{/community}">
+                <span class="post-category"
+                      th:classappend="| ${post.categoryClass}|"
+                      th:text="${post.category}">Review</span>
+                <div class="post-main">
+                    <div class="post-title" th:text="${post.title}">Sample title</div>
+                    <div class="post-meta" th:text="|by ${post.author} - ${post.timeAgo}|">by Traveller - 2 hours ago</div>
+                </div>
+                <div class="post-right">
+                    <div class="post-comments" th:text="|${post.comments} comments|">12 comments</div>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<div class="banner-strip">
+    <strong>Korea Point</strong> helps international visitors discover where to go, what to eat, and how to move around Korea.
+</div>
+
+<footer>
+    <div class="footer-top">
+        <div class="footer-logo">KoreaPoint</div>
+    </div>
+
+    <div class="footer-info">
+        <p>KoreaPoint Travel Guide Platform</p>
+        <p>Email: help@koreapoint.com</p>
+        <p>Customer Center: 1644-0000</p>
+    </div>
+
+    <div class="footer-links">
+        <a th:href="@{/}">Home</a>
+        <a th:href="@{/tourism}">Tourism</a>
+        <a th:href="@{/transport}">Transport</a>
+        <a th:href="@{/community}">Community</a>
+    </div>
+
+    <div class="footer-copy">Copyright 2025 KoreaPoint. All rights reserved.</div>
+</footer>
+
+<a class="fab" th:href="@{/community}" title="Open community">+</a>
+
+<script>
+    let current = 0;
+    const slides = document.getElementById("heroSlides");
+    const dots = document.querySelectorAll(".dot");
+    const total = dots.length;
+
+    function goSlide(n) {
+        current = n;
+        slides.style.transform = `translateX(-${current * 100}%)`;
+        dots.forEach((dot, index) => dot.classList.toggle("active", index === current));
+    }
+
+    function moveSlide(direction) {
+        goSlide((current + direction + total) % total);
+    }
+
+    if (total > 1) {
+        setInterval(() => moveSlide(1), 4500);
+    }
+
+    function setLang(lang) {
+        document.querySelectorAll(".lang-btn").forEach((button) => {
+            button.classList.toggle("active", button.textContent === lang);
+        });
+    }
+
+    function handleLogin() {
+        alert("Google Login will be connected to Spring Security OAuth later.");
+    }
+</script>
+</body>
+</html>

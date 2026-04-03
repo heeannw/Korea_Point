@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KoreaConnect - Community</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          boxShadow: {
+            soft: "0 1px 3px rgba(0,0,0,0.04)"
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen bg-[#FAFAFA] flex flex-col">
+<header class="sticky top-0 z-50 bg-white border-b border-gray-200/80">
+  <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-8">
+      <a href="index.html" class="flex items-center gap-2 no-underline">
+        <div class="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center">
+          <i data-lucide="globe" class="w-5 h-5 text-white"></i>
+        </div>
+        <span class="text-[18px] text-gray-900 tracking-[-0.3px]" style="font-weight: 600;">KoreaConnect</span>
+      </a>
+      <nav class="flex items-center gap-1">
+        <a href="index.html" class="px-3 py-2 rounded-lg text-[14px] no-underline transition-colors text-[#2563EB] bg-blue-50" style="font-weight: 500;">Community</a>
+        <a href="#" class="px-3 py-2 rounded-lg text-[14px] no-underline transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50" style="font-weight: 500;">Tips &amp; Guides</a>
+        <a href="#" class="px-3 py-2 rounded-lg text-[14px] no-underline transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50" style="font-weight: 500;">Events</a>
+      </nav>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="write-post.html" class="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[14px] no-underline hover:bg-[#1d4ed8] transition-colors" style="font-weight: 500;">Write Post</a>
+      <a href="login.html" class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-[14px] no-underline hover:bg-gray-50 transition-colors" style="font-weight: 500;">Sign In</a>
+    </div>
+  </div>
+</header>
+
+<main class="flex-1">
+  <div class="max-w-[1200px] mx-auto px-6 py-8">
+    <div class="mb-8">
+      <h1 class="text-[28px] text-gray-900 mb-2" style="font-weight: 700;">Community</h1>
+      <p class="text-[15px] text-gray-500">Ask questions, share tips, and connect with fellow travelers in Korea.</p>
+    </div>
+
+    <div class="flex gap-8">
+      <div class="flex-1 min-w-0">
+        <form class="mb-5" onsubmit="return false;">
+          <div class="relative">
+            <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+            <input type="text" name="q" placeholder="Search posts..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[14px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 transition-all" />
+          </div>
+        </form>
+
+        <div class="flex items-center gap-2 mb-5">
+          <button type="button" class="px-3.5 py-2 rounded-lg text-[13px] border transition-all cursor-pointer bg-[#2563EB] text-white border-[#2563EB]" style="font-weight: 500;"><span class="mr-1.5">📋</span>All</button>
+          <button type="button" class="px-3.5 py-2 rounded-lg text-[13px] border transition-all cursor-pointer bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50" style="font-weight: 500;"><span class="mr-1.5">🍜</span>Food</button>
+          <button type="button" class="px-3.5 py-2 rounded-lg text-[13px] border transition-all cursor-pointer bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50" style="font-weight: 500;"><span class="mr-1.5">🚇</span>Transport</button>
+          <button type="button" class="px-3.5 py-2 rounded-lg text-[13px] border transition-all cursor-pointer bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50" style="font-weight: 500;"><span class="mr-1.5">🛡️</span>Safety</button>
+          <button type="button" class="px-3.5 py-2 rounded-lg text-[13px] border transition-all cursor-pointer bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50" style="font-weight: 500;"><span class="mr-1.5">💬</span>General</button>
+        </div>
+
+        <div class="flex items-center gap-1 mb-4">
+          <button type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] cursor-pointer transition-colors text-[#2563EB] bg-blue-50" style="font-weight: 500;"><i data-lucide="clock-3" class="w-3.5 h-3.5"></i> Latest</button>
+          <button type="button" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] cursor-pointer transition-colors text-gray-500 hover:text-gray-700" style="font-weight: 500;"><i data-lucide="flame" class="w-3.5 h-3.5"></i> Popular</button>
+        </div>
+
+        <div class="flex flex-col gap-3">
+          <a href="post-detail.html" class="group bg-white rounded-xl border border-gray-200/80 p-5 no-underline hover:border-gray-300 transition-all shadow-soft">
+            <div class="flex items-center gap-2 mb-2.5"><span class="px-2 py-0.5 rounded-md text-[11px] border bg-orange-50 text-orange-600 border-orange-100" style="font-weight: 600;">Food</span><span class="text-[12px] text-gray-400">Mar 28, 2026</span></div>
+            <h3 class="text-[16px] text-gray-900 group-hover:text-[#2563EB] transition-colors mb-1.5" style="font-weight: 600;">Best tteokbokki places near Hongdae station?</h3>
+            <p class="text-[13px] text-gray-500 leading-relaxed mb-3 line-clamp-2">I've been craving authentic tteokbokki since arriving in Seoul. Looking for recommendations near Hongdae that locals actually go to...</p>
+            <div class="flex items-center gap-4"><span class="text-[12px] text-gray-500" style="font-weight: 500;">Sarah M.</span><div class="flex items-center gap-3 ml-auto"><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="eye" class="w-3.5 h-3.5"></i> 342</span><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> 12</span></div></div>
+          </a>
+          <a href="post-detail.html" class="group bg-white rounded-xl border border-gray-200/80 p-5 no-underline hover:border-gray-300 transition-all shadow-soft">
+            <div class="flex items-center gap-2 mb-2.5"><span class="px-2 py-0.5 rounded-md text-[11px] border bg-blue-50 text-blue-600 border-blue-100" style="font-weight: 600;">Transport</span><span class="text-[12px] text-gray-400">Mar 27, 2026</span></div>
+            <h3 class="text-[16px] text-gray-900 group-hover:text-[#2563EB] transition-colors mb-1.5" style="font-weight: 600;">How to get from Incheon Airport to Myeongdong cheaply</h3>
+            <p class="text-[13px] text-gray-500 leading-relaxed mb-3 line-clamp-2">After comparing all options — AREX, airport bus, taxi — here's my detailed breakdown of costs and travel times for each...</p>
+            <div class="flex items-center gap-4"><span class="text-[12px] text-gray-500" style="font-weight: 500;">James K.</span><div class="flex items-center gap-3 ml-auto"><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="eye" class="w-3.5 h-3.5"></i> 1,205</span><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> 24</span></div></div>
+          </a>
+          <a href="post-detail.html" class="group bg-white rounded-xl border border-gray-200/80 p-5 no-underline hover:border-gray-300 transition-all shadow-soft">
+            <div class="flex items-center gap-2 mb-2.5"><span class="px-2 py-0.5 rounded-md text-[11px] border bg-red-50 text-red-600 border-red-100" style="font-weight: 600;">Safety</span><span class="text-[12px] text-gray-400">Mar 27, 2026</span></div>
+            <h3 class="text-[16px] text-gray-900 group-hover:text-[#2563EB] transition-colors mb-1.5" style="font-weight: 600;">Lost my wallet in Gangnam — here's what I did</h3>
+            <p class="text-[13px] text-gray-500 leading-relaxed mb-3 line-clamp-2">Don't panic! Korea has an amazing lost &amp; found system. I got my wallet back within 24 hours. Here's the step-by-step process...</p>
+            <div class="flex items-center gap-4"><span class="text-[12px] text-gray-500" style="font-weight: 500;">Emma L.</span><div class="flex items-center gap-3 ml-auto"><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="eye" class="w-3.5 h-3.5"></i> 876</span><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> 18</span></div></div>
+          </a>
+          <a href="post-detail.html" class="group bg-white rounded-xl border border-gray-200/80 p-5 no-underline hover:border-gray-300 transition-all shadow-soft">
+            <div class="flex items-center gap-2 mb-2.5"><span class="px-2 py-0.5 rounded-md text-[11px] border bg-gray-50 text-gray-600 border-gray-200" style="font-weight: 600;">General</span><span class="text-[12px] text-gray-400">Mar 26, 2026</span></div>
+            <h3 class="text-[16px] text-gray-900 group-hover:text-[#2563EB] transition-colors mb-1.5" style="font-weight: 600;">Free cultural experiences in Seoul this weekend</h3>
+            <p class="text-[13px] text-gray-500 leading-relaxed mb-3 line-clamp-2">Compiled a list of free exhibitions, temple stays, and cultural events happening around Seoul this weekend. Perfect for budget travelers...</p>
+            <div class="flex items-center gap-4"><span class="text-[12px] text-gray-500" style="font-weight: 500;">Mike D.</span><div class="flex items-center gap-3 ml-auto"><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="eye" class="w-3.5 h-3.5"></i> 654</span><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> 8</span></div></div>
+          </a>
+          <a href="post-detail.html" class="group bg-white rounded-xl border border-gray-200/80 p-5 no-underline hover:border-gray-300 transition-all shadow-soft">
+            <div class="flex items-center gap-2 mb-2.5"><span class="px-2 py-0.5 rounded-md text-[11px] border bg-orange-50 text-orange-600 border-orange-100" style="font-weight: 600;">Food</span><span class="text-[12px] text-gray-400">Mar 26, 2026</span></div>
+            <h3 class="text-[16px] text-gray-900 group-hover:text-[#2563EB] transition-colors mb-1.5" style="font-weight: 600;">Vegetarian-friendly restaurants in Itaewon area</h3>
+            <p class="text-[13px] text-gray-500 leading-relaxed mb-3 line-clamp-2">As a vegetarian traveler, finding food in Korea was challenging at first. Here are my top 10 tested and approved spots...</p>
+            <div class="flex items-center gap-4"><span class="text-[12px] text-gray-500" style="font-weight: 500;">Priya S.</span><div class="flex items-center gap-3 ml-auto"><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="eye" class="w-3.5 h-3.5"></i> 432</span><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> 15</span></div></div>
+          </a>
+          <a href="post-detail.html" class="group bg-white rounded-xl border border-gray-200/80 p-5 no-underline hover:border-gray-300 transition-all shadow-soft">
+            <div class="flex items-center gap-2 mb-2.5"><span class="px-2 py-0.5 rounded-md text-[11px] border bg-blue-50 text-blue-600 border-blue-100" style="font-weight: 600;">Transport</span><span class="text-[12px] text-gray-400">Mar 25, 2026</span></div>
+            <h3 class="text-[16px] text-gray-900 group-hover:text-[#2563EB] transition-colors mb-1.5" style="font-weight: 600;">KTX vs. Express Bus to Busan: which is better?</h3>
+            <p class="text-[13px] text-gray-500 leading-relaxed mb-3 line-clamp-2">Planning a Busan trip? I've tried both KTX and the express bus. Here's an honest comparison covering price, comfort, and convenience...</p>
+            <div class="flex items-center gap-4"><span class="text-[12px] text-gray-500" style="font-weight: 500;">Tom W.</span><div class="flex items-center gap-3 ml-auto"><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="eye" class="w-3.5 h-3.5"></i> 789</span><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> 21</span></div></div>
+          </a>
+          <a href="post-detail.html" class="group bg-white rounded-xl border border-gray-200/80 p-5 no-underline hover:border-gray-300 transition-all shadow-soft">
+            <div class="flex items-center gap-2 mb-2.5"><span class="px-2 py-0.5 rounded-md text-[11px] border bg-gray-50 text-gray-600 border-gray-200" style="font-weight: 600;">General</span><span class="text-[12px] text-gray-400">Mar 25, 2026</span></div>
+            <h3 class="text-[16px] text-gray-900 group-hover:text-[#2563EB] transition-colors mb-1.5" style="font-weight: 600;">Korean phrases that saved my trip</h3>
+            <p class="text-[13px] text-gray-500 leading-relaxed mb-3 line-clamp-2">You don't need to be fluent, but these 15 Korean phrases will make your daily interactions so much smoother...</p>
+            <div class="flex items-center gap-4"><span class="text-[12px] text-gray-500" style="font-weight: 500;">Lisa R.</span><div class="flex items-center gap-3 ml-auto"><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="eye" class="w-3.5 h-3.5"></i> 1,543</span><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> 32</span></div></div>
+          </a>
+          <a href="post-detail.html" class="group bg-white rounded-xl border border-gray-200/80 p-5 no-underline hover:border-gray-300 transition-all shadow-soft">
+            <div class="flex items-center gap-2 mb-2.5"><span class="px-2 py-0.5 rounded-md text-[11px] border bg-red-50 text-red-600 border-red-100" style="font-weight: 600;">Safety</span><span class="text-[12px] text-gray-400">Mar 24, 2026</span></div>
+            <h3 class="text-[16px] text-gray-900 group-hover:text-[#2563EB] transition-colors mb-1.5" style="font-weight: 600;">Is it safe to walk alone at night in Seoul?</h3>
+            <p class="text-[13px] text-gray-500 leading-relaxed mb-3 line-clamp-2">As a solo female traveler, safety was my top concern. After 2 weeks here, here's my honest assessment of different areas...</p>
+            <div class="flex items-center gap-4"><span class="text-[12px] text-gray-500" style="font-weight: 500;">Anna J.</span><div class="flex items-center gap-3 ml-auto"><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="eye" class="w-3.5 h-3.5"></i> 2,103</span><span class="flex items-center gap-1 text-[12px] text-gray-400"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> 45</span></div></div>
+          </a>
+        </div>
+
+        <div class="flex items-center justify-center gap-1 mt-8">
+          <button class="w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:bg-gray-50 cursor-pointer transition-colors"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+          <button class="w-9 h-9 rounded-lg text-[13px] cursor-pointer transition-colors bg-[#2563EB] text-white border-[#2563EB]" style="font-weight: 500;">1</button>
+          <button class="w-9 h-9 rounded-lg text-[13px] cursor-pointer transition-colors border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" style="font-weight: 500;">2</button>
+          <button class="w-9 h-9 rounded-lg text-[13px] cursor-pointer transition-colors border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" style="font-weight: 500;">3</button>
+          <button class="w-9 h-9 rounded-lg text-[13px] cursor-pointer transition-colors border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" style="font-weight: 500;">4</button>
+          <button class="w-9 h-9 rounded-lg text-[13px] cursor-pointer transition-colors border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" style="font-weight: 500;">5</button>
+          <button class="w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+
+      <aside class="w-[320px] shrink-0 flex flex-col gap-5">
+        <div class="bg-white rounded-xl border border-gray-200/80 p-5 shadow-soft">
+          <div class="flex items-center gap-2 mb-4">
+            <i data-lucide="trending-up" class="w-4 h-4 text-[#2563EB]"></i>
+            <h3 class="text-[14px] text-gray-900" style="font-weight: 600;">Trending Posts</h3>
+          </div>
+          <div class="flex flex-col gap-3">
+            <a href="post-detail.html" class="group flex gap-3 no-underline"><span class="text-[13px] text-gray-300 mt-px" style="font-weight: 600;">01</span><div class="flex-1 min-w-0"><p class="text-[13px] text-gray-700 group-hover:text-[#2563EB] transition-colors truncate leading-snug" style="font-weight: 500;">Best street food spots in Myeongdong</p><div class="flex items-center gap-1 mt-1"><i data-lucide="eye" class="w-3 h-3 text-gray-400"></i><span class="text-[11px] text-gray-400">1,243</span></div></div></a>
+            <a href="post-detail.html" class="group flex gap-3 no-underline"><span class="text-[13px] text-gray-300 mt-px" style="font-weight: 600;">02</span><div class="flex-1 min-w-0"><p class="text-[13px] text-gray-700 group-hover:text-[#2563EB] transition-colors truncate leading-snug" style="font-weight: 500;">How to use T-money card like a local</p><div class="flex items-center gap-1 mt-1"><i data-lucide="eye" class="w-3 h-3 text-gray-400"></i><span class="text-[11px] text-gray-400">982</span></div></div></a>
+            <a href="post-detail.html" class="group flex gap-3 no-underline"><span class="text-[13px] text-gray-300 mt-px" style="font-weight: 600;">03</span><div class="flex-1 min-w-0"><p class="text-[13px] text-gray-700 group-hover:text-[#2563EB] transition-colors truncate leading-snug" style="font-weight: 500;">Emergency numbers every tourist should know</p><div class="flex items-center gap-1 mt-1"><i data-lucide="eye" class="w-3 h-3 text-gray-400"></i><span class="text-[11px] text-gray-400">876</span></div></div></a>
+            <a href="post-detail.html" class="group flex gap-3 no-underline"><span class="text-[13px] text-gray-300 mt-px" style="font-weight: 600;">04</span><div class="flex-1 min-w-0"><p class="text-[13px] text-gray-700 group-hover:text-[#2563EB] transition-colors truncate leading-snug" style="font-weight: 500;">Hidden cafes in Ikseon-dong hanok village</p><div class="flex items-center gap-1 mt-1"><i data-lucide="eye" class="w-3 h-3 text-gray-400"></i><span class="text-[11px] text-gray-400">754</span></div></div></a>
+            <a href="post-detail.html" class="group flex gap-3 no-underline"><span class="text-[13px] text-gray-300 mt-px" style="font-weight: 600;">05</span><div class="flex-1 min-w-0"><p class="text-[13px] text-gray-700 group-hover:text-[#2563EB] transition-colors truncate leading-snug" style="font-weight: 500;">Airport bus vs AREX: honest comparison</p><div class="flex items-center gap-1 mt-1"><i data-lucide="eye" class="w-3 h-3 text-gray-400"></i><span class="text-[11px] text-gray-400">698</span></div></div></a>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200/80 p-5 shadow-soft">
+          <h3 class="text-[14px] text-gray-900 mb-2" style="font-weight: 600;">Join the Community</h3>
+          <p class="text-[13px] text-gray-500 mb-4 leading-relaxed">Sign in to share your experiences and connect with other travelers.</p>
+          <a href="login.html" class="flex items-center justify-center gap-2 w-full py-2.5 border border-gray-200 rounded-lg text-[13px] text-gray-700 no-underline hover:bg-gray-50 transition-colors" style="font-weight: 500;">Continue with Google</a>
+        </div>
+
+        <div class="bg-gradient-to-b from-blue-50 to-white rounded-xl border border-blue-100/80 p-5 shadow-soft">
+          <div class="flex items-center gap-2 mb-4">
+            <i data-lucide="lightbulb" class="w-4 h-4 text-amber-500"></i>
+            <h3 class="text-[14px] text-gray-900" style="font-weight: 600;">Quick Tips</h3>
+          </div>
+          <ul class="flex flex-col gap-2.5 list-none p-0 m-0">
+            <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span class="text-[#2563EB] mt-0.5">•</span>Download Naver Map — Google Maps is limited in Korea</li>
+            <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span class="text-[#2563EB] mt-0.5">•</span>Most convenience stores have free Wi-Fi</li>
+            <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span class="text-[#2563EB] mt-0.5">•</span>Tap water is safe to drink in Seoul</li>
+            <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span class="text-[#2563EB] mt-0.5">•</span>T-money card works on buses, subway, and taxis</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="border-t border-gray-200/80 bg-gray-50 mt-16">
+  <div class="max-w-[1200px] mx-auto px-6 py-10">
+    <div class="flex justify-between items-start">
+      <div>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-7 h-7 bg-[#2563EB] rounded-lg flex items-center justify-center">
+            <i data-lucide="globe" class="w-4 h-4 text-white"></i>
+          </div>
+          <span class="text-[15px] text-gray-900" style="font-weight: 600;">KoreaConnect</span>
+        </div>
+        <p class="text-[13px] text-gray-500 max-w-[300px] leading-relaxed">A community platform for foreign tourists visiting Korea. Share tips, ask questions, and connect with fellow travelers.</p>
+      </div>
+      <div class="flex gap-16">
+        <div>
+          <h4 class="text-[13px] text-gray-400 uppercase tracking-wider mb-3" style="font-weight: 600;">Community</h4>
+          <div class="flex flex-col gap-2">
+            <a href="#" class="text-[13px] text-gray-600 no-underline hover:text-gray-900 transition-colors">Food</a>
+            <a href="#" class="text-[13px] text-gray-600 no-underline hover:text-gray-900 transition-colors">Transport</a>
+            <a href="#" class="text-[13px] text-gray-600 no-underline hover:text-gray-900 transition-colors">Safety</a>
+            <a href="#" class="text-[13px] text-gray-600 no-underline hover:text-gray-900 transition-colors">General</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="text-[13px] text-gray-400 uppercase tracking-wider mb-3" style="font-weight: 600;">Support</h4>
+          <div class="flex flex-col gap-2">
+            <a href="#" class="text-[13px] text-gray-600 no-underline hover:text-gray-900 transition-colors">Help Center</a>
+            <a href="#" class="text-[13px] text-gray-600 no-underline hover:text-gray-900 transition-colors">Contact</a>
+            <a href="#" class="text-[13px] text-gray-600 no-underline hover:text-gray-900 transition-colors">Terms</a>
+            <a href="#" class="text-[13px] text-gray-600 no-underline hover:text-gray-900 transition-colors">Privacy</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-8 pt-6 border-t border-gray-200 text-[12px] text-gray-400">&copy; 2026 KoreaConnect. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+  lucide.createIcons();
+</script>
+</body>
+</html>
