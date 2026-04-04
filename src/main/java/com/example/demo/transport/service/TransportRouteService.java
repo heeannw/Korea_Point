@@ -49,9 +49,7 @@ public class TransportRouteService {
         put(3, "#F99D1C"); put(4, "#F72F08");
     }};
 
-    // -----------------------------------------------
     // 카카오 API → 좌표 조회
-    // -----------------------------------------------
     public double[] getTransportCoords(String place) throws Exception {
         String encoded = URLEncoder.encode(place, StandardCharsets.UTF_8);
         String url = "https://dapi.kakao.com/v2/local/search/keyword.json?query=" + encoded;
@@ -71,9 +69,7 @@ public class TransportRouteService {
         return new double[]{x, y};
     }
 
-    // -----------------------------------------------
     // ODsay API → 경로 조회 + ML 점수로 분류
-    // -----------------------------------------------
     public List<TransportRouteDto> getTransportRoutes(String start, String end) throws Exception {
         double[] startCoords = getTransportCoords(start);
         double[] endCoords   = getTransportCoords(end);
@@ -99,9 +95,7 @@ public class TransportRouteService {
         JsonNode paths = root.get("result").get("path");
         if (paths == null || paths.isEmpty()) return List.of();
 
-        // -----------------------------------------------
         // 1. 경로 파싱 + ML 확률 계산
-        // -----------------------------------------------
         List<Map<String, Object>> rawRoutes = new ArrayList<>();
         float minTime = Float.MAX_VALUE;
 
@@ -139,9 +133,7 @@ public class TransportRouteService {
             rawRoutes.add(raw);
         }
 
-        // -----------------------------------------------
         // 2. fast / comfort / recommend 분류
-        // -----------------------------------------------
         // 검색 시점 현재 시각 (모든 경로 공통)
         String departTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
 
@@ -179,7 +171,7 @@ public class TransportRouteService {
             dto.setWalkTime((float) best.get("walk"));
             dto.setSteps((List<TransportStepDto>) best.get("steps"));
 
-            // ✅ 현재 시각 자동 세팅
+            // 현재 시각 자동 세팅
             dto.setDepartTime(departTime);
 
             transportRouteStore.put(dto.getRouteId(), dto);
@@ -189,9 +181,7 @@ public class TransportRouteService {
         return result;
     }
 
-    // -----------------------------------------------
     // subPath 파싱 → TransportStepDto 리스트
-    // -----------------------------------------------
     private List<TransportStepDto> parseTransportSteps(JsonNode subPaths) {
         List<TransportStepDto> steps = new ArrayList<>();
 
@@ -275,9 +265,7 @@ public class TransportRouteService {
         return steps;
     }
 
-    // -----------------------------------------------
     // 헬퍼 메서드들
-    // -----------------------------------------------
     private float calcAvgTransferTime(List<TransportStepDto> steps) {
         List<Float> times = new ArrayList<>();
         for (TransportStepDto step : steps) {
@@ -324,9 +312,7 @@ public class TransportRouteService {
         return totalStops / transitSteps.size();
     }
 
-    // -----------------------------------------------
     // routeId로 상세 조회
-    // -----------------------------------------------
     public TransportRouteDto getTransportRouteDetail(String routeId) {
         return transportRouteStore.get(routeId);
     }

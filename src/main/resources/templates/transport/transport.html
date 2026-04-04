@@ -1,10 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>교통 검색</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .search-box { margin-bottom: 30px; }
+        .search-box input { padding: 8px; font-size: 14px; width: 200px; }
+        .search-box button { padding: 8px 16px; background: #3b9eff; color: white; border: none; cursor: pointer; font-size: 14px; }
+        .route-card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: box-shadow 0.2s; }
+        .route-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .route-type { font-size: 12px; font-weight: bold; color: #3b9eff; margin-bottom: 6px; }
+        .route-time { font-size: 24px; font-weight: bold; margin-bottom: 6px; }
+        .route-info { font-size: 13px; color: #666; margin-bottom: 10px; }
+        .step-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+        .pill { padding: 3px 10px; border-radius: 50px; font-size: 11px; font-weight: bold; color: white; }
+        .error-box { background: #fee2e2; padding: 16px; border-radius: 8px; color: #991b1b; }
+    </style>
 </head>
 <body>
-    안녕하세요<br>
+
+<!-- 검색 폼 -->
+<div class="search-box">
+    <h2>교통 경로 검색</h2>
+    <form th:action="@{/transport/search}" method="get">
+        <input type="text" name="start" placeholder="출발지" th:value="${start}" required>
+        →
+        <input type="text" name="end" placeholder="도착지" th:value="${end}" required>
+        <button type="submit">검색</button>
+    </form>
+</div>
+
+<!-- 에러 메시지 -->
+<div class="error-box" th:if="${error}">
+    ⚠️ <span th:text="${error}"></span>
+</div>
+
+<!-- 경로 결과 -->
+<div th:if="${routes != null and !#lists.isEmpty(routes)}">
+    <h3 th:text="${start} + ' → ' + ${end} + ' 경로 결과'"></h3>
+    <p th:text="'출발 시각: ' + ${routes[0].departTime}"></p>
+
+    <div th:each="route : ${routes}">
+        <div class="route-card"
+             th:onclick="|location.href='/transport/detail?routeId=${route.routeId}'|">
+
+            <!-- 경로 타입 -->
+            <div class="route-type"
+                 th:text="${route.type == 'fast'} ? '⚡ 빠른 경로' :
+                           (${route.type == 'comfort'} ? '편한 경로' : '추천 경로')">
+            </div>
+
+            <!-- 소요 시간 -->
+            <div class="route-time">
+                <span th:text="${route.totalTime}"></span>분
+            </div>
+
+            <!-- 상세 정보 -->
+            <div class="route-info">
+                환승 <span th:text="${route.transferCount}"></span>회 ·
+                도보 <span th:text="${#numbers.formatDecimal(route.walkTime, 1, 1)}"></span>분 ·
+                출발 <span th:text="${route.departTime}"></span>
+            </div>
+
+            <!-- 노선 pills -->
+            <div class="step-pills">
+                <span th:each="step : ${route.steps}"
+                      th:if="${step.type == 'subway' or step.type == 'bus'}"
+                      class="pill"
+                      th:style="'background:' + ${step.color}"
+                      th:text="${step.line}">
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 결과 없음 -->
+<div th:if="${routes != null and #lists.isEmpty(routes)}">
+    <p>경로를 찾을 수 없습니다. 출발지/도착지를 다시 확인해주세요.</p>
+</div>
+
 </body>
 </html>
