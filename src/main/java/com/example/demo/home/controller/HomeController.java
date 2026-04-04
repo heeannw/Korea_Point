@@ -7,8 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import java.util.List;
 import java.util.Map;
 
-import static com.fasterxml.jackson.databind.type.LogicalType.Map;
-
 @Controller
 public class HomeController {
 
