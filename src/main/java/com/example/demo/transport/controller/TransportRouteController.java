@@ -22,7 +22,6 @@ public class TransportRouteController {
             @RequestParam(required = false) String end,
             Model model) {
 
-        // 파라미터 없으면 검색 폼만 보여줌
         if (start == null || end == null || start.isEmpty() || end.isEmpty()) {
             return "transport/transport";
         }
@@ -30,6 +29,18 @@ public class TransportRouteController {
         try {
             List<TransportRouteDto> routes =
                     transportRouteService.getTransportRoutes(start, end);
+
+            // ODsay 경로 개수 확인
+            System.out.println("=== 경로 조회 결과 ===");
+            System.out.println("총 경로 수: " + routes.size());
+            for (TransportRouteDto r : routes) {
+                System.out.println("타입: " + r.getType()
+                        + " | 시간: " + r.getTotalTime()
+                        + "분 | 환승: " + r.getTransferCount()
+                        + "회 | routeId: " + r.getRouteId());
+            }
+            System.out.println("====================");
+
             model.addAttribute("routes", routes);
             model.addAttribute("start", start);
             model.addAttribute("end", end);

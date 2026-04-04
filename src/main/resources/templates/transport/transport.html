@@ -165,7 +165,7 @@
 
                 <div class="route-type"
                      th:text="${route.type == 'fast'} ? '⚡ 빠른 경로' :
-                               (${route.type == 'comfort'} ? '😊 편한 경로' : '⭐ 추천 경로')">
+                       (${route.type == 'comfort'} ? '😊 편한 경로' : '⭐ 추천 경로')">
                 </div>
 
                 <div class="route-time">
@@ -178,9 +178,21 @@
                     도보 <span th:text="${#numbers.formatDecimal(route.walkTime, 1, 1)}"></span>분
                 </div>
 
+                <!-- ✅ 각 step 상세 정보 표시 -->
+                <div style="font-size:12px; color:#64748b; margin-bottom:10px;">
+                    <span th:each="step, stat : ${route.steps}" th:if="${step.type == 'subway' or step.type == 'bus'}">
+                        <span th:if="${!stat.first}"> → </span>
+                        <span th:text="${step.fromStation}"></span>
+                        <span style="font-size:10px;" th:text="'(' + ${step.line} + ')'">
+                    </span>
+                    </span>
+                    <span th:if="${!#lists.isEmpty(route.steps)}">
+                        → <span th:text="${route.steps[route.steps.size()-1].toStation}"></span>
+                    </span>
+                </div>
+
                 <div class="step-pills">
-                    <span th:each="step, stat : ${route.steps}"
-                          th:if="${step.type == 'subway' or step.type == 'bus'}">
+                    <span th:each="step, stat : ${route.steps}" th:if="${step.type == 'subway' or step.type == 'bus'}">
                         <span th:if="${!stat.first}" class="pill-arrow">›</span>
                         <span class="pill"
                               th:style="'background:' + ${step.color}"
