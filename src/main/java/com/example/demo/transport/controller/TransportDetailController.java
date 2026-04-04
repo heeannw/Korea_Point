@@ -1,6 +1,7 @@
 package com.example.demo.transport.controller;
 
 import com.example.demo.transport.dto.TransportRouteDto;
+import com.example.demo.transport.service.CongestionMlService;
 import com.example.demo.transport.service.TransportRouteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -19,9 +20,11 @@ public class TransportDetailController {
     @Autowired
     private TransportRouteService transportRouteService;
 
-    // ===========================
+    @Autowired
+    private CongestionMlService congestionMlService;
+
+
     // 상세 페이지 이동
-    // ===========================
     @GetMapping("/transport/detail")
     public String transportDetail(@RequestParam(required = false) String routeId,
                                   Model model) {
@@ -36,15 +39,13 @@ public class TransportDetailController {
         return "transport/transportDetail";
     }
 
-    // ===========================
     // 지하철 도착정보 API
-    // ===========================
     @ResponseBody
     @GetMapping("/api/transport/subway")
     public String transportSubwayArrival(
             @RequestParam(required = false) String station) throws Exception {
 
-        // station 없으면 빈값 반환 (서울 넣지마)
+        //역 없을 때
         if (station == null || station.isEmpty()) {
             return "{\"realtimeArrivalList\":[]}";
         }
@@ -63,9 +64,7 @@ public class TransportDetailController {
         return result;
     }
 
-    // ===========================
     // 실제 API 호출 함수
-    // ===========================
     private String callApi(String station) throws Exception {
 
         String key = "436243644472696e36316879424961";
@@ -94,5 +93,14 @@ public class TransportDetailController {
         conn.disconnect();
 
         return sb.toString();
+    }
+
+    @ResponseBody
+    @GetMapping("/api/transport/congestion")
+    public float getCongestion(@RequestParam float station,
+                               @RequestParam float hour,
+                               @RequestParam float day) throws Exception{
+        return congestionMlService.predict(station, hour, day);
+
     }
 }
