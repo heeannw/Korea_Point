@@ -142,8 +142,8 @@
             }
 
             // 마지막 지하철/버스역 수집
-            if ((step.type === 'subway' || step.type === 'bus') && step.to_station) {
-                lastStation = step.to_station;
+            if ((step.type === 'subway' || step.type === 'bus') && step.toStation) {
+                lastStation = step.toStation;
             }
 
             // 단계 목록 생성
@@ -152,8 +152,8 @@
                 step.type === 'bus'      ? '🚌' :
                     step.type === 'transfer' ? '🔄' : '🚇';
 
-            const from = step.from_station || '';
-            const to   = step.to_station   || '';
+            const from = step.fromStation || '';
+            const to   = step.toStation   || '';
             const line = step.line ? step.line + ' · ' : '';
 
             stepHtml += `
