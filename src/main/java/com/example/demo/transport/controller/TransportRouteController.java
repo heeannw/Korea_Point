@@ -17,9 +17,16 @@ public class TransportRouteController {
     private TransportRouteService transportRouteService;
 
     @GetMapping("/transport/search")
-    public String transportSearch(@RequestParam String start,
-                                  @RequestParam String end,
-                                  Model model) {
+    public String transportSearch(
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end,
+            Model model) {
+
+        // 파라미터 없으면 검색 폼만 보여줌
+        if (start == null || end == null || start.isEmpty() || end.isEmpty()) {
+            return "transport/transport";
+        }
+
         try {
             List<TransportRouteDto> routes =
                     transportRouteService.getTransportRoutes(start, end);

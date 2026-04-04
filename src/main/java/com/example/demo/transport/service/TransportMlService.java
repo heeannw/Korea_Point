@@ -16,12 +16,7 @@ public class TransportMlService {
     private OrtSession scalerSession;
     private OrtSession modelSession;
 
-    // df_meta.csv → 역명:환승시간 맵
     private final Map<String, Float> transferTimeMap = new HashMap<>();
-
-    // features 순서 (변환 결과 확인됨)
-    // ['time', 'transfer', 'walk', 'transfer_time',
-    //  'subway_ratio', 'bus_ratio', 'n_segments', 'avg_stop_count']
 
     @PostConstruct
     public void init() throws Exception {
@@ -40,7 +35,6 @@ public class TransportMlService {
         System.out.println("TransportMlService 초기화 완료");
     }
 
-    // df_meta.csv 로드
     private void loadDfMeta() throws Exception {
         try (CSVReader reader = new CSVReader(new InputStreamReader(
                 Objects.requireNonNull(
@@ -48,25 +42,21 @@ public class TransportMlService {
                                 .getResourceAsStream("model/transport/df_meta.csv")),
                 "UTF-8"))) {
 
-            reader.readNext(); // 헤더 스킵
+            reader.readNext();
             String[] line;
             while ((line = reader.readNext()) != null) {
                 if (line.length >= 2) {
-                    String stationName  = line[0].trim();
-                    float  transferTime = Float.parseFloat(line[1].trim());
-                    transferTimeMap.put(stationName, transferTime);
+                    transferTimeMap.put(line[0].trim(), Float.parseFloat(line[1].trim()));
                 }
             }
         }
         System.out.println("df_meta.csv 로드 완료: " + transferTimeMap.size() + "개 역");
     }
 
-    // 환승시간 조회
     public float getTransferTime(String stationName) {
         return transferTimeMap.getOrDefault(stationName, 5.0f);
     }
 
-    // ML 확률값 계산 (features 8개)
     public float getMlProb(float time, float transfer, float walk,
                            float transferTime, float subwayRatio,
                            float busRatio, float nSegments,
@@ -88,8 +78,23 @@ public class TransportMlService {
         );
         try (OrtSession.Result result = scalerSession.run(
                 Collections.singletonMap("input", input))) {
-            float[][] output = (float[][]) result.get(0).getValue();
-            return output[0];
+
+            Object raw = result.get(0).getValue();
+
+            if (raw instanceof float[][]) {
+                return ((float[][]) raw)[0];
+            } else if (raw instanceof List) {
+                List<?> list = (List<?>) raw;
+                float[] out = new float[list.size()];
+                for (int i = 0; i < list.size(); i++) {
+                    out[i] = ((Number) list.get(i)).floatValue();
+                }
+                return out;
+            } else {
+                // OnnxTensor로 직접 읽기
+                OnnxTensor tensor = (OnnxTensor) result.get(0);
+                return ((float[][]) tensor.getValue())[0];
+            }
         }
     }
 
@@ -100,12 +105,51 @@ public class TransportMlService {
         );
         try (OrtSession.Result result = modelSession.run(
                 Collections.singletonMap("input", input))) {
-            float[][] proba = (float[][]) result.get(1).getValue();
-            return proba[0][1];
+
+            // result.get(1) = List 안에 OnnxMap이 들어있는 구조
+            Object raw = result.get(1).getValue();
+            System.out.println("raw 타입: " + raw.getClass().getName());
+
+            // List 안에 OnnxMap
+            if (raw instanceof List) {
+                List<?> list = (List<?>) raw;
+                Object first = list.get(0);
+                System.out.println("first 타입: " + first.getClass().getName());
+
+                if (first instanceof OnnxMap) {
+                    // 핵심: List 안의 OnnxMap 처리
+                    OnnxMap onnxMap = (OnnxMap) first;
+                    Map<?, ?> map = (Map<?, ?>) onnxMap.getValue();
+                    System.out.println("map 내용: " + map);
+
+                    // 클래스 1의 확률값
+                    Object prob = map.get(1L);
+                    if (prob == null) prob = map.get(1);
+                    if (prob == null) {
+                        // 값이 뭔지 모르면 두 번째 값 가져오기
+                        List<Object> vals = new ArrayList<>(map.values());
+                        if (vals.size() >= 2) prob = vals.get(1);
+                    }
+                    return prob != null ? ((Number) prob).floatValue() : 0.5f;
+
+                } else if (first instanceof List) {
+                    List<?> inner = (List<?>) first;
+                    return ((Number) inner.get(1)).floatValue();
+
+                } else if (first instanceof float[]) {
+                    return ((float[]) first)[1];
+                }
+            }
+
+            if (raw instanceof float[][]) {
+                return ((float[][]) raw)[0][1];
+            }
+
+            System.out.println("처리 못한 타입: " + raw.getClass().getName());
+            return 0.5f;
         }
     }
 
-    // Python calc_score 완전 동일 로직
     public float calcScore(float time, float transfer, float walk,
                            float subwayRatio, float mlProb,
                            float minTime, String routeType) {
@@ -120,7 +164,7 @@ public class TransportMlService {
                 wMl = 0.3f; wTime = 0.20f; wTransfer = 0.60f;
                 wWalk = 0.15f; wSubway = 0.05f;
                 break;
-            default: // recommend
+            default:
                 wMl = 0.5f; wTime = 0.50f; wTransfer = 0.35f;
                 wWalk = 0.10f; wSubway = 0.05f;
                 break;
@@ -134,7 +178,6 @@ public class TransportMlService {
         return mlProb * wMl + heuristic * (1f - wMl);
     }
 
-    // 파일 로드 헬퍼
     private byte[] loadBytes(String path) throws Exception {
         try (var is = getClass().getClassLoader().getResourceAsStream(path)) {
             if (is == null) throw new RuntimeException("파일 없음: " + path);

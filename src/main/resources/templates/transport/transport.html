@@ -2,84 +2,220 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>교통 검색</title>
+    <title>교통 경로 검색</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .search-box { margin-bottom: 30px; }
-        .search-box input { padding: 8px; font-size: 14px; width: 200px; }
-        .search-box button { padding: 8px 16px; background: #3b9eff; color: white; border: none; cursor: pointer; font-size: 14px; }
-        .route-card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: box-shadow 0.2s; }
-        .route-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .route-type { font-size: 12px; font-weight: bold; color: #3b9eff; margin-bottom: 6px; }
-        .route-time { font-size: 24px; font-weight: bold; margin-bottom: 6px; }
-        .route-info { font-size: 13px; color: #666; margin-bottom: 10px; }
-        .step-pills { display: flex; gap: 6px; flex-wrap: wrap; }
-        .pill { padding: 3px 10px; border-radius: 50px; font-size: 11px; font-weight: bold; color: white; }
-        .error-box { background: #fee2e2; padding: 16px; border-radius: 8px; color: #991b1b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Apple SD Gothic Neo', sans-serif; background: #f0f7ff; min-height: 100vh; }
+
+        .search-wrap {
+            background: linear-gradient(135deg, #0a1628, #0d4a8a);
+            padding: 40px 20px 60px;
+            text-align: center;
+        }
+        .search-wrap h1 { color: white; font-size: 26px; margin-bottom: 6px; }
+        .search-wrap p  { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 28px; }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .search-form input {
+            flex: 1;
+            min-width: 160px;
+            padding: 13px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+        }
+        .search-form button {
+            padding: 13px 28px;
+            background: #3b9eff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .search-form button:hover { background: #1a7de0; }
+
+        .result-wrap {
+            max-width: 680px;
+            margin: -20px auto 40px;
+            padding: 0 16px;
+        }
+
+        .error-box {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .route-card {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 14px;
+            cursor: pointer;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .route-card:hover {
+            border-color: #3b9eff;
+            box-shadow: 0 6px 20px rgba(59,158,255,0.15);
+            transform: translateY(-2px);
+        }
+        .route-type {
+            font-size: 12px;
+            font-weight: bold;
+            color: #3b9eff;
+            margin-bottom: 8px;
+        }
+        .route-time {
+            font-size: 28px;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+        .route-time small {
+            font-size: 14px;
+            font-weight: normal;
+            color: #64748b;
+        }
+        .route-info {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+        .step-pills {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .pill {
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+        }
+        .pill-arrow {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 14px; }
+        .empty-state h3 { font-size: 18px; color: #475569; margin-bottom: 6px; }
+        .empty-state p  { font-size: 14px; }
     </style>
 </head>
 <body>
 
 <!-- 검색 폼 -->
-<div class="search-box">
-    <h2>교통 경로 검색</h2>
-    <form th:action="@{/transport/search}" method="get">
-        <input type="text" name="start" placeholder="출발지" th:value="${start}" required>
-        →
-        <input type="text" name="end" placeholder="도착지" th:value="${end}" required>
-        <button type="submit">검색</button>
+<div class="search-wrap">
+    <h1>교통 경로 검색</h1>
+    <p>출발지와 도착지를 입력하세요</p>
+
+    <form class="search-form" th:action="@{/transport/search}" method="get">
+        <input type="text" name="start" placeholder="📍 출발지 (예: 서울역)"
+               th:value="${start}" required>
+        <input type="text" name="end" placeholder="🏁 도착지 (예: 강남역)"
+               th:value="${end}" required>
+        <button type="submit">검색 →</button>
     </form>
 </div>
 
-<!-- 에러 메시지 -->
-<div class="error-box" th:if="${error}">
-    ⚠️ <span th:text="${error}"></span>
-</div>
+<!-- 결과 영역 -->
+<div class="result-wrap">
 
-<!-- 경로 결과 -->
-<div th:if="${routes != null and !#lists.isEmpty(routes)}">
-    <h3 th:text="${start} + ' → ' + ${end} + ' 경로 결과'"></h3>
-    <p th:text="'출발 시각: ' + ${routes[0].departTime}"></p>
+    <!-- 에러 -->
+    <div class="error-box" th:if="${error}">
+        ⚠️ <span th:text="${error}"></span>
+    </div>
 
-    <div th:each="route : ${routes}">
-        <div class="route-card"
-             th:onclick="|location.href='/transport/detail?routeId=${route.routeId}'|">
+    <!-- 경로 카드 3개 -->
+    <div th:if="${routes != null and !#lists.isEmpty(routes)}">
 
-            <!-- 경로 타입 -->
-            <div class="route-type"
-                 th:text="${route.type == 'fast'} ? '⚡ 빠른 경로' :
-                           (${route.type == 'comfort'} ? '편한 경로' : '추천 경로')">
-            </div>
+        <div style="padding: 16px 0 10px; font-size: 13px; color: #64748b;">
+            <b th:text="${start}"></b> → <b th:text="${end}"></b> ·
+            출발 <span th:text="${routes[0].departTime}"></span> 기준
+        </div>
 
-            <!-- 소요 시간 -->
-            <div class="route-time">
-                <span th:text="${route.totalTime}"></span>분
-            </div>
+        <!-- th:onclick 제거, data-route-id 사용 -->
+        <div th:each="route : ${routes}">
+            <div class="route-card"
+                 th:data-route-id="${route.routeId}"
+                 onclick="goDetail(this)">
 
-            <!-- 상세 정보 -->
-            <div class="route-info">
-                환승 <span th:text="${route.transferCount}"></span>회 ·
-                도보 <span th:text="${#numbers.formatDecimal(route.walkTime, 1, 1)}"></span>분 ·
-                출발 <span th:text="${route.departTime}"></span>
-            </div>
+                <div class="route-type"
+                     th:text="${route.type == 'fast'} ? '⚡ 빠른 경로' :
+                               (${route.type == 'comfort'} ? '😊 편한 경로' : '⭐ 추천 경로')">
+                </div>
 
-            <!-- 노선 pills -->
-            <div class="step-pills">
-                <span th:each="step : ${route.steps}"
-                      th:if="${step.type == 'subway' or step.type == 'bus'}"
-                      class="pill"
-                      th:style="'background:' + ${step.color}"
-                      th:text="${step.line}">
-                </span>
+                <div class="route-time">
+                    <span th:text="${route.totalTime}"></span>
+                    <small>분</small>
+                </div>
+
+                <div class="route-info">
+                    환승 <span th:text="${route.transferCount}"></span>회 ·
+                    도보 <span th:text="${#numbers.formatDecimal(route.walkTime, 1, 1)}"></span>분
+                </div>
+
+                <div class="step-pills">
+                    <span th:each="step, stat : ${route.steps}"
+                          th:if="${step.type == 'subway' or step.type == 'bus'}">
+                        <span th:if="${!stat.first}" class="pill-arrow">›</span>
+                        <span class="pill"
+                              th:style="'background:' + ${step.color}"
+                              th:text="${step.line}">
+                        </span>
+                    </span>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- 결과 없음 -->
+    <div class="empty-state"
+         th:if="${routes != null and #lists.isEmpty(routes)}">
+        <div class="icon">🔍</div>
+        <h3>경로를 찾을 수 없습니다</h3>
+        <p>출발지/도착지를 다시 확인해주세요</p>
+    </div>
+
+    <!-- 초기 상태 (검색 전) -->
+    <div class="empty-state" th:if="${routes == null and error == null}">
+        <div class="icon">🗺️</div>
+        <h3>경로를 검색해보세요</h3>
+        <p>출발지와 도착지를 입력하고 검색 버튼을 누르세요</p>
+    </div>
+
 </div>
 
-<!-- 결과 없음 -->
-<div th:if="${routes != null and #lists.isEmpty(routes)}">
-    <p>경로를 찾을 수 없습니다. 출발지/도착지를 다시 확인해주세요.</p>
-</div>
+<!-- 카드 클릭 → 상세 페이지 이동 -->
+<script>
+    function goDetail(el) {
+        const routeId = el.getAttribute('data-route-id');
+        location.href = '/transport/detail?routeId=' + routeId;
+    }
+</script>
 
 </body>
 </html>
