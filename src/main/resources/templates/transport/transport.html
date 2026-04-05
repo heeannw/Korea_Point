@@ -18,12 +18,12 @@
         .search-form {
             display: flex;
             gap: 10px;
-            max-width: 600px;
+            max-width: 680px;
             margin: 0 auto;
             flex-wrap: wrap;
             justify-content: center;
         }
-        .search-form input {
+        .search-form input[type="text"] {
             flex: 1;
             min-width: 160px;
             padding: 13px 16px;
@@ -32,7 +32,36 @@
             font-size: 14px;
             outline: none;
         }
-        .search-form button {
+        .start-wrap {
+            display: flex;
+            gap: 6px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .start-wrap input {
+            flex: 1;
+            padding: 13px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+        }
+        .location-btn {
+            padding: 13px 14px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .location-btn:hover { background: #059669; }
+        .location-btn:disabled { background: #0f172a; cursor: default; }
+
+        .search-btn {
             padding: 13px 28px;
             background: #3b9eff;
             color: white;
@@ -43,7 +72,7 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        .search-form button:hover { background: #1a7de0; }
+        .search-btn:hover { background: #1a7de0; }
 
         .result-wrap {
             max-width: 680px;
@@ -95,7 +124,12 @@
         .route-info {
             font-size: 13px;
             color: #64748b;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
+        }
+        .route-stations {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 10px;
         }
         .step-pills {
             display: flex;
@@ -129,15 +163,31 @@
 
 <!-- 검색 폼 -->
 <div class="search-wrap">
-    <h1>교통 경로 검색</h1>
+    <h1>🚇 교통 경로 검색</h1>
     <p>출발지와 도착지를 입력하세요</p>
 
     <form class="search-form" th:action="@{/transport/search}" method="get">
-        <input type="text" name="start" placeholder="📍 출발지 (예: 서울역)"
-               th:value="${start}" required>
+
+        <!-- 출발지 + 현재위치 버튼 -->
+        <div class="start-wrap">
+            <input type="text" name="start" id="startInput"
+                   placeholder="📍 출발지 (예: 서울역)"
+                   th:value="${start}">
+            <button type="button" class="location-btn"
+                    id="locationBtn" onclick="useMyLocation()">
+                📡 현재위치
+            </button>
+        </div>
+
+        <!-- hidden 좌표 필드 -->
+        <input type="hidden" name="startLat" id="startLat">
+        <input type="hidden" name="startLng" id="startLng">
+
+        <!-- 도착지 -->
         <input type="text" name="end" placeholder="🏁 도착지 (예: 강남역)"
                th:value="${end}" required>
-        <button type="submit">검색 →</button>
+
+        <button type="submit" class="search-btn">검색 →</button>
     </form>
 </div>
 
@@ -149,15 +199,14 @@
         ⚠️ <span th:text="${error}"></span>
     </div>
 
-    <!-- 경로 카드 3개 -->
+    <!-- 경로 카드 -->
     <div th:if="${routes != null and !#lists.isEmpty(routes)}">
-
+        <br>
         <div style="padding: 16px 0 10px; font-size: 13px; color: #64748b;">
             <b th:text="${start}"></b> → <b th:text="${end}"></b> ·
             출발 <span th:text="${routes[0].departTime}"></span> 기준
         </div>
 
-        <!-- th:onclick 제거, data-route-id 사용 -->
         <div th:each="route : ${routes}">
             <div class="route-card"
                  th:data-route-id="${route.routeId}"
@@ -178,6 +227,20 @@
                     도보 <span th:text="${#numbers.formatDecimal(route.walkTime, 1, 1)}"></span>분
                 </div>
 
+                <!-- 경유 역 정보 -->
+                <div class="route-stations">
+                    <span th:each="step, stat : ${route.steps}"
+                          th:if="${step.type == 'subway' or step.type == 'bus'}">
+                        <span th:if="${!stat.first}"> → </span>
+                        <span th:text="${step.fromStation}"></span>
+                        <span th:text="'(' + ${step.line} + ')'"></span>
+                    </span>
+                    <span th:if="${!#lists.isEmpty(route.steps)}">
+                        → <span th:text="${route.steps[route.steps.size()-1].toStation}"></span>
+                    </span>
+                </div>
+
+                <!-- 노선 pills -->
                 <div class="step-pills">
                     <span th:each="step, stat : ${route.steps}"
                           th:if="${step.type == 'subway' or step.type == 'bus'}">
@@ -200,7 +263,7 @@
         <p>출발지/도착지를 다시 확인해주세요</p>
     </div>
 
-    <!-- 초기 상태 (검색 전) -->
+    <!-- 초기 상태 -->
     <div class="empty-state" th:if="${routes == null and error == null}">
         <div class="icon">🗺️</div>
         <h3>경로를 검색해보세요</h3>
@@ -209,12 +272,90 @@
 
 </div>
 
-<!-- 카드 클릭 → 상세 페이지 이동 -->
 <script>
+    // 카드 클릭 → 상세 페이지
     function goDetail(el) {
         const routeId = el.getAttribute('data-route-id');
         location.href = '/transport/detail?routeId=' + routeId;
     }
+
+    // 현재위치 가져오기
+    function useMyLocation() {
+        if (!navigator.geolocation) {
+            alert('이 브라우저는 위치 서비스를 지원하지 않아요.');
+            return;
+        }
+
+        const btn = document.getElementById('locationBtn');
+        btn.textContent = '📡 위치 확인중...';
+        btn.disabled = true;
+
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+
+                // hidden 필드에 좌표 저장
+                document.getElementById('startLat').value = lat;
+                document.getElementById('startLng').value = lng;
+
+                // 카카오 역지오코딩 API로 주소 변환
+                fetch(`https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${lng}&y=${lat}`, {
+                    headers: {
+                        'Authorization': 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92'
+                    }
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        const docs = data.documents;
+                        if (docs && docs.length > 0) {
+                            const addr = docs[0];
+
+                            // 도로명 주소 우선, 없으면 지번 주소 사용
+                            let displayAddr = '';
+                            if (addr.road_address) {
+                                // 도로명: "서울 강남구 테헤란로 123" 형태
+                                displayAddr = addr.road_address.address_name;
+                            } else if (addr.address) {
+                                // 지번: "서울 강남구 역삼동" 형태
+                                const a = addr.address;
+                                displayAddr = a.region_1depth_name + ' '
+                                    + a.region_2depth_name + ' '
+                                    + a.region_3depth_name;
+                            }
+
+                            document.getElementById('startInput').value = displayAddr;
+                        } else {
+                            document.getElementById('startInput').value = '현재위치';
+                        }
+
+                        btn.textContent = '✅ 위치 확인됨';
+                        btn.style.background = '#0f172a';
+                    })
+                    .catch(() => {
+                        // API 실패해도 좌표는 저장됨
+                        document.getElementById('startInput').value = '현재위치';
+                        btn.textContent = '✅ 위치 확인됨';
+                        btn.style.background = '#0f172a';
+                    });
+            },
+            function(err) {
+                alert('위치를 가져올 수 없어요. 직접 입력해주세요.');
+                btn.textContent = '📡 현재위치';
+                btn.disabled = false;
+            }
+        );
+    }
+
+    // 출발지 직접 입력하면 좌표 초기화
+    document.getElementById('startInput').addEventListener('input', function() {
+        document.getElementById('startLat').value = '';
+        document.getElementById('startLng').value = '';
+        const btn = document.getElementById('locationBtn');
+        btn.textContent = '📡 현재위치';
+        btn.disabled = false;
+        btn.style.background = '#10b981';
+    });
 </script>
 
 </body>

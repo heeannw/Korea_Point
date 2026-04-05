@@ -67,6 +67,9 @@ public class TransportDetailController {
     // 실제 API 호출 함수
     private String callApi(String station) throws Exception {
 
+        // "역" 제거 (예: "강남역" → "강남")
+        station = station.replace("역", "").trim();
+
         String key = "436243644472696e36316879424961";
 
         StringBuilder urlBuilder = new StringBuilder("http://openapi.seoul.go.kr:8088");
