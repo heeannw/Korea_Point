@@ -33,10 +33,8 @@ public class TransportRouteService {
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    // routeId → 경로 임시 저장소
     private final Map<String, TransportRouteDto> transportRouteStore = new HashMap<>();
 
-    // 지하철 노선 색상
     private static final Map<Integer, String> SUBWAY_COLORS = new HashMap<>() {{
         put(1, "#0052A4"); put(2, "#00A84D"); put(3, "#EF7C1C");
         put(4, "#00A5DE"); put(5, "#996CAC"); put(6, "#CD7C2F");
@@ -49,7 +47,9 @@ public class TransportRouteService {
         put(3, "#F99D1C"); put(4, "#F72F08");
     }};
 
+    // -----------------------------------------------
     // 카카오 API → 좌표 조회
+    // -----------------------------------------------
     public double[] getTransportCoords(String place) throws Exception {
         String encoded = URLEncoder.encode(place, StandardCharsets.UTF_8);
         String url = "https://dapi.kakao.com/v2/local/search/keyword.json?query=" + encoded;
@@ -69,7 +69,9 @@ public class TransportRouteService {
         return new double[]{x, y};
     }
 
+    // -----------------------------------------------
     // ODsay API → 경로 조회 + ML 점수로 분류
+    // -----------------------------------------------
     public List<TransportRouteDto> getTransportRoutes(String start, String end) throws Exception {
         double[] startCoords = getTransportCoords(start);
         double[] endCoords   = getTransportCoords(end);
@@ -95,7 +97,11 @@ public class TransportRouteService {
         JsonNode paths = root.get("result").get("path");
         if (paths == null || paths.isEmpty()) return List.of();
 
+        System.out.println("ODsay 경로 개수: " + paths.size());
+
+        // -----------------------------------------------
         // 1. 경로 파싱 + ML 확률 계산
+        // -----------------------------------------------
         List<Map<String, Object>> rawRoutes = new ArrayList<>();
         float minTime = Float.MAX_VALUE;
 
@@ -107,6 +113,8 @@ public class TransportRouteService {
             float transfer = info.get("busTransitCount").asInt()
                     + info.get("subwayTransitCount").asInt();
             float walk     = (float)(info.get("totalWalk").asDouble() / 60.0);
+
+            System.out.println("경로 " + i + ": " + time + "분, 환승 " + (int)transfer + "회");
 
             List<TransportStepDto> steps = parseTransportSteps(path.get("subPath"));
 
@@ -133,55 +141,91 @@ public class TransportRouteService {
             rawRoutes.add(raw);
         }
 
-        // 2. fast / comfort / recommend 분류
-        // 검색 시점 현재 시각 (모든 경로 공통)
+        // -----------------------------------------------
+        // 2. 경로 개수에 따라 분류
+        // -----------------------------------------------
         String departTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-
+        String[] typeLabels = {"fast", "comfort", "recommend"};
         List<TransportRouteDto> result = new ArrayList<>();
 
-        for (String routeType : List.of("fast", "comfort", "recommend")) {
-            float bestScore = -1f;
-            Map<String, Object> best = null;
+        if (rawRoutes.size() >= 3) {
+            // 3개 이상 → ML 점수로 분류 (중복 선택 방지)
+            Set<Integer> usedIndexes = new HashSet<>();
 
-            for (Map<String, Object> r : rawRoutes) {
-                float score = transportMlService.calcScore(
-                        (float) r.get("time"),
-                        (float) r.get("transfer"),
-                        (float) r.get("walk"),
-                        (float) r.get("subwayRatio"),
-                        (float) r.get("mlProb"),
-                        minTime,
-                        routeType
-                );
-                if (score > bestScore) {
-                    bestScore = score;
-                    best = r;
+            for (String routeType : List.of("fast", "comfort", "recommend")) {
+                float bestScore = -1f;
+                int bestIdx = 0;
+
+                for (int i = 0; i < rawRoutes.size(); i++) {
+                    if (usedIndexes.contains(i)) continue; // ✅ 이미 선택된 경로 건너뜀
+
+                    Map<String, Object> r = rawRoutes.get(i);
+                    float score = transportMlService.calcScore(
+                            (float) r.get("time"),
+                            (float) r.get("transfer"),
+                            (float) r.get("walk"),
+                            (float) r.get("subwayRatio"),
+                            (float) r.get("mlProb"),
+                            minTime,
+                            routeType
+                    );
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestIdx = i;
+                    }
+                }
+
+                usedIndexes.add(bestIdx);
+
+                // final 변수로 복사
+                final int finalBestIdx = bestIdx;
+
+                // 중복 경로 방어 코드
+                boolean isDuplicate = result.stream()
+                        .anyMatch(r -> r.getTotalTime() == ((Float) rawRoutes.get(finalBestIdx).get("time")).intValue()
+                                && r.getTransferCount() == ((Float) rawRoutes.get(finalBestIdx).get("transfer")).intValue()
+                                && r.getSteps().size() == ((List<?>) rawRoutes.get(finalBestIdx).get("steps")).size());
+
+                if (!isDuplicate) {
+                    TransportRouteDto dto = buildDto(routeType, rawRoutes.get(finalBestIdx), start, end, departTime);
+                    transportRouteStore.put(dto.getRouteId(), dto);
+                    result.add(dto);
                 }
             }
 
-            if (best == null) continue;
-
-            TransportRouteDto dto = new TransportRouteDto();
-            dto.setRouteId(UUID.randomUUID().toString());
-            dto.setType(routeType);
-            dto.setStart(start);
-            dto.setEnd(end);
-            dto.setTotalTime(((Float) best.get("time")).intValue());
-            dto.setTransferCount(((Float) best.get("transfer")).intValue());
-            dto.setWalkTime((float) best.get("walk"));
-            dto.setSteps((List<TransportStepDto>) best.get("steps"));
-
-            // 현재 시각 자동 세팅
-            dto.setDepartTime(departTime);
-
-            transportRouteStore.put(dto.getRouteId(), dto);
-            result.add(dto);
+        } else {
+            // 1~2개 → 순서대로 할당
+            for (int i = 0; i < rawRoutes.size(); i++) {
+                TransportRouteDto dto = buildDto(typeLabels[i], rawRoutes.get(i), start, end, departTime);
+                transportRouteStore.put(dto.getRouteId(), dto);
+                result.add(dto);
+            }
         }
 
         return result;
     }
 
-    // subPath 파싱 → TransportStepDto 리스트
+    // -----------------------------------------------
+    // DTO 생성 헬퍼
+    // -----------------------------------------------
+    private TransportRouteDto buildDto(String type, Map<String, Object> r,
+                                       String start, String end, String departTime) {
+        TransportRouteDto dto = new TransportRouteDto();
+        dto.setRouteId(UUID.randomUUID().toString());
+        dto.setType(type);
+        dto.setStart(start);
+        dto.setEnd(end);
+        dto.setTotalTime(((Float) r.get("time")).intValue());
+        dto.setTransferCount(((Float) r.get("transfer")).intValue());
+        dto.setWalkTime((float) r.get("walk"));
+        dto.setSteps((List<TransportStepDto>) r.get("steps"));
+        dto.setDepartTime(departTime);
+        return dto;
+    }
+
+    // -----------------------------------------------
+    // subPath 파싱
+    // -----------------------------------------------
     private List<TransportStepDto> parseTransportSteps(JsonNode subPaths) {
         List<TransportStepDto> steps = new ArrayList<>();
 
@@ -265,7 +309,9 @@ public class TransportRouteService {
         return steps;
     }
 
+    // -----------------------------------------------
     // 헬퍼 메서드들
+    // -----------------------------------------------
     private float calcAvgTransferTime(List<TransportStepDto> steps) {
         List<Float> times = new ArrayList<>();
         for (TransportStepDto step : steps) {
@@ -312,7 +358,9 @@ public class TransportRouteService {
         return totalStops / transitSteps.size();
     }
 
+    // -----------------------------------------------
     // routeId로 상세 조회
+    // -----------------------------------------------
     public TransportRouteDto getTransportRouteDetail(String routeId) {
         return transportRouteStore.get(routeId);
     }
