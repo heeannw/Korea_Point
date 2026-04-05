@@ -65,7 +65,7 @@ public class TransportDetailController {
     private String callApi(String station) throws Exception {
         station = station.replace("역", "").trim();
 
-        String key = "436243644472696e36316879424961";
+        String key = "746f74584172696e37395277457a71";
         StringBuilder urlBuilder = new StringBuilder("http://openapi.seoul.go.kr:8088");
         urlBuilder.append("/").append(key);
         urlBuilder.append("/json/realtimeStationArrival/1/5/");
