@@ -17,23 +17,6 @@ public class TransportMlService {
     private OrtSession modelSession;
 
     private final Map<String, Float> transferTimeMap = new HashMap<>();
-//
-//    @PostConstruct
-//    public void init() throws Exception {
-//        env = OrtEnvironment.getEnvironment();
-//
-//        scalerSession = env.createSession(
-//                loadBytes("model/transport/scaler.onnx"),
-//                new OrtSession.SessionOptions()
-//        );
-//        modelSession = env.createSession(
-//                loadBytes("model/transport/route_model.onnx"),
-//                new OrtSession.SessionOptions()
-//        );
-//
-//        loadDfMeta();
-//        System.out.println("TransportMlService 초기화 완료");
-//    }
 
     @PostConstruct
     public void init() {
@@ -44,17 +27,16 @@ public class TransportMlService {
                     loadBytes("model/transport/scaler.onnx"),
                     new OrtSession.SessionOptions()
             );
-
             modelSession = env.createSession(
                     loadBytes("model/transport/route_model.onnx"),
                     new OrtSession.SessionOptions()
             );
 
             loadDfMeta();
-            System.out.println("TransportMlService 초기화 완료");
+            System.out.println("✅ TransportMlService 초기화 완료");
 
         } catch (Exception e) {
-            System.out.println("TransportMlService 로드 실패 (무시됨)");
+            System.out.println("⚠️ TransportMlService 로드 실패 (무시됨)");
             e.printStackTrace();
         }
     }
@@ -81,36 +63,21 @@ public class TransportMlService {
         return transferTimeMap.getOrDefault(stationName, 5.0f);
     }
 
-//    public float getMlProb(float time, float transfer, float walk,
-//                           float transferTime, float subwayRatio,
-//                           float busRatio, float nSegments,
-//                           float avgStopCount) throws Exception {
-//
-//        float[] features = {
-//                time, transfer, walk, transferTime,
-//                subwayRatio, busRatio, nSegments, avgStopCount
-//        };
-//
-//        float[] scaled = applyScaler(features);
-//        return applyModel(scaled);
-//    }
-
+    // 중복 제거 - try-catch 버전 하나만 유지
     public float getMlProb(float time, float transfer, float walk,
                            float transferTime, float subwayRatio,
                            float busRatio, float nSegments,
                            float avgStopCount) {
-
         try {
             float[] features = {
                     time, transfer, walk, transferTime,
                     subwayRatio, busRatio, nSegments, avgStopCount
             };
-
             float[] scaled = applyScaler(features);
             return applyModel(scaled);
 
         } catch (Exception e) {
-            System.out.println("Transport ML 예측 실패 (무시됨)");
+            System.out.println("⚠️ Transport ML 예측 실패: " + e.getMessage());
             return 0.5f;
         }
     }
@@ -135,7 +102,6 @@ public class TransportMlService {
                 }
                 return out;
             } else {
-                // OnnxTensor로 직접 읽기
                 OnnxTensor tensor = (OnnxTensor) result.get(0);
                 return ((float[][]) tensor.getValue())[0];
             }
@@ -150,27 +116,19 @@ public class TransportMlService {
         try (OrtSession.Result result = modelSession.run(
                 Collections.singletonMap("input", input))) {
 
-            // result.get(1) = List 안에 OnnxMap이 들어있는 구조
             Object raw = result.get(1).getValue();
-            System.out.println("raw 타입: " + raw.getClass().getName());
 
-            // List 안에 OnnxMap
             if (raw instanceof List) {
                 List<?> list = (List<?>) raw;
                 Object first = list.get(0);
-                System.out.println("first 타입: " + first.getClass().getName());
 
                 if (first instanceof OnnxMap) {
-                    // 핵심: List 안의 OnnxMap 처리
                     OnnxMap onnxMap = (OnnxMap) first;
                     Map<?, ?> map = (Map<?, ?>) onnxMap.getValue();
-                    System.out.println("map 내용: " + map);
 
-                    // 클래스 1의 확률값
                     Object prob = map.get(1L);
                     if (prob == null) prob = map.get(1);
                     if (prob == null) {
-                        // 값이 뭔지 모르면 두 번째 값 가져오기
                         List<Object> vals = new ArrayList<>(map.values());
                         if (vals.size() >= 2) prob = vals.get(1);
                     }
@@ -189,7 +147,6 @@ public class TransportMlService {
                 return ((float[][]) raw)[0][1];
             }
 
-            System.out.println("처리 못한 타입: " + raw.getClass().getName());
             return 0.5f;
         }
     }
