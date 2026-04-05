@@ -34,14 +34,14 @@ public class TransportDetailController {
         return "transport/transportDetail";
     }
 
-    // route JSON 반환 API (JS에서 fetch로 호출)
+    // route JSON 반환 API
     @ResponseBody
     @GetMapping("/api/transport/route/{routeId}")
     public TransportRouteDto getRouteJson(@PathVariable String routeId) {
         return transportRouteService.getTransportRouteDetail(routeId);
     }
 
-    // 지하철 실시간 도착정보 API
+    //지하철 실시간 도착정보 API (최종 완성)
     @ResponseBody
     @GetMapping("/api/transport/subway")
     public String transportSubwayArrival(
@@ -51,21 +51,21 @@ public class TransportDetailController {
             return "{\"realtimeArrivalList\":[]}";
         }
 
+        //핵심: 여기서만 처리 (완전 안전 버전)
+        station = station.replaceAll("\\s+", "")   // 공백 제거
+                .replace("역", "")        // "역" 제거
+                .trim();
+
         System.out.println("요청 역: " + station);
-        String result = callApi(station);
 
-        if (result.contains("해당하는 데이터가 없습니다")) {
-            System.out.println("재시도: " + station + "역");
-            result = callApi(station + "역");
-        }
-
-        return result;
+        return callApi(station);
     }
 
+    //API 호출 (정리된 버전)
     private String callApi(String station) throws Exception {
-        station = station.replace("역", "").trim();
 
         String key = "746f74584172696e37395277457a71";
+
         StringBuilder urlBuilder = new StringBuilder("http://openapi.seoul.go.kr:8088");
         urlBuilder.append("/").append(key);
         urlBuilder.append("/json/realtimeStationArrival/1/5/");
@@ -81,9 +81,14 @@ public class TransportDetailController {
 
         StringBuilder sb = new StringBuilder();
         String line;
-        while ((line = rd.readLine()) != null) sb.append(line);
+
+        while ((line = rd.readLine()) != null) {
+            sb.append(line);
+        }
+
         rd.close();
         conn.disconnect();
+
         return sb.toString();
     }
 
