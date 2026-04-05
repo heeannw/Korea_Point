@@ -70,7 +70,7 @@ public class TransportRouteService {
     }
 
     // -----------------------------------------------
-    // ODsay API → 경로 조회 + ML 점수로 분류
+    // 텍스트 입력 → 경로 조회
     // -----------------------------------------------
     public List<TransportRouteDto> getTransportRoutes(String start, String end) throws Exception {
         double[] startCoords = getTransportCoords(start);
@@ -78,11 +78,43 @@ public class TransportRouteService {
 
         if (startCoords == null || endCoords == null) return List.of();
 
+        return searchAndClassify(
+                startCoords[0], startCoords[1],
+                endCoords[0], endCoords[1],
+                start, end
+        );
+    }
+
+    // -----------------------------------------------
+    // 현재위치(좌표) → 경로 조회
+    // -----------------------------------------------
+    public List<TransportRouteDto> getTransportRoutesByCoords(
+            double lat, double lng, String end) throws Exception {
+
+        double[] endCoords = getTransportCoords(end);
+        if (endCoords == null) return List.of();
+
+        // 위도=lat(Y), 경도=lng(X)
+        return searchAndClassify(
+                lng, lat,           // SX=경도, SY=위도
+                endCoords[0], endCoords[1],
+                "현재위치", end
+        );
+    }
+
+    // -----------------------------------------------
+    // ODsay 검색 + ML 분류 (공통 로직)
+    // -----------------------------------------------
+    private List<TransportRouteDto> searchAndClassify(
+            double startX, double startY,
+            double endX, double endY,
+            String startLabel, String end) throws Exception {
+
         String url = "https://api.odsay.com/v1/api/searchPubTransPathT"
-                + "?SX=" + startCoords[0]
-                + "&SY=" + startCoords[1]
-                + "&EX=" + endCoords[0]
-                + "&EY=" + endCoords[1]
+                + "?SX=" + startX
+                + "&SY=" + startY
+                + "&EX=" + endX
+                + "&EY=" + endY
                 + "&apiKey=" + URLEncoder.encode(odsayKey, StandardCharsets.UTF_8);
 
         HttpRequest req = HttpRequest.newBuilder()
@@ -99,9 +131,7 @@ public class TransportRouteService {
 
         System.out.println("ODsay 경로 개수: " + paths.size());
 
-        // -----------------------------------------------
         // 1. 경로 파싱 + ML 확률 계산
-        // -----------------------------------------------
         List<Map<String, Object>> rawRoutes = new ArrayList<>();
         float minTime = Float.MAX_VALUE;
 
@@ -141,15 +171,12 @@ public class TransportRouteService {
             rawRoutes.add(raw);
         }
 
-        // -----------------------------------------------
         // 2. 경로 개수에 따라 분류
-        // -----------------------------------------------
         String departTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
         String[] typeLabels = {"fast", "comfort", "recommend"};
         List<TransportRouteDto> result = new ArrayList<>();
 
         if (rawRoutes.size() >= 3) {
-            // 3개 이상 → ML 점수로 분류 (중복 선택 방지)
             Set<Integer> usedIndexes = new HashSet<>();
 
             for (String routeType : List.of("fast", "comfort", "recommend")) {
@@ -157,7 +184,7 @@ public class TransportRouteService {
                 int bestIdx = 0;
 
                 for (int i = 0; i < rawRoutes.size(); i++) {
-                    if (usedIndexes.contains(i)) continue; // ✅ 이미 선택된 경로 건너뜀
+                    if (usedIndexes.contains(i)) continue;
 
                     Map<String, Object> r = rawRoutes.get(i);
                     float score = transportMlService.calcScore(
@@ -176,27 +203,23 @@ public class TransportRouteService {
                 }
 
                 usedIndexes.add(bestIdx);
-
-                // final 변수로 복사
                 final int finalBestIdx = bestIdx;
 
-                // 중복 경로 방어 코드
                 boolean isDuplicate = result.stream()
                         .anyMatch(r -> r.getTotalTime() == ((Float) rawRoutes.get(finalBestIdx).get("time")).intValue()
                                 && r.getTransferCount() == ((Float) rawRoutes.get(finalBestIdx).get("transfer")).intValue()
                                 && r.getSteps().size() == ((List<?>) rawRoutes.get(finalBestIdx).get("steps")).size());
 
                 if (!isDuplicate) {
-                    TransportRouteDto dto = buildDto(routeType, rawRoutes.get(finalBestIdx), start, end, departTime);
+                    TransportRouteDto dto = buildDto(routeType, rawRoutes.get(finalBestIdx), startLabel, end, departTime);
                     transportRouteStore.put(dto.getRouteId(), dto);
                     result.add(dto);
                 }
             }
 
         } else {
-            // 1~2개 → 순서대로 할당
             for (int i = 0; i < rawRoutes.size(); i++) {
-                TransportRouteDto dto = buildDto(typeLabels[i], rawRoutes.get(i), start, end, departTime);
+                TransportRouteDto dto = buildDto(typeLabels[i], rawRoutes.get(i), startLabel, end, departTime);
                 transportRouteStore.put(dto.getRouteId(), dto);
                 result.add(dto);
             }
@@ -245,7 +268,7 @@ public class TransportRouteService {
                 }
             }
 
-            if (trafficType == 1) {  // 지하철
+            if (trafficType == 1) {
                 JsonNode lane     = sp.get("lane").get(0);
                 int    subwayCode = lane.get("subwayCode").asInt();
                 String color      = SUBWAY_COLORS.getOrDefault(subwayCode, "#888888");
@@ -263,7 +286,7 @@ public class TransportRouteService {
                 step.setPath(pathCoords);
                 steps.add(step);
 
-            } else if (trafficType == 2) {  // 버스
+            } else if (trafficType == 2) {
                 JsonNode lane  = sp.get("lane").get(0);
                 int    busType = lane.has("type") ? lane.get("type").asInt() : 1;
                 String color   = BUS_COLORS.getOrDefault(busType, "#3A7BD5");
@@ -281,7 +304,7 @@ public class TransportRouteService {
                 step.setPath(pathCoords);
                 steps.add(step);
 
-            } else if (trafficType == 3 && sectionTime > 0) {  // 도보
+            } else if (trafficType == 3 && sectionTime > 0) {
                 List<Map<String, Double>> walkPath = new ArrayList<>();
                 if (sp.has("startExitX") && !sp.get("startExitX").isNull()) {
                     Map<String, Double> p = new HashMap<>();
