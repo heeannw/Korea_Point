@@ -17,22 +17,46 @@ public class TransportMlService {
     private OrtSession modelSession;
 
     private final Map<String, Float> transferTimeMap = new HashMap<>();
+//
+//    @PostConstruct
+//    public void init() throws Exception {
+//        env = OrtEnvironment.getEnvironment();
+//
+//        scalerSession = env.createSession(
+//                loadBytes("model/transport/scaler.onnx"),
+//                new OrtSession.SessionOptions()
+//        );
+//        modelSession = env.createSession(
+//                loadBytes("model/transport/route_model.onnx"),
+//                new OrtSession.SessionOptions()
+//        );
+//
+//        loadDfMeta();
+//        System.out.println("TransportMlService 초기화 완료");
+//    }
 
     @PostConstruct
-    public void init() throws Exception {
-        env = OrtEnvironment.getEnvironment();
+    public void init() {
+        try {
+            env = OrtEnvironment.getEnvironment();
 
-        scalerSession = env.createSession(
-                loadBytes("model/transport/scaler.onnx"),
-                new OrtSession.SessionOptions()
-        );
-        modelSession = env.createSession(
-                loadBytes("model/transport/route_model.onnx"),
-                new OrtSession.SessionOptions()
-        );
+            scalerSession = env.createSession(
+                    loadBytes("model/transport/scaler.onnx"),
+                    new OrtSession.SessionOptions()
+            );
 
-        loadDfMeta();
-        System.out.println("TransportMlService 초기화 완료");
+            modelSession = env.createSession(
+                    loadBytes("model/transport/route_model.onnx"),
+                    new OrtSession.SessionOptions()
+            );
+
+            loadDfMeta();
+            System.out.println("TransportMlService 초기화 완료");
+
+        } catch (Exception e) {
+            System.out.println("TransportMlService 로드 실패 (무시됨)");
+            e.printStackTrace();
+        }
     }
 
     private void loadDfMeta() throws Exception {
@@ -57,18 +81,38 @@ public class TransportMlService {
         return transferTimeMap.getOrDefault(stationName, 5.0f);
     }
 
+//    public float getMlProb(float time, float transfer, float walk,
+//                           float transferTime, float subwayRatio,
+//                           float busRatio, float nSegments,
+//                           float avgStopCount) throws Exception {
+//
+//        float[] features = {
+//                time, transfer, walk, transferTime,
+//                subwayRatio, busRatio, nSegments, avgStopCount
+//        };
+//
+//        float[] scaled = applyScaler(features);
+//        return applyModel(scaled);
+//    }
+
     public float getMlProb(float time, float transfer, float walk,
                            float transferTime, float subwayRatio,
                            float busRatio, float nSegments,
-                           float avgStopCount) throws Exception {
+                           float avgStopCount) {
 
-        float[] features = {
-                time, transfer, walk, transferTime,
-                subwayRatio, busRatio, nSegments, avgStopCount
-        };
+        try {
+            float[] features = {
+                    time, transfer, walk, transferTime,
+                    subwayRatio, busRatio, nSegments, avgStopCount
+            };
 
-        float[] scaled = applyScaler(features);
-        return applyModel(scaled);
+            float[] scaled = applyScaler(features);
+            return applyModel(scaled);
+
+        } catch (Exception e) {
+            System.out.println("Transport ML 예측 실패 (무시됨)");
+            return 0.5f;
+        }
     }
 
     private float[] applyScaler(float[] features) throws Exception {
