@@ -20,17 +20,35 @@ public class TransportRouteController {
     public String transportSearch(
             @RequestParam(required = false) String start,
             @RequestParam(required = false) String end,
+            @RequestParam(required = false) Double startLat,
+            @RequestParam(required = false) Double startLng,
             Model model) {
 
-        if (start == null || end == null || start.isEmpty() || end.isEmpty()) {
+        // 도착지 없으면 폼만 보여줌
+        if (end == null || end.isEmpty()) {
+            return "transport/transport";
+        }
+
+        // 출발지도 없고 좌표도 없으면 폼만 보여줌
+        if ((start == null || start.isEmpty()) && startLat == null) {
             return "transport/transport";
         }
 
         try {
-            List<TransportRouteDto> routes =
-                    transportRouteService.getTransportRoutes(start, end);
+            List<TransportRouteDto> routes;
 
-            // ODsay 경로 개수 확인
+            if (startLat != null && startLng != null) {
+                // 현재위치(좌표)로 검색
+                routes = transportRouteService.getTransportRoutesByCoords(
+                        startLat, startLng, end
+                );
+                model.addAttribute("start", "현재위치");
+            } else {
+                // 텍스트 입력으로 검색
+                routes = transportRouteService.getTransportRoutes(start, end);
+                model.addAttribute("start", start);
+            }
+
             System.out.println("=== 경로 조회 결과 ===");
             System.out.println("총 경로 수: " + routes.size());
             for (TransportRouteDto r : routes) {
@@ -42,8 +60,8 @@ public class TransportRouteController {
             System.out.println("====================");
 
             model.addAttribute("routes", routes);
-            model.addAttribute("start", start);
             model.addAttribute("end", end);
+
         } catch (Exception e) {
             e.printStackTrace();
             model.addAttribute("error", "경로 조회 실패: " + e.getMessage());
