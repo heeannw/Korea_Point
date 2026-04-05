@@ -23,39 +23,37 @@ public class TransportDetailController {
     @Autowired
     private CongestionMlService congestionMlService;
 
-
-    // 상세 페이지 이동
+    // 상세 페이지
     @GetMapping("/transport/detail")
     public String transportDetail(@RequestParam(required = false) String routeId,
                                   Model model) {
-
         if (routeId != null && !routeId.isEmpty()) {
-            TransportRouteDto route =
-                    transportRouteService.getTransportRouteDetail(routeId);
-
+            TransportRouteDto route = transportRouteService.getTransportRouteDetail(routeId);
             model.addAttribute("route", route);
         }
-
         return "transport/transportDetail";
     }
 
-    // 지하철 도착정보 API
+    // route JSON 반환 API (JS에서 fetch로 호출)
+    @ResponseBody
+    @GetMapping("/api/transport/route/{routeId}")
+    public TransportRouteDto getRouteJson(@PathVariable String routeId) {
+        return transportRouteService.getTransportRouteDetail(routeId);
+    }
+
+    // 지하철 실시간 도착정보 API
     @ResponseBody
     @GetMapping("/api/transport/subway")
     public String transportSubwayArrival(
             @RequestParam(required = false) String station) throws Exception {
 
-        //역 없을 때
         if (station == null || station.isEmpty()) {
             return "{\"realtimeArrivalList\":[]}";
         }
 
         System.out.println("요청 역: " + station);
-
-        // 1차 호출
         String result = callApi(station);
 
-        // 데이터 없으면 "역" 붙여서 재시도
         if (result.contains("해당하는 데이터가 없습니다")) {
             System.out.println("재시도: " + station + "역");
             result = callApi(station + "역");
@@ -64,14 +62,10 @@ public class TransportDetailController {
         return result;
     }
 
-    // 실제 API 호출 함수
     private String callApi(String station) throws Exception {
-
-        // "역" 제거 (예: "강남역" → "강남")
         station = station.replace("역", "").trim();
 
         String key = "436243644472696e36316879424961";
-
         StringBuilder urlBuilder = new StringBuilder("http://openapi.seoul.go.kr:8088");
         urlBuilder.append("/").append(key);
         urlBuilder.append("/json/realtimeStationArrival/1/5/");
@@ -87,23 +81,18 @@ public class TransportDetailController {
 
         StringBuilder sb = new StringBuilder();
         String line;
-
-        while ((line = rd.readLine()) != null) {
-            sb.append(line);
-        }
-
+        while ((line = rd.readLine()) != null) sb.append(line);
         rd.close();
         conn.disconnect();
-
         return sb.toString();
     }
 
+    // 혼잡도 예측 API (0=여유, 1=보통, 2=혼잡)
     @ResponseBody
     @GetMapping("/api/transport/congestion")
-    public float getCongestion(@RequestParam float station,
-                               @RequestParam float hour,
-                               @RequestParam float day) throws Exception{
+    public int getCongestion(@RequestParam float station,
+                             @RequestParam float hour,
+                             @RequestParam float day) throws Exception {
         return congestionMlService.predict(station, hour, day);
-
     }
 }

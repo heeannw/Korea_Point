@@ -2,30 +2,73 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>경로 상세</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>경로 상세 — KoreaPoint</title>
     <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Apple SD Gothic Neo', sans-serif; background: #f0f7ff; }
+        body { font-family: 'Apple SD Gothic Neo', 'DM Sans', sans-serif; background: #f0f7ff; }
 
         .back-btn {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             margin: 12px 16px;
-            padding: 8px 16px;
+            padding: 8px 18px;
             background: #64748b;
             color: white;
             text-decoration: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
         }
+        .back-btn:hover { background: #475569; }
 
         .info-box {
-            padding: 14px 20px;
+            padding: 16px 20px;
             background: white;
             border-bottom: 1px solid #e2e8f0;
         }
-        .info-box h3 { font-size: 16px; margin-bottom: 4px; }
+        .info-box h3 { font-size: 17px; font-weight: 700; margin-bottom: 4px; color: #0f172a; }
         .info-box p  { font-size: 13px; color: #64748b; }
+
+        .congestion-banner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: #fff7ed;
+            border-bottom: 1px solid #fed7aa;
+            font-size: 14px;
+        }
+        .congestion-banner .label { font-weight: 600; color: #64748b; }
+        .congestion-chip {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .congestion-chip.low  { background: #d1fae5; color: #065f46; }
+        .congestion-chip.mid  { background: #fef3c7; color: #92400e; }
+        .congestion-chip.high { background: #fee2e2; color: #991b1b; }
+        .congestion-bar-wrap {
+            flex: 1;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            max-width: 160px;
+        }
+        .congestion-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.8s ease;
+        }
+        .congestion-bar-fill.low  { background: #10b981; }
+        .congestion-bar-fill.mid  { background: #f59e0b; }
+        .congestion-bar-fill.high { background: #ef4444; }
 
         #map { width: 100%; height: 55vh; }
 
@@ -36,28 +79,26 @@
         }
         .tab-btn {
             flex: 1;
-            padding: 12px;
+            padding: 13px;
             font-size: 13px;
             font-weight: 600;
             text-align: center;
             cursor: pointer;
             color: #64748b;
+            border: none;
             border-bottom: 2px solid transparent;
             background: none;
-            border-top: none;
-            border-left: none;
-            border-right: none;
+            transition: all 0.2s;
         }
         .tab-btn.active { color: #3b9eff; border-bottom-color: #3b9eff; }
 
         .tab-content { display: none; padding: 16px; background: white; }
         .tab-content.active { display: block; }
 
-        /* 단계 */
         .step-item {
             display: flex;
             gap: 12px;
-            padding: 12px 0;
+            padding: 13px 0;
             border-bottom: 1px solid #f1f5f9;
             align-items: flex-start;
         }
@@ -86,10 +127,9 @@
             background: #e2e8f0;
             margin: 3px 0;
         }
-        .step-info strong { display: block; font-size: 14px; margin-bottom: 3px; }
+        .step-info strong { display: block; font-size: 14px; margin-bottom: 3px; color: #0f172a; }
         .step-info span   { font-size: 12px; color: #94a3b8; }
 
-        /* 도착정보 */
         .arrival-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -106,6 +146,7 @@
             color: #94a3b8;
             font-size: 14px;
         }
+        .error-box { padding: 20px; color: #ef4444; background: white; }
     </style>
 </head>
 <body>
@@ -118,14 +159,20 @@
     <p th:text="'총 ' + ${route.totalTime} + '분 · 환승 ' + ${route.transferCount} + '회 · 출발 ' + ${route.departTime}"></p>
 </div>
 
-<div th:if="${route == null}" style="padding:20px; color:#ef4444; background:white;">
-    경로 정보를 찾을 수 없습니다.
+<div th:if="${route == null}" class="error-box">
+    경로 정보를 찾을 수 없습니다. 다시 검색해주세요.
 </div>
 
-<!-- 카카오 지도 -->
+<div class="congestion-banner">
+    <span class="label">🚇 혼잡도</span>
+    <span class="congestion-chip" id="congestionChip">불러오는 중...</span>
+    <div class="congestion-bar-wrap">
+        <div class="congestion-bar-fill" id="congestionBarFill" style="width:0%"></div>
+    </div>
+</div>
+
 <div id="map"></div>
 
-<!-- 탭 -->
 <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('steps', this)">📋 이동 단계</button>
     <button class="tab-btn" onclick="switchTab('arrival', this)">🚇 실시간 도착정보</button>
@@ -140,13 +187,12 @@
 </div>
 
 <script th:inline="javascript">
-    const routeData = [[${route}]];
+    /*<![CDATA[*/
+    const routeId = /*[[${route?.routeId}]]*/ null;
+    /*]]>*/
 </script>
 
 <script>
-    // ========================
-    // 탭 전환
-    // ========================
     function switchTab(id, btn) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -154,168 +200,184 @@
         document.getElementById('tab-' + id).classList.add('active');
     }
 
-    // ========================
-    // 지도 생성
-    // ========================
     var map = new kakao.maps.Map(document.getElementById('map'), {
         center: new kakao.maps.LatLng(37.5665, 126.9780),
         level: 6
     });
 
-    if (!routeData || !routeData.steps) {
+    if (!routeId) {
         document.getElementById('stepList').innerHTML = '<p class="no-data">경로 데이터 없음</p>';
+        document.getElementById('congestionChip').textContent = '-';
     } else {
-        const steps = routeData.steps;
-        let allCoords = [];
-        let lastStation = "";
-        let stepHtml = "";
-
-        steps.forEach((step, idx) => {
-            const isLast = idx === steps.size - 1;
-
-            // ========================
-            // 지도 경로 그리기 (버스+지하철+도보 모두)
-            // ========================
-            if (step.path && step.path.length > 0) {
-                const color = step.color ||
-                    (step.type === 'walk' ? '#f59e0b' :
-                        step.type === 'bus'  ? '#10b981' : '#3b9eff');
-
-                const linePath = step.path.map(p =>
-                    new kakao.maps.LatLng(p.lat, p.lng)
-                );
-                allCoords = allCoords.concat(linePath);
-
-                if (step.type === 'walk') {
-                    // 도보는 점선으로 표시
-                    new kakao.maps.Polyline({
-                        path: linePath,
-                        strokeWeight: 3,
-                        strokeColor: color,
-                        strokeOpacity: 0.7,
-                        strokeStyle: 'dashed'
-                    }).setMap(map);
-                } else {
-                    // 지하철/버스는 실선 + 두껍게
-                    new kakao.maps.Polyline({
-                        path: linePath,
-                        strokeWeight: 6,
-                        strokeColor: color,
-                        strokeOpacity: 0.9
-                    }).setMap(map);
+        fetch('/api/transport/route/' + routeId)
+            .then(res => res.json())
+            .then(routeData => {
+                if (!routeData || !routeData.steps) {
+                    document.getElementById('stepList').innerHTML = '<p class="no-data">경로 데이터 없음</p>';
+                    return;
                 }
 
-                // 환승/중간역 마커 (작은 원)
-                if (step.type === 'subway' || step.type === 'bus') {
-                    if (linePath.length > 0) {
-                        var circle = new kakao.maps.Circle({
-                            center: linePath[0],
-                            radius: 60,
-                            strokeWeight: 2,
-                            strokeColor: color,
-                            strokeOpacity: 1,
-                            fillColor: '#ffffff',
-                            fillOpacity: 1
-                        });
-                        circle.setMap(map);
+                const steps = routeData.steps;
+                let allCoords = [];
+                let lastStation = "";
+                let stepHtml = "";
+
+                steps.forEach((step, idx) => {
+
+                    // 지도 경로 그리기
+                    if (step.path && step.path.length > 0) {
+                        const color = step.color ||
+                            (step.type === 'walk' ? '#f59e0b' :
+                                step.type === 'bus'  ? '#10b981' : '#3b9eff');
+
+                        const linePath = step.path.map(p =>
+                            new kakao.maps.LatLng(p.lat, p.lng)
+                        );
+                        allCoords = allCoords.concat(linePath);
+
+                        if (step.type === 'walk') {
+                            new kakao.maps.Polyline({
+                                path: linePath,
+                                strokeWeight: 3,
+                                strokeColor: color,
+                                strokeOpacity: 0.7,
+                                strokeStyle: 'dashed'
+                            }).setMap(map);
+                        } else {
+                            new kakao.maps.Polyline({
+                                path: linePath,
+                                strokeWeight: 6,
+                                strokeColor: color,
+                                strokeOpacity: 0.9
+                            }).setMap(map);
+                        }
+
+                        if ((step.type === 'subway' || step.type === 'bus') && linePath.length > 0) {
+                            new kakao.maps.Circle({
+                                center: linePath[0],
+                                radius: 60,
+                                strokeWeight: 2,
+                                strokeColor: color,
+                                strokeOpacity: 1,
+                                fillColor: '#ffffff',
+                                fillOpacity: 1
+                            }).setMap(map);
+                        }
                     }
-                }
-            }
 
-            // 마지막 지하철/버스 역 수집
-            if ((step.type === 'subway' || step.type === 'bus') && step.to_station) {
-                lastStation = step.to_station;
-            }
-
-            // ========================
-            // 단계 목록 생성 (버스+지하철+도보 모두)
-            // ========================
-            const badgeColor = step.color ||
-                (step.type === 'walk'     ? '#f59e0b' :
-                    step.type === 'bus'      ? '#10b981' :
-                        step.type === 'transfer' ? '#94a3b8' : '#3b9eff');
-
-            const icon = step.type === 'walk'     ? '🚶' :
-                step.type === 'bus'      ? '🚌' :
-                    step.type === 'transfer' ? '🔄' : '🚇';
-
-            const from = step.from_station || '';
-            const to   = step.to_station   || '';
-            const line = step.line ? '[' + step.line + '] ' : '';
-            const isLastStep = idx === steps.length - 1;
-
-            stepHtml += `
-                <div class="step-item">
-                    <div class="step-dot-wrap">
-                        <div class="step-dot" style="background:${badgeColor}">${icon}</div>
-                        ${!isLastStep ? '<div class="step-line"></div>' : ''}
-                    </div>
-                    <div class="step-info">
-                        <strong>${line}${from} → ${to}</strong>
-                        <span>${step.duration}분</span>
-                    </div>
-                </div>
-            `;
-        });
-
-        document.getElementById('stepList').innerHTML = stepHtml;
-
-        // ========================
-        // 지도 범위 자동 조정 (전체 경로 보이게)
-        // ========================
-        if (allCoords.length > 0) {
-            // 출발 마커
-            new kakao.maps.Marker({
-                position: allCoords[0],
-                map: map,
-                title: routeData.start || '출발'
-            });
-
-            // 도착 마커
-            new kakao.maps.Marker({
-                position: allCoords[allCoords.length - 1],
-                map: map,
-                title: routeData.end || '도착'
-            });
-
-            // 전체 경로가 지도에 보이도록 범위 자동 조정
-            var bounds = new kakao.maps.LatLngBounds();
-            allCoords.forEach(coord => bounds.extend(coord));
-            map.setBounds(bounds);
-        }
-
-        // ========================
-        // 실시간 도착정보 (역 이름에서 "역" 제거는 서버에서 처리)
-        // ========================
-        if (lastStation) {
-            fetch(`/api/transport/subway?station=${encodeURIComponent(lastStation)}`)
-                .then(res => res.json())
-                .then(data => {
-                    const list = data.realtimeArrivalList || [];
-                    if (list.length === 0) {
-                        document.getElementById('arrivalList').innerHTML =
-                            '<p class="no-data">도착 정보 없음</p>';
-                        return;
+                    // 마지막 지하철/버스역 수집
+                    if ((step.type === 'subway' || step.type === 'bus') && step.toStation) {
+                        lastStation = step.toStation;
                     }
-                    let html = '';
-                    list.forEach(item => {
-                        html += `
-                            <div class="arrival-card">
-                                <b>${item.trainLineNm}</b><br>
-                                ${item.arvlMsg2}
+
+                    // 단계 목록
+                    const badgeColor = step.color ||
+                        (step.type === 'walk'     ? '#f59e0b' :
+                            step.type === 'bus'      ? '#10b981' :
+                                step.type === 'transfer' ? '#94a3b8' : '#3b9eff');
+
+                    const icon = step.type === 'walk'     ? '🚶' :
+                        step.type === 'bus'      ? '🚌' :
+                            step.type === 'transfer' ? '🔄' : '🚇';
+
+                    const from = step.fromStation || '';
+                    const to   = step.toStation   || '';
+                    const line = step.line ? '[' + step.line + '] ' : '';
+                    const isLastStep = idx === steps.length - 1;
+
+                    stepHtml += `
+                        <div class="step-item">
+                            <div class="step-dot-wrap">
+                                <div class="step-dot" style="background:${badgeColor}">${icon}</div>
+                                ${!isLastStep ? '<div class="step-line"></div>' : ''}
                             </div>
-                        `;
-                    });
-                    document.getElementById('arrivalList').innerHTML = html;
-                })
-                .catch(() => {
-                    document.getElementById('arrivalList').innerHTML =
-                        '<p class="no-data">도착정보 조회 실패</p>';
+                            <div class="step-info">
+                                <strong>${line}${from} → ${to}</strong>
+                                <span>${step.duration}분</span>
+                            </div>
+                        </div>
+                    `;
                 });
-        } else {
-            document.getElementById('arrivalList').innerHTML =
-                '<p class="no-data">도착 정보 없음</p>';
-        }
+
+                document.getElementById('stepList').innerHTML =
+                    stepHtml || '<p class="no-data">단계 정보 없음</p>';
+
+                // 지도 범위 조정
+                if (allCoords.length > 0) {
+                    new kakao.maps.Marker({ position: allCoords[0], map: map });
+                    new kakao.maps.Marker({ position: allCoords[allCoords.length - 1], map: map });
+                    var bounds = new kakao.maps.LatLngBounds();
+                    allCoords.forEach(coord => bounds.extend(coord));
+                    map.setBounds(bounds);
+                }
+
+                // 실시간 도착정보
+                if (lastStation) {
+                    fetch(`/api/transport/subway?station=${encodeURIComponent(lastStation)}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            const list = data.realtimeArrivalList || [];
+                            if (list.length === 0) {
+                                document.getElementById('arrivalList').innerHTML =
+                                    '<p class="no-data">도착 정보 없음</p>';
+                                return;
+                            }
+                            let html = '';
+                            list.forEach(item => {
+                                html += `
+                                    <div class="arrival-card">
+                                        <b>${item.trainLineNm}</b><br>
+                                        ${item.arvlMsg2}
+                                    </div>
+                                `;
+                            });
+                            document.getElementById('arrivalList').innerHTML = html;
+                        })
+                        .catch(() => {
+                            document.getElementById('arrivalList').innerHTML =
+                                '<p class="no-data">도착정보 조회 실패</p>';
+                        });
+                } else {
+                    document.getElementById('arrivalList').innerHTML =
+                        '<p class="no-data">도착 정보 없음</p>';
+                }
+
+                // 혼잡도 API 호출 (반환값: 0=여유, 1=보통, 2=혼잡)
+                const stationCode = lastStation
+                    ? (lastStation.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 200) + 1
+                    : 50;
+                const hour = new Date().getHours();
+                const day  = (new Date().getDay() === 0 || new Date().getDay() === 6) ? 0 : 1;
+
+                fetch(`/api/transport/congestion?station=${stationCode}&hour=${hour}&day=${day}`)
+                    .then(res => res.text())
+                    .then(data => {
+                        const label = parseInt(data); // 0=여유, 1=보통, 2=혼잡
+                        const chip  = document.getElementById('congestionChip');
+                        const fill  = document.getElementById('congestionBarFill');
+
+                        let text, cls, pct;
+                        if (label === 0) {
+                            text = '여유'; cls = 'low'; pct = 20;
+                        } else if (label === 1) {
+                            text = '보통'; cls = 'mid'; pct = 50;
+                        } else {
+                            text = '혼잡'; cls = 'high'; pct = 80;
+                        }
+
+                        chip.textContent = text;
+                        chip.className   = 'congestion-chip ' + cls;
+                        fill.style.width = pct + '%';
+                        fill.className   = 'congestion-bar-fill ' + cls;
+                    })
+                    .catch(() => {
+                        document.getElementById('congestionChip').textContent = '조회 실패';
+                    });
+            })
+            .catch(() => {
+                document.getElementById('stepList').innerHTML =
+                    '<p class="no-data">경로 데이터 로딩 실패</p>';
+            });
     }
 </script>
 
