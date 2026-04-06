@@ -29,6 +29,7 @@ public class CommunityController {
         model.addAttribute("selectedCategory", categoryId);
         model.addAttribute("keyword", keyword);
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
+        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         return "community/post-list";
     }
 
@@ -38,6 +39,7 @@ public class CommunityController {
         model.addAttribute("post", postService.getPostDetail(id));
         model.addAttribute("comments", commentService.getCommentsByPost(id));
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
+        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         return "community/post-detail";
     }
 

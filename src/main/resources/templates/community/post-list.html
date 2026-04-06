@@ -31,12 +31,27 @@
             </nav>
         </div>
         <div class="flex items-center gap-3">
-            <a th:href="@{/community/post/write}"
-               class="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[14px] no-underline hover:bg-[#1d4ed8] transition-colors"
-               style="font-weight:500;">Write Post</a>
-            <a th:href="@{/oauth2/authorization/google}"
-               class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-[14px] no-underline hover:bg-gray-50 transition-colors"
-               style="font-weight:500;">Sign In</a>
+            <!-- 로그인한 사용자 -->
+            <th:block th:if="${isLoggedIn}">
+                <span class="text-[14px] text-gray-600"
+                      th:text="${currentUserName} + '님 환영합니다'"></span>
+                <a th:href="@{/community/post/write}"
+                   class="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[14px] no-underline hover:bg-[#1d4ed8] transition-colors"
+                   style="font-weight:500;">Write Post</a>
+                <!-- Logout은 CSRF 보안상 POST 방식 폼으로 처리 -->
+                <form th:action="@{/logout}" method="post" class="m-0">
+                    <button type="submit"
+                            class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-[14px] hover:bg-gray-50 transition-colors cursor-pointer">
+                        Logout
+                    </button>
+                </form>
+            </th:block>
+            <!-- 비로그인 사용자 -->
+            <th:block th:unless="${isLoggedIn}">
+                <a th:href="@{/oauth2/authorization/google}"
+                   class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-[14px] no-underline hover:bg-gray-50 transition-colors"
+                   style="font-weight:500;">Sign In</a>
+            </th:block>
         </div>
     </div>
 </header>

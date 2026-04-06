@@ -29,6 +29,7 @@ public class PostDto {
 
     // 게시글 작성 요청 DTO
     @Getter
+    @Setter
     @NoArgsConstructor
     public static class PostCreateRequest {
 
