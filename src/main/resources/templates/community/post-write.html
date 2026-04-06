@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Write Post - KoreaConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { boxShadow: { soft: "0 1px 3px rgba(0,0,0,0.04)" } } }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Quill 에디터 -->
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet"/>
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+
+    <style>
+        /* Quill 에디터 영역 높이 및 테두리 스타일 */
+        .ql-container {
+            font-size: 14px;
+            min-height: 300px;
+            border-bottom-left-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+            border-color: #e5e7eb;
+        }
+        .ql-toolbar {
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+            border-color: #e5e7eb;
+        }
+        /* 포커스 시 테두리 색상 */
+        .ql-container:focus-within,
+        .ql-toolbar:focus-within {
+            border-color: #2563EB;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#FAFAFA] flex flex-col">
+
+<!-- Header -->
+<header class="sticky top-0 z-50 bg-white border-b border-gray-200/80">
+    <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+        <a th:href="@{/}" class="flex items-center gap-2 no-underline">
+            <div class="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center">
+                <i data-lucide="globe" class="w-5 h-5 text-white"></i>
+            </div>
+            <span class="text-[18px] text-gray-900 tracking-[-0.3px]" style="font-weight:600;">KoreaConnect</span>
+        </a>
+    </div>
+</header>
+
+<main class="flex-1">
+    <div class="max-w-[800px] mx-auto px-6 py-8">
+
+        <!-- 뒤로가기 -->
+        <a th:href="@{/community/post-list}"
+           class="inline-flex items-center gap-1.5 text-[13px] text-gray-500 no-underline hover:text-gray-800 transition-colors mb-6">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Community
+        </a>
+
+        <div class="bg-white rounded-xl border border-gray-200/80 p-8 shadow-soft">
+            <h1 class="text-[22px] text-gray-900 mb-6" style="font-weight:700;">Write a Post</h1>
+
+            <!--
+                th:action을 사용하면 thymeleaf-extras-springsecurity6가
+                CSRF 토큰을 hidden input으로 자동 삽입함
+            -->
+            <form id="postForm" th:action="@{/community/post/write}" method="post" class="flex flex-col gap-5">
+
+                <!-- 카테고리 선택 -->
+                <div>
+                    <label class="block text-[13px] text-gray-600 mb-1.5" style="font-weight:600;">Category</label>
+                    <select name="categoryId" required
+                            class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-[14px] text-gray-700 bg-white focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 cursor-pointer">
+                        <option value="" disabled selected>Select a category</option>
+                        <option th:each="cat : ${categories}"
+                                th:value="${cat.categoryId}"
+                                th:text="${cat.icon + ' ' + cat.name}">Category</option>
+                    </select>
+                </div>
+
+                <!-- 제목 -->
+                <div>
+                    <label class="block text-[13px] text-gray-600 mb-1.5" style="font-weight:600;">Title</label>
+                    <input type="text" name="title" required maxlength="200"
+                           placeholder="Enter a clear and descriptive title"
+                           class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-[14px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100"/>
+                </div>
+
+                <!-- 내용 — Quill 에디터 -->
+                <div>
+                    <label class="block text-[13px] text-gray-600 mb-1.5" style="font-weight:600;">Content</label>
+                    <!-- Quill이 이 div를 에디터로 교체함 -->
+                    <div id="quillEditor"></div>
+                    <!--
+                        Quill은 자체 div에 HTML을 담고 form에 직접 포함되지 않음.
+                        폼 제출 시 JS로 Quill의 HTML을 이 hidden input에 복사해서 서버로 전송.
+                    -->
+                    <input type="hidden" name="content" id="contentInput"/>
+                </div>
+
+                <!-- 에러 메시지 (내용 미입력) -->
+                <p id="contentError" class="hidden text-[13px] text-red-500">내용을 입력해주세요.</p>
+
+                <!-- 버튼 -->
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <a th:href="@{/community/post-list}"
+                       class="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-lg text-[14px] no-underline hover:bg-gray-50 transition-colors"
+                       style="font-weight:500;">Cancel</a>
+                    <button type="submit"
+                            class="px-6 py-2.5 bg-[#2563EB] text-white rounded-lg text-[14px] hover:bg-[#1d4ed8] transition-colors cursor-pointer"
+                            style="font-weight:500;">
+                        Publish Post
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</main>
+
+<footer class="border-t border-gray-200/80 bg-gray-50 mt-16">
+    <div class="max-w-[1200px] mx-auto px-6 py-8 text-[12px] text-gray-400">
+        &copy; 2026 KoreaConnect. All rights reserved.
+    </div>
+</footer>
+
+<script>
+    lucide.createIcons();
+
+    // Quill 에디터 초기화
+    const quill = new Quill('#quillEditor', {
+        theme: 'snow',
+        placeholder: 'Share your experience, ask a question, or give a tip...',
+        modules: {
+            toolbar: [
+                [{ header: [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['blockquote', 'code-block'],
+                ['link', 'image'],
+                ['clean']
+            ]
+        }
+    });
+
+    // 폼 제출 시 Quill HTML → hidden input으로 복사 후 유효성 검사
+    document.getElementById('postForm').addEventListener('submit', function (e) {
+        const html = quill.root.innerHTML;
+        const isEmpty = quill.getText().trim().length === 0;
+
+        if (isEmpty) {
+            e.preventDefault();
+            document.getElementById('contentError').classList.remove('hidden');
+            return;
+        }
+
+        document.getElementById('contentError').classList.add('hidden');
+        document.getElementById('contentInput').value = html;
+    });
+</script>
+</body>
+</html>
