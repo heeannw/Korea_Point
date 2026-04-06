@@ -23,6 +23,11 @@ public class TransportDetailController {
     @Autowired
     private CongestionMlService congestionMlService;
 
+   @GetMapping("/home")
+   public String home(){
+       return "home/home";
+   }
+
     // 상세 페이지
     @GetMapping("/transport/detail")
     public String transportDetail(@RequestParam(required = false) String routeId,
@@ -53,7 +58,6 @@ public class TransportDetailController {
 
         //핵심: 여기서만 처리 (완전 안전 버전)
         station = station.replaceAll("\\s+", "")   // 공백 제거
-                .replace("역", "")        // "역" 제거
                 .trim();
 
         System.out.println("요청 역: " + station);
@@ -66,7 +70,7 @@ public class TransportDetailController {
 
         String key = "746f74584172696e37395277457a71";
 
-        StringBuilder urlBuilder = new StringBuilder("http://openapi.seoul.go.kr:8088");
+        StringBuilder urlBuilder = new StringBuilder("http://swopenapi.seoul.go.kr/api/subway");
         urlBuilder.append("/").append(key);
         urlBuilder.append("/json/realtimeStationArrival/1/5/");
         urlBuilder.append(URLEncoder.encode(station, "UTF-8"));

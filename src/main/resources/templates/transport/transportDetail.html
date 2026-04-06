@@ -197,7 +197,7 @@
 
 <!-- HEADER -->
 <header>
-    <a class="logo" href="index.html">Korea<span>Point</span></a>
+    <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
     <div class="header-right">
         <button class="h-btn active">EN</button>
         <button class="h-btn">KR</button>
@@ -293,6 +293,7 @@
     /*]]>*/
 </script>
 
+<!-- 변경된 JS 부분만 보면 됨 -->
 <script>
     function switchTab(id, btn) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -326,9 +327,12 @@
             .then(res => res.json())
             .then(routeData => {
 
+                console.log("routeData:", routeData);
+                console.log("🔥 출발역:", routeData.start);
+                console.log("🔥 도착역:", routeData.end);
+
                 const steps = routeData.steps;
                 let allCoords = [];
-                let lastStation = '';
                 let stepHtml = '';
 
                 steps.forEach((step, idx) => {
@@ -347,14 +351,6 @@
                             strokeOpacity: 0.9,
                             strokeStyle: step.type === 'walk' ? 'dashed' : 'solid'
                         }).setMap(map);
-                    }
-
-                    // 기존 코드 유지
-                    if (step.type === 'subway' && step.fromStation && !lastStation) {
-                        lastStation = step.fromStation
-                            .replace("역", "")
-                            .replace(/\(.*?\)/g, "")
-                            .trim();
                     }
 
                     const from = step.fromStation || '';
@@ -381,66 +377,92 @@
                     map.setBounds(bounds);
                 }
 
-                // 🔥🔥🔥 추가된 딱 한 줄 (출발지 기준으로 덮어쓰기)
-                lastStation = routeData.start
-                    .replace("역", "")
-                    .replace(/\(.*?\)/g, "")
-                    .trim();
+                // 출발역 보정
+                let station = routeData.start || "";
 
-                console.log("조회 역:", lastStation);
+                station = station.replace(/\s+/g, "");
+
+                if (!station.endsWith("역")) {
+                    station += "역";
+                }
+
+                console.log("최종 조회 역:", station);
 
                 // 실시간 도착정보
-                if (lastStation) {
-                    fetch(`/api/transport/subway?station=${encodeURIComponent(lastStation)}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            const list = data.realtimeArrivalList || data.realtimeStationArrival?.row || [];
+                fetch(`/api/transport/subway?station=${encodeURIComponent(station)}`)
+                    .then(res => res.json())
+                    .then(data => {
 
-                            if (!list.length) {
-                                document.getElementById('arrivalList').innerHTML =
-                                    '<p class="no-data">도착 정보 없음</p>';
-                                return;
-                            }
+                        console.log("API 결과:", data);
 
+                        const list = data.realtimeArrivalList
+                            || data.realtimeStationArrival?.row
+                            || [];
+
+                        if (!list.length) {
                             document.getElementById('arrivalList').innerHTML =
-                                list.map(item => `
+                                '<p class="no-data">도착 정보 없음</p>';
+                            return;
+                        }
+
+                        document.getElementById('arrivalList').innerHTML =
+                            list.map(item => {
+
+                                let msg = "";
+
+                                const sec = parseInt(item.barvlDt);
+
+                                if (sec === 0) {
+                                    msg = "곧 도착";
+                                } else if (!isNaN(sec)) {
+                                    const min = Math.floor(sec / 60);
+                                    msg = `${min}분 후 도착`;
+                                } else {
+                                    msg = item.arvlMsg2;
+                                }
+
+                                return `
                                     <div class="arrival-card">
-                                        <div>${item.trainLineNm}</div>
-                                        <div>${item.arvlMsg2}</div>
+                                        <div class="arr-line">${item.trainLineNm}</div>
+                                        <div class="arr-msg">${msg}</div>
                                     </div>
-                                `).join('');
-                        })
-                        .catch(() => {
-                            document.getElementById('arrivalList').innerHTML =
-                                '<p class="no-data">조회 실패</p>';
-                        });
-                }
+                                `;
+                            }).join('');
 
-                // 혼잡도 (원래 코드 그대로)
-                if (lastStation) {
-                    const stationCode = (lastStation.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 200) + 1;
-                    const hour = new Date().getHours();
-                    const day  = (new Date().getDay() === 0 || new Date().getDay() === 6) ? 0 : 1;
+                    })
+                    .catch(() => {
+                        document.getElementById('arrivalList').innerHTML =
+                            '<p class="no-data">조회 실패</p>';
+                    });
 
-                    fetch(`/api/transport/congestion?station=${stationCode}&hour=${hour}&day=${day}`)
-                        .then(res => res.text())
-                        .then(data => {
-                            const label = parseInt(data);
-                            const chip  = document.getElementById('congestionChip');
-                            const fill  = document.getElementById('congestionBarFill');
+                // 혼잡도
+                const stationCode = (station.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 200) + 1;
+                const hour = new Date().getHours();
+                const day  = (new Date().getDay() === 0 || new Date().getDay() === 6) ? 0 : 1;
 
-                            let text, cls, pct;
-                            if (label === 0)      { text = '여유'; cls = 'low';  pct = 20; }
-                            else if (label === 1) { text = '보통'; cls = 'mid';  pct = 50; }
-                            else                  { text = '혼잡'; cls = 'high'; pct = 80; }
+                fetch(`/api/transport/congestion?station=${stationCode}&hour=${hour}&day=${day}`)
+                    .then(res => res.text())
+                    .then(data => {
+                        const label = parseInt(data);
+                        const chip  = document.getElementById('congestionChip');
+                        const fill  = document.getElementById('congestionBarFill');
 
-                            chip.textContent = text;
-                            chip.className   = 'congestion-chip ' + cls;
-                            fill.style.width = pct + '%';
-                            fill.className   = 'congestion-bar-fill ' + cls;
-                        });
-                }
+                        let text, cls, pct;
+                        if (label === 0)      { text = '여유'; cls = 'low';  pct = 20; }
+                        else if (label === 1) { text = '보통'; cls = 'mid';  pct = 50; }
+                        else                  { text = '혼잡'; cls = 'high'; pct = 80; }
 
+                        chip.textContent = text;
+                        chip.className   = 'congestion-chip ' + cls;
+                        fill.style.width = pct + '%';
+                        fill.className   = 'congestion-bar-fill ' + cls;
+                    });
+
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('stepList').innerHTML =
+                    '<p class="error-box">데이터 불러오기 실패</p>';
             });
     }
 </script>
