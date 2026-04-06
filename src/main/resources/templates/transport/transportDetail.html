@@ -18,7 +18,6 @@
         html, body { height: 100%; overflow: hidden; }
         body { font-family: 'DM Sans', sans-serif; background: var(--white); color: var(--dark); display: flex; flex-direction: column; }
 
-        /* ── HEADER ── */
         header {
             height: 56px; display: flex; align-items: center; justify-content: space-between;
             padding: 0 20px; border-bottom: 1px solid var(--border);
@@ -36,19 +35,14 @@
         .h-btn-fill { background: var(--blue); color: #fff; border-color: var(--blue); }
         .h-btn-fill:hover { background: var(--blue-dk); color: #fff; }
 
-        /* ── LAYOUT ── */
         .app-body { flex: 1; display: flex; overflow: hidden; }
 
-        /* ── SIDEBAR ── */
         .sidebar {
             width: 380px; flex-shrink: 0; display: flex; flex-direction: column;
             border-right: 1px solid var(--border); background: var(--white); overflow: hidden;
         }
 
-        /* Route Summary Header */
-        .route-header {
-            padding: 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
-        }
+        .route-header { padding: 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .back-link {
             display: inline-flex; align-items: center; gap: 6px;
             color: var(--gray); text-decoration: none; font-size: 12px; font-weight: 600;
@@ -61,10 +55,7 @@
         }
         .route-sub { font-size: 13px; color: var(--gray); }
 
-        /* Stats row */
-        .stats-row {
-            display: flex; gap: 6px; margin-top: 12px;
-        }
+        .stats-row { display: flex; gap: 6px; margin-top: 12px; }
         .stat-chip {
             display: flex; align-items: center; gap: 5px;
             padding: 5px 12px; border-radius: 50px; background: var(--light);
@@ -72,33 +63,23 @@
         }
         .stat-chip .sc-icon { font-size: 13px; }
 
-        /* Congestion banner */
         .congestion-banner {
             display: flex; align-items: center; gap: 10px;
             padding: 10px 16px; background: #fff7ed;
             border-bottom: 1px solid #fed7aa; font-size: 13px; flex-shrink: 0;
         }
         .congestion-banner .label { font-weight: 600; color: var(--gray); white-space: nowrap; }
-        .congestion-chip {
-            display: inline-block; padding: 3px 12px; border-radius: 50px;
-            font-size: 12px; font-weight: 700;
-        }
+        .congestion-chip { display: inline-block; padding: 3px 12px; border-radius: 50px; font-size: 12px; font-weight: 700; }
         .congestion-chip.low  { background: #d1fae5; color: #065f46; }
         .congestion-chip.mid  { background: #fef3c7; color: #92400e; }
         .congestion-chip.high { background: #fee2e2; color: #991b1b; }
-        .congestion-bar-wrap {
-            flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
-        }
+        .congestion-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
         .congestion-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
         .congestion-bar-fill.low  { background: #10b981; }
         .congestion-bar-fill.mid  { background: var(--gold); }
         .congestion-bar-fill.high { background: #ef4444; }
 
-        /* Tabs */
-        .tabs {
-            display: flex; background: var(--white);
-            border-bottom: 1px solid var(--border); flex-shrink: 0;
-        }
+        .tabs { display: flex; background: var(--white); border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .tab-btn {
             flex: 1; padding: 12px; font-size: 12px; font-weight: 600;
             text-align: center; cursor: pointer; color: var(--gray);
@@ -107,40 +88,29 @@
         }
         .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
 
-        /* Scrollable content */
-        .tab-content { display: none; padding: 12px 12px 12px; overflow-y: auto; flex: 1; }
+        .tab-content { display: none; padding: 12px; overflow-y: auto; flex: 1; }
         .tab-content.active { display: flex; flex-direction: column; }
         .tab-content::-webkit-scrollbar { width: 4px; }
         .tab-content::-webkit-scrollbar-track { background: transparent; }
         .tab-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-        /* Step items */
         .step-item {
-            display: flex; gap: 12px; padding: 10px 10px;
-            border-radius: var(--r); transition: background .15s; cursor: default;
-            align-items: flex-start;
+            display: flex; gap: 12px; padding: 10px;
+            border-radius: var(--r); transition: background .15s; cursor: default; align-items: flex-start;
         }
         .step-item:hover { background: var(--light); }
-        .step-dot-wrap {
-            display: flex; flex-direction: column; align-items: center;
-            flex-shrink: 0; width: 32px;
-        }
+        .step-dot-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 32px; }
         .step-dot {
             width: 30px; height: 30px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-size: 13px; color: white; flex-shrink: 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,.15);
+            font-size: 13px; color: white; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,.15);
         }
         .step-line { width: 2px; height: 28px; background: var(--border); border-radius: 1px; margin: 3px 0; }
         .step-info { flex: 1; padding-top: 4px; }
         .step-info strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 3px; color: var(--dark); }
         .step-info span { font-size: 12px; color: var(--gray); }
-        .step-badge {
-            display: inline-block; padding: 2px 8px; border-radius: 50px;
-            font-size: 11px; font-weight: 700; margin-left: 6px;
-        }
+        .step-badge { display: inline-block; padding: 2px 8px; border-radius: 50px; font-size: 11px; font-weight: 700; margin-left: 6px; }
 
-        /* Arrival card */
         .arrival-card {
             background: var(--light); border: 1.5px solid var(--border);
             border-radius: var(--r); padding: 12px 14px; margin-bottom: 8px;
@@ -151,12 +121,9 @@
         .no-data { text-align: center; padding: 40px 20px; color: var(--gray); font-size: 14px; }
         .error-box { padding: 20px; color: #ef4444; font-size: 14px; }
 
-        /* ── MAP AREA ── */
         .map-area { flex: 1; position: relative; overflow: hidden; }
-
         #map { position: absolute; inset: 0; width: 100%; height: 100%; }
 
-        /* Map controls */
         .map-controls {
             position: absolute; top: 16px; right: 16px;
             display: flex; flex-direction: column; gap: 4px; z-index: 30;
@@ -165,11 +132,9 @@
             width: 36px; height: 36px; background: #fff; border: 1px solid var(--border);
             border-radius: 8px; display: flex; align-items: center; justify-content: center;
             cursor: pointer; font-size: 16px; box-shadow: var(--sh); transition: background .2s;
-            font-family: 'DM Sans', sans-serif;
         }
         .mc:hover { background: var(--light); }
 
-        /* My Location button */
         .loc-btn {
             position: absolute; bottom: 24px; right: 16px;
             background: #fff; border: 1px solid var(--border); border-radius: 50px;
@@ -179,12 +144,10 @@
         }
         .loc-btn:hover { border-color: var(--blue); color: var(--blue); }
 
-        /* Map legend overlay */
         .map-legend {
             position: absolute; top: 16px; left: 16px;
             background: rgba(255,255,255,.95); border: 1px solid var(--border);
-            border-radius: 10px; padding: 10px 14px;
-            box-shadow: var(--sh); z-index: 30; min-width: 130px;
+            border-radius: 10px; padding: 10px 14px; box-shadow: var(--sh); z-index: 30; min-width: 130px;
         }
         .legend-title { font-size: 11px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
         .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--mid); margin-bottom: 5px; }
@@ -195,7 +158,6 @@
 </head>
 <body>
 
-<!-- HEADER -->
 <header>
     <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
     <div class="header-right">
@@ -205,27 +167,22 @@
     </div>
 </header>
 
-<!-- BODY -->
 <div class="app-body">
-
-    <!-- ── SIDEBAR ── -->
     <div class="sidebar">
-
-        <!-- Route summary -->
         <div class="route-header">
             <a class="back-link"
                th:href="@{/transport/search(start=${route?.start}, end=${route?.end})}"
                href="#">← 검색으로 돌아가기</a>
-            <div class="route-title" id="routeTitle" th:text="${route?.start} + ' → ' + ${route?.end}">출발지 → 목적지</div>
-            <div class="route-sub" id="routeSub" th:text="'출발 ' + ${route?.departTime}">출발 정보</div>
+            <div class="route-title" th:text="${route?.start} + ' → ' + ${route?.end}">출발지 → 목적지</div>
+            <div class="route-sub" th:text="'출발 ' + ${route?.departTime}">출발 정보</div>
             <div class="stats-row">
                 <div class="stat-chip">
                     <span class="sc-icon">⏱</span>
-                    <span id="statTime" th:text="${route?.totalTime} + '분'">— 분</span>
+                    <span th:text="${route?.totalTime} + '분'">— 분</span>
                 </div>
                 <div class="stat-chip">
                     <span class="sc-icon">🔄</span>
-                    <span id="statTransfer" th:text="'환승 ' + ${route?.transferCount} + '회'">환승 —회</span>
+                    <span th:text="'환승 ' + ${route?.transferCount} + '회'">환승 —회</span>
                 </div>
                 <div class="stat-chip">
                     <span class="sc-icon">🚇</span>
@@ -234,7 +191,6 @@
             </div>
         </div>
 
-        <!-- Congestion -->
         <div class="congestion-banner">
             <span class="label">🚇 혼잡도</span>
             <span class="congestion-chip" id="congestionChip">불러오는 중...</span>
@@ -243,57 +199,41 @@
             </div>
         </div>
 
-        <!-- Tabs -->
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('steps', this)">📋 이동 단계</button>
             <button class="tab-btn" onclick="switchTab('arrival', this)">🚇 실시간 도착정보</button>
         </div>
 
-        <!-- Tab: Steps -->
         <div id="tab-steps" class="tab-content active">
             <div id="stepList"><p class="no-data">로딩중...</p></div>
         </div>
-
-        <!-- Tab: Arrival -->
         <div id="tab-arrival" class="tab-content">
             <div id="arrivalList"><p class="no-data">로딩중...</p></div>
         </div>
-
     </div>
 
-    <!-- ── MAP AREA ── -->
     <div class="map-area">
-
         <div id="map"></div>
-
-        <!-- Legend -->
         <div class="map-legend">
             <div class="legend-title">범례</div>
             <div class="legend-item"><div class="legend-line" style="background:#3b9eff"></div>지하철</div>
             <div class="legend-item"><div class="legend-line" style="background:#10b981"></div>버스</div>
             <div class="legend-item"><div class="legend-dash"></div>도보</div>
         </div>
-
-        <!-- Map controls -->
         <div class="map-controls">
             <div class="mc" id="mcZoomIn">＋</div>
             <div class="mc" id="mcZoomOut">－</div>
         </div>
-
         <button class="loc-btn" id="locBtn">📍 내 위치</button>
-
     </div>
-
 </div>
 
-<!-- Thymeleaf inline data -->
 <script th:inline="javascript">
     /*<![CDATA[*/
     const routeId = /*[[${route?.routeId}]]*/ null;
     /*]]>*/
 </script>
 
-<!-- 변경된 JS 부분만 보면 됨 -->
 <script>
     function switchTab(id, btn) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -307,17 +247,35 @@
         level: 6
     });
 
+    document.getElementById('mcZoomIn').addEventListener('click', () => map.setLevel(map.getLevel() - 1));
+    document.getElementById('mcZoomOut').addEventListener('click', () => map.setLevel(map.getLevel() + 1));
+
     function typeColor(type, fallback) {
         if (fallback) return fallback;
         if (type === 'walk') return '#f59e0b';
-        if (type === 'bus') return '#10b981';
+        if (type === 'bus')  return '#10b981';
         return '#3b9eff';
     }
 
     function typeIcon(type) {
         if (type === 'walk') return '🚶';
-        if (type === 'bus') return '🚌';
+        if (type === 'bus')  return '🚌';
         return '🚇';
+    }
+
+    function drawWalkLine(startPt, endPt) {
+        const walkLine = [
+            new kakao.maps.LatLng(startPt.lat, startPt.lng),
+            new kakao.maps.LatLng(endPt.lat,   endPt.lng)
+        ];
+        new kakao.maps.Polyline({
+            path: walkLine,
+            strokeWeight: 3,
+            strokeColor: '#f59e0b',
+            strokeOpacity: 0.85,
+            strokeStyle: 'dashed'
+        }).setMap(map);
+        return walkLine;
     }
 
     if (!routeId) {
@@ -327,34 +285,113 @@
             .then(res => res.json())
             .then(routeData => {
 
-                console.log("routeData:", routeData);
-                console.log("🔥 출발역:", routeData.start);
-                console.log("🔥 도착역:", routeData.end);
-
                 const steps = routeData.steps;
                 let allCoords = [];
-                let stepHtml = '';
+                let stepHtml  = '';
 
+                // ✅ 각 step 첫/마지막 좌표 미리 수집
+                const stepCoords = steps.map(step => {
+                    if (step.path && step.path.length > 0) {
+                        return {
+                            first: step.path[0],
+                            last:  step.path[step.path.length - 1]
+                        };
+                    }
+                    return null;
+                });
+
+                // ── 경로 그리기 ──
                 steps.forEach((step, idx) => {
-                    const color = typeColor(step.type, step.color);
-                    const icon  = typeIcon(step.type);
+                    const color  = typeColor(step.type, step.color);
+                    const icon   = typeIcon(step.type);
                     const isLast = idx === steps.length - 1;
 
                     if (step.path && step.path.length > 0) {
+                        // 지하철/버스 실선
                         const linePath = step.path.map(p => new kakao.maps.LatLng(p.lat, p.lng));
                         allCoords = allCoords.concat(linePath);
 
                         new kakao.maps.Polyline({
                             path: linePath,
-                            strokeWeight: step.type === 'walk' ? 3 : 6,
+                            strokeWeight: 6,
                             strokeColor: color,
                             strokeOpacity: 0.9,
-                            strokeStyle: step.type === 'walk' ? 'dashed' : 'solid'
+                            strokeStyle: 'solid'
                         }).setMap(map);
+
+                    } else if (step.type === 'walk') {
+                        const prevCoords = idx > 0 ? stepCoords[idx - 1] : null;
+                        const nextCoords = idx < steps.length - 1 ? stepCoords[idx + 1] : null;
+                        const endPt = nextCoords ? nextCoords.first : null;
+
+                        if (idx === 0) {
+                            // ✅ 첫 도보: 출발지 → 첫 역
+                            // 현재위치면 좌표 없으므로 스킵, 텍스트 출발지면 카카오로 조회
+                            const startName = (routeData.start || '').replace('현재위치', '').trim();
+                            if (startName && endPt) {
+                                fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(startName)}`, {
+                                    headers: { 'Authorization': 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92' }
+                                })
+                                    .then(r => r.json())
+                                    .then(d => {
+                                        if (d.documents && d.documents.length > 0) {
+                                            const doc = d.documents[0];
+                                            const startPt = { lat: parseFloat(doc.y), lng: parseFloat(doc.x) };
+                                            drawWalkLine(startPt, endPt);
+                                        }
+                                    });
+                            }
+                        } else if (isLast) {
+                            // ✅ 마지막 도보: 마지막 역 → 목적지
+                            const startPt = prevCoords ? prevCoords.last : null;
+                            const endName = (routeData.end || '').trim();
+                            if (startPt && endName) {
+                                fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(endName)}`, {
+                                    headers: { 'Authorization': 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92' }
+                                })
+                                    .then(r => r.json())
+                                    .then(d => {
+                                        if (d.documents && d.documents.length > 0) {
+                                            const doc = d.documents[0];
+                                            const destPt = { lat: parseFloat(doc.y), lng: parseFloat(doc.x) };
+                                            drawWalkLine(startPt, destPt);
+
+                                            // ✅ 목적지 마커
+                                            new kakao.maps.CustomOverlay({
+                                                position: new kakao.maps.LatLng(destPt.lat, destPt.lng),
+                                                content: `<div style="background:#3b9eff;color:white;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.25);margin-bottom:4px;">🏁 ${routeData.end}</div>`,
+                                                yAnchor: 2.8
+                                            }).setMap(map);
+                                        }
+                                    });
+                            }
+                        } else {
+                            // ✅ 중간 도보: 앞 역 → 뒷 역
+                            const startPt = prevCoords ? prevCoords.last : null;
+                            if (startPt && endPt) {
+                                const walkLine = drawWalkLine(startPt, endPt);
+                                allCoords = allCoords.concat(walkLine);
+                            }
+                        }
                     }
 
+                    // ── 단계 목록 ──
                     const from = step.fromStation || '';
                     const to   = step.toStation   || '';
+
+                    let stepLabel = '';
+                    if (step.type === 'walk') {
+                        if (from && to && from !== to) stepLabel = `${from} → ${to}`;
+                        else if (from) stepLabel = `${from} 출구 도보`;
+                        else if (to)   stepLabel = `${to}까지 도보`;
+                        else           stepLabel = `도보 이동`;
+                    } else {
+                        stepLabel = `${from} → ${to}`;
+                    }
+
+                    const lineLabel = step.line
+                        ? `<span class="step-badge" style="background:${color}22;color:${color}">${step.line}</span>`
+                        : '';
 
                     stepHtml += `
                         <div class="step-item">
@@ -363,7 +400,7 @@
                                 ${!isLast ? '<div class="step-line"></div>' : ''}
                             </div>
                             <div class="step-info">
-                                <strong>${from} → ${to}</strong>
+                                <strong>${stepLabel}${lineLabel}</strong>
                                 <span>${step.duration}분</span>
                             </div>
                         </div>`;
@@ -371,103 +408,119 @@
 
                 document.getElementById('stepList').innerHTML = stepHtml;
 
+                // ── 마커 ──
                 if (allCoords.length > 0) {
+
+                    // 출발 마커
+                    new kakao.maps.Circle({
+                        center: allCoords[0],
+                        radius: 80,
+                        strokeWeight: 3,
+                        strokeColor: '#ef4444',
+                        strokeOpacity: 1,
+                        fillColor: '#ef4444',
+                        fillOpacity: 1
+                    }).setMap(map);
+                    new kakao.maps.CustomOverlay({
+                        position: allCoords[0],
+                        content: `<div style="background:#ef4444;color:white;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.25);margin-bottom:4px;">출발</div>`,
+                        yAnchor: 2.8
+                    }).setMap(map);
+
+                    // 도착 마커
+                    new kakao.maps.Circle({
+                        center: allCoords[allCoords.length - 1],
+                        radius: 80,
+                        strokeWeight: 3,
+                        strokeColor: '#3b9eff',
+                        strokeOpacity: 1,
+                        fillColor: '#3b9eff',
+                        fillOpacity: 1
+                    }).setMap(map);
+                    new kakao.maps.CustomOverlay({
+                        position: allCoords[allCoords.length - 1],
+                        content: `<div style="background:#3b9eff;color:white;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.25);margin-bottom:4px;">도착</div>`,
+                        yAnchor: 2.8
+                    }).setMap(map);
+
+                    // 환승역 마커
+                    steps.forEach((step, idx) => {
+                        if (idx === 0) return;
+                        if (step.type !== 'subway' && step.type !== 'bus') return;
+                        const color  = typeColor(step.type, step.color);
+                        const coords = stepCoords[idx];
+                        if (!coords) return;
+                        const pt = new kakao.maps.LatLng(coords.first.lat, coords.first.lng);
+
+                        new kakao.maps.Circle({
+                            center: pt, radius: 60,
+                            strokeWeight: 3, strokeColor: color, strokeOpacity: 1,
+                            fillColor: '#ffffff', fillOpacity: 1
+                        }).setMap(map);
+
+                        if (step.fromStation) {
+                            new kakao.maps.CustomOverlay({
+                                position: pt,
+                                content: `<div style="background:${color};color:white;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2);margin-bottom:4px;">${step.fromStation}</div>`,
+                                yAnchor: 2.8
+                            }).setMap(map);
+                        }
+                    });
+
+                    // 지도 범위 자동 조정
                     var bounds = new kakao.maps.LatLngBounds();
                     allCoords.forEach(c => bounds.extend(c));
                     map.setBounds(bounds);
                 }
 
-                // 출발역 보정
-                let station = "";
-
-                // 🔥 지하철 step 찾기
-                for (let step of routeData.steps) {
-                    if (step.type === "subway") {
-                        station = step.fromStation;
-                        break;
-                    }
+                // ── 실시간 도착정보 ──
+                let station = '';
+                for (let step of steps) {
+                    if (step.type === 'subway') { station = step.fromStation; break; }
                 }
+                if (!station) station = routeData.start || '';
+                station = station.replace(/\s+/g, '').replace(/역$/, '');
 
-                // 없으면 fallback
-                if (!station) {
-                    station = routeData.start;
-                }
-
-                // 보정
-                station = station.replace(/\s+/g, "");
-
-                if (station.endsWith("역")) {
-                    station = station.slice(0, -1);
-                }
-
-                console.log("최종 조회 역:", station);
-
-                // 실시간 도착정보
                 fetch(`/api/transport/subway?station=${encodeURIComponent(station)}`)
                     .then(res => res.json())
                     .then(data => {
-
-                        console.log("API 결과:", data);
-
-                        const list = data.realtimeArrivalList
-                            || data.realtimeStationArrival?.row
-                            || [];
-
-                        // 목적지 기준 방향 필터링
-                        const destination = routeData.end.replace(/\s+/g, "");
-
-                        const filteredList = list.filter(item => {
-                            return item.trainLineNm && item.trainLineNm.includes(destination);
-                        });
-
-                        // 필터 없으면 원본
-                        const finalList = filteredList.length > 0 ? filteredList : list;
-
+                        const list = data.realtimeArrivalList || [];
                         if (!list.length) {
                             document.getElementById('arrivalList').innerHTML =
                                 '<p class="no-data">도착 정보 없음</p>';
                             return;
                         }
+                        const destination = (routeData.end || '').replace(/\s+/g, '');
+                        const filtered = list.filter(item =>
+                            item.trainLineNm && item.trainLineNm.includes(destination)
+                        );
+                        const finalList = filtered.length > 0 ? filtered : list;
 
                         document.getElementById('arrivalList').innerHTML =
                             finalList.map((item, idx) => {
-
-                                let msg = "";
                                 const sec = parseInt(item.barvlDt);
-
-                                if (sec <= 60 && sec > 0) {
-                                    msg = "🚨 곧 도착";
-                                } else if (!isNaN(sec)) {
-                                    const min = Math.floor(sec / 60);
-                                    msg = `${min}분 후 도착`;
-                                } else {
-                                    msg = item.arvlMsg2;
-                                }
-
-                                // 방향
-                                const direction = item.trainLineNm || "";
-
-                                // 첫번째 강조
+                                let msg = '';
+                                if (sec <= 60 && sec > 0)        msg = '🚨 곧 도착';
+                                else if (!isNaN(sec) && sec > 0) msg = `${Math.floor(sec / 60)}분 후 도착`;
+                                else                             msg = item.arvlMsg2 || '';
                                 const highlight = idx === 0
-                                    ? 'style="background:#e0f2fe; border:2px solid #3b9eff;"'
-                                    : "";
-
+                                    ? 'style="background:#e0f2fe; border:2px solid #3b9eff;"' : '';
                                 return `
                                     <div class="arrival-card" ${highlight}>
-                                        <div class="arr-line">${item.trainLineNm}</div>
+                                        <div class="arr-line">${item.trainLineNm || ''}</div>
                                         <div class="arr-msg">${msg}</div>
-                                    </div>
-                                `;
+                                    </div>`;
                             }).join('');
-
                     })
                     .catch(() => {
                         document.getElementById('arrivalList').innerHTML =
                             '<p class="no-data">조회 실패</p>';
                     });
 
-                // 혼잡도
-                const stationCode = (station.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 200) + 1;
+                // ── 혼잡도 ──
+                const stationCode = station
+                    ? (station.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 200) + 1
+                    : 50;
                 const hour = new Date().getHours();
                 const day  = (new Date().getDay() === 0 || new Date().getDay() === 6) ? 0 : 1;
 
@@ -477,18 +530,18 @@
                         const label = parseInt(data);
                         const chip  = document.getElementById('congestionChip');
                         const fill  = document.getElementById('congestionBarFill');
-
                         let text, cls, pct;
-                        if (label === 0)      { text = '여유'; cls = 'low';  pct = 20; }
-                        else if (label === 1) { text = '보통'; cls = 'mid';  pct = 50; }
-                        else                  { text = '혼잡'; cls = 'high'; pct = 80; }
-
+                        if (label === 0)      { text = '여유'; cls = 'low';  pct = 30;  }
+                        else if (label === 1) { text = '보통'; cls = 'mid';  pct = 60;  }
+                        else                  { text = '혼잡'; cls = 'high'; pct = 100; }
                         chip.textContent = text;
                         chip.className   = 'congestion-chip ' + cls;
                         fill.style.width = pct + '%';
                         fill.className   = 'congestion-bar-fill ' + cls;
+                    })
+                    .catch(() => {
+                        document.getElementById('congestionChip').textContent = '조회 실패';
                     });
-
             })
             .catch(err => {
                 console.error(err);

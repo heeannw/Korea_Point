@@ -164,7 +164,6 @@ public class TransportRouteService {
         if (rawRoutes.size() >= 3) {
             Set<Integer> usedIndexes = new HashSet<>();
 
-            // ✅ 여기가 핵심 - 문자열로 오염됐던 부분
             for (String routeType : List.of("fast", "comfort", "recommend")) {
                 float bestScore = -1f;
                 int bestIdx = 0;
@@ -285,19 +284,46 @@ public class TransportRouteService {
                 steps.add(step);
 
             } else if (trafficType == 3 && sectionTime > 0) {
+                // 도보 좌표 수정
                 List<Map<String, Double>> walkPath = new ArrayList<>();
-                if (sp.has("startExitX") && !sp.get("startExitX").isNull()) {
+
+                // 1순위: startExitX/Y (0 아닌 경우만)
+                if (sp.has("startExitX") && !sp.get("startExitX").isNull()
+                        && sp.get("startExitX").asDouble() != 0) {
                     Map<String, Double> p = new HashMap<>();
                     p.put("lat", sp.get("startExitY").asDouble());
                     p.put("lng", sp.get("startExitX").asDouble());
                     walkPath.add(p);
                 }
-                if (sp.has("endExitX") && !sp.get("endExitX").isNull()) {
+                if (sp.has("endExitX") && !sp.get("endExitX").isNull()
+                        && sp.get("endExitX").asDouble() != 0) {
                     Map<String, Double> p = new HashMap<>();
                     p.put("lat", sp.get("endExitY").asDouble());
                     p.put("lng", sp.get("endExitX").asDouble());
                     walkPath.add(p);
                 }
+
+                // 2순위: startX/Y, endX/Y
+                if (walkPath.isEmpty()) {
+                    if (sp.has("startX") && !sp.get("startX").isNull()
+                            && sp.get("startX").asDouble() != 0) {
+                        Map<String, Double> p = new HashMap<>();
+                        p.put("lat", sp.get("startY").asDouble());
+                        p.put("lng", sp.get("startX").asDouble());
+                        walkPath.add(p);
+                    }
+                    if (sp.has("endX") && !sp.get("endX").isNull()
+                            && sp.get("endX").asDouble() != 0) {
+                        Map<String, Double> p = new HashMap<>();
+                        p.put("lat", sp.get("endY").asDouble());
+                        p.put("lng", sp.get("endX").asDouble());
+                        walkPath.add(p);
+                    }
+                }
+
+                System.out.println("도보 좌표 개수: " + walkPath.size()
+                        + " | from: " + (sp.has("startName") ? sp.get("startName").asText() : "")
+                        + " | to: " + (sp.has("endName") ? sp.get("endName").asText() : ""));
 
                 TransportStepDto step = new TransportStepDto();
                 step.setType("walk");
