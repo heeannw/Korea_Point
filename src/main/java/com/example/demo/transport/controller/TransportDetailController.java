@@ -23,10 +23,10 @@ public class TransportDetailController {
     @Autowired
     private CongestionMlService congestionMlService;
 
-   @GetMapping("/home")
-   public String home(){
-       return "home/home";
-   }
+    @GetMapping("/home")
+    public String home(){
+        return "home/home";
+    }
 
     // 상세 페이지
     @GetMapping("/transport/detail")
