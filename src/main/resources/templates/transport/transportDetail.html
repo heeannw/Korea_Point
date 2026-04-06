@@ -36,12 +36,10 @@
         .h-btn-fill:hover { background: var(--blue-dk); color: #fff; }
 
         .app-body { flex: 1; display: flex; overflow: hidden; }
-
         .sidebar {
             width: 380px; flex-shrink: 0; display: flex; flex-direction: column;
             border-right: 1px solid var(--border); background: var(--white); overflow: hidden;
         }
-
         .route-header { padding: 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .back-link {
             display: inline-flex; align-items: center; gap: 6px;
@@ -49,12 +47,8 @@
             margin-bottom: 12px; transition: color .2s;
         }
         .back-link:hover { color: var(--blue); }
-        .route-title {
-            font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700;
-            color: var(--dark); margin-bottom: 4px;
-        }
+        .route-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
         .route-sub { font-size: 13px; color: var(--gray); }
-
         .stats-row { display: flex; gap: 6px; margin-top: 12px; }
         .stat-chip {
             display: flex; align-items: center; gap: 5px;
@@ -87,7 +81,6 @@
             background: none; transition: all .2s; font-family: 'DM Sans', sans-serif;
         }
         .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
-
         .tab-content { display: none; padding: 12px; overflow-y: auto; flex: 1; }
         .tab-content.active { display: flex; flex-direction: column; }
         .tab-content::-webkit-scrollbar { width: 4px; }
@@ -117,13 +110,11 @@
         }
         .arrival-card .arr-line { font-size: 13px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
         .arrival-card .arr-msg  { font-size: 12px; color: var(--gray); }
-
         .no-data { text-align: center; padding: 40px 20px; color: var(--gray); font-size: 14px; }
         .error-box { padding: 20px; color: #ef4444; font-size: 14px; }
 
         .map-area { flex: 1; position: relative; overflow: hidden; }
         #map { position: absolute; inset: 0; width: 100%; height: 100%; }
-
         .map-controls {
             position: absolute; top: 16px; right: 16px;
             display: flex; flex-direction: column; gap: 4px; z-index: 30;
@@ -134,7 +125,6 @@
             cursor: pointer; font-size: 16px; box-shadow: var(--sh); transition: background .2s;
         }
         .mc:hover { background: var(--light); }
-
         .loc-btn {
             position: absolute; bottom: 24px; right: 16px;
             background: #fff; border: 1px solid var(--border); border-radius: 50px;
@@ -143,7 +133,6 @@
             color: var(--dark); font-family: 'DM Sans', sans-serif; z-index: 30; transition: all .2s;
         }
         .loc-btn:hover { border-color: var(--blue); color: var(--blue); }
-
         .map-legend {
             position: absolute; top: 16px; left: 16px;
             background: rgba(255,255,255,.95); border: 1px solid var(--border);
@@ -176,18 +165,9 @@
             <div class="route-title" th:text="${route?.start} + ' → ' + ${route?.end}">출발지 → 목적지</div>
             <div class="route-sub" th:text="'출발 ' + ${route?.departTime}">출발 정보</div>
             <div class="stats-row">
-                <div class="stat-chip">
-                    <span class="sc-icon">⏱</span>
-                    <span th:text="${route?.totalTime} + '분'">— 분</span>
-                </div>
-                <div class="stat-chip">
-                    <span class="sc-icon">🔄</span>
-                    <span th:text="'환승 ' + ${route?.transferCount} + '회'">환승 —회</span>
-                </div>
-                <div class="stat-chip">
-                    <span class="sc-icon">🚇</span>
-                    <span>실시간</span>
-                </div>
+                <div class="stat-chip"><span class="sc-icon">⏱</span><span th:text="${route?.totalTime} + '분'">— 분</span></div>
+                <div class="stat-chip"><span class="sc-icon">🔄</span><span th:text="'환승 ' + ${route?.transferCount} + '회'">환승 —회</span></div>
+                <div class="stat-chip"><span class="sc-icon">🚇</span><span>실시간</span></div>
             </div>
         </div>
 
@@ -203,7 +183,6 @@
             <button class="tab-btn active" onclick="switchTab('steps', this)">📋 이동 단계</button>
             <button class="tab-btn" onclick="switchTab('arrival', this)">🚇 실시간 도착정보</button>
         </div>
-
         <div id="tab-steps" class="tab-content active">
             <div id="stepList"><p class="no-data">로딩중...</p></div>
         </div>
@@ -235,6 +214,8 @@
 </script>
 
 <script>
+    const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
+
     function switchTab(id, btn) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -256,26 +237,82 @@
         if (type === 'bus')  return '#10b981';
         return '#3b9eff';
     }
-
     function typeIcon(type) {
         if (type === 'walk') return '🚶';
         if (type === 'bus')  return '🚌';
         return '🚇';
     }
 
+    // ✅ 카카오 키워드 검색 → 좌표 반환
+    function kakaoSearch(query) {
+        return fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}`, {
+            headers: { 'Authorization': KAKAO_KEY }
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.documents && d.documents.length > 0) {
+                    return { lat: parseFloat(d.documents[0].y), lng: parseFloat(d.documents[0].x) };
+                }
+                return null;
+            })
+            .catch(() => null);
+    }
+
+    // ✅ 도보 점선 그리기
     function drawWalkLine(startPt, endPt) {
-        const walkLine = [
-            new kakao.maps.LatLng(startPt.lat, startPt.lng),
-            new kakao.maps.LatLng(endPt.lat,   endPt.lng)
-        ];
-        new kakao.maps.Polyline({
-            path: walkLine,
+        const line = new kakao.maps.Polyline({
+            path: [
+                new kakao.maps.LatLng(startPt.lat, startPt.lng),
+                new kakao.maps.LatLng(endPt.lat,   endPt.lng)
+            ],
             strokeWeight: 3,
             strokeColor: '#f59e0b',
             strokeOpacity: 0.85,
             strokeStyle: 'dashed'
+        });
+        line.setMap(map);
+        return [
+            { lat: startPt.lat, lng: startPt.lng },
+            { lat: endPt.lat,   lng: endPt.lng   }
+        ];
+    }
+
+    // ✅ 마커 + 라벨
+    function drawMarker(latLng, color, label) {
+        new kakao.maps.Circle({
+            center: latLng, radius: 80,
+            strokeWeight: 3, strokeColor: color, strokeOpacity: 1,
+            fillColor: color, fillOpacity: 1
         }).setMap(map);
-        return walkLine;
+        new kakao.maps.CustomOverlay({
+            position: latLng,
+            content: `<div style="background:${color};color:white;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.25);margin-bottom:6px;">${label}</div>`,
+            yAnchor: 2.8
+        }).setMap(map);
+    }
+
+    // ✅ 환승역 마커
+    function drawTransferMarker(latLng, color, label) {
+        new kakao.maps.Circle({
+            center: latLng, radius: 60,
+            strokeWeight: 3, strokeColor: color, strokeOpacity: 1,
+            fillColor: '#ffffff', fillOpacity: 1
+        }).setMap(map);
+        if (label) {
+            new kakao.maps.CustomOverlay({
+                position: latLng,
+                content: `<div style="background:${color};color:white;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2);margin-bottom:6px;">${label}</div>`,
+                yAnchor: 2.8
+            }).setMap(map);
+        }
+    }
+
+    // ✅ 지도 범위 조정
+    function fitBounds(coordList) {
+        if (!coordList.length) return;
+        const bounds = new kakao.maps.LatLngBounds();
+        coordList.forEach(c => bounds.extend(new kakao.maps.LatLng(c.lat, c.lng)));
+        map.setBounds(bounds);
     }
 
     if (!routeId) {
@@ -283,13 +320,13 @@
     } else {
         fetch('/api/transport/route/' + routeId)
             .then(res => res.json())
-            .then(routeData => {
+            .then(async routeData => {
 
                 const steps = routeData.steps;
-                let allCoords = [];
+                let allCoords = []; // { lat, lng } 배열
                 let stepHtml  = '';
 
-                // ✅ 각 step 첫/마지막 좌표 미리 수집
+                // ✅ 각 step 첫/마지막 좌표 수집
                 const stepCoords = steps.map(step => {
                     if (step.path && step.path.length > 0) {
                         return {
@@ -300,8 +337,28 @@
                     return null;
                 });
 
+                // ✅ 출발지 좌표 (카카오 검색 or GPS)
+                let originPt = null;
+                const startLabel = routeData.start || '';
+                if (startLabel === '현재위치') {
+                    // GPS 좌표는 hidden field에 없어서 첫 transit step 첫 좌표 사용
+                    for (let sc of stepCoords) {
+                        if (sc) { originPt = sc.first; break; }
+                    }
+                } else if (startLabel) {
+                    originPt = await kakaoSearch(startLabel);
+                }
+
+                // ✅ 목적지 좌표 (카카오 검색)
+                let destPt = null;
+                const endLabel = routeData.end || '';
+                if (endLabel) {
+                    destPt = await kakaoSearch(endLabel);
+                }
+
                 // ── 경로 그리기 ──
-                steps.forEach((step, idx) => {
+                for (let idx = 0; idx < steps.length; idx++) {
+                    const step   = steps[idx];
                     const color  = typeColor(step.type, step.color);
                     const icon   = typeIcon(step.type);
                     const isLast = idx === steps.length - 1;
@@ -309,7 +366,7 @@
                     if (step.path && step.path.length > 0) {
                         // 지하철/버스 실선
                         const linePath = step.path.map(p => new kakao.maps.LatLng(p.lat, p.lng));
-                        allCoords = allCoords.concat(linePath);
+                        step.path.forEach(p => allCoords.push(p));
 
                         new kakao.maps.Polyline({
                             path: linePath,
@@ -322,63 +379,28 @@
                     } else if (step.type === 'walk') {
                         const prevCoords = idx > 0 ? stepCoords[idx - 1] : null;
                         const nextCoords = idx < steps.length - 1 ? stepCoords[idx + 1] : null;
-                        const endPt = nextCoords ? nextCoords.first : null;
 
-                        if (idx === 0) {
-                            // ✅ 첫 도보: 출발지 → 첫 역
-                            // 현재위치면 좌표 없으므로 스킵, 텍스트 출발지면 카카오로 조회
-                            const startName = (routeData.start || '').replace('현재위치', '').trim();
-                            if (startName && endPt) {
-                                fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(startName)}`, {
-                                    headers: { 'Authorization': 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92' }
-                                })
-                                    .then(r => r.json())
-                                    .then(d => {
-                                        if (d.documents && d.documents.length > 0) {
-                                            const doc = d.documents[0];
-                                            const startPt = { lat: parseFloat(doc.y), lng: parseFloat(doc.x) };
-                                            drawWalkLine(startPt, endPt);
-                                        }
-                                    });
-                            }
-                        } else if (isLast) {
-                            // ✅ 마지막 도보: 마지막 역 → 목적지
-                            const startPt = prevCoords ? prevCoords.last : null;
-                            const endName = (routeData.end || '').trim();
-                            if (startPt && endName) {
-                                fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(endName)}`, {
-                                    headers: { 'Authorization': 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92' }
-                                })
-                                    .then(r => r.json())
-                                    .then(d => {
-                                        if (d.documents && d.documents.length > 0) {
-                                            const doc = d.documents[0];
-                                            const destPt = { lat: parseFloat(doc.y), lng: parseFloat(doc.x) };
-                                            drawWalkLine(startPt, destPt);
+                        let startPt = prevCoords ? prevCoords.last : null;
+                        let endPt   = nextCoords ? nextCoords.first : null;
 
-                                            // ✅ 목적지 마커
-                                            new kakao.maps.CustomOverlay({
-                                                position: new kakao.maps.LatLng(destPt.lat, destPt.lng),
-                                                content: `<div style="background:#3b9eff;color:white;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.25);margin-bottom:4px;">🏁 ${routeData.end}</div>`,
-                                                yAnchor: 2.8
-                                            }).setMap(map);
-                                        }
-                                    });
-                            }
-                        } else {
-                            // ✅ 중간 도보: 앞 역 → 뒷 역
-                            const startPt = prevCoords ? prevCoords.last : null;
-                            if (startPt && endPt) {
-                                const walkLine = drawWalkLine(startPt, endPt);
-                                allCoords = allCoords.concat(walkLine);
-                            }
+                        // ✅ 첫 도보: 출발지 → 첫 역
+                        if (idx === 0 && originPt && endPt) {
+                            startPt = originPt;
+                        }
+                        // ✅ 마지막 도보: 마지막 역 → 목적지
+                        if (isLast && startPt && destPt) {
+                            endPt = destPt;
+                        }
+
+                        if (startPt && endPt) {
+                            const drawn = drawWalkLine(startPt, endPt);
+                            drawn.forEach(p => allCoords.push(p));
                         }
                     }
 
                     // ── 단계 목록 ──
                     const from = step.fromStation || '';
                     const to   = step.toStation   || '';
-
                     let stepLabel = '';
                     if (step.type === 'walk') {
                         if (from && to && from !== to) stepLabel = `${from} → ${to}`;
@@ -404,74 +426,35 @@
                                 <span>${step.duration}분</span>
                             </div>
                         </div>`;
-                });
+                }
 
                 document.getElementById('stepList').innerHTML = stepHtml;
 
-                // ── 마커 ──
-                if (allCoords.length > 0) {
-
-                    // 출발 마커
-                    new kakao.maps.Circle({
-                        center: allCoords[0],
-                        radius: 80,
-                        strokeWeight: 3,
-                        strokeColor: '#ef4444',
-                        strokeOpacity: 1,
-                        fillColor: '#ef4444',
-                        fillOpacity: 1
-                    }).setMap(map);
-                    new kakao.maps.CustomOverlay({
-                        position: allCoords[0],
-                        content: `<div style="background:#ef4444;color:white;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.25);margin-bottom:4px;">출발</div>`,
-                        yAnchor: 2.8
-                    }).setMap(map);
-
-                    // 도착 마커
-                    new kakao.maps.Circle({
-                        center: allCoords[allCoords.length - 1],
-                        radius: 80,
-                        strokeWeight: 3,
-                        strokeColor: '#3b9eff',
-                        strokeOpacity: 1,
-                        fillColor: '#3b9eff',
-                        fillOpacity: 1
-                    }).setMap(map);
-                    new kakao.maps.CustomOverlay({
-                        position: allCoords[allCoords.length - 1],
-                        content: `<div style="background:#3b9eff;color:white;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.25);margin-bottom:4px;">도착</div>`,
-                        yAnchor: 2.8
-                    }).setMap(map);
-
-                    // 환승역 마커
-                    steps.forEach((step, idx) => {
-                        if (idx === 0) return;
-                        if (step.type !== 'subway' && step.type !== 'bus') return;
-                        const color  = typeColor(step.type, step.color);
-                        const coords = stepCoords[idx];
-                        if (!coords) return;
-                        const pt = new kakao.maps.LatLng(coords.first.lat, coords.first.lng);
-
-                        new kakao.maps.Circle({
-                            center: pt, radius: 60,
-                            strokeWeight: 3, strokeColor: color, strokeOpacity: 1,
-                            fillColor: '#ffffff', fillOpacity: 1
-                        }).setMap(map);
-
-                        if (step.fromStation) {
-                            new kakao.maps.CustomOverlay({
-                                position: pt,
-                                content: `<div style="background:${color};color:white;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2);margin-bottom:4px;">${step.fromStation}</div>`,
-                                yAnchor: 2.8
-                            }).setMap(map);
-                        }
-                    });
-
-                    // 지도 범위 자동 조정
-                    var bounds = new kakao.maps.LatLngBounds();
-                    allCoords.forEach(c => bounds.extend(c));
-                    map.setBounds(bounds);
+                // ✅ 출발 마커
+                if (originPt) {
+                    drawMarker(new kakao.maps.LatLng(originPt.lat, originPt.lng), '#ef4444', '🚩 출발');
+                    allCoords.unshift(originPt);
                 }
+
+                // ✅ 도착 마커
+                if (destPt) {
+                    drawMarker(new kakao.maps.LatLng(destPt.lat, destPt.lng), '#3b9eff', '🏁 도착');
+                    allCoords.push(destPt);
+                }
+
+                // ✅ 환승역 마커
+                steps.forEach((step, idx) => {
+                    if (idx === 0) return;
+                    if (step.type !== 'subway' && step.type !== 'bus') return;
+                    const coords = stepCoords[idx];
+                    if (!coords) return;
+                    const color = typeColor(step.type, step.color);
+                    const pt = new kakao.maps.LatLng(coords.first.lat, coords.first.lng);
+                    drawTransferMarker(pt, color, step.fromStation || '');
+                });
+
+                // 지도 범위 자동 조정
+                fitBounds(allCoords);
 
                 // ── 실시간 도착정보 ──
                 let station = '';
@@ -495,7 +478,6 @@
                             item.trainLineNm && item.trainLineNm.includes(destination)
                         );
                         const finalList = filtered.length > 0 ? filtered : list;
-
                         document.getElementById('arrivalList').innerHTML =
                             finalList.map((item, idx) => {
                                 const sec = parseInt(item.barvlDt);
@@ -504,7 +486,7 @@
                                 else if (!isNaN(sec) && sec > 0) msg = `${Math.floor(sec / 60)}분 후 도착`;
                                 else                             msg = item.arvlMsg2 || '';
                                 const highlight = idx === 0
-                                    ? 'style="background:#e0f2fe; border:2px solid #3b9eff;"' : '';
+                                    ? 'style="background:#e0f2fe;border:2px solid #3b9eff;"' : '';
                                 return `
                                     <div class="arrival-card" ${highlight}>
                                         <div class="arr-line">${item.trainLineNm || ''}</div>
