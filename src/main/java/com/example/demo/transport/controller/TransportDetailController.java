@@ -56,7 +56,6 @@ public class TransportDetailController {
             return "{\"realtimeArrivalList\":[]}";
         }
 
-        //핵심: 여기서만 처리 (완전 안전 버전)
         station = station.replaceAll("\\s+", "").trim();
 
         // "역" 제거
@@ -109,3 +108,4 @@ public class TransportDetailController {
         return congestionMlService.predict(station, hour, day);
     }
 }
+
