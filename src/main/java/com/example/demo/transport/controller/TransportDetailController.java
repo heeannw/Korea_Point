@@ -57,8 +57,12 @@ public class TransportDetailController {
         }
 
         //핵심: 여기서만 처리 (완전 안전 버전)
-        station = station.replaceAll("\\s+", "")   // 공백 제거
-                .trim();
+        station = station.replaceAll("\\s+", "").trim();
+
+        // "역" 제거
+        if (station.endsWith("역")) {
+            station = station.substring(0, station.length() - 1);
+        }
 
         System.out.println("요청 역: " + station);
 

@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <title>교통 경로 검색</title>
     <style>
+        :root {
+            --blue: #3b9eff; --blue-dk: #1a7de0; --blue-lt: #eff6ff;
+            --dark: #0f172a; --mid: #334155; --gray: #64748b;
+            --border: #dbeafe; --white: #fff; --light: #f0f7ff;
+            --gold: #f59e0b; --green: #16a34a;
+            --r: 12px; --sh: 0 2px 16px rgba(59,158,255,.10);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--white); color: var(--dark); display: flex; flex-direction: column; }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Apple SD Gothic Neo', sans-serif; background: #f0f7ff; min-height: 100vh; }
 
@@ -157,9 +168,38 @@
         .empty-state .icon { font-size: 48px; margin-bottom: 14px; }
         .empty-state h3 { font-size: 18px; color: #475569; margin-bottom: 6px; }
         .empty-state p  { font-size: 14px; }
+
+        /* ── HEADER ── */
+        header {
+            height: 56px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; border-bottom: 1px solid var(--border);
+            background: var(--white); flex-shrink: 0; z-index: 100;
+        }
+        .logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: var(--blue-dk); text-decoration: none; }
+        .logo span { color: var(--dark); }
+        .header-right { display: flex; gap: 8px; align-items: center; }
+        .h-btn {
+            padding: 7px 16px; border-radius: 50px; border: 1.5px solid var(--border);
+            background: transparent; font-size: 12px; font-weight: 600; cursor: pointer;
+            font-family: 'DM Sans', sans-serif; color: var(--dark); transition: all .2s;
+        }
+        .h-btn:hover, .h-btn.active { border-color: var(--blue); color: var(--blue); }
+        .h-btn-fill { background: var(--blue); color: #fff; border-color: var(--blue); }
+        .h-btn-fill:hover { background: var(--blue-dk); color: #fff; }
+
     </style>
 </head>
 <body>
+
+<!-- HEADER -->
+<header>
+    <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
+    <div class="header-right">
+        <button class="h-btn active">EN</button>
+        <button class="h-btn">KR</button>
+        <button class="h-btn h-btn-fill">Login</button>
+    </div>
+</header>
 
 <!-- 검색 폼 -->
 <div class="search-wrap">

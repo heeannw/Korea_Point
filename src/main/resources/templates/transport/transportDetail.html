@@ -378,12 +378,26 @@
                 }
 
                 // 출발역 보정
-                let station = routeData.start || "";
+                let station = "";
 
+                // 🔥 지하철 step 찾기
+                for (let step of routeData.steps) {
+                    if (step.type === "subway") {
+                        station = step.fromStation;
+                        break;
+                    }
+                }
+
+                // 없으면 fallback
+                if (!station) {
+                    station = routeData.start;
+                }
+
+                // 보정
                 station = station.replace(/\s+/g, "");
 
-                if (!station.endsWith("역")) {
-                    station += "역";
+                if (station.endsWith("역")) {
+                    station = station.slice(0, -1);
                 }
 
                 console.log("최종 조회 역:", station);
@@ -399,6 +413,16 @@
                             || data.realtimeStationArrival?.row
                             || [];
 
+                        // 목적지 기준 방향 필터링
+                        const destination = routeData.end.replace(/\s+/g, "");
+
+                        const filteredList = list.filter(item => {
+                            return item.trainLineNm && item.trainLineNm.includes(destination);
+                        });
+
+                        // 필터 없으면 원본
+                        const finalList = filteredList.length > 0 ? filteredList : list;
+
                         if (!list.length) {
                             document.getElementById('arrivalList').innerHTML =
                                 '<p class="no-data">도착 정보 없음</p>';
@@ -406,14 +430,13 @@
                         }
 
                         document.getElementById('arrivalList').innerHTML =
-                            list.map(item => {
+                            finalList.map((item, idx) => {
 
                                 let msg = "";
-
                                 const sec = parseInt(item.barvlDt);
 
-                                if (sec === 0) {
-                                    msg = "곧 도착";
+                                if (sec <= 60 && sec > 0) {
+                                    msg = "🚨 곧 도착";
                                 } else if (!isNaN(sec)) {
                                     const min = Math.floor(sec / 60);
                                     msg = `${min}분 후 도착`;
@@ -421,8 +444,16 @@
                                     msg = item.arvlMsg2;
                                 }
 
+                                // 방향
+                                const direction = item.trainLineNm || "";
+
+                                // 첫번째 강조
+                                const highlight = idx === 0
+                                    ? 'style="background:#e0f2fe; border:2px solid #3b9eff;"'
+                                    : "";
+
                                 return `
-                                    <div class="arrival-card">
+                                    <div class="arrival-card" ${highlight}>
                                         <div class="arr-line">${item.trainLineNm}</div>
                                         <div class="arr-msg">${msg}</div>
                                     </div>
