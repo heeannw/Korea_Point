@@ -248,7 +248,7 @@ background-size:20px 20px,20px 20px,100px 100px,100px 100px;
       <div class="mc" onclick="alert('Zoom out')">－</div>
     </div>
 
-    <button class="loc-btn" onclick="alert('Re-centering to current location')">
+    <button class="loc-btn" onclick="getLocation()">
       📍 My Location
     </button>
 
@@ -519,7 +519,7 @@ function render(){
         </div>
       </div>
     </div>`).join('');
-  // Pins
+  // 위치표시
   const pinsEl = document.getElementById('mapPins');
   pinsEl.innerHTML = PLACES.map(p => `
     <div class="map-pin-wrap${activePinId===p.id?' active':''}" id="pin-${p.id}" style="left:${p.loc.x}%;top:${p.loc.y}%" onclick="selectPin(${p.id})">
@@ -617,6 +617,36 @@ document.getElementById('mapArea').addEventListener('click', function(e){
 
 // init
 render();
+
+function getLocation() {
+
+  if (navigator.geolocation) {
+
+    navigator.geolocation.getCurrentPosition(
+            function(position){
+
+              var lat = position.coords.latitude;
+              var lon = position.coords.longitude;
+
+              location.href = "/tour/mylocation/" + lat + "/" + lon;
+
+            },
+            function(){
+
+              // 위치 실패 시 서울 중앙도시보여주기
+              location.href = "/map/37.5665/126.9780";
+
+            }
+    );
+
+  } else {
+
+    // 브라우저 지원 안함
+    location.href = "/map/37.5665/126.9780";
+
+  }
+
+}
 </script>
 </body>
 </html>

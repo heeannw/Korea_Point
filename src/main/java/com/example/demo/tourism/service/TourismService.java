@@ -1,10 +1,16 @@
 package com.example.demo.tourism.service;
 
+import com.example.demo.tourism.dto.TourPlaceDto;
+import com.example.demo.tourism.dto.TourReviewDto;
+import com.example.demo.tourism.dto.TourismDto;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
@@ -116,7 +122,7 @@ public class TourismService {
      * @param reviews            리뷰 목록 (각 Map에 "text", "language" 키)
      */
     public double score(String title, String typeCode, double rating,
-                        int userRatingsTotal, List<Map<String, String>> reviews) {
+                        int userRatingsTotal, List<TourReviewDto> reviews) {
 
         // 1) 피처 추출
         double[] feat = extractFeatures(title, rating, userRatingsTotal, reviews);
@@ -167,14 +173,14 @@ public class TourismService {
 
             if (dist > radiusKm) continue;
 
-            String title     = (String) place.get("title");
-            String typeCode  = String.valueOf(place.get("type"));
-            double rating    = toDouble(place.getOrDefault("rating", 0.0));
-            int    total     = toInt(place.getOrDefault("user_ratings_total", 0));
+            String title = (String) place.get("title");
+            String typeCode = String.valueOf(place.get("type"));
+            double rating = toDouble(place.getOrDefault("rating", 0.0));
+            int total  = toInt(place.getOrDefault("user_ratings_total", 0));
 
             @SuppressWarnings("unchecked")
-            List<Map<String, String>> reviews =
-                    (List<Map<String, String>>) place.getOrDefault("reviews", List.of());
+            List<TourReviewDto> reviews =
+                    (List<TourReviewDto>) place.getOrDefault("reviews", List.of());
 
             double s = score(title, typeCode, rating, total, reviews);
 
@@ -212,8 +218,8 @@ public class TourismService {
             int    total    = toInt(place.getOrDefault("user_ratings_total", 0));
 
             @SuppressWarnings("unchecked")
-            List<Map<String, String>> reviews =
-                    (List<Map<String, String>>) place.getOrDefault("reviews", List.of());
+            List<TourReviewDto> reviews =
+                    (List<TourReviewDto>) place.getOrDefault("reviews", List.of());
 
             double s = score(title, typeCode, rating, total, reviews);
 
@@ -243,11 +249,11 @@ public class TourismService {
     // 내부 피처 추출
     // ─────────────────────────────────────────────────────────
     private double[] extractFeatures(String title, double rating,
-                                     int total, List<Map<String, String>> reviews) {
+                                     int total, List<TourReviewDto> reviews) {
         // 외국인 리뷰 분리
-        List<Map<String, String>> foreignReviews = new ArrayList<>();
-        for (Map<String, String> r : reviews) {
-            if (FOREIGN_LANGS.contains(r.getOrDefault("language", "")))
+        List<TourReviewDto> foreignReviews = new ArrayList<>();
+        for (TourReviewDto r : reviews) {
+            if (FOREIGN_LANGS.contains(r.getLanguage()))
                 foreignReviews.add(r);
         }
 
@@ -257,8 +263,8 @@ public class TourismService {
 
         // 외국인 긍정어 비율
         StringBuilder sb = new StringBuilder();
-        for (Map<String, String> r : foreignReviews)
-            sb.append(" ").append(r.getOrDefault("text", "").toLowerCase());
+        for (TourReviewDto r : foreignReviews)
+            sb.append(" ").append(r.getText().toLowerCase());
         String text = sb.toString();
         String[] words = text.trim().split("\\s+");
         int wordCount = Math.max(words.length, 1);
@@ -269,9 +275,12 @@ public class TourismService {
         double effectiveRating = rating;
         if (!foreignReviews.isEmpty()) {
             double sum = 0; int cnt = 0;
-            for (Map<String, String> r : foreignReviews) {
-                String rv = r.getOrDefault("rating", "");
-                if (!rv.isEmpty()) { sum += Double.parseDouble(rv); cnt++; }
+            for (TourReviewDto r : foreignReviews) {
+                Double rv = r.getRating();
+                if (rv != null) {
+                    sum += rv;
+                    cnt++;
+                }
             }
             if (cnt > 0) effectiveRating = sum / cnt;
         }
@@ -341,5 +350,32 @@ public class TourismService {
         if (v == null) return 0;
         if (v instanceof Number) return ((Number) v).intValue();
         try { return Integer.parseInt(v.toString()); } catch (Exception e) { return 0; }
+    }
+
+    public void analyzeLocation(Double lat, Double lon) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            File file = new File("src/resources/data/tourism/seoul_recommend_.json");
+            //json파일 읽어서 플레이스 객체로 변환해서 담기
+            List<TourPlaceDto> list = objectMapper.readValue(file, new TypeReference<List<TourPlaceDto>>() {});
+
+
+
+            List<TourPlaceDto> nearbyList = new ArrayList<>();
+
+            for (TourPlaceDto obj : list) {
+
+               // score(obj.getTitle(),obj.getType(),obj.getRating(),obj.getUser_ratings_total(),obj.getReviews());
+                //double distance = calculateDistance(lat, lon, obj.getLat(), obj.getLng());
+//
+//                if (distance <= 2.0) {
+//                    nearbyList.add(obj);  // 2km 이내면 담기
+//                }
+            }
+
+            //return nearbyList;  // 담은 리스트 리턴
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
