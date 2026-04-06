@@ -15,7 +15,7 @@ public class Route {
     private String endPlace;
     private int totalTime;
     private int transferCount;
-    private String routeType;       // fast / comfort / recommend
+    private String routeType;
     private LocalDateTime searchedAt;
 
     @PrePersist

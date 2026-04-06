@@ -16,7 +16,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(--dark); min-height: 100vh; }
 
-        /* HEADER */
         header {
             height: 56px; display: flex; align-items: center; justify-content: space-between;
             padding: 0 24px; border-bottom: 1px solid var(--border);
@@ -35,7 +34,6 @@
         .h-btn-fill { background: var(--blue); color: #fff; border-color: var(--blue); }
         .h-btn-fill:hover { background: var(--blue-dk); color: #fff; }
 
-        /* HERO */
         .hero {
             background: linear-gradient(135deg, #0a1628 0%, #0d3a7a 60%, #1a5fb4 100%);
             padding: 48px 24px 80px;
@@ -57,92 +55,49 @@
         }
         .hero p { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 32px; position: relative; }
 
-        /* SEARCH CARD */
         .search-card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            max-width: 660px;
-            margin: 0 auto;
+            background: white; border-radius: 16px; padding: 20px;
+            max-width: 660px; margin: 0 auto;
             box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            position: relative;
-            overflow: visible;
+            position: relative; overflow: visible;
         }
 
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
+        .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
 
-        /* ✅ input-row: 포커스시 z-index 올리기 */
         .input-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            position: relative;
-            z-index: 1;
+            display: flex; gap: 8px; align-items: center;
+            position: relative; z-index: 1;
         }
-        .input-row:focus-within {
-            z-index: 50;
-        }
+        .input-row:focus-within { z-index: 50; }
 
         .input-icon {
-            width: 36px; height: 36px;
-            background: var(--light);
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 16px; flex-shrink: 0;
+            width: 36px; height: 36px; background: var(--light);
+            border-radius: 8px; display: flex; align-items: center;
+            justify-content: center; font-size: 16px; flex-shrink: 0;
         }
 
-        /* ✅ input-wrap: 포커스시 z-index 올리기 */
-        .input-wrap {
-            flex: 1;
-            position: relative;
-            z-index: 1;
-        }
-        .input-wrap:focus-within {
-            z-index: 100;
-        }
+        .input-wrap { flex: 1; position: relative; z-index: 1; }
+        .input-wrap:focus-within { z-index: 100; }
 
         .input-wrap input {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            font-size: 14px;
-            font-family: 'DM Sans', sans-serif;
-            outline: none;
-            transition: border-color .2s;
-            background: var(--white);
+            width: 100%; padding: 12px 14px;
+            border: 1.5px solid var(--border); border-radius: 10px;
+            font-size: 14px; font-family: 'DM Sans', sans-serif;
+            outline: none; transition: border-color .2s; background: var(--white);
         }
         .input-wrap input:focus { border-color: var(--blue); }
 
-        /* ✅ 자동완성 드롭다운 */
         .autocomplete-list {
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0; right: 0;
-            background: white;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            z-index: 9999;
-            max-height: 260px;
-            overflow-y: auto;
-            display: none;
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+            background: white; border: 1.5px solid var(--border);
+            border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 9999; max-height: 260px; overflow-y: auto; display: none;
         }
         .autocomplete-list.show { display: block; }
         .autocomplete-item {
-            padding: 10px 14px;
-            cursor: pointer;
-            font-size: 13px;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            transition: background .15s;
-            border-bottom: 1px solid #f1f5f9;
+            padding: 10px 14px; cursor: pointer; font-size: 13px;
+            display: flex; align-items: flex-start; gap: 10px;
+            transition: background .15s; border-bottom: 1px solid #f1f5f9;
         }
         .autocomplete-item:last-child { border-bottom: none; }
         .autocomplete-item:hover { background: var(--light); }
@@ -150,59 +105,30 @@
         .autocomplete-item .ac-name { font-weight: 600; color: var(--dark); font-size: 13px; }
         .autocomplete-item .ac-addr { font-size: 11px; color: var(--gray); margin-top: 2px; }
 
-        .route-divider {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 0 44px;
-        }
+        .route-divider { display: flex; align-items: center; gap: 8px; padding: 0 44px; }
         .route-divider-line { flex: 1; height: 1px; background: var(--border); }
-        .route-divider-dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background: var(--border);
-        }
+        .route-divider-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
 
         .location-btn {
-            padding: 10px 14px;
-            background: var(--green);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            white-space: nowrap;
-            flex-shrink: 0;
-            transition: background 0.2s;
-            font-family: 'DM Sans', sans-serif;
+            padding: 10px 14px; background: var(--green); color: white;
+            border: none; border-radius: 10px; cursor: pointer;
+            font-size: 12px; font-weight: 600; white-space: nowrap;
+            flex-shrink: 0; transition: background 0.2s; font-family: 'DM Sans', sans-serif;
         }
         .location-btn:hover { background: #059669; }
         .location-btn:disabled { background: #0f172a; cursor: default; }
 
         .search-btn {
-            width: 100%;
-            padding: 14px;
-            background: var(--blue);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s;
-            font-family: 'DM Sans', sans-serif;
-            margin-top: 4px;
+            width: 100%; padding: 14px; background: var(--blue); color: white;
+            border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
+            cursor: pointer; transition: background 0.2s;
+            font-family: 'DM Sans', sans-serif; margin-top: 4px;
         }
         .search-btn:hover { background: var(--blue-dk); }
 
-        /* MAIN CONTENT */
         .main-content {
-            max-width: 720px;
-            margin: 24px auto 40px; /* -32px → 24px */
-            padding: 0 16px;
-            position: relative;
-            z-index: 1;
+            max-width: 720px; margin: 24px auto 40px;
+            padding: 0 16px; position: relative; z-index: 1;
         }
 
         .error-box {
@@ -211,21 +137,21 @@
             margin-bottom: 16px; font-size: 14px;
         }
 
-        .result-header {
-            padding: 20px 0 12px;
-            font-size: 13px; color: var(--gray);
-        }
+        .result-header { padding: 20px 0 12px; font-size: 13px; color: var(--gray); }
         .result-header b { color: var(--dark); }
 
+        /* ✅ 다시 검색 링크 */
+        .re-search {
+            display: inline-block; margin-bottom: 8px;
+            font-size: 13px; color: var(--blue);
+            text-decoration: none; font-weight: 600;
+        }
+        .re-search:hover { text-decoration: underline; }
+
         .route-card {
-            background: white;
-            border-radius: 14px;
-            padding: 20px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            box-shadow: var(--sh);
-            border: 2px solid transparent;
-            transition: all 0.2s;
+            background: white; border-radius: 14px; padding: 20px;
+            margin-bottom: 12px; cursor: pointer; box-shadow: var(--sh);
+            border: 2px solid transparent; transition: all 0.2s;
         }
         .route-card:hover {
             border-color: var(--blue);
@@ -233,8 +159,9 @@
             transform: translateY(-2px);
         }
         .route-type { font-size: 12px; font-weight: 700; color: var(--blue); margin-bottom: 8px; }
+        /* ✅ route-time small 수정 */
         .route-time { font-size: 28px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
-        .route-time small { font-size: 14px; font-weight: 400; color: var(--gray); }
+        .route-time small { font-size: 20px; font-weight: 700; color: var(--dark); }
         .route-info { font-size: 13px; color: var(--gray); margin-bottom: 8px; }
         .route-stations { font-size: 12px; color: #94a3b8; margin-bottom: 10px; }
         .step-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
@@ -244,20 +171,12 @@
         .section-title {
             font-size: 13px; font-weight: 700; color: var(--gray);
             text-transform: uppercase; letter-spacing: .6px;
-            margin: 24px 0 12px;
         }
         .recent-card {
-            background: white;
-            border-radius: 12px;
-            padding: 14px 16px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            box-shadow: var(--sh);
-            border: 1.5px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: all .2s;
+            background: white; border-radius: 12px; padding: 14px 16px;
+            margin-bottom: 8px; cursor: pointer; box-shadow: var(--sh);
+            border: 1.5px solid var(--border); display: flex;
+            align-items: center; gap: 12px; transition: all .2s;
         }
         .recent-card:hover { border-color: var(--blue); }
         .recent-icon { font-size: 18px; flex-shrink: 0; }
@@ -265,6 +184,14 @@
         .recent-route { font-size: 14px; font-weight: 600; color: var(--dark); }
         .recent-meta { font-size: 12px; color: var(--gray); margin-top: 2px; }
         .recent-time { font-size: 13px; font-weight: 700; color: var(--blue); flex-shrink: 0; }
+        .recent-time small { font-size: 13px; font-weight: 700; color: var(--blue); }
+
+        .delete-btn {
+            background: none; border: none; cursor: pointer;
+            color: #94a3b8; font-size: 18px; padding: 4px;
+            line-height: 1; flex-shrink: 0; transition: color .2s;
+        }
+        .delete-btn:hover { color: #ef4444; }
 
         .empty-state { text-align: center; padding: 60px 20px; color: var(--gray); }
         .empty-state .icon { font-size: 48px; margin-bottom: 14px; }
@@ -290,15 +217,12 @@
     <div class="search-card">
         <form th:action="@{/transport/search}" method="get" id="searchForm">
             <div class="input-group">
-
-                <!-- 출발지 -->
                 <div class="input-row">
                     <div class="input-icon">🚩</div>
                     <div class="input-wrap">
                         <input type="text" name="start" id="startInput"
                                placeholder="출발지 입력 (예: 서울역)"
-                               th:value="${start}"
-                               autocomplete="off">
+                               th:value="${start}" autocomplete="off">
                         <div class="autocomplete-list" id="startAcList"></div>
                     </div>
                     <button type="button" class="location-btn"
@@ -307,21 +231,18 @@
                     </button>
                 </div>
 
-                <!-- 구분선 -->
                 <div class="route-divider">
                     <div class="route-divider-line"></div>
                     <div class="route-divider-dot"></div>
                     <div class="route-divider-line"></div>
                 </div>
 
-                <!-- 도착지 -->
                 <div class="input-row">
                     <div class="input-icon">🏁</div>
                     <div class="input-wrap">
                         <input type="text" name="end" id="endInput"
                                placeholder="도착지 입력 (예: 강남역)"
-                               th:value="${end}"
-                               autocomplete="off" required>
+                               th:value="${end}" autocomplete="off" required>
                         <div class="autocomplete-list" id="endAcList"></div>
                     </div>
                 </div>
@@ -343,6 +264,10 @@
 
     <!-- 검색 결과 -->
     <div th:if="${routes != null and !#lists.isEmpty(routes)}">
+
+        <!-- 다시 검색 링크 -->
+        <a class="re-search" th:href="@{/transport/search}">← 다시 검색하기</a>
+
         <div class="result-header">
             <b th:text="${start}"></b> → <b th:text="${end}"></b> ·
             출발 <span th:text="${routes[0].departTime}"></span> 기준
@@ -356,10 +281,7 @@
                      th:text="${route.type == 'fast'} ? '⚡ 빠른 경로' :
                                (${route.type == 'comfort'} ? '😊 편한 경로' : '⭐ 추천 경로')">
                 </div>
-                <div class="route-time">
-                    <span th:text="${route.totalTime}"></span>
-                    <small>분</small>
-                </div>
+                <div class="route-time" th:data-minutes="${route.totalTime}"></div>
                 <div class="route-info">
                     환승 <span th:text="${route.transferCount}"></span>회 ·
                     도보 <span th:text="${#numbers.formatDecimal(route.walkTime, 1, 1)}"></span>분
@@ -399,9 +321,19 @@
     <div th:if="${routes == null and error == null}">
 
         <div th:if="${recentRoutes != null and !#lists.isEmpty(recentRoutes)}">
-            <div class="section-title">🕐 최근 검색</div>
-            <!-- 수정 - data 속성으로 분리 -->
+            <!-- 최근 검색 헤더 + 전체 삭제 -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin: 24px 0 12px;">
+                <div class="section-title">🕐 최근 검색</div>
+                <button onclick="clearAllHistory()"
+                        style="font-size:12px; color:var(--gray); background:none; border:none;
+                               cursor:pointer; font-family:'DM Sans',sans-serif;">
+                    전체 삭제
+                </button>
+            </div>
+
+            <!-- 개별 삭제 버튼 추가 -->
             <div th:each="r : ${recentRoutes}" class="recent-card"
+                 th:id="'recent-' + ${r.id}"
                  th:data-start="${r.startPlace}"
                  th:data-end="${r.endPlace}"
                  onclick="fillSearch(this.dataset.start, this.dataset.end)">
@@ -414,7 +346,12 @@
                                    (${r.routeType == 'comfort'} ? '😊 편한 경로' : '⭐ 추천 경로')">
                     </div>
                 </div>
-                <div class="recent-time" th:text="${r.totalTime} + '분'"></div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div class="recent-time" th:data-minutes="${r.totalTime}"></div>
+                    <button class="delete-btn"
+                            th:data-id="${r.id}"
+                            onclick="deleteHistory(this, event)">×</button>
+                </div>
             </div>
         </div>
 
@@ -432,6 +369,45 @@
     const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
     let acTimer = null;
 
+    // 분 → 시간 변환
+    function formatMinutes(min) {
+        if (min >= 60) {
+            const h = Math.floor(min / 60);
+            const m = min % 60;
+            return m > 0
+                ? `<span>${h}시간 ${m}</span><small>분</small>`
+                : `<span>${h}시간</span>`;
+        }
+        return `<span>${min}</span><small>분</small>`;
+    }
+
+    function applyTimeFormat() {
+        document.querySelectorAll('.route-time[data-minutes]').forEach(el => {
+            el.innerHTML = formatMinutes(parseInt(el.getAttribute('data-minutes')));
+        });
+        document.querySelectorAll('.recent-time[data-minutes]').forEach(el => {
+            el.innerHTML = formatMinutes(parseInt(el.getAttribute('data-minutes')));
+        });
+    }
+    applyTimeFormat();
+
+    // 개별 삭제
+    function deleteHistory(btn, event) {
+        event.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        fetch(`/api/transport/history/${id}`, { method: 'DELETE' })
+            .then(() => {
+                const card = document.getElementById('recent-' + id);
+                if (card) card.remove();
+            });
+    }
+
+    // 전체 삭제
+    function clearAllHistory() {
+        fetch('/api/transport/history', { method: 'DELETE' })
+            .then(() => location.reload());
+    }
+
     function setupAutocomplete(inputId, listId) {
         const input = document.getElementById(inputId);
         const list  = document.getElementById(listId);
@@ -442,7 +418,6 @@
             if (q.length < 1) { list.classList.remove('show'); return; }
 
             acTimer = setTimeout(() => {
-                // 지하철역 검색 + 일반 검색 병합
                 const subwaySearch = fetch(
                     `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(q)}&category_group_code=SW8&size=4`,
                     { headers: { 'Authorization': KAKAO_KEY } }
@@ -457,7 +432,6 @@
                     const subwayDocs  = subway.documents  || [];
                     const keywordDocs = keyword.documents || [];
 
-                    // 지하철역 먼저, 중복 제거
                     const seen = new Set();
                     const merged = [...subwayDocs, ...keywordDocs].filter(d => {
                         if (seen.has(d.id)) return false;
@@ -475,7 +449,6 @@
                                         d.category_group_code === 'CS2' ? '🏪' :
                                             d.category_group_code === 'PK6' ? '🅿️' : '📍';
 
-                        // 검색어 하이라이트
                         const escapedQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                         const name = d.place_name.replace(
                             new RegExp(escapedQ, 'gi'),
@@ -498,14 +471,12 @@
             }, 200);
         });
 
-        // 외부 클릭시 닫기
         document.addEventListener('click', e => {
             if (!input.contains(e.target) && !list.contains(e.target)) {
                 list.classList.remove('show');
             }
         });
 
-        // 출발지 직접 입력시 좌표 초기화
         if (inputId === 'startInput') {
             input.addEventListener('input', () => {
                 document.getElementById('startLat').value = '';
@@ -519,7 +490,6 @@
     }
 
     function selectAc(inputId, listId, name) {
-        // 공백 이후 부가정보 제거 (예: "수원시청역 수인분당선" → "수원시청역")
         const cleanName = name.split(' ')[0].trim();
         document.getElementById(inputId).value = cleanName;
         document.getElementById(listId).classList.remove('show');

@@ -1,6 +1,8 @@
 package com.example.demo.transport.controller;
 
 import com.example.demo.transport.dto.TransportRouteDto;
+import com.example.demo.transport.entity.Route;
+import com.example.demo.transport.repository.RouteRepository;
 import com.example.demo.transport.service.CongestionMlService;
 import com.example.demo.transport.service.TransportRouteService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +25,11 @@ public class TransportDetailController {
     @Autowired
     private CongestionMlService congestionMlService;
 
+    @Autowired
+    private RouteRepository routeRepository;
+
     @GetMapping("/home")
-    public String home(){
+    public String home() {
         return "home/home";
     }
 
@@ -46,7 +51,7 @@ public class TransportDetailController {
         return transportRouteService.getTransportRouteDetail(routeId);
     }
 
-    //지하철 실시간 도착정보 API
+    // 지하철 실시간 도착정보 API
     @ResponseBody
     @GetMapping("/api/transport/subway")
     public String transportSubwayArrival(
@@ -57,20 +62,15 @@ public class TransportDetailController {
         }
 
         station = station.replaceAll("\\s+", "").trim();
-
-        // 역 제거
         if (station.endsWith("역")) {
             station = station.substring(0, station.length() - 1);
         }
 
         System.out.println("요청 역: " + station);
-
         return callApi(station);
     }
 
-    //API 호출 (정리된 버전)
     private String callApi(String station) throws Exception {
-
         String key = "746f74584172696e37395277457a71";
 
         StringBuilder urlBuilder = new StringBuilder("http://swopenapi.seoul.go.kr/api/subway");
@@ -88,18 +88,13 @@ public class TransportDetailController {
 
         StringBuilder sb = new StringBuilder();
         String line;
-
-        while ((line = rd.readLine()) != null) {
-            sb.append(line);
-        }
-
+        while ((line = rd.readLine()) != null) sb.append(line);
         rd.close();
         conn.disconnect();
-
         return sb.toString();
     }
 
-    // 혼잡도 예측 API (0=여유, 1=보통, 2=혼잡)
+    // 혼잡도 예측 API
     @ResponseBody
     @GetMapping("/api/transport/congestion")
     public int getCongestion(@RequestParam float station,
@@ -107,5 +102,20 @@ public class TransportDetailController {
                              @RequestParam float day) throws Exception {
         return congestionMlService.predict(station, hour, day);
     }
-}
 
+    // 최근 검색 기록 개별 삭제
+    @ResponseBody
+    @DeleteMapping("/api/transport/history/{id}")
+    public String deleteHistory(@PathVariable Long id) {
+        routeRepository.deleteById(id);
+        return "ok";
+    }
+
+    // 최근 검색 기록 전체 삭제
+    @ResponseBody
+    @DeleteMapping("/api/transport/history")
+    public String deleteAllHistory() {
+        routeRepository.deleteAll();
+        return "ok";
+    }
+}
