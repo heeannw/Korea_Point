@@ -1,12 +1,13 @@
 package com.example.demo.transport.controller;
 
 import com.example.demo.transport.dto.TransportRouteDto;
+import com.example.demo.transport.entity.Route;
+import com.example.demo.transport.repository.RouteRepository;
 import com.example.demo.transport.service.TransportRouteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -16,35 +17,46 @@ public class TransportRouteController {
     @Autowired
     private TransportRouteService transportRouteService;
 
+    @Autowired
+    private RouteRepository routeRepository;
+
     @GetMapping("/transport/search")
     public String transportSearch(
             @RequestParam(required = false) String start,
             @RequestParam(required = false) String end,
-            @RequestParam(required = false) Double startLat,
-            @RequestParam(required = false) Double startLng,
+            @RequestParam(required = false) String startLat,  // ✅ Double → String
+            @RequestParam(required = false) String startLng,  // ✅ Double → String
             Model model) {
 
-        // 도착지 없으면 폼만 보여줌
         if (end == null || end.isEmpty()) {
+            model.addAttribute("recentRoutes", routeRepository.findTop10ByOrderBySearchedAtDesc());
             return "transport/transport";
         }
 
-        // 출발지도 없고 좌표도 없으면 폼만 보여줌
-        if ((start == null || start.isEmpty()) && startLat == null) {
+        if ((start == null || start.isEmpty()) && (startLat == null || startLat.isEmpty())) {
+            model.addAttribute("recentRoutes", routeRepository.findTop10ByOrderBySearchedAtDesc());
             return "transport/transport";
         }
 
         try {
             List<TransportRouteDto> routes;
 
-            if (startLat != null && startLng != null) {
-                // 현재위치(좌표)로 검색
-                routes = transportRouteService.getTransportRoutesByCoords(
-                        startLat, startLng, end
-                );
+            // ✅ 좌표가 실제로 있는지 확인
+            boolean hasCoords = startLat != null && !startLat.isEmpty()
+                    && startLng != null && !startLng.isEmpty();
+
+            if (hasCoords) {
+                double lat = Double.parseDouble(startLat);
+                double lng = Double.parseDouble(startLng);
+                routes = transportRouteService.getTransportRoutesByCoords(lat, lng, end);
                 model.addAttribute("start", "현재위치");
+                start = "현재위치";
             } else {
-                // 텍스트 입력으로 검색
+                if ("현재위치".equals(start)) {
+                    model.addAttribute("error", "현재위치 좌표를 가져올 수 없습니다. 다시 시도해주세요.");
+                    model.addAttribute("recentRoutes", routeRepository.findTop10ByOrderBySearchedAtDesc());
+                    return "transport/transport";
+                }
                 routes = transportRouteService.getTransportRoutes(start, end);
                 model.addAttribute("start", start);
             }
@@ -59,8 +71,22 @@ public class TransportRouteController {
             }
             System.out.println("====================");
 
+            // 검색 기록 저장
+            if (!routes.isEmpty()) {
+                for (TransportRouteDto r : routes) {
+                    Route route = new Route();
+                    route.setStartPlace(start);
+                    route.setEndPlace(end);
+                    route.setTotalTime(r.getTotalTime());
+                    route.setTransferCount(r.getTransferCount());
+                    route.setRouteType(r.getType());
+                    routeRepository.save(route);
+                }
+            }
+
             model.addAttribute("routes", routes);
             model.addAttribute("end", end);
+            model.addAttribute("recentRoutes", routeRepository.findTop10ByOrderBySearchedAtDesc());
 
         } catch (Exception e) {
             e.printStackTrace();

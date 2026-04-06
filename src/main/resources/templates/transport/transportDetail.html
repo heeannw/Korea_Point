@@ -384,7 +384,7 @@
         }).setMap(map);
     }
 
-    // ✅ 지도 범위 조정
+    // 지도 범위 조정
     function fitBounds(coordList) {
         if (!coordList.length) return;
         const bounds = new kakao.maps.LatLngBounds();
@@ -541,6 +541,53 @@
 
                 // 지도 범위 자동 조정
                 fitBounds(allCoords);
+
+                // ✅✅✅목적지 근처 알림 (fitBounds 밖으로 이동)✅✅✅
+                if (destPt) {
+                    let alertShown = false;
+                    const alertOverlay = new kakao.maps.CustomOverlay({
+                        position: new kakao.maps.LatLng(destPt.lat, destPt.lng),
+                        content: `<div style="
+                        background:#ef4444;color:white;
+                        padding:10px 16px;border-radius:12px;
+                        font-size:13px;font-weight:700;
+                        box-shadow:0 4px 12px rgba(0,0,0,0.3);
+                        white-space:nowrap;">🔔 목적지 근처입니다!</div>`,
+                        yAnchor: 2.5,
+                        zIndex: 10
+                    });
+
+                    function getDistance(lat1, lng1, lat2, lng2) {
+                        const R = 6371000;
+                        const dLat = (lat2 - lat1) * Math.PI / 180;
+                        const dLng = (lng2 - lng1) * Math.PI / 180;
+                        const a = Math.sin(dLat/2) * Math.sin(dLat/2)
+                            + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+                            * Math.sin(dLng/2) * Math.sin(dLng/2);
+                        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                    }
+
+                    const locationWatcher = setInterval(() => {
+                        navigator.geolocation.getCurrentPosition(pos => {
+                            const dist = getDistance(
+                                pos.coords.latitude, pos.coords.longitude,
+                                destPt.lat, destPt.lng
+                            );
+                            if (dist < 200 && !alertShown) {
+                                alertShown = true;
+                                alertOverlay.setMap(map);
+                                map.setCenter(new kakao.maps.LatLng(destPt.lat, destPt.lng));
+                                map.setLevel(3);
+                                setTimeout(() => alertOverlay.setMap(null), 30000);
+                            } else if (dist >= 200) {
+                                alertShown = false;
+                                alertOverlay.setMap(null);
+                            }
+                        });
+                    }, 5000);
+
+                    window.addEventListener('beforeunload', () => clearInterval(locationWatcher));
+                }
 
                 // ── 실시간 도착정보 ──
                 let station = '';

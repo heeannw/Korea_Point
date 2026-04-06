@@ -47,6 +47,9 @@ public class TransportRouteService {
         put(3, "#F99D1C"); put(4, "#F72F08");
     }};
 
+    // -----------------------------------------------
+    // 카카오 API → 좌표 조회
+    // -----------------------------------------------
     public double[] getTransportCoords(String place) throws Exception {
         String encoded = URLEncoder.encode(place, StandardCharsets.UTF_8);
         String url = "https://dapi.kakao.com/v2/local/search/keyword.json?query=" + encoded;
@@ -66,9 +69,18 @@ public class TransportRouteService {
         return new double[]{x, y};
     }
 
+    // -----------------------------------------------
+    // 텍스트 입력 → 경로 조회
+    // -----------------------------------------------
     public List<TransportRouteDto> getTransportRoutes(String start, String end) throws Exception {
-        double[] startCoords = getTransportCoords(start);
-        double[] endCoords   = getTransportCoords(end);
+        // ✅ 역 이름만 추출 (예: "수원시청역 수인분당선" → "수원시청역")
+        String cleanStart = start.split("\\s+")[0];
+        String cleanEnd   = end.split("\\s+")[0];
+
+        System.out.println("검색: " + cleanStart + " → " + cleanEnd);
+
+        double[] startCoords = getTransportCoords(cleanStart);
+        double[] endCoords   = getTransportCoords(cleanEnd);
 
         if (startCoords == null || endCoords == null) return List.of();
 
@@ -79,10 +91,14 @@ public class TransportRouteService {
         );
     }
 
+    // -----------------------------------------------
+    // 현재위치(좌표) → 경로 조회
+    // -----------------------------------------------
     public List<TransportRouteDto> getTransportRoutesByCoords(
             double lat, double lng, String end) throws Exception {
 
-        double[] endCoords = getTransportCoords(end);
+        String cleanEnd = end.split("\\s+")[0];
+        double[] endCoords = getTransportCoords(cleanEnd);
         if (endCoords == null) return List.of();
 
         return searchAndClassify(
@@ -92,6 +108,9 @@ public class TransportRouteService {
         );
     }
 
+    // -----------------------------------------------
+    // ODsay 검색 + ML 분류 (공통 로직)
+    // -----------------------------------------------
     private List<TransportRouteDto> searchAndClassify(
             double startX, double startY,
             double endX, double endY,
@@ -213,6 +232,9 @@ public class TransportRouteService {
         return result;
     }
 
+    // -----------------------------------------------
+    // DTO 생성 헬퍼
+    // -----------------------------------------------
     private TransportRouteDto buildDto(String type, Map<String, Object> r,
                                        String start, String end, String departTime) {
         TransportRouteDto dto = new TransportRouteDto();
@@ -228,6 +250,9 @@ public class TransportRouteService {
         return dto;
     }
 
+    // -----------------------------------------------
+    // subPath 파싱
+    // -----------------------------------------------
     private List<TransportStepDto> parseTransportSteps(JsonNode subPaths) {
         List<TransportStepDto> steps = new ArrayList<>();
 
@@ -284,10 +309,8 @@ public class TransportRouteService {
                 steps.add(step);
 
             } else if (trafficType == 3 && sectionTime > 0) {
-                // 도보 좌표 수정
                 List<Map<String, Double>> walkPath = new ArrayList<>();
 
-                // 1순위: startExitX/Y (0 아닌 경우만)
                 if (sp.has("startExitX") && !sp.get("startExitX").isNull()
                         && sp.get("startExitX").asDouble() != 0) {
                     Map<String, Double> p = new HashMap<>();
@@ -303,7 +326,6 @@ public class TransportRouteService {
                     walkPath.add(p);
                 }
 
-                // 2순위: startX/Y, endX/Y
                 if (walkPath.isEmpty()) {
                     if (sp.has("startX") && !sp.get("startX").isNull()
                             && sp.get("startX").asDouble() != 0) {
@@ -321,10 +343,6 @@ public class TransportRouteService {
                     }
                 }
 
-                System.out.println("도보 좌표 개수: " + walkPath.size()
-                        + " | from: " + (sp.has("startName") ? sp.get("startName").asText() : "")
-                        + " | to: " + (sp.has("endName") ? sp.get("endName").asText() : ""));
-
                 TransportStepDto step = new TransportStepDto();
                 step.setType("walk");
                 step.setColor("#f59e0b");
@@ -338,6 +356,9 @@ public class TransportRouteService {
         return steps;
     }
 
+    // -----------------------------------------------
+    // 헬퍼 메서드들
+    // -----------------------------------------------
     private float calcAvgTransferTime(List<TransportStepDto> steps) {
         List<Float> times = new ArrayList<>();
         for (TransportStepDto step : steps) {
