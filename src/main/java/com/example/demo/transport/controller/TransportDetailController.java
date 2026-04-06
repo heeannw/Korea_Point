@@ -46,7 +46,7 @@ public class TransportDetailController {
         return transportRouteService.getTransportRouteDetail(routeId);
     }
 
-    //지하철 실시간 도착정보 API (최종 완성)
+    //지하철 실시간 도착정보 API
     @ResponseBody
     @GetMapping("/api/transport/subway")
     public String transportSubwayArrival(
@@ -58,7 +58,7 @@ public class TransportDetailController {
 
         station = station.replaceAll("\\s+", "").trim();
 
-        // "역" 제거
+        // 역 제거
         if (station.endsWith("역")) {
             station = station.substring(0, station.length() - 1);
         }
