@@ -10,72 +10,96 @@ import java.util.Map;
 @Controller
 public class HomeController {
 
-    @GetMapping("/")
-    public String home(Model model) {
-        model.addAttribute("heroTitle", "Discover Korea");
-        model.addAttribute("heroSubtitle", "Your gateway to the best attractions, food and travel tips.");
-
-        model.addAttribute("slides", List.of(
-                Map.of("imageUrl", "https://images.unsplash.com/photo-1538485399081-7191377e8241?w=1400&q=80"),
-                Map.of("imageUrl", "https://images.unsplash.com/photo-1601621915196-2621bfb0cd6e?w=1400&q=80"),
-                Map.of("imageUrl", "https://images.unsplash.com/photo-1549114473-8a17d3b72e3e?w=1400&q=80")
-        ));
-
-        model.addAttribute("categories", List.of(
-                category("AT", "Attractions", "red", "/tourism"),
-                category("FOOD", "Restaurants", "orange", "/tourism"),
-                category("BUS", "Transport", "blue", "/transport"),
-                category("PARK", "Nature", "green", "/tourism"),
-                category("SHOP", "Shopping", "purple", "/tourism"),
-                category("STAY", "Hotels", "teal", "/tourism"),
-                category("TALK", "Community", "red", "/community")
-        ));
-
-        model.addAttribute("attractions", List.of(
-                attraction("1", "Palace", "Gyeongbokgung Palace", "Jongno-gu, Seoul", "4.9", "2.3k", "https://images.unsplash.com/photo-1548115184-bc6544d06a58?w=600&q=80"),
-                attraction("2", "District", "Bukchon Hanok Village", "Jongno-gu, Seoul", "4.8", "1.8k", "https://images.unsplash.com/photo-1538485399081-7191377e8241?w=600&q=80"),
-                attraction("3", "Theme Park", "Everland Resort", "Yongin, Gyeonggi-do", "4.7", "3.1k", "https://images.unsplash.com/photo-1601621915196-2621bfb0cd6e?w=600&q=80")
-        ));
-
-        model.addAttribute("posts", List.of(
-                post("Review", "cat-review", "Gyeongbokgung was absolutely stunning in hanbok!", "TravellerMike", "2 hours ago", "12"),
-                post("Food", "cat-food", "Best Korean BBQ spots near Hongdae area", "FoodieJulia", "5 hours ago", "28"),
-                post("Tip", "cat-tip", "How to use Seoul Metro as a foreigner", "SeoulExpert", "Yesterday", "45"),
-                post("Review", "cat-review", "Cherry blossom season at Yeouido is worth the crowd!", "SakuraWatcher", "Yesterday", "9"),
-                post("Food", "cat-food", "Must-try street food in Myeongdong 2025", "StreetFoodLover", "2 days ago", "33")
-        ));
-
+    @GetMapping({"/", "/en"})
+    public String homeEn(Model model) {
+        populateModel(model);
         return "home/home";
     }
 
-    private Map<String, String> category(String icon, String label, String colorClass, String link) {
-        return Map.of(
-                "icon", icon,
-                "label", label,
-                "colorClass", colorClass,
-                "link", link
-        );
+    @GetMapping({"/ko", "/kr"})
+    public String homeKo(Model model) {
+        populateModel(model);
+        return "home/home-ko";
     }
 
-    private Map<String, String> attraction(String rank, String badge, String title, String location, String rating, String reviews, String imageUrl) {
+    private void populateModel(Model model) {
+        model.addAttribute("heroTitle", "Discover");
+        model.addAttribute("heroSubTitle", "Korea");
+        model.addAttribute("heroDescription",
+                "Your curated guide to Korea's finest attractions, hidden dining gems, and insider travel tips.");
+
+        model.addAttribute("heroTitleKo", "한국을");
+        model.addAttribute("heroSubTitleKo", "만나보세요");
+        model.addAttribute("heroDescriptionKo",
+                "대표 관광지부터 숨은 맛집, 실용적인 교통 팁까지 한국 여행에 필요한 정보를 한곳에서 만나보세요.");
+
+        model.addAttribute("slides", List.of(
+                Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/c/c3/KOCIS_Korea_BlueSky_In_Seoul_03_%289947223046%29.jpg"),
+                Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/a/ab/Bukchon-ro_11-gil_street_with_hanok_houses_and_blue_sky_in_Bukchon_Hanok_Village_Seoul.jpg"),
+                Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/9/96/Gwanghwamun_at_Night.jpg")
+        ));
+
+        model.addAttribute("attractions", List.of(
+                attraction("1", "Gyeongbokgung Palace", "경복궁", "Jongno-gu, Seoul", "서울 종로구", "4.9", "2.3k",
+                        "https://upload.wikimedia.org/wikipedia/commons/6/67/Gyeongbokgung_Palace%2C_Seoul%2C_South_Korea_%2814712071910%29.jpg"),
+                attraction("2", "Bukchon Hanok Village", "북촌한옥마을", "Jongno-gu, Seoul", "서울 종로구", "4.8", "1.8k",
+                        "https://upload.wikimedia.org/wikipedia/commons/d/da/Bukchon_Hanok_Village%2C_Seoul_%289%29_%2839304631270%29.jpg"),
+                attraction("3", "Namsan Seoul Tower", "남산서울타워", "Yongsan-gu, Seoul", "서울 용산구", "4.7", "3.1k",
+                        "https://upload.wikimedia.org/wikipedia/commons/b/b4/N_Seoul_Tower_%286%29.jpg")
+        ));
+
+        model.addAttribute("posts", List.of(
+                post(1L, "Review", "후기", "cat-review",
+                        "Gyeongbokgung was absolutely stunning in hanbok!",
+                        "한복 입고 본 경복궁이 정말 아름다웠어요!",
+                        "TravellerMike", "2 hours ago", "2시간 전", "12"),
+                post(2L, "Food", "음식", "cat-food",
+                        "Best Korean BBQ spots near Hongdae area",
+                        "홍대 근처에서 가기 좋은 한식 바비큐 맛집",
+                        "FoodieJulia", "5 hours ago", "5시간 전", "28"),
+                post(3L, "Tip", "팁", "cat-tip",
+                        "How to use Seoul Metro as a foreigner",
+                        "외국인도 쉽게 쓰는 서울 지하철 이용법",
+                        "SeoulExpert", "Yesterday", "어제", "45"),
+                post(4L, "Review", "후기", "cat-review",
+                        "Cherry blossom season at Yeouido is worth the crowd!",
+                        "여의도 벚꽃 시즌, 사람 많아도 갈 가치가 있어요!",
+                        "SakuraWatcher", "Yesterday", "어제", "9"),
+                post(5L, "Food", "음식", "cat-food",
+                        "Must-try street food in Myeongdong 2025",
+                        "2025 명동에서 꼭 먹어봐야 할 길거리 음식",
+                        "StreetFoodLover", "2 days ago", "2일 전", "33")
+        ));
+    }
+
+    private Map<String, String> attraction(String rank, String title, String titleKo,
+                                           String location, String locationKo,
+                                           String rating, String reviews, String imageUrl) {
         return Map.of(
                 "rank", rank,
-                "badge", badge,
                 "title", title,
+                "titleKo", titleKo,
                 "location", location,
+                "locationKo", locationKo,
                 "rating", rating,
                 "reviews", reviews,
                 "imageUrl", imageUrl
         );
     }
 
-    private Map<String, String> post(String category, String categoryClass, String title, String author, String timeAgo, String comments) {
+    private Map<String, Object> post(Long id, String category, String categoryKo, String categoryClass,
+                                     String title, String titleKo,
+                                     String author, String timeAgo, String timeAgoKo, String comments) {
         return Map.of(
+                "id", id,
                 "category", category,
+                "categoryKo", categoryKo,
                 "categoryClass", categoryClass,
                 "title", title,
+                "titleKo", titleKo,
                 "author", author,
                 "timeAgo", timeAgo,
+                "timeAgoKo", timeAgoKo,
                 "comments", comments
         );
     }
