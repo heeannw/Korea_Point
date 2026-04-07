@@ -1,150 +1,93 @@
 package com.example.demo.tourism.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+
+import java.io.IOException;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TourPlaceDto {
-    private int id;
+
+    // ✅ JSON에서 lat/lng가 String("37.496...")으로 오기 때문에 커스텀 역직렬화 필요
+    private static class StringToDouble extends StdDeserializer<Double> {
+        public StringToDouble() { super(Double.class); }
+        @Override
+        public Double deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+            String v = p.getText();
+            if (v == null || v.isBlank()) return null;
+            try { return Double.parseDouble(v); } catch (NumberFormatException e) { return null; }
+        }
+    }
+
+    private String id;
     private String title;
-    private int type;
+    private String type;
     private String addr;
+
+    @JsonDeserialize(using = StringToDouble.class)
     private Double lat;
+
+    @JsonDeserialize(using = StringToDouble.class)
     private Double lng;
+
     private String image;
     private String google_place_id;
     private String google_name;
     private String google_addr;
     private Double rating;
-    private int user_ratings_total;
+    private int    user_ratings_total;
     private List<TourReviewDto> reviews;
-    private Float score;
-    private Float positive_ratio;
+
+    // 계산 필드
+    private Float  score;
     private Double distance;
 
-    public int getId() {
-        return id;
-    }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
 
-    public String getTitle() {
-        return title;
-    }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+    public String getAddr() { return addr; }
+    public void setAddr(String addr) { this.addr = addr; }
 
-    public int getType() {
-        return type;
-    }
+    public Double getLat() { return lat; }
+    public void setLat(Double lat) { this.lat = lat; }
 
-    public void setType(int type) {
-        this.type = type;
-    }
+    public Double getLng() { return lng; }
+    public void setLng(Double lng) { this.lng = lng; }
 
-    public String getAddr() {
-        return addr;
-    }
+    public String getImage() { return image; }
+    public void setImage(String image) { this.image = image; }
 
-    public void setAddr(String addr) {
-        this.addr = addr;
-    }
+    public String getGoogle_place_id() { return google_place_id; }
+    public void setGoogle_place_id(String google_place_id) { this.google_place_id = google_place_id; }
 
-    public Double getLat() {
-        return lat;
-    }
+    public String getGoogle_name() { return google_name; }
+    public void setGoogle_name(String google_name) { this.google_name = google_name; }
 
-    public void setLat(Double lat) {
-        this.lat = lat;
-    }
+    public String getGoogle_addr() { return google_addr; }
+    public void setGoogle_addr(String google_addr) { this.google_addr = google_addr; }
 
-    public Double getLng() {
-        return lng;
-    }
+    public Double getRating() { return rating; }
+    public void setRating(Double rating) { this.rating = rating; }
 
-    public void setLng(Double lng) {
-        this.lng = lng;
-    }
+    public int getUser_ratings_total() { return user_ratings_total; }
+    public void setUser_ratings_total(int user_ratings_total) { this.user_ratings_total = user_ratings_total; }
 
-    public String getImage() {
-        return image;
-    }
+    public List<TourReviewDto> getReviews() { return reviews; }
+    public void setReviews(List<TourReviewDto> reviews) { this.reviews = reviews; }
 
-    public void setImage(String image) {
-        this.image = image;
-    }
+    public Float getScore() { return score; }
+    public void setScore(Float score) { this.score = score; }
 
-    public String getGoogle_place_id() {
-        return google_place_id;
-    }
-
-    public void setGoogle_place_id(String google_place_id) {
-        this.google_place_id = google_place_id;
-    }
-
-    public String getGoogle_name() {
-        return google_name;
-    }
-
-    public void setGoogle_name(String google_name) {
-        this.google_name = google_name;
-    }
-
-    public String getGoogle_addr() {
-        return google_addr;
-    }
-
-    public void setGoogle_addr(String google_addr) {
-        this.google_addr = google_addr;
-    }
-
-    public Double getRating() {
-        return rating;
-    }
-
-    public void setRating(Double rating) {
-        this.rating = rating;
-    }
-
-    public int getUser_ratings_total() {
-        return user_ratings_total;
-    }
-
-    public void setUser_ratings_total(int user_ratings_total) {
-        this.user_ratings_total = user_ratings_total;
-    }
-
-    public List<TourReviewDto> getReviews() {
-        return reviews;
-    }
-
-    public void setReviews(List<TourReviewDto> reviews) {
-        this.reviews = reviews;
-    }
-
-    public Float getScore() {
-        return score;
-    }
-
-    public void setScore(Float score) {
-        this.score = score;
-    }
-
-    public Float getPositive_ratio() {
-        return positive_ratio;
-    }
-
-    public void setPositive_ratio(Float positive_ratio) {
-        this.positive_ratio = positive_ratio;
-    }
-
-    public Double getDistance() {
-        return distance;
-    }
-
-    public void setDistance(Double distance) {
-        this.distance = distance;
-    }
+    public Double getDistance() { return distance; }
+    public void setDistance(Double distance) { this.distance = distance; }
 }

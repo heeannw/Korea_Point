@@ -8,9 +8,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TourismService {
@@ -25,22 +25,16 @@ public class TourismService {
 
     // ── 카테고리 보너스 ──────────────────────────────────────
     private static final Map<String, Float> CATEGORY_BONUS = new HashMap<>() {{
-        put("25", 0.10f);
-        put("38", 0.08f);
-        put("15", 0.07f);
-        put("12", 0.04f);
-        put("14", 0.02f);
-        put("28", 0.00f);
+        put("25", 0.10f); put("38", 0.08f); put("15", 0.07f);
+        put("12", 0.04f); put("14", 0.02f); put("28", 0.00f);
     }};
 
-    // ── 정규화 기준값 ────────────────────────────────────────
     private static final float RATING_MIN    = 1.0f;
     private static final float RATING_MAX    = 5.0f;
     private static final float LOG_TOTAL_MAX = (float) Math.log1p(70_000);
     private static final float POS_RATIO_MAX = 0.25f;
     private static final int   BAYESIAN_C    = 100;
 
-    // ── 외국인 긍정어 ────────────────────────────────────────
     private static final Set<String> POSITIVE_WORDS = new HashSet<>(Arrays.asList(
             "amazing","beautiful","great","wonderful","nice","love","best",
             "awesome","fantastic","perfect","excellent","good","peaceful",
@@ -51,7 +45,6 @@ public class TourismService {
             "free","traditional","unique","special","view"
     ));
 
-    // ── 외국어 코드 ──────────────────────────────────────────
     private static final Set<String> FOREIGN_LANGS = new HashSet<>(Arrays.asList(
             "en","zh","zh-Hant","zh-Hans","ja","fr","de","es","th","ru","id"
     ));
@@ -62,22 +55,25 @@ public class TourismService {
     private final Map<String, Double> foreignCoverage = new HashMap<>();
     private final Map<String, Double> agePopularity   = new HashMap<>();
 
+    // 캐시 - 서버 시작 시 한 번만 로드
+    private List<TourPlaceDto> cachedCandidates = null;
+
     private final ObjectMapper mapper = new ObjectMapper();
 
     // ─────────────────────────────────────────────────────────
-    // 초기화
+    // 초기화 - 서버 시작 시 모든 데이터 로드
     // ─────────────────────────────────────────────────────────
     @PostConstruct
     public void init() {
         try {
             loadLookup();
+            loadCandidates();   // 캐싱
             System.out.println("✅ TourismService 초기화 완료");
-            System.out.println("   globalAvgRating=" + globalAvgRating
-                    + " agePopMax=" + agePopMax
+            System.out.println("   candidates=" + cachedCandidates.size() + "개"
                     + " coverage=" + foreignCoverage.size() + "개"
                     + " agePop=" + agePopularity.size() + "개");
         } catch (Exception e) {
-            System.out.println("⚠️ TourismService 로드 실패 (기본값 사용)");
+            System.out.println("⚠️ TourismService 로드 실패");
             e.printStackTrace();
         }
     }
@@ -90,78 +86,145 @@ public class TourismService {
         JsonNode root = mapper.readTree(is);
         globalAvgRating = root.get("global_avg_rating").asDouble();
         agePopMax       = root.get("age_pop_max").asDouble();
-
         root.get("foreign_coverage").fields()
                 .forEachRemaining(e -> foreignCoverage.put(e.getKey(), e.getValue().asDouble()));
         root.get("age_popularity").fields()
                 .forEachRemaining(e -> agePopularity.put(e.getKey(), e.getValue().asDouble()));
     }
 
-    // ─────────────────────────────────────────────────────────
-    // 점수 계산 (0~100)
-    // ─────────────────────────────────────────────────────────
-    public double score(String title, int typeCode, double rating,
-                        int userRatingsTotal, List<TourReviewDto> reviews) {
-
-        if (reviews == null) reviews = List.of(); // ✅ NPE 방지
-
-        double[] feat = extractFeatures(title, rating, userRatingsTotal, reviews);
-        double effectiveRating  = feat[0];
-        double foreignRatio     = feat[1];
-        double foreignSentiment = feat[2];
-        double coverage         = feat[3];
-        double agePop           = feat[4];
-
-        double bay = bayesianRating(effectiveRating, userRatingsTotal);
-
-        float bonus = CATEGORY_BONUS.getOrDefault(String.valueOf(typeCode), 0.0f); // ✅ int → String 변환
-
-        double base = W_RATING     * normRating(bay)
-                + W_SENTIMENT  * normSentiment(foreignSentiment)
-                + W_POPULARITY * normLogTotal(userRatingsTotal)
-                + W_FOREIGN    * Math.min(foreignRatio, 1.0)
-                + W_COVERAGE   * Math.min(coverage, 1.0)
-                + W_AGE_POP    * normAgePop(agePop);
-
-        return Math.min(base * (1 + bonus) * 100.0, 100.0);
+    // JSON 한 번만 파싱해서 캐싱
+    private void loadCandidates() throws Exception {
+        InputStream is = getClass().getClassLoader()
+                .getResourceAsStream("data/tourism/seoul_recommend_candidates.json");
+        if (is == null) throw new RuntimeException("seoul_recommend_candidates.json 없음");
+        cachedCandidates = mapper.readValue(is, new TypeReference<>() {});
     }
 
     // ─────────────────────────────────────────────────────────
-    // 현위치 기반 2km 이내 추천
+    // 현위치 기반 2km 이내 추천 (캐시 사용으로 빠름)
     // ─────────────────────────────────────────────────────────
     public List<TourPlaceDto> analyzeLocation(Double lat, Double lon) {
-        try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream("data/tourism/seoul_recommend_candidates.json"); // 경로 수정
-            if (is == null) throw new RuntimeException("JSON 파일 없음 - 경로 확인 필요");
+        List<TourPlaceDto> result = new ArrayList<>();
 
-            List<TourPlaceDto> list = mapper.readValue(is, new TypeReference<>() {});
-            List<TourPlaceDto> nearbyList = new ArrayList<>();
+        for (TourPlaceDto p : cachedCandidates) {
+            if (p.getLat() == null || p.getLng() == null) continue;
 
-            for (TourPlaceDto obj : list) {
-                if (obj.getLat() == null || obj.getLng() == null) continue;
+            double dist = haversine(lat, lon, p.getLat(), p.getLng());
+            if (dist > 2.0) continue;
 
-                double distance = haversine(lat, lon, obj.getLat(), obj.getLng());
-                if (distance > 2.0) continue;
+            // ✅ 원본 수정 방지 - 복사본 사용
+            TourPlaceDto copy = copy(p);
+            double s = score(copy.getTitle(), copy.getType(),
+                    copy.getRating() != null ? copy.getRating() : 0.0,
+                    copy.getUser_ratings_total(), copy.getReviews());
+            copy.setScore((float) s);
+            copy.setDistance(Math.round(dist * 1000.0) / 1000.0);
+            result.add(copy);
+        }
 
-                double s = score(
-                        obj.getTitle(),
-                        obj.getType(),
-                        obj.getRating() != null ? obj.getRating() : 0.0, //
-                        obj.getUser_ratings_total(),
-                        obj.getReviews() // score() 안에서 null 처리함
-                );
-                obj.setScore((float) s);
-                obj.setDistance(Math.round(distance * 1000.0) / 1000.0);
-                nearbyList.add(obj);
+        result.sort((a, b) -> Float.compare(b.getScore(), a.getScore()));
+        return result;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // 키워드 검색 + 내 위치까지 거리 표시
+    // ─────────────────────────────────────────────────────────
+    public List<TourPlaceDto> searchKeyword(String keyword) {
+        return searchKeyword(keyword, null, null);
+    }
+
+    // 내 위치 좌표를 함께 받으면 distance 계산
+    public List<TourPlaceDto> searchKeyword(String keyword, Double userLat, Double userLon) {
+        if (keyword == null || keyword.isBlank()) return List.of();
+
+        String kw = keyword.trim().toLowerCase();
+        List<TourPlaceDto> result = new ArrayList<>();
+
+        for (TourPlaceDto p : cachedCandidates) {
+            String title  = p.getTitle()       != null ? p.getTitle().toLowerCase()       : "";
+            String gName  = p.getGoogle_name() != null ? p.getGoogle_name().toLowerCase() : "";
+            String addr   = p.getAddr()        != null ? p.getAddr().toLowerCase()        : "";
+
+            if (!title.contains(kw) && !gName.contains(kw) && !addr.contains(kw)) continue;
+
+            TourPlaceDto copy = copy(p);
+
+            // 내 위치가 있으면 거리 계산
+            if (userLat != null && userLon != null && copy.getLat() != null && copy.getLng() != null) {
+                double dist = haversine(userLat, userLon, copy.getLat(), copy.getLng());
+                copy.setDistance(Math.round(dist * 1000.0) / 1000.0);
             }
 
-            // ✅ 점수 높은 순 정렬
-            nearbyList.sort((a, b) -> Float.compare(b.getScore(), a.getScore()));
-            return nearbyList;
-
-        } catch (IOException e) {
-            throw new RuntimeException("JSON 읽기 실패: " + e.getMessage());
+            result.add(copy);
         }
+
+        return result;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Save to Itinerary - 특정 장소 근처 카페/음식점 조회
+    // ─────────────────────────────────────────────────────────
+
+    // 음식점/카페에 해당하는 type 코드 (38=시장/쇼핑 포함, 추후 확장 가능)
+    // 현재 candidates에 카페/음식점 별도 타입 없으므로 키워드 기반으로 필터
+    private static final Set<String> FOOD_KEYWORDS = new HashSet<>(Arrays.asList(
+            "식당","음식","카페","커피","맛집","레스토랑","분식","치킨","피자",
+            "restaurant","cafe","coffee","food","dining","bistro","bar"
+    ));
+
+    public List<TourPlaceDto> getNearbyFoodPlaces(Double lat, Double lon, double radiusKm) {
+        List<TourPlaceDto> result = new ArrayList<>();
+
+        for (TourPlaceDto p : cachedCandidates) {
+            if (p.getLat() == null || p.getLng() == null) continue;
+
+            double dist = haversine(lat, lon, p.getLat(), p.getLng());
+            if (dist > radiusKm) continue;
+
+            // 음식 관련 키워드 포함 여부 확인
+            String title  = p.getTitle()       != null ? p.getTitle().toLowerCase()       : "";
+            String gName  = p.getGoogle_name() != null ? p.getGoogle_name().toLowerCase() : "";
+            String addr   = p.getAddr()        != null ? p.getAddr().toLowerCase()        : "";
+            String combined = title + " " + gName + " " + addr;
+
+            boolean isFoodPlace = FOOD_KEYWORDS.stream().anyMatch(combined::contains);
+            // 시장/쇼핑(38) 타입도 포함 (광장시장, 남대문시장 등)
+            boolean isMarket = "38".equals(p.getType());
+
+            if (!isFoodPlace && !isMarket) continue;
+
+            TourPlaceDto copy = copy(p);
+            double s = score(copy.getTitle(), copy.getType(),
+                    copy.getRating() != null ? copy.getRating() : 0.0,
+                    copy.getUser_ratings_total(), copy.getReviews());
+            copy.setScore((float) s);
+            copy.setDistance(Math.round(dist * 1000.0) / 1000.0);
+            result.add(copy);
+        }
+
+        result.sort((a, b) -> Float.compare(b.getScore(), a.getScore()));
+        return result;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // 점수 계산 (0~100)
+    // ─────────────────────────────────────────────────────────
+    public double score(String title, String typeCode, double rating,
+                        int userRatingsTotal, List<TourReviewDto> reviews) {
+        if (reviews == null) reviews = List.of();
+
+        double[] feat = extractFeatures(title, rating, userRatingsTotal, reviews);
+        double bay    = bayesianRating(feat[0], userRatingsTotal);
+        float bonus   = CATEGORY_BONUS.getOrDefault(typeCode, 0.0f);
+
+        double base = W_RATING     * normRating(bay)
+                + W_SENTIMENT  * normSentiment(feat[2])
+                + W_POPULARITY * normLogTotal(userRatingsTotal)
+                + W_FOREIGN    * Math.min(feat[1], 1.0)
+                + W_COVERAGE   * Math.min(feat[3], 1.0)
+                + W_AGE_POP    * normAgePop(feat[4]);
+
+        return Math.min(base * (1 + bonus) * 100.0, 100.0);
     }
 
     // ─────────────────────────────────────────────────────────
@@ -169,33 +232,26 @@ public class TourismService {
     // ─────────────────────────────────────────────────────────
     private double[] extractFeatures(String title, double rating,
                                      int total, List<TourReviewDto> reviews) {
-        List<TourReviewDto> foreignReviews = new ArrayList<>();
-        for (TourReviewDto r : reviews) {
-            if (FOREIGN_LANGS.contains(r.getLanguage()))
-                foreignReviews.add(r);
-        }
+        List<TourReviewDto> foreignReviews = reviews.stream()
+                .filter(r -> FOREIGN_LANGS.contains(r.getLanguage()))
+                .collect(Collectors.toList());
 
         double foreignRatio = reviews.isEmpty() ? 0.0
                 : (double) foreignReviews.size() / reviews.size();
 
-        StringBuilder sb = new StringBuilder();
-        for (TourReviewDto r : foreignReviews)
-            sb.append(" ").append(r.getText() != null ? r.getText().toLowerCase() : "");
-        String text = sb.toString();
-        String[] words = text.trim().split("\\s+");
-        int wordCount = Math.max(words.length, 1);
-        long posHits = POSITIVE_WORDS.stream().filter(text::contains).count();
+        String text = foreignReviews.stream()
+                .map(r -> r.getText() != null ? r.getText().toLowerCase() : "")
+                .collect(Collectors.joining(" "));
+        int wordCount = Math.max(text.trim().split("\\s+").length, 1);
+        long posHits  = POSITIVE_WORDS.stream().filter(text::contains).count();
         double foreignSentiment = foreignReviews.isEmpty() ? 0.0 : (double) posHits / wordCount;
 
         double effectiveRating = rating;
-        if (!foreignReviews.isEmpty()) {
-            double sum = 0; int cnt = 0;
-            for (TourReviewDto r : foreignReviews) {
-                Double rv = r.getRating();
-                if (rv != null) { sum += rv; cnt++; }
-            }
-            if (cnt > 0) effectiveRating = sum / cnt;
-        }
+        OptionalDouble avg = foreignReviews.stream()
+                .filter(r -> r.getRating() != null)
+                .mapToDouble(TourReviewDto::getRating)
+                .average();
+        if (avg.isPresent()) effectiveRating = avg.getAsDouble();
 
         double coverage = lookupWithPartial(foreignCoverage, title);
         double agePop   = lookupWithPartial(agePopularity, title);
@@ -209,23 +265,13 @@ public class TourismService {
     private double bayesianRating(double rating, int total) {
         return (BAYESIAN_C * globalAvgRating + total * rating) / (BAYESIAN_C + total);
     }
-    private double normRating(double v) {
-        return (v - RATING_MIN) / (RATING_MAX - RATING_MIN);
-    }
-    private double normLogTotal(int total) {
-        return Math.min(Math.log1p(total) / LOG_TOTAL_MAX, 1.0);
-    }
-    private double normSentiment(double v) {
-        return Math.min(v / POS_RATIO_MAX, 1.0);
-    }
-    private double normAgePop(double v) {
-        return Math.min(v / agePopMax, 1.0);
-    }
+    private double normRating(double v) { return (v - RATING_MIN) / (RATING_MAX - RATING_MIN); }
+    private double normLogTotal(int total) { return Math.min(Math.log1p(total) / LOG_TOTAL_MAX, 1.0); }
+    private double normSentiment(double v) { return Math.min(v / POS_RATIO_MAX, 1.0); }
+    private double normAgePop(double v) { return Math.min(v / agePopMax, 1.0); }
 
-    // ─────────────────────────────────────────────────────────
-    // 유틸
-    // ─────────────────────────────────────────────────────────
     private double lookupWithPartial(Map<String, Double> map, String title) {
+        if (title == null) return 0.0;
         if (map.containsKey(title)) return map.get(title);
         for (Map.Entry<String, Double> e : map.entrySet()) {
             if (e.getKey().contains(title) || title.contains(e.getKey()))
@@ -245,53 +291,22 @@ public class TourismService {
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    private double toDouble(Object v) {
-        if (v == null) return 0.0;
-        if (v instanceof Number) return ((Number) v).doubleValue();
-        try { return Double.parseDouble(v.toString()); } catch (Exception e) { return 0.0; }
-    }
-
-    private int toInt(Object v) {
-        if (v == null) return 0;
-        if (v instanceof Number) return ((Number) v).intValue();
-        try { return Integer.parseInt(v.toString()); } catch (Exception e) { return 0; }
-    }
-    //검색어 들어왓을떄 위치 찾기
-    public List<TourPlaceDto> searchKeyword(String keyword) {
-        InputStream is = getClass().getClassLoader().getResourceAsStream("data/tourism/seoul_recommend_candidates.json");
-        if (is == null) throw new RuntimeException("JSON 파일 없음");
-
-        try {
-            List<TourPlaceDto> list = mapper.readValue(is, new TypeReference<List<TourPlaceDto>>() {});
-
-            //위치 좌표 찾기
-            List<TourPlaceDto> resultList = new ArrayList<>();
-            for (TourPlaceDto a : list) {
-                String title = a.getTitle() != null ? a.getTitle() : "";
-                String gName = a.getGoogle_name() != null ? a.getGoogle_name() : "";
-                if (title.contains(keyword) || gName.contains(keyword)) {
-                    resultList.add(a);
-                }
-
-            }
-
-
-
-//            System.out.println("lat!! " + lat);
-//            System.out.println("lon!! " + lon);
-//            // ✅ 못 찾으면 빈 리스트 반환
-//            if (lat == null || lon == null) return new ArrayList<>();
-//
-//            // ✅ 2루프: 찾은 좌표 기준으로 2km 이내 필터링
-////            List<TourPlaceDto> nearbyList = new ArrayList<>();
-//
-//            System.out.println(analyzeLocation(lat,lon).get(0).getRating());
-//            System.out.println(analyzeLocation(lat,lon).get(0).getTitle());
-//
-            return resultList;
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    // 원본 보호용 얕은 복사
+    private TourPlaceDto copy(TourPlaceDto p) {
+        TourPlaceDto c = new TourPlaceDto();
+        c.setId(p.getId());
+        c.setTitle(p.getTitle());
+        c.setType(p.getType());
+        c.setAddr(p.getAddr());
+        c.setLat(p.getLat());
+        c.setLng(p.getLng());
+        c.setImage(p.getImage());
+        c.setGoogle_place_id(p.getGoogle_place_id());
+        c.setGoogle_name(p.getGoogle_name());
+        c.setGoogle_addr(p.getGoogle_addr());
+        c.setRating(p.getRating());
+        c.setUser_ratings_total(p.getUser_ratings_total());
+        c.setReviews(p.getReviews());
+        return c;
     }
 }
