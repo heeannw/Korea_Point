@@ -4,20 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Korea Point | Discover Korea</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Cormorant+Garamond:wght@600;700&family=Sora:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --red: #3b9eff;
-            --red-dark: #1a7de0;
-            --gold: #38bdf8;
+            --primary: #3b9eff;
+            --primary-dark: #1a7de0;
+            --accent: #38bdf8;
             --dark: #0f172a;
             --gray: #64748b;
             --light: #f0f7ff;
             --white: #ffffff;
             --border: #dbeafe;
             --radius: 14px;
-            --shadow: 0 4px 24px rgba(59, 158, 255, 0.10);
-            --shadow-hover: 0 12px 40px rgba(59, 158, 255, 0.20);
+            --radius-lg: 24px;
+            --shadow: 0 8px 26px rgba(59, 158, 255, 0.12);
         }
 
         * {
@@ -26,33 +26,43 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
-            font-family: "DM Sans", sans-serif;
+            font-family: "Sora", "Noto Sans KR", sans-serif;
             background: var(--white);
             color: var(--dark);
             overflow-x: hidden;
+        }
+
+        a,
+        button,
+        input {
+            font: inherit;
         }
 
         header {
             position: sticky;
             top: 0;
             z-index: 100;
-            background: var(--white);
-            border-bottom: 1px solid var(--border);
-            padding: 0 40px;
-            height: 64px;
+            padding: 0 56px;
+            height: 76px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 2px 20px rgba(59, 158, 255, 0.08);
         }
 
         .logo {
             font-family: "Playfair Display", serif;
-            font-size: 22px;
+            font-size: 28px;
             font-weight: 900;
-            color: #1a7de0;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.02em;
+            color: var(--primary-dark);
             text-decoration: none;
         }
 
@@ -60,210 +70,190 @@
             color: var(--dark);
         }
 
-        .header-search {
-            flex: 1;
-            max-width: 420px;
-            margin: 0 32px;
-            position: relative;
-        }
-
-        .header-search input {
-            width: 100%;
-            padding: 10px 44px 10px 18px;
-            border: 1.5px solid var(--border);
-            border-radius: 50px;
-            font-size: 14px;
-            outline: none;
-            background: var(--light);
-            transition: border 0.2s;
-        }
-
-        .header-search input:focus {
-            border-color: var(--red);
-            background: #fff;
-        }
-
-        .header-search .search-icon {
-            position: absolute;
-            right: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--gray);
-            font-size: 12px;
-            font-weight: 700;
-        }
-
         .header-nav {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 36px;
+        }
+
+        .header-nav a {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--dark);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .header-nav a:hover {
+            color: var(--primary);
+        }
+
+        .lang-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px;
+            background: var(--light);
+            border-radius: 999px;
         }
 
         .lang-btn {
-            padding: 6px 12px;
-            border: 1.5px solid var(--border);
-            border-radius: 50px;
-            background: transparent;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: var(--dark);
-        }
-
-        .lang-btn:hover,
-        .lang-btn.active {
-            border-color: var(--red);
-            color: var(--red);
-        }
-
-        .login-btn {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 18px;
-            background: var(--red);
-            color: #fff;
+            justify-content: center;
             border: none;
-            border-radius: 50px;
-            font-size: 13px;
-            font-weight: 600;
+            background: transparent;
+            color: var(--gray);
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-            margin-left: 4px;
+            text-decoration: none;
+            transition: all 0.2s ease;
         }
 
-        .login-btn:hover {
-            background: var(--red-dark);
-            transform: translateY(-1px);
+        .lang-btn.active {
+            background: var(--primary);
+            color: #ffffff;
         }
 
         .hero {
             position: relative;
-            height: 520px;
+            height: 100vh;
+            min-height: 640px;
+            background: var(--dark);
             overflow: hidden;
         }
 
-        .hero-slides {
+        .slider-track {
             display: flex;
             height: 100%;
-            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.9s cubic-bezier(0.77, 0, 0.175, 1);
         }
 
-        .hero-slide {
+        .slide {
+            position: relative;
             min-width: 100%;
             height: 100%;
-            position: relative;
             background-size: cover;
             background-position: center;
+            background-color: rgba(255, 255, 255, 0.14);
+            background-blend-mode: screen;
         }
 
-        .hero-slide::after {
+        .slide::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.55) 100%);
+            background: linear-gradient(
+                135deg,
+                rgba(15, 23, 42, 0.36) 0%,
+                rgba(15, 23, 42, 0.12) 55%,
+                rgba(15, 23, 42, 0.32) 100%
+            );
         }
 
         .hero-content {
             position: absolute;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            color: #fff;
+            inset: 0;
             z-index: 2;
-            width: 100%;
-            padding: 0 20px;
-            animation: fadeUp 0.8s ease;
-        }
-
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
-        }
-
-        .hero-content h1 {
-            font-family: "Playfair Display", serif;
-            font-size: 52px;
-            font-weight: 900;
-            line-height: 1.15;
-            margin-bottom: 8px;
-            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .hero-content p {
-            font-size: 16px;
-            opacity: 0.88;
-            margin-bottom: 28px;
-            font-weight: 300;
-        }
-
-        .hero-search {
             display: flex;
-            align-items: center;
-            background: #fff;
-            border-radius: 50px;
-            padding: 6px 6px 6px 24px;
-            max-width: 560px;
-            margin: 0 auto;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 0 80px 92px;
         }
 
-        .hero-search input {
-            flex: 1;
-            border: none;
-            outline: none;
-            font-size: 15px;
-            color: var(--dark);
-            background: transparent;
-        }
-
-        .hero-search button {
-            padding: 12px 28px;
-            background: #3b9eff;
-            color: #fff;
-            border: none;
-            border-radius: 50px;
-            font-size: 14px;
+        .hero-eyebrow {
+            font-size: 11px;
             font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 18px;
+            opacity: 0;
+            transform: translateY(16px);
+            animation: fadeUp 0.7s 0.2s ease forwards;
         }
 
-        .hero-search button:hover {
-            background: #1a7de0;
+        .hero-title {
+            font-family: "Cormorant Garamond", serif;
+            font-size: clamp(52px, 8.5vw, 112px);
+            font-weight: 700;
+            line-height: 0.93;
+            color: #ffffff;
+            margin-bottom: 24px;
+            opacity: 0;
+            transform: translateY(24px);
+            animation: fadeUp 0.8s 0.35s ease forwards;
+        }
+
+        .hero-sub {
+            max-width: 440px;
+            font-size: 15px;
+            font-weight: 300;
+            line-height: 1.75;
+            color: rgba(255, 255, 255, 0.78);
+            opacity: 0;
+            transform: translateY(16px);
+            animation: fadeUp 0.7s 0.5s ease forwards;
+        }
+
+        .hero-counter {
+            position: absolute;
+            right: 80px;
+            bottom: 92px;
+            z-index: 3;
+            text-align: right;
+        }
+
+        .counter-num {
+            font-family: "Cormorant Garamond", serif;
+            font-size: 44px;
+            font-weight: 600;
+            color: #ffffff;
+            line-height: 1;
+        }
+
+        .counter-bar {
+            width: 28px;
+            height: 1px;
+            margin: 8px 0 8px auto;
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .counter-total {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.55);
+            letter-spacing: 0.1em;
         }
 
         .hero-dots {
             position: absolute;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 8px;
+            left: 80px;
+            bottom: 98px;
             z-index: 3;
+            display: none;
+            gap: 6px;
         }
 
-        .dot {
-            width: 8px;
-            height: 8px;
+        .hero-dot {
+            width: 6px;
+            height: 6px;
+            border: none;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.45);
+            background: rgba(255, 255, 255, 0.3);
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.4s ease;
         }
 
-        .dot.active {
-            background: #fff;
-            width: 24px;
-            border-radius: 4px;
+        .hero-dot.active {
+            width: 28px;
+            border-radius: 3px;
+            background: var(--primary);
         }
 
         .hero-arrow {
@@ -271,609 +261,811 @@
             top: 50%;
             transform: translateY(-50%);
             z-index: 3;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: #fff;
-            width: 44px;
-            height: 44px;
+            width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 50%;
-            font-size: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
             cursor: pointer;
-            backdrop-filter: blur(4px);
-            transition: background 0.2s;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
         }
 
         .hero-arrow:hover {
-            background: rgba(255, 255, 255, 0.35);
+            background: rgba(59, 158, 255, 0.25);
+            border-color: var(--primary);
         }
 
         .hero-arrow.left {
-            left: 20px;
+            left: 32px;
         }
 
         .hero-arrow.right {
-            right: 20px;
+            right: 32px;
         }
 
-        .section {
-            padding: 48px 40px;
-        }
-
-        .container {
-            max-width: 1140px;
-            margin: 0 auto;
-        }
-
-        .section-title {
-            font-family: "Playfair Display", serif;
-            font-size: 26px;
-            font-weight: 700;
-            margin-bottom: 6px;
-            color: var(--dark);
-        }
-
-        .section-sub {
-            font-size: 14px;
-            color: var(--gray);
-            margin-bottom: 28px;
-        }
-
-        .section-header {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            margin-bottom: 28px;
-        }
-
-        .see-all {
-            font-size: 13px;
-            color: var(--red);
-            font-weight: 600;
-            text-decoration: none;
-            padding: 6px 16px;
-            border: 1.5px solid var(--red);
-            border-radius: 50px;
-            transition: all 0.2s;
-        }
-
-        .see-all:hover {
-            background: var(--red);
-            color: #fff;
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .categories {
             background: var(--white);
-            padding: 32px 40px;
             border-bottom: 1px solid var(--border);
+            padding: 36px 56px 40px;
         }
 
-        .cat-grid {
+        .category-grid {
+            max-width: 980px;
+            margin: 0 auto;
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 18px;
         }
 
-        .cat-item {
+        .category-item {
+            width: 128px;
+            padding: 10px 8px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
-            padding: 16px 20px;
-            cursor: pointer;
-            border-radius: var(--radius);
-            transition: all 0.2s;
-            min-width: 96px;
-            text-decoration: none;
+            gap: 12px;
             color: var(--dark);
+            text-decoration: none;
+            border-radius: 18px;
+            transition: transform 0.2s ease, background 0.2s ease;
         }
 
-        .cat-item:hover {
+        .category-item:hover {
             background: var(--light);
             transform: translateY(-3px);
         }
 
-        .cat-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
+        .category-icon {
+            width: 64px;
+            height: 64px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.4px;
-        }
-
-        .cat-icon.red {
-            background: #fff0f2;
-        }
-
-        .cat-icon.blue {
+            border-radius: 18px;
             background: #eff6ff;
+            color: var(--primary);
+            font-size: 28px;
+            box-shadow: inset 0 0 0 1px rgba(59, 158, 255, 0.08);
         }
 
-        .cat-icon.green {
-            background: #f0fdf4;
-        }
-
-        .cat-icon.orange {
-            background: #fff7ed;
-        }
-
-        .cat-icon.purple {
-            background: #faf5ff;
-        }
-
-        .cat-icon.teal {
-            background: #f0fdfa;
-        }
-
-        .cat-item span {
-            font-size: 12px;
+        .category-item span:last-child {
+            font-size: 15px;
             font-weight: 600;
             color: var(--gray);
-            text-align: center;
         }
 
-        .card-row {
+        .section {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 72px 80px;
+        }
+
+        .section-header-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 36px;
+        }
+
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .section-label-bar {
+            width: 28px;
+            height: 2px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        .section-label span {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--primary);
+        }
+
+        .section-title {
+            font-family: "Cormorant Garamond", serif;
+            font-size: clamp(34px, 4vw, 50px);
+            font-weight: 700;
+            line-height: 1.1;
+            color: var(--dark);
+        }
+
+        .section-sub {
+            margin-top: 12px;
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+        .see-all {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding-bottom: 2px;
+            border-bottom: 1px solid var(--primary);
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            transition: gap 0.25s ease;
+        }
+
+        .see-all:hover {
+            gap: 12px;
+        }
+
+        .popular-section .section-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .popular-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: 1.45fr 1fr;
+            grid-template-rows: repeat(2, minmax(0, 1fr));
             gap: 20px;
+            min-height: 560px;
         }
 
-        .attraction-card {
+        .popular-card {
+            display: flex;
+            flex-direction: column;
             border-radius: var(--radius);
             overflow: hidden;
             box-shadow: var(--shadow);
             background: var(--white);
             border: 1px solid var(--border);
-            transition: all 0.3s;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .attraction-card:hover {
-            box-shadow: var(--shadow-hover);
+        .popular-card.featured {
+            grid-row: span 2;
+        }
+
+        .popular-card:hover {
             transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(59, 158, 255, 0.20);
         }
 
-        .card-rel {
+        .popular-media {
             position: relative;
         }
 
-        .rank-badge {
+        .popular-rank-badge {
             position: absolute;
             top: 14px;
             left: 14px;
-            background: #3b9eff;
-            color: #fff;
-            font-weight: 700;
-            font-size: 13px;
+            z-index: 1;
             padding: 4px 12px;
             border-radius: 50px;
-            z-index: 1;
+            background: var(--primary);
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
         }
 
-        .card-img-placeholder {
+        .popular-image {
             width: 100%;
             height: 200px;
             background-size: cover;
             background-position: center;
         }
 
-        .card-body {
+        .popular-card.featured .popular-image {
+            height: 380px;
+        }
+
+        .popular-body {
             padding: 16px 18px 20px;
         }
 
-        .card-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 50px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            background: #eff6ff;
-            color: #1a7de0;
-        }
-
-        .card-title {
+        .popular-title {
             font-size: 16px;
             font-weight: 600;
+            line-height: 1.4;
             margin-bottom: 6px;
             color: var(--dark);
-            line-height: 1.4;
         }
 
-        .card-location {
+        .popular-card.featured .popular-title {
+            font-size: 22px;
+        }
+
+        .popular-location {
             font-size: 13px;
             color: var(--gray);
         }
 
-        .card-stars {
+        .popular-rating {
             display: flex;
             align-items: center;
             gap: 6px;
             margin-top: 10px;
             font-size: 13px;
-            color: var(--gold);
+            color: var(--accent);
             font-weight: 600;
         }
 
+        .popular-rating .popular-reviews {
+            color: var(--gray);
+            font-weight: 400;
+        }
+
         .community-section {
-            background: var(--light);
+            background: var(--dark);
+        }
+
+        .community-inner {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 72px 80px;
+        }
+
+        .community-section .section-title {
+            color: #ffffff;
         }
 
         .post-list {
             display: flex;
             flex-direction: column;
-            gap: 1px;
-            background: var(--border);
-            border-radius: var(--radius);
-            overflow: hidden;
         }
 
         .post-item {
-            background: var(--white);
-            padding: 20px 24px;
-            display: flex;
+            position: relative;
+            display: grid;
+            grid-template-columns: 56px 108px 1fr auto;
             align-items: center;
-            gap: 20px;
+            gap: 28px;
+            padding: 26px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            color: #ffffff;
             text-decoration: none;
-            color: var(--dark);
-            transition: background 0.15s;
         }
 
-        .post-item:hover {
-            background: #f0f7ff;
+        .post-item:first-child {
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
         }
 
-        .post-category {
-            padding: 4px 12px;
+        .post-item::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: -80px;
+            bottom: 0;
+            left: -80px;
+            background: rgba(59, 158, 255, 0.04);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .post-item:hover::before {
+            opacity: 1;
+        }
+
+        .post-num {
+            position: relative;
+            z-index: 1;
+            font-family: "Cormorant Garamond", serif;
+            font-size: 30px;
+            font-weight: 600;
+            line-height: 1;
+            color: rgba(255, 255, 255, 0.12);
+        }
+
+        .post-tag {
+            position: relative;
+            z-index: 1;
+            display: inline-flex;
+            justify-content: center;
+            padding: 5px 13px;
             border-radius: 50px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
-            white-space: nowrap;
-            flex-shrink: 0;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
         }
 
         .cat-review {
-            background: #eff6ff;
-            color: #3b9eff;
+            background: rgba(59, 158, 255, 0.15);
+            color: var(--accent);
         }
 
         .cat-food {
-            background: #e0f2fe;
-            color: #0284c7;
+            background: rgba(56, 189, 248, 0.12);
+            color: #7dd3fc;
         }
 
         .cat-tip {
-            background: #f0f9ff;
-            color: #0369a1;
+            background: rgba(100, 220, 160, 0.12);
+            color: #6ee7b7;
         }
 
         .post-main {
-            flex: 1;
+            position: relative;
+            z-index: 1;
         }
 
         .post-title {
             font-size: 15px;
             font-weight: 500;
-            margin-bottom: 4px;
+            line-height: 1.45;
+            margin-bottom: 5px;
+            transition: color 0.2s ease;
+        }
+
+        .post-item:hover .post-title {
+            color: var(--accent);
         }
 
         .post-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
             font-size: 12px;
-            color: var(--gray);
-        }
-
-        .post-right {
-            text-align: right;
-            flex-shrink: 0;
+            color: rgba(255, 255, 255, 0.36);
+            font-weight: 300;
         }
 
         .post-comments {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 4px;
             font-size: 12px;
-            color: var(--gray);
-        }
-
-        .banner-strip {
-            background: linear-gradient(135deg, #3b9eff 0%, #60c8f5 100%);
-            padding: 18px 40px;
-            text-align: center;
-            color: #fff;
-            font-size: 14px;
-            font-weight: 500;
+            color: rgba(255, 255, 255, 0.3);
+            white-space: nowrap;
         }
 
         footer {
-            background: #f8fafc;
-            border-top: 1px solid var(--border);
-            padding: 36px 40px 28px;
-            font-size: 12px;
-            color: var(--gray);
+            background: #07090f;
+            padding: 56px 80px 36px;
         }
 
-        .footer-top,
-        .footer-info,
-        .footer-links,
-        .footer-copy {
-            max-width: 1140px;
+        .footer-inner {
+            max-width: 1440px;
             margin: 0 auto;
         }
 
         .footer-top {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+            align-items: flex-start;
+            padding-bottom: 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 24px;
         }
 
         .footer-logo {
             font-family: "Playfair Display", serif;
-            font-size: 20px;
+            font-size: 24px;
             font-weight: 900;
-            color: #1a7de0;
+            letter-spacing: -0.02em;
+            color: var(--primary);
+        }
+
+        .footer-logo span {
+            color: #ffffff;
+        }
+
+        .footer-tagline {
+            margin-top: 6px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.28);
+            font-weight: 300;
         }
 
         .footer-info {
-            line-height: 1.9;
-            color: #94a3b8;
-            font-size: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
+            font-size: 11px;
+            line-height: 2;
+            color: rgba(255, 255, 255, 0.2);
         }
 
         .footer-links {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 6px 0;
+            margin-bottom: 24px;
         }
 
         .footer-links a {
+            padding: 0 12px 0 0;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            line-height: 1;
+            color: rgba(255, 255, 255, 0.32);
             text-decoration: none;
-            color: #64748b;
+            font-size: 11px;
+            transition: color 0.15s ease;
+        }
+
+        .footer-links a:last-child {
+            border-right: none;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
         }
 
         .footer-copy {
             font-size: 11px;
-            color: #cbd5e1;
-        }
-
-        .fab {
-            position: fixed;
-            bottom: 36px;
-            right: 36px;
-            width: 56px;
-            height: 56px;
-            background: #3b9eff;
-            color: #fff;
-            border-radius: 50%;
-            font-size: 26px;
-            text-decoration: none;
-            box-shadow: 0 6px 24px rgba(59, 158, 255, 0.4);
-            z-index: 99;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .fab:hover {
-            background: #1a7de0;
-            transform: scale(1.1);
+            letter-spacing: 0.04em;
+            color: rgba(255, 255, 255, 0.15);
         }
 
         @media (max-width: 1024px) {
-            .card-row {
+            .section,
+            .community-inner,
+            footer,
+            .categories {
+                padding-left: 40px;
+                padding-right: 40px;
+            }
+
+            .hero-content {
+                padding: 0 48px 72px;
+            }
+
+            .popular-grid {
                 grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                min-height: 0;
+            }
+
+            .popular-card.featured {
+                grid-row: auto;
+            }
+
+            .popular-card.featured .popular-image {
+                height: 240px;
             }
         }
 
         @media (max-width: 768px) {
             header {
-                padding: 16px 20px;
-                gap: 12px;
+                padding: 16px 24px;
                 height: auto;
-                min-height: 64px;
+                min-height: 76px;
                 flex-wrap: wrap;
+                justify-content: center;
             }
 
-            .header-search {
-                order: 3;
-                margin: 0;
-                max-width: none;
+            .header-nav {
                 width: 100%;
+                justify-content: center;
             }
 
-            .hero-content h1 {
-                font-size: 36px;
+            .hero {
+                min-height: 540px;
+            }
+
+            .hero-content {
+                padding: 0 24px 60px;
+            }
+
+            .hero-counter {
+                display: none;
+            }
+
+            .hero-title {
+                font-size: 46px;
             }
 
             .section,
-            .categories,
-            .banner-strip,
-            footer {
-                padding-left: 20px;
-                padding-right: 20px;
+            .community-inner,
+            footer,
+            .categories {
+                padding-left: 24px;
+                padding-right: 24px;
             }
 
-            .section-header {
+            .section-header-row,
+            .footer-top {
                 flex-direction: column;
                 align-items: flex-start;
+            }
+
+            .post-item {
+                grid-template-columns: 40px 1fr;
                 gap: 16px;
+            }
+
+            .post-tag,
+            .post-comments {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-arrow {
+                display: none;
+            }
+
+            .hero-dots {
+                left: 24px;
+                bottom: 70px;
+            }
+
+            .hero-title {
+                font-size: 38px;
+            }
+
+            .category-item {
+                width: calc(50% - 10px);
             }
         }
     </style>
 </head>
 <body>
 <header>
-    <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
+    <a class="logo" th:href="@{/}" href="/">Korea<span>Point</span></a>
 
-    <div class="header-search">
-        <input type="text" aria-label="Search" placeholder="Search attractions, restaurants, tips...">
-        <span class="search-icon">FIND</span>
-    </div>
-
-    <nav class="header-nav">
-        <button class="lang-btn active" type="button" onclick="setLang('EN')">EN</button>
-        <button class="lang-btn" type="button" onclick="setLang('KR')">KR</button>
-        <button class="login-btn" type="button" onclick="handleLogin()">Google Login</button>
+    <nav class="header-nav" aria-label="Main menu">
+        <a href="#categorySection">Category</a>
     </nav>
+
+    <div class="lang-toggle">
+        <a class="lang-btn active" th:href="@{/}" href="/">EN</a>
+        <a class="lang-btn" th:href="@{/ko}" href="/ko">KR</a>
+    </div>
 </header>
 
 <section class="hero">
-    <div class="hero-slides" id="heroSlides">
-        <div class="hero-slide"
+    <div class="slider-track" id="sliderTrack">
+        <div class="slide"
              th:each="slide : ${slides}"
-             th:style="|background-image:url('${slide.imageUrl}')|"></div>
+             th:style="|background-image:url('${slide.imageUrl}')|"
+             style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/c/c3/KOCIS_Korea_BlueSky_In_Seoul_03_%289947223046%29.jpg')"></div>
     </div>
 
-    <button class="hero-arrow left" type="button" onclick="moveSlide(-1)" aria-label="Previous slide">&lt;</button>
-    <button class="hero-arrow right" type="button" onclick="moveSlide(1)" aria-label="Next slide">&gt;</button>
-
+    <button class="hero-arrow left" type="button" onclick="moveSlide(-1)" aria-label="Previous slide">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M15 18l-6-6 6-6"></path>
+        </svg>
+    </button>
+    <button class="hero-arrow right" type="button" onclick="moveSlide(1)" aria-label="Next slide">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 18l6-6-6-6"></path>
+        </svg>
+    </button>
     <div class="hero-content">
-        <h1 th:text="${heroTitle}">Discover Korea</h1>
-        <p th:text="${heroSubtitle}">Your gateway to the best attractions, food and travel tips.</p>
-        <form class="hero-search" th:action="@{/tourism}" method="get">
-            <input type="text" name="keyword" aria-label="Destination" placeholder="Where do you want to go?">
-            <button type="submit">Search</button>
-        </form>
+        <p class="hero-eyebrow">The Korea Travel Guide</p>
+        <h1 class="hero-title">
+            <span th:text="${heroTitle}">Discover</span><br>
+            <em th:text="${heroSubTitle}">Korea</em>
+        </h1>
+        <p class="hero-sub" th:text="${heroDescription}">
+            Your curated guide to Korea's finest attractions, hidden dining gems, and insider travel tips.
+        </p>
     </div>
-
     <div class="hero-dots" id="heroDots">
-        <div class="dot"
-             th:each="slide, iter : ${slides}"
-             th:classappend="${iter.index == 0} ? ' active' : ''"
-             th:onclick="|goSlide(${iter.index})|"></div>
+        <button class="hero-dot"
+                type="button"
+                th:each="slide, iter : ${slides}"
+                th:classappend="${iter.index == 0} ? ' active' : ''"
+                th:onclick="|goSlide(${iter.index})|"
+                th:attr="aria-label=|Slide ${iter.count}|"
+                aria-label="Slide 1"></button>
+    </div>
+
+    <div class="hero-counter">
+        <div class="counter-num" id="counterNum">01</div>
+        <div class="counter-bar"></div>
+        <div class="counter-total" id="counterTotal">03</div>
     </div>
 </section>
 
-<div class="categories">
-    <div class="container">
-        <div class="cat-grid">
-            <a class="cat-item" th:each="category : ${categories}" th:href="${category.link}">
-                <div class="cat-icon"
-                     th:classappend="| ${category.colorClass}|"
-                     th:text="${category.icon}">AT</div>
-                <span th:text="${category.label}">Attractions</span>
-            </a>
-        </div>
-    </div>
-</div>
-
-<section class="section">
-    <div class="container">
-        <div class="section-header">
-            <div>
-                <h2 class="section-title">Popular Attractions</h2>
-                <p class="section-sub">Top 3 places visitors love most</p>
-            </div>
-            <a class="see-all" th:href="@{/tourism}">See all</a>
-        </div>
-
-        <div class="card-row">
-            <article class="attraction-card" th:each="attraction : ${attractions}">
-                <div class="card-rel">
-                    <div class="rank-badge" th:text="|TOP ${attraction.rank}|">TOP 1</div>
-                    <div class="card-img-placeholder"
-                         th:style="|background-image:url('${attraction.imageUrl}')|"></div>
-                </div>
-                <div class="card-body">
-                    <span class="card-badge" th:text="${attraction.badge}">Palace</span>
-                    <div class="card-title" th:text="${attraction.title}">Gyeongbokgung Palace</div>
-                    <div class="card-location" th:text="${attraction.location}">Jongno-gu, Seoul</div>
-                    <div class="card-stars">
-                        <span th:text="${attraction.rating}">4.9</span>
-                        <span style="color:var(--gray);font-weight:400" th:text="|(${attraction.reviews})|">(2.3k)</span>
-                    </div>
-                </div>
-            </article>
-        </div>
+<section class="categories" id="categorySection">
+    <div class="category-grid">
+        <a class="category-item" th:href="@{/tour/all(category='food')}" href="/tour/all?category=food">
+            <span class="category-icon">🍽</span>
+            <span>Food</span>
+        </a>
+        <a class="category-item" th:href="@{/tour/all(category='cafe')}" href="/tour/all?category=cafe">
+            <span class="category-icon">☕</span>
+            <span>Cafe</span>
+        </a>
+        <a class="category-item" th:href="@{/tour/all(category='tour')}" href="/tour/all?category=tour">
+            <span class="category-icon">🗺</span>
+            <span>Tour</span>
+        </a>
+        <a class="category-item" th:href="@{/transport/search}" href="/transport/search">
+            <span class="category-icon">🚆</span>
+            <span>Transport</span>
+        </a>
+        <a class="category-item" th:href="@{/community/post-list}" href="/community/post-list">
+            <span class="category-icon">💬</span>
+            <span>Community</span>
+        </a>
     </div>
 </section>
 
-<section class="section community-section">
-    <div class="container">
-        <div class="section-header">
-            <div>
-                <h2 class="section-title">Community</h2>
-                <p class="section-sub">Latest travel reviews and tips from visitors</p>
+<section class="section popular-section">
+    <div class="section-header">
+        <div>
+            <h2 class="section-title">Popular Attractions</h2>
+            <p class="section-sub">Top 3 places visitors love most</p>
+        </div>
+        <a class="see-all" th:href="@{/tour/all}" href="/tour/all">See all</a>
+    </div>
+
+    <div class="popular-grid">
+        <article class="popular-card featured"
+                 th:if="${!#lists.isEmpty(attractions)}"
+                 th:with="attraction=${attractions[0]}">
+            <div class="popular-media">
+                <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 1</div>
+                <div class="popular-image"
+                     th:style="|background-image:url('${attraction.imageUrl}')|"
+                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Gyeongbokgung_Palace_Geunjeongjeon.jpg/800px-Gyeongbokgung_Palace_Geunjeongjeon.jpg')"></div>
             </div>
-            <a class="see-all" th:href="@{/community}">See all</a>
+            <div class="popular-body">
+                <div class="popular-title" th:text="${attraction.title}">Gyeongbokgung Palace</div>
+                <div class="popular-location" th:text="${attraction.location}">Jongno-gu, Seoul</div>
+                <div class="popular-rating">
+                    <span th:text="${attraction.rating}">4.9</span>
+                    <span class="popular-reviews" th:text="|(${attraction.reviews})|">(2.3k)</span>
+                </div>
+            </div>
+        </article>
+
+        <article class="popular-card"
+                 th:each="attraction, iter : ${attractions}"
+                 th:if="${!iter.first}">
+            <div class="popular-media">
+                <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 2</div>
+                <div class="popular-image"
+                     th:style="|background-image:url('${attraction.imageUrl}')|"
+                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Gyeongbokgung_Palace_Geunjeongjeon.jpg/800px-Gyeongbokgung_Palace_Geunjeongjeon.jpg')"></div>
+            </div>
+            <div class="popular-body">
+                <div class="popular-title" th:text="${attraction.title}">Bukchon Hanok Village</div>
+                <div class="popular-location" th:text="${attraction.location}">Jongno-gu, Seoul</div>
+                <div class="popular-rating">
+                    <span th:text="${attraction.rating}">4.8</span>
+                    <span class="popular-reviews" th:text="|(${attraction.reviews})|">(1.8k)</span>
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+
+<section class="community-section">
+    <div class="community-inner">
+        <div class="section-header-row">
+            <div>
+                <div class="section-label">
+                    <div class="section-label-bar"></div>
+                    <span>From the Community</span>
+                </div>
+                <h2 class="section-title">Travel Stories &amp; Tips</h2>
+                <p class="section-sub">Latest travel reviews and practical tips from visitors</p>
+            </div>
+            <a class="see-all" th:href="@{/community/post-list}" href="/community/post-list">See all</a>
         </div>
 
         <div class="post-list">
-            <a class="post-item" th:each="post : ${posts}" th:href="@{/community}">
-                <span class="post-category"
-                      th:classappend="| ${post.categoryClass}|"
+            <a class="post-item"
+               th:each="post, iter : ${posts}"
+               th:href="@{/community/post/{id}(id=${post.id})}"
+               href="/community/post/1">
+                <span class="post-num" th:text="${iter.count < 10 ? '0' + iter.count : iter.count}">01</span>
+                <span class="post-tag cat-review"
+                      th:if="${post.categoryClass == 'cat-review'}"
                       th:text="${post.category}">Review</span>
+                <span class="post-tag cat-food"
+                      th:if="${post.categoryClass == 'cat-food'}"
+                      th:text="${post.category}">Food</span>
+                <span class="post-tag cat-tip"
+                      th:if="${post.categoryClass == 'cat-tip'}"
+                      th:text="${post.category}">Tip</span>
                 <div class="post-main">
-                    <div class="post-title" th:text="${post.title}">Sample title</div>
-                    <div class="post-meta" th:text="|by ${post.author} - ${post.timeAgo}|">by Traveller - 2 hours ago</div>
+                    <div class="post-title" th:text="${post.title}">Sample post title</div>
+                    <div class="post-meta">
+                        <span>by</span>
+                        <span th:text="${post.author}">Author</span>
+                        <span>·</span>
+                        <span th:text="${post.timeAgo}">2 hours ago</span>
+                    </div>
                 </div>
-                <div class="post-right">
-                    <div class="post-comments" th:text="|${post.comments} comments|">12 comments</div>
+                <div class="post-comments">
+                    <span>Comments</span>
+                    <span th:text="${post.comments}">12</span>
                 </div>
             </a>
         </div>
     </div>
 </section>
 
-<div class="banner-strip">
-    <strong>Korea Point</strong> helps international visitors discover where to go, what to eat, and how to move around Korea.
-</div>
-
 <footer>
-    <div class="footer-top">
-        <div class="footer-logo">KoreaPoint</div>
-    </div>
+    <div class="footer-inner">
+        <div class="footer-top">
+            <div>
+                <div class="footer-logo">Korea<span>Point</span></div>
+                <div class="footer-tagline">Your gateway to discovering Korea</div>
+            </div>
+        </div>
 
-    <div class="footer-info">
-        <p>KoreaPoint Travel Guide Platform</p>
-        <p>Email: help@koreapoint.com</p>
-        <p>Customer Center: 1644-0000</p>
-    </div>
+        <div class="footer-info">
+            <p>KoreaPoint Travel Guide Platform</p>
+            <p>Email: help@koreapoint.com</p>
+            <p>Customer Center: 1644-0000</p>
+        </div>
 
-    <div class="footer-links">
-        <a th:href="@{/}">Home</a>
-        <a th:href="@{/tourism}">Tourism</a>
-        <a th:href="@{/transport}">Transport</a>
-        <a th:href="@{/community}">Community</a>
-    </div>
+        <div class="footer-links">
+            <a th:href="@{/}" href="/">Home</a>
+            <a th:href="@{/tour/all}" href="/tour/all">Tourism</a>
+            <a th:href="@{/transport/search}" href="/transport/search">Transport</a>
+            <a th:href="@{/community/post-list}" href="/community/post-list">Community</a>
+        </div>
 
-    <div class="footer-copy">Copyright 2025 KoreaPoint. All rights reserved.</div>
+        <div class="footer-copy">Copyright 2025 KoreaPoint. All rights reserved.</div>
+    </div>
 </footer>
-
-<a class="fab" th:href="@{/community}" title="Open community">+</a>
 
 <script>
     let current = 0;
-    const slides = document.getElementById("heroSlides");
-    const dots = document.querySelectorAll(".dot");
+    const track = document.getElementById("sliderTrack");
+    const dots = document.querySelectorAll(".hero-dot");
+    const counterEl = document.getElementById("counterNum");
+    const totalEl = document.getElementById("counterTotal");
     const total = dots.length;
+    let autoPlay = null;
 
-    function goSlide(n) {
-        current = n;
-        slides.style.transform = `translateX(-${current * 100}%)`;
-        dots.forEach((dot, index) => dot.classList.toggle("active", index === current));
+    if (totalEl) {
+        totalEl.textContent = String(total).padStart(2, "0");
+    }
+
+    function goSlide(index) {
+        if (total === 0) return;
+        current = index;
+        track.style.transform = `translateX(-${current * 100}%)`;
+        dots.forEach((dot, dotIndex) => dot.classList.toggle("active", dotIndex === current));
+        if (counterEl) {
+            counterEl.textContent = String(current + 1).padStart(2, "0");
+        }
+        if (total > 1) {
+            clearInterval(autoPlay);
+            autoPlay = setInterval(() => moveSlide(1), 5000);
+        }
     }
 
     function moveSlide(direction) {
+        if (total === 0) return;
         goSlide((current + direction + total) % total);
     }
 
     if (total > 1) {
-        setInterval(() => moveSlide(1), 4500);
-    }
-
-    function setLang(lang) {
-        document.querySelectorAll(".lang-btn").forEach((button) => {
-            button.classList.toggle("active", button.textContent === lang);
-        });
-    }
-
-    function handleLogin() {
-        alert("Google Login will be connected to Spring Security OAuth later.");
+        autoPlay = setInterval(() => moveSlide(1), 5000);
     }
 </script>
 </body>
 </html>
+
+
+
