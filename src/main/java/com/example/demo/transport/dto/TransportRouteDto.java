@@ -13,6 +13,8 @@ public class TransportRouteDto {
     private double walkTime;
     private String departTime;
     private List<TransportStepDto> steps;
+    private Double startLat;
+    private Double startLng;
 
     public String getRouteId() { return routeId; }
     public void setRouteId(String routeId) { this.routeId = routeId; }
@@ -32,4 +34,8 @@ public class TransportRouteDto {
     public void setDepartTime(String departTime) { this.departTime = departTime; }
     public List<TransportStepDto> getSteps() { return steps; }
     public void setSteps(List<TransportStepDto> steps) { this.steps = steps; }
+    public Double getStartLat() { return startLat; }
+    public void setStartLat(Double startLat) { this.startLat = startLat; }
+    public Double getStartLng() { return startLng; }
+    public void setStartLng(Double startLng) { this.startLng = startLng; }
 }

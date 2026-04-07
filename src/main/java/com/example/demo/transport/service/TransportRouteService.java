@@ -101,11 +101,19 @@ public class TransportRouteService {
         double[] endCoords = getTransportCoords(cleanEnd);
         if (endCoords == null) return List.of();
 
-        return searchAndClassify(
+        List<TransportRouteDto> result = searchAndClassify(
                 lng, lat,
                 endCoords[0], endCoords[1],
                 "현재위치", end
         );
+
+        //GPS 좌표 저장
+        result.forEach(dto -> {
+            dto.setStartLat(lat);
+            dto.setStartLng(lng);
+        });
+
+        return result;
     }
 
     // -----------------------------------------------
