@@ -140,7 +140,6 @@
         .result-header { padding: 20px 0 12px; font-size: 13px; color: var(--gray); }
         .result-header b { color: var(--dark); }
 
-        /* ✅ 다시 검색 링크 */
         .re-search {
             display: inline-block; margin-bottom: 8px;
             font-size: 13px; color: var(--blue);
@@ -159,9 +158,11 @@
             transform: translateY(-2px);
         }
         .route-type { font-size: 12px; font-weight: 700; color: var(--blue); margin-bottom: 8px; }
-        /* route-time small 수정 */
+
+        /* 시간 표시 - small도 같은 크기/굵기 */
         .route-time { font-size: 28px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
-        .route-time small { font-size: 20px; font-weight: 700; color: var(--dark); }
+        .route-time small { font-size: 28px; font-weight: 700; color: var(--dark); }
+
         .route-info { font-size: 13px; color: var(--gray); margin-bottom: 8px; }
         .route-stations { font-size: 12px; color: #94a3b8; margin-bottom: 10px; }
         .step-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
@@ -264,8 +265,6 @@
 
     <!-- 검색 결과 -->
     <div th:if="${routes != null and !#lists.isEmpty(routes)}">
-
-        <!-- 다시 검색 링크 -->
         <a class="re-search" th:href="@{/transport/search}">← 다시 검색하기</a>
 
         <div class="result-header">
@@ -321,7 +320,6 @@
     <div th:if="${routes == null and error == null}">
 
         <div th:if="${recentRoutes != null and !#lists.isEmpty(recentRoutes)}">
-            <!-- 최근 검색 헤더 + 전체 삭제 -->
             <div style="display:flex; align-items:center; justify-content:space-between; margin: 24px 0 12px;">
                 <div class="section-title">🕐 최근 검색</div>
                 <button onclick="clearAllHistory()"
@@ -331,7 +329,6 @@
                 </button>
             </div>
 
-            <!-- 개별 삭제 버튼 추가 -->
             <div th:each="r : ${recentRoutes}" class="recent-card"
                  th:id="'recent-' + ${r.id}"
                  th:data-start="${r.startPlace}"
@@ -369,16 +366,16 @@
     const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
     let acTimer = null;
 
-    // 분 → 시간 변환
+    // 분 → 시간 변환 (small도 같은 크기)
     function formatMinutes(min) {
         if (min >= 60) {
             const h = Math.floor(min / 60);
             const m = min % 60;
             return m > 0
-                ? `<span>${h}시간 ${m}</span><small>분</small>`
+                ? `<span>${h}시간 ${m}분</span>`
                 : `<span>${h}시간</span>`;
         }
-        return `<span>${min}</span><small>분</small>`;
+        return `<span>${min}분</span>`;
     }
 
     function applyTimeFormat() {
@@ -489,9 +486,9 @@
         }
     }
 
+    // 선택한 명칭 그대로 입력창에 표시
     function selectAc(inputId, listId, name) {
-        const cleanName = name.split(' ')[0].trim();
-        document.getElementById(inputId).value = cleanName;
+        document.getElementById(inputId).value = name;
         document.getElementById(listId).classList.remove('show');
     }
 
