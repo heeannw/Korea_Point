@@ -73,8 +73,8 @@
     .popup-meta{font-size:12px;color:var(--gray);margin-bottom:8px}
     .popup-btn{display:block;width:100%;padding:8px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;text-align:center;text-decoration:none}
     .popup-btn:hover{background:var(--blue-dk)}
-    .detail-panel{position:absolute;inset:0;background:#fff;z-index:50;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto}
-    .detail-panel.open{transform:translateX(0)}
+    .detail-panel{position:absolute;inset:0;background:#fff;z-index:50;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none;}
+    .detail-panel.open{transform:translateX(0); pointer-events:auto;}
     .dp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:5}
     .dp-back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px;line-height:1}
     .dp-title{font-size:16px;font-weight:700;flex:1}
@@ -154,18 +154,24 @@
       </div>
     </div>
     <div class="place-list" id="placeList"></div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;">
+      <button type="button" onclick="getLocation()"
+              style="width:100%;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        📍 My Location
+      </button>
+    </div>
   </div>
 
   <div class="map-area" id="mapArea">
     <!-- ✅ 카카오맵 div -->
-    <div id="kakaoMap" style="position:absolute;inset:0;z-index:1;"></div>
+    <div id="kakaoMap" style="position:absolute;inset:0;z-index:0;"></div>
 
     <div class="map-controls" style="z-index:30;">
       <div class="mc">＋</div>
       <div class="mc">－</div>
     </div>
 
-    <button class="loc-btn" onclick="getLocation()">📍 My Location</button>
+
 
     <div class="map-popup" id="mapPopup">
       <div class="popup-img" id="popupImg">
@@ -208,6 +214,9 @@
   const userLat = /*[[${userlat}]]*/ 37.5665;
   const userLon = /*[[${userlon}]]*/ 126.9780;
   const PLACES  = /*[[${list}]]*/ [];
+
+  const centerLat = /*[[${centerLat}]]*/ 37.5665;
+  const centerLon = /*[[${centerLon}]]*/ 126.9780;
 </script>
 
 <!-- ✅ JS 로직 -->
@@ -216,10 +225,11 @@
   let activeSort = 'recommended';
   let activePinId = null;
   let currentPopup = null;
+  let map;
 
   function typeName(type) {
-    const map = {12:'문화시설', 14:'박물관', 15:'축제', 25:'체험관광', 28:'자연', 38:'쇼핑'};
-    return map[type] ?? '기타';
+    const typemap = {12:'문화시설', 14:'박물관', 15:'축제', 25:'체험관광', 28:'자연', 38:'쇼핑'};
+    return typemap[type] ?? '기타';
   }
 
   function distStr(d) {
@@ -285,6 +295,13 @@
   function selectPlace(id) {
     activePinId = id;
     render();
+
+    const p = PLACES.find(x => x.id === id);
+    if (p && p.lat && p.lng && map) {
+      const moveLatLng = new kakao.maps.LatLng(p.lat, p.lng);
+      map.panTo(moveLatLng);
+    }
+
     document.getElementById('card-' + id)?.scrollIntoView({behavior:'smooth', block:'nearest'});
     showPopup(id);
   }
@@ -370,7 +387,11 @@
   }
 
   document.getElementById('mapArea').addEventListener('click', function(e) {
-    if (!e.target.closest('.map-popup') && !e.target.closest('.detail-panel')) {
+    if (!e.target.closest('.map-popup') &&
+            !e.target.closest('.detail-panel') &&
+            !e.target.closest('.place-card') &&
+            !e.target.closest('.loc-btn') &&  // ✅ 추가
+            !e.target.closest('.map-controls')) { // ✅ 추가
       closePopup();
     }
   });
@@ -393,8 +414,8 @@
 <script th:src="'//dapi.kakao.com/v2/maps/sdk.js?appkey=' + ${kakaoKey} + '&autoload=false'"></script>
 <script>
   kakao.maps.load(function() {
-    const map = new kakao.maps.Map(document.getElementById('kakaoMap'), {
-      center: new kakao.maps.LatLng(userLat, userLon),
+    map = new kakao.maps.Map(document.getElementById('kakaoMap'), {
+      center: new kakao.maps.LatLng(centerLat, centerLon),
       level: 5
     });
 

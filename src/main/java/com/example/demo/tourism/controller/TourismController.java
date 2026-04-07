@@ -3,7 +3,6 @@ package com.example.demo.tourism.controller;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.example.demo.tourism.service.TourismService;
 import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -17,69 +16,16 @@ public class TourismController {
 
     @Autowired
     TourismService tourismService;
+
     @Value("${TOURISM_KAKAO_API_KEY}")
     private String kakaoKey;
 
-//    @GetMapping("/tour/test")
-//    public List<Map<String, Object>> testRecommend() {
-//
-//        List<Map<String, Object>> candidates = new ArrayList<>();
-//
-//        // 관광지 1
-//        Map<String, Object> place1 = new HashMap<>();
-//        place1.put("title", "경복궁");
-//        place1.put("type", "12");
-//        place1.put("lat", 37.5796);
-//        place1.put("lng", 126.9770);
-//        place1.put("rating", 4.7);
-//        place1.put("user_ratings_total", 52000);
-//
-//        List<Map<String, String>> reviews1 = new ArrayList<>();
-//        Map<String, String> r1 = new HashMap<>();
-//        r1.put("text", "Amazing place and beautiful palace");
-//        r1.put("language", "en");
-//        r1.put("rating", "5");
-//        reviews1.add(r1);
-//
-//        Map<String, String> r2 = new HashMap<>();
-//        r2.put("text", "정말 멋진 곳이에요");
-//        r2.put("language", "ko");
-//        r2.put("rating", "5");
-//        reviews1.add(r2);
-//
-//        place1.put("reviews", reviews1);
-//        candidates.add(place1);
-//
-//        // 관광지 2
-//        Map<String, Object> place2 = new HashMap<>();
-//        place2.put("title", "남산서울타워");
-//        place2.put("type", "28");
-//        place2.put("lat", 37.5512);
-//        place2.put("lng", 126.9882);
-//        place2.put("rating", 4.5);
-//        place2.put("user_ratings_total", 43000);
-//
-//        List<Map<String, String>> reviews2 = new ArrayList<>();
-//        Map<String, String> r3 = new HashMap<>();
-//        r3.put("text", "Wonderful view and very impressive");
-//        r3.put("language", "en");
-//        r3.put("rating", "5");
-//        reviews2.add(r3);
-//
-//        place2.put("reviews", reviews2);
-//        candidates.add(place2);
-//
-//        // 시청 근처 좌표 예시
-//        double userLat = 37.5665;
-//        double userLng = 126.9780;
-//
-//        return tourismService.recommend(candidates, userLat, userLng, 5.0, 10);
-//    }
 
     @RequestMapping("/tour/all")
     public String tourAll(Model model)  {
 
-        model.addAttribute("kakaoKey","cd0022ebe44b8280a5811612a2069dd1");
+        model.addAttribute("kakaoKey", kakaoKey);
+
         return "tourism/explore";
     }
 
@@ -91,16 +37,31 @@ public class TourismController {
         List<TourPlaceDto> list = null;
         list = tourismService.searchKeyword(keyword);
 
-        if(list.isEmpty() ){
+        if(list.isEmpty() || keyword.isEmpty() ){
             list = tourismService.analyzeLocation(37.5665,126.9780);
         }
+        Double latsum = 0.0;
+        Double lonsum = 0.0;
 
-        //System.out.println("tour / " + list.get(0).getTitle());
-        //model.addAttribute("list",list);
-        java.lang.Double userlat = (Double)session.getAttribute("userlat");
-        session.getAttribute("userlon");
+        for(TourPlaceDto p : list){
+            latsum += p.getLat();
+            lonsum += p.getLng();
+        }
+
+        Double centerLat = latsum/list.size();
+        Double centerLon = lonsum/list.size();
+
+        model.addAttribute("centerLat",centerLat);
+        model.addAttribute("centerLon",centerLon);
+
+        Double userlat = (Double)session.getAttribute("userlat");
+        Double userlon =  (Double)session.getAttribute("userlon");
+
+        model.addAttribute("userlat",userlat);
+        model.addAttribute("userlon",userlon);
+
         model.addAttribute("list",list);
-        model.addAttribute("kakaoKey","cd0022ebe44b8280a5811612a2069dd1");
+        model.addAttribute("kakaoKey",kakaoKey);
         return "tourism/explore";
     }
 
@@ -112,9 +73,13 @@ public class TourismController {
         model.addAttribute("list", nearbyList);
         session.setAttribute("userlat",lat);
         session.setAttribute("userlon",lon);
+
+        model.addAttribute("centerLat",lat);
+        model.addAttribute("centerLon",lon);
+
         model.addAttribute("userlat",lat);
         model.addAttribute("userlon",lon);
-        model.addAttribute("kakaoKey","cd0022ebe44b8280a5811612a2069dd1");
+        model.addAttribute("kakaoKey",kakaoKey);
 
 
         return "tourism/explore";
