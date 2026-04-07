@@ -1,7 +1,6 @@
 package com.example.demo.transport.controller;
 
 import com.example.demo.transport.dto.TransportRouteDto;
-import com.example.demo.transport.entity.Route;
 import com.example.demo.transport.repository.RouteRepository;
 import com.example.demo.transport.service.CongestionMlService;
 import com.example.demo.transport.service.TransportRouteService;
@@ -33,25 +32,35 @@ public class TransportDetailController {
         return "home/home";
     }
 
-    // 상세 페이지
     @GetMapping("/transport/detail")
-    public String transportDetail(@RequestParam(required = false) String routeId,
-                                  Model model) {
+    public String transportDetailRedirect(@RequestParam(required = false) String routeId) {
+        return "redirect:/ko/transport/detail?routeId=" + (routeId != null ? routeId : "");
+    }
+
+    @GetMapping("/ko/transport/detail")
+    public String transportDetailKo(@RequestParam(required = false) String routeId, Model model) {
+        return handleDetail(routeId, model, "transport/transportDetail");
+    }
+
+    @GetMapping("/en/transport/detail")
+    public String transportDetailEn(@RequestParam(required = false) String routeId, Model model) {
+        return handleDetail(routeId, model, "transport/transportDetailEn");
+    }
+
+    private String handleDetail(String routeId, Model model, String viewName) {
         if (routeId != null && !routeId.isEmpty()) {
             TransportRouteDto route = transportRouteService.getTransportRouteDetail(routeId);
             model.addAttribute("route", route);
         }
-        return "transport/transportDetail";
+        return viewName;
     }
 
-    // route JSON 반환 API
     @ResponseBody
     @GetMapping("/api/transport/route/{routeId}")
     public TransportRouteDto getRouteJson(@PathVariable String routeId) {
         return transportRouteService.getTransportRouteDetail(routeId);
     }
 
-    // 지하철 실시간 도착정보 API
     @ResponseBody
     @GetMapping("/api/transport/subway")
     public String transportSubwayArrival(
@@ -94,7 +103,6 @@ public class TransportDetailController {
         return sb.toString();
     }
 
-    // 혼잡도 예측 API
     @ResponseBody
     @GetMapping("/api/transport/congestion")
     public int getCongestion(@RequestParam float station,
@@ -103,7 +111,6 @@ public class TransportDetailController {
         return congestionMlService.predict(station, hour, day);
     }
 
-    // 최근 검색 기록 개별 삭제
     @ResponseBody
     @DeleteMapping("/api/transport/history/{id}")
     public String deleteHistory(@PathVariable Long id) {
@@ -111,7 +118,6 @@ public class TransportDetailController {
         return "ok";
     }
 
-    // 최근 검색 기록 전체 삭제
     @ResponseBody
     @DeleteMapping("/api/transport/history")
     public String deleteAllHistory() {

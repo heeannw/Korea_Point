@@ -21,27 +21,52 @@ public class TransportRouteController {
     private RouteRepository routeRepository;
 
     @GetMapping("/transport/search")
-    public String transportSearch(
+    public String transportSearchRedirect() {
+        return "redirect:/ko/transport/search";
+    }
+
+    @GetMapping("/ko/transport/search")
+    public String transportSearchKo(
             @RequestParam(required = false) String start,
             @RequestParam(required = false) String end,
-            @RequestParam(required = false) String startLat,  // ✅ Double → String
-            @RequestParam(required = false) String startLng,  // ✅ Double → String
+            @RequestParam(required = false) String startLat,
+            @RequestParam(required = false) String startLng,
             Model model) {
+        return handleSearch(start, end, startLat, startLng, model, "transport/transport");
+    }
 
+    @GetMapping("/en/transport/search")
+    public String transportSearchEn(
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end,
+            @RequestParam(required = false) String startLat,
+            @RequestParam(required = false) String startLng,
+            Model model) {
+        return handleSearch(start, end, startLat, startLng, model, "transport/transportEn");
+    }
+
+    // 경로 클릭 시 저장 API
+    @ResponseBody
+    @PostMapping("/api/transport/history")
+    public String saveHistory(@RequestBody Route route) {
+        routeRepository.save(route);
+        return "ok";
+    }
+
+    private String handleSearch(String start, String end, String startLat, String startLng,
+                                Model model, String viewName) {
         if (end == null || end.isEmpty()) {
             model.addAttribute("recentRoutes", routeRepository.findTop10ByOrderBySearchedAtDesc());
-            return "transport/transport";
+            return viewName;
         }
 
         if ((start == null || start.isEmpty()) && (startLat == null || startLat.isEmpty())) {
             model.addAttribute("recentRoutes", routeRepository.findTop10ByOrderBySearchedAtDesc());
-            return "transport/transport";
+            return viewName;
         }
 
         try {
             List<TransportRouteDto> routes;
-
-            // ✅ 좌표가 실제로 있는지 확인
             boolean hasCoords = startLat != null && !startLat.isEmpty()
                     && startLng != null && !startLng.isEmpty();
 
@@ -55,7 +80,7 @@ public class TransportRouteController {
                 if ("현재위치".equals(start)) {
                     model.addAttribute("error", "현재위치 좌표를 가져올 수 없습니다. 다시 시도해주세요.");
                     model.addAttribute("recentRoutes", routeRepository.findTop10ByOrderBySearchedAtDesc());
-                    return "transport/transport";
+                    return viewName;
                 }
                 routes = transportRouteService.getTransportRoutes(start, end);
                 model.addAttribute("start", start);
@@ -71,19 +96,7 @@ public class TransportRouteController {
             }
             System.out.println("====================");
 
-            // 검색 기록 저장
-            if (!routes.isEmpty()) {
-                for (TransportRouteDto r : routes) {
-                    Route route = new Route();
-                    route.setStartPlace(start);
-                    route.setEndPlace(end);
-                    route.setTotalTime(r.getTotalTime());
-                    route.setTransferCount(r.getTransferCount());
-                    route.setRouteType(r.getType());
-                    routeRepository.save(route);
-                }
-            }
-
+            // 검색 시점엔 저장하지 않음 - 클릭할 때 저장
             model.addAttribute("routes", routes);
             model.addAttribute("end", end);
             model.addAttribute("recentRoutes", routeRepository.findTop10ByOrderBySearchedAtDesc());
@@ -92,6 +105,6 @@ public class TransportRouteController {
             e.printStackTrace();
             model.addAttribute("error", "경로 조회 실패: " + e.getMessage());
         }
-        return "transport/transport";
+        return viewName;
     }
 }
