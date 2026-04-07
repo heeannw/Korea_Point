@@ -477,6 +477,19 @@
   function escapeQ(s)     { return s.replace(/'/g, "\\'"); }
 
   render();
+
+  // 자동 현위치: /cafe/all 일 때만 실행 (mylocation URL이면 무한루프 방지)
+  const isMylocation = location.pathname.startsWith('/cafe/mylocation');
+  if (PLACES.length === 0 && !isMylocation) {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+              pos => location.href = `/cafe/mylocation/${pos.coords.latitude}/${pos.coords.longitude}`,
+              ()  => location.href = '/cafe/mylocation/37.5665/126.9780'
+      );
+    } else {
+      location.href = '/cafe/mylocation/37.5665/126.9780';
+    }
+  }
 </script>
 
 <!-- ── 카카오맵 SDK + 초기화 (explore.html 과 동일 패턴) ── -->
