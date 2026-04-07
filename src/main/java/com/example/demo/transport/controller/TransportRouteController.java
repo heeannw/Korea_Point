@@ -4,6 +4,7 @@ import com.example.demo.transport.dto.TransportRouteDto;
 import com.example.demo.transport.entity.Route;
 import com.example.demo.transport.repository.RouteRepository;
 import com.example.demo.transport.service.TransportRouteService;
+import com.example.demo.user.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -55,6 +56,11 @@ public class TransportRouteController {
 
     private String handleSearch(String start, String end, String startLat, String startLng,
                                 Model model, String viewName) {
+
+        // 로그인 정보 추가
+        model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
+        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
+
         if (end == null || end.isEmpty()) {
             model.addAttribute("recentRoutes", routeRepository.findTop10ByOrderBySearchedAtDesc());
             return viewName;
@@ -96,7 +102,6 @@ public class TransportRouteController {
             }
             System.out.println("====================");
 
-            // 검색 시점엔 저장하지 않음 - 클릭할 때 저장
             model.addAttribute("routes", routes);
             model.addAttribute("end", end);
             model.addAttribute("recentRoutes", routeRepository.findTop10ByOrderBySearchedAtDesc());

@@ -25,7 +25,18 @@
     <div class="header-right">
         <a th:href="@{/en/transport/search(end=${end})}" class="h-btn active">EN</a>
         <a th:href="@{/ko/transport/search(end=${end})}" class="h-btn">KR</a>
-        <button class="h-btn h-btn-fill">Login</button>
+
+        <th:block th:if="${isLoggedIn}">
+            <span class="h-btn" style="cursor:default;"
+                  th:text="${currentUserName}"></span>
+            <form th:action="@{/logout}" method="post" style="margin:0;">
+                <button type="submit" class="h-btn h-btn-fill">Logout</button>
+            </form>
+        </th:block>
+        <th:block th:unless="${isLoggedIn}">
+            <a th:href="@{/oauth2/authorization/google}"
+               class="h-btn h-btn-fill" style="text-decoration:none;">Login</a>
+        </th:block>
     </div>
 </header>
 
