@@ -508,19 +508,33 @@
                 });
 
                 // 환승 마커 찍기 (여러번 다 찍힘)
-                for (let i = 1; i < subwaySteps.length; i++) {
+                // 모든 환승 처리 (버스 포함)
+                // 교통수단 + 좌표 같이 묶기
+                const transportSteps = steps
+                    .map((step, idx) => ({
+                        step,
+                        idx,
+                        coords: stepCoords[idx]
+                    }))
+                    .filter(s => s.step.type !== 'walk');
 
-                    const prev = subwaySteps[i - 1];
-                    const curr = subwaySteps[i];
+                // 환승 마커
+                for (let i = 1; i < transportSteps.length; i++) {
 
-                    const prevCoords = stepCoords[prev.idx];
-                    if (!prevCoords || !prevCoords.last) continue;
+                    const prev = transportSteps[i - 1];
+                    const curr = transportSteps[i];
+
+                    // 같은 타입이면 패스 라인도 비교
+                    if (prev.step.type === curr.step.type &&
+                        prev.step.line === curr.step.line) continue;
+
+                    if (!prev.coords || !prev.coords.last) continue;
 
                     const color = typeColor(curr.step.type, curr.step.color);
 
                     const pt = new kakao.maps.LatLng(
-                        prevCoords.last.lat,
-                        prevCoords.last.lng
+                        prev.coords.last.lat,
+                        prev.coords.last.lng
                     );
 
                     drawTransferMarker(pt, color, '');
