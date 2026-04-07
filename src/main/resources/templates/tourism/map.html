@@ -480,7 +480,7 @@
 </script>
 
 <!-- ── 카카오맵 SDK + 초기화 (explore.html 과 동일 패턴) ── -->
-<script th:src="|https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaokey}&autoload=false|"></script>
+<script th:src="|https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoKey}&autoload=false|"></script>
 <script>
   kakao.maps.load(function () {
     const map = new kakao.maps.Map(document.getElementById('kakaoMap'), {
