@@ -1,0 +1,178 @@
+/* ================= 경로 헤더 ================= */
+.route-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--gray);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.back-link:hover { color: var(--blue); }
+
+.route-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.route-sub {
+    font-size: 13px;
+    color: var(--gray);
+}
+
+/* ================= 통계 ================= */
+.stats-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 50px;
+    background: var(--light);
+    border: 1.5px solid var(--border);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ================= 혼잡도 ================= */
+.congestion-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: #fff7ed;
+    border-bottom: 1px solid #fed7aa;
+}
+
+.congestion-chip {
+    padding: 3px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.congestion-chip.low  { background: #d1fae5; color: #065f46; }
+.congestion-chip.mid  { background: #fef3c7; color: #92400e; }
+.congestion-chip.high { background: #fee2e2; color: #991b1b; }
+
+.congestion-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.congestion-bar-fill {
+    height: 100%;
+}
+
+/* ================= 탭 ================= */
+.tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 12px;
+    cursor: pointer;
+    border: none;
+    background: none;
+}
+
+.tab-btn.active {
+    color: var(--blue);
+    border-bottom: 2px solid var(--blue);
+}
+
+.tab-content {
+    display: none;
+    padding: 12px;
+    overflow-y: auto;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ================= 단계 ================= */
+.step-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px;
+    border-radius: var(--r);
+}
+
+.step-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.step-line {
+    width: 2px;
+    height: 28px;
+    background: var(--border);
+}
+
+.step-info strong {
+    font-size: 14px;
+}
+
+.step-info span {
+    font-size: 12px;
+    color: var(--gray);
+}
+
+/* ================= 도착 정보 ================= */
+.arrival-card {
+    background: var(--light);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r);
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+/* ================= 지도 ================= */
+.map-controls {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+}
+
+.mc {
+    width: 36px;
+    height: 36px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.loc-btn {
+    position: absolute;
+    bottom: 24px;
+    right: 16px;
+}
