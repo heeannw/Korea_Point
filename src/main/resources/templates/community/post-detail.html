@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${post.title} + ' - KoreaConnect'">Post - KoreaConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { boxShadow: { soft: "0 1px 3px rgba(0,0,0,0.04)" } } }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* 에디터 HTML 콘텐츠 기본 스타일 */
+        .post-content h1, .post-content h2, .post-content h3 { font-weight: 700; margin: 1rem 0 0.5rem; }
+        .post-content h1 { font-size: 1.5rem; }
+        .post-content h2 { font-size: 1.25rem; }
+        .post-content p { margin-bottom: 0.75rem; line-height: 1.7; }
+        .post-content ul, .post-content ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+        .post-content li { margin-bottom: 0.25rem; }
+        .post-content img { max-width: 100%; border-radius: 0.5rem; margin: 0.75rem 0; }
+        .post-content a { color: #2563EB; text-decoration: underline; }
+        .post-content blockquote { border-left: 3px solid #e5e7eb; padding-left: 1rem; color: #6b7280; margin: 0.75rem 0; }
+    </style>
+</head>
+<body class="min-h-screen bg-[#FAFAFA] flex flex-col">
+
+<!-- Header -->
+<header class="sticky top-0 z-50 bg-white border-b border-gray-200/80">
+    <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-8">
+            <a th:href="@{/}" class="flex items-center gap-2 no-underline">
+                <div class="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center">
+                    <i data-lucide="globe" class="w-5 h-5 text-white"></i>
+                </div>
+                <span class="text-[18px] text-gray-900 tracking-[-0.3px]" style="font-weight:600;">KoreaConnect</span>
+            </a>
+        </div>
+        <div class="flex items-center gap-3">
+            <!-- 로그인한 사용자 -->
+            <th:block th:if="${isLoggedIn}">
+                <span class="text-[14px] text-gray-600"
+                      th:text="${currentUserName} + '님 환영합니다'"></span>
+                <a th:href="@{/community/post/write}"
+                   class="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[14px] no-underline hover:bg-[#1d4ed8] transition-colors"
+                   style="font-weight:500;">Write Post</a>
+                <form th:action="@{/logout}" method="post" class="m-0">
+                    <button type="submit"
+                            class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-[14px] hover:bg-gray-50 transition-colors cursor-pointer">
+                        Logout
+                    </button>
+                </form>
+            </th:block>
+            <!-- 비로그인 사용자 -->
+            <th:block th:unless="${isLoggedIn}">
+                <a th:href="@{/oauth2/authorization/google}"
+                   class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-[14px] no-underline hover:bg-gray-50 transition-colors"
+                   style="font-weight:500;">Sign In</a>
+            </th:block>
+        </div>
+    </div>
+</header>
+
+<main class="flex-1">
+    <div class="max-w-[800px] mx-auto px-6 py-8">
+
+        <!-- 뒤로가기 -->
+        <a th:href="@{/community/post-list}"
+           class="inline-flex items-center gap-1.5 text-[13px] text-gray-500 no-underline hover:text-gray-800 transition-colors mb-6">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Community
+        </a>
+
+        <!-- 게시글 본문 -->
+        <article class="bg-white rounded-xl border border-gray-200/80 p-8 shadow-soft mb-6">
+
+            <!-- 카테고리 + 날짜 -->
+            <div class="flex items-center gap-2 mb-4">
+                <span class="px-2.5 py-1 rounded-md text-[12px] border bg-orange-50 text-orange-600 border-orange-100"
+                      style="font-weight:600;">
+                    <span th:text="${post.categoryEmoji}"></span>
+                    <span th:text="${post.categoryName}">Category</span>
+                </span>
+                <span class="text-[13px] text-gray-400"
+                      th:text="${#temporals.format(post.createdAt, 'MMM dd, yyyy')}">Date</span>
+            </div>
+
+            <!-- 제목 -->
+            <h1 class="text-[24px] text-gray-900 mb-4 leading-snug" style="font-weight:700;"
+                th:text="${post.title}">Title</h1>
+
+            <!-- 작성자 정보 -->
+            <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                        <img th:if="${post.authorProfileImage != null}"
+                             th:src="${post.authorProfileImage}"
+                             class="w-full h-full object-cover" alt="profile"/>
+                        <i th:unless="${post.authorProfileImage != null}"
+                           data-lucide="user" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                    <div>
+                        <p class="text-[14px] text-gray-800" style="font-weight:600;"
+                           th:text="${post.authorName}">Author</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 text-[12px] text-gray-400">
+                    <span class="flex items-center gap-1">
+                        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                        <span th:text="${post.viewCount}">0</span>
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                        <span th:text="${post.commentCount}">0</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- 본문 (에디터 HTML) -->
+            <div class="post-content text-[15px] text-gray-700 leading-relaxed"
+                 th:utext="${post.content}">본문 내용</div>
+
+            <!-- 삭제 버튼 (임시: 항상 표시 — OAuth2 연동 후 본인만 표시하도록 변경) -->
+            <div class="flex justify-end mt-8 pt-5 border-t border-gray-100">
+                <form th:action="@{/community/post/{id}/delete(id=${post.postId})}" method="post"
+                      onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                    <button type="submit"
+                            class="px-4 py-2 text-[13px] text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer">
+                        Delete Post
+                    </button>
+                </form>
+            </div>
+        </article>
+
+        <!-- 댓글 섹션 -->
+        <section class="bg-white rounded-xl border border-gray-200/80 p-6 shadow-soft">
+            <h2 class="text-[16px] text-gray-900 mb-5" style="font-weight:700;">
+                Comments <span class="text-gray-400 font-normal" th:text="'(' + ${post.commentCount} + ')'"></span>
+            </h2>
+
+            <!-- 댓글 목록 -->
+            <div class="flex flex-col divide-y divide-gray-100" id="commentList">
+
+                <!-- 댓글 없을 때 -->
+                <p th:if="${#lists.isEmpty(comments)}"
+                   class="text-[13px] text-gray-400 py-4 text-center">첫 번째 댓글을 남겨보세요!</p>
+
+                <!-- 최상위 댓글 -->
+                <div th:each="comment : ${comments}" class="py-4">
+
+                    <!-- 삭제된 댓글 -->
+                    <div th:if="${comment.deleted}" class="text-[13px] text-gray-400 italic py-1">
+                        삭제된 댓글입니다.
+                    </div>
+
+                    <!-- 정상 댓글 -->
+                    <div th:unless="${comment.deleted}">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center shrink-0">
+                                <img th:if="${comment.authorProfileImage != null}"
+                                     th:src="${comment.authorProfileImage}"
+                                     class="w-full h-full object-cover" alt="profile"/>
+                                <i th:unless="${comment.authorProfileImage != null}"
+                                   data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[13px] text-gray-800" style="font-weight:600;"
+                                          th:text="${comment.authorName}">Author</span>
+                                    <span class="text-[11px] text-gray-400"
+                                          th:text="${#temporals.format(comment.createdAt, 'MMM dd, HH:mm')}">Date</span>
+                                </div>
+                                <p class="text-[14px] text-gray-700 leading-relaxed"
+                                   th:text="${comment.content}">Comment content</p>
+                                <button type="button"
+                                        th:attr="data-parent-id=${comment.id}"
+                                        onclick="showReplyForm(this)"
+                                        class="mt-1.5 text-[12px] text-blue-500 hover:text-blue-700 cursor-pointer">
+                                    Reply
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 대댓글 입력 폼 (기본 숨김) -->
+                        <div class="reply-form hidden ml-11 mt-3">
+                            <div class="flex gap-2">
+                                <input type="text" placeholder="Write a reply..."
+                                       class="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-blue-100"/>
+                                <button type="button"
+                                        th:attr="data-post-id=${post.postId}, data-parent-id=${comment.id}"
+                                        onclick="submitComment(this)"
+                                        class="px-4 py-2 bg-[#2563EB] text-white text-[13px] rounded-lg hover:bg-[#1d4ed8] transition-colors cursor-pointer">
+                                    Submit
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 대댓글 목록 -->
+                        <div th:if="${!#lists.isEmpty(comment.children)}" class="ml-11 mt-3 flex flex-col gap-3">
+                            <div th:each="reply : ${comment.children}" class="flex items-start gap-3">
+                                <div class="w-7 h-7 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center shrink-0">
+                                    <img th:if="${reply.authorProfileImage != null}"
+                                         th:src="${reply.authorProfileImage}"
+                                         class="w-full h-full object-cover" alt="profile"/>
+                                    <i th:unless="${reply.authorProfileImage != null}"
+                                       data-lucide="user" class="w-3.5 h-3.5 text-gray-400"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-[12px] text-gray-800" style="font-weight:600;"
+                                              th:text="${reply.authorName}">Author</span>
+                                        <span class="text-[11px] text-gray-400"
+                                              th:text="${#temporals.format(reply.createdAt, 'MMM dd, HH:mm')}">Date</span>
+                                    </div>
+                                    <p class="text-[13px] text-gray-700 leading-relaxed"
+                                       th:if="${!reply.deleted}" th:text="${reply.content}">Reply content</p>
+                                    <p class="text-[13px] text-gray-400 italic"
+                                       th:if="${reply.deleted}">삭제된 댓글입니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 댓글 작성 폼 -->
+            <div class="mt-6 pt-5 border-t border-gray-100">
+                <h3 class="text-[14px] text-gray-700 mb-3" style="font-weight:600;">Leave a Comment</h3>
+                <div class="flex gap-2">
+                    <input type="text" id="commentInput" placeholder="Write a comment..."
+                           class="flex-1 px-4 py-2.5 text-[14px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100"/>
+                    <button type="button"
+                            th:attr="data-post-id=${post.postId}"
+                            onclick="submitTopComment(this)"
+                            class="px-5 py-2.5 bg-[#2563EB] text-white text-[14px] rounded-lg hover:bg-[#1d4ed8] transition-colors cursor-pointer"
+                            style="font-weight:500;">
+                        Submit
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<footer class="border-t border-gray-200/80 bg-gray-50 mt-16">
+    <div class="max-w-[1200px] mx-auto px-6 py-8 text-[12px] text-gray-400">
+        &copy; 2026 KoreaConnect. All rights reserved.
+    </div>
+</footer>
+
+<script>
+    lucide.createIcons();
+
+    // 대댓글 입력 폼 토글
+    function showReplyForm(btn) {
+        const commentBlock = btn.closest('.py-4');
+        const form = commentBlock.querySelector('.reply-form');
+        form.classList.toggle('hidden');
+    }
+
+    // 최상위 댓글 작성
+    function submitTopComment(btn) {
+        const postId = btn.getAttribute('data-post-id');
+        const input = document.getElementById('commentInput');
+        const content = input.value.trim();
+        if (!content) return;
+
+        fetch('/api/comments/' + postId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content, parentId: null })
+        })
+        .then(res => {
+            if (res.ok) { location.reload(); }
+            else { alert('로그인이 필요합니다.'); }
+        });
+    }
+
+    // 대댓글 작성
+    function submitComment(btn) {
+        const postId = btn.getAttribute('data-post-id');
+        const parentId = btn.getAttribute('data-parent-id');
+        const input = btn.previousElementSibling;
+        const content = input.value.trim();
+        if (!content) return;
+
+        fetch('/api/comments/' + postId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content, parentId: Number(parentId) })
+        })
+        .then(res => {
+            if (res.ok) { location.reload(); }
+            else { alert('로그인이 필요합니다.'); }
+        });
+    }
+</script>
+</body>
+</html>

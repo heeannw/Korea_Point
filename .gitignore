@@ -53,3 +53,4 @@ application-local.yaml
 data/
 *.mv.db
 *.trace.db
+application-secret.properties

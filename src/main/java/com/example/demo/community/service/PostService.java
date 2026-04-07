@@ -1,0 +1,138 @@
+package com.example.demo.community.service;
+
+import com.example.demo.community.dto.PostDto;
+import com.example.demo.community.entity.Category;
+import com.example.demo.community.entity.Post;
+import com.example.demo.community.repository.CategoryRepository;
+import com.example.demo.community.repository.CommunityRepository;
+import com.example.demo.community.repository.PostRepository;
+import com.example.demo.user.entity.User;
+import com.example.demo.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class PostService {
+
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+
+    // 전체 게시글 목록
+    @Transactional(readOnly = true)
+    public List<PostDto> getPosts() {
+        return postRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    // 카테고리별 게시글 목록
+    @Transactional(readOnly = true)
+    public List<PostDto> getPostsByCategory(Long categoryId) {
+        return postRepository.findByCategoryIdAndDeletedAtIsNullOrderByCreatedAtDesc(categoryId)
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    // 제목 검색 (전체 카테고리)
+    @Transactional(readOnly = true)
+    public List<PostDto> searchPosts(String keyword) {
+        return postRepository.findByTitleContainingIgnoreCaseAndDeletedAtIsNullOrderByCreatedAtDesc(keyword)
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    // 카테고리 + 키워드 동시 필터링
+    @Transactional(readOnly = true)
+    public List<PostDto> searchPostsByCategory(Long categoryId, String keyword) {
+        return postRepository.findByCategoryIdAndTitleContainingIgnoreCaseAndDeletedAtIsNullOrderByCreatedAtDesc(categoryId, keyword)
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    // 인기글 상위 5개
+    @Transactional(readOnly = true)
+    public List<PostDto> getTrendingPosts() {
+        return postRepository.findTop5ByDeletedAtIsNullOrderByViewCountDesc()
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    // 게시글 상세 조회 + 조회수 +1
+    @Transactional
+    public PostDto getPostDetail(Long postId) {
+        postRepository.findByIdAndDeletedAtIsNull(postId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+        postRepository.incrementViewCount(postId);
+        // +1 반영된 값을 화면에 보여주기 위해 다시 조회
+        Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+        return toDto(post);
+    }
+
+    // 게시글 작성
+    @Transactional
+    public Long createPost(PostDto.PostCreateRequest req, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        Category category = categoryRepository.findById(req.getCategoryId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
+
+        Post post = Post.builder()
+                .user(user)
+                .category(category)
+                .title(req.getTitle())
+                .content(req.getContent())
+                .build();
+
+        return postRepository.save(post).getId();
+    }
+
+    // 게시글 소프트 딜리트
+    @Transactional
+    public void deletePost(Long postId, Long userId) {
+        Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+        if (!post.getUser().getId().equals(userId)) {
+            throw new IllegalStateException("삭제 권한이 없습니다.");
+        }
+        post.setDeletedAt(LocalDateTime.now());
+    }
+
+    // Post → PostDto 변환
+    private PostDto toDto(Post post) {
+        return PostDto.builder()
+                .postId(post.getId())
+                .userId(post.getUser().getId())
+                .categoryId(post.getCategory() != null ? post.getCategory().getId() : null)
+                .categoryName(post.getCategory() != null ? post.getCategory().getName() : null)
+                .categoryEmoji(post.getCategory() != null ? post.getCategory().getEmoji() : null)
+                .title(post.getTitle())
+                .content(post.getContent())
+                .contentPreview(buildPreview(post.getContent()))
+                .authorName(post.getUser().getName())
+                .authorProfileImage(post.getUser().getProfileImage())
+                .viewCount(post.getViewCount())
+                .commentCount(post.getCommentCount())
+                .createdAt(post.getCreatedAt())
+                .build();
+    }
+
+    // HTML 태그 제거 후 120자 요약 (목록 미리보기용)
+    private String buildPreview(String html) {
+        if (html == null) return "";
+        //replace vs replaceAll 차이 replaceAll: 정규식 패턴으로 찾아서 바꾸는 함수 \\s+ 이거 정규식 문법 공백 문자
+        String plain = html.replaceAll("<[^>]*>", "").replaceAll("\\s+", " ").strip();
+        return plain.length() > 120 ? plain.substring(0, 120) + "..." : plain;
+    }
+}
