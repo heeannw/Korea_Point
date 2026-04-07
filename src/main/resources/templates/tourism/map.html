@@ -480,16 +480,14 @@
 </script>
 
 <!-- ── 카카오맵 SDK + 초기화 (explore.html 과 동일 패턴) ── -->
-<script src="'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + ${kakaokey} +'&autoload=false'"></script>
+<script th:src="|https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaokey}&autoload=false|"></script>
 <script>
   kakao.maps.load(function () {
     const map = new kakao.maps.Map(document.getElementById('kakaoMap'), {
-      center: new kakao.maps.LatLng(37.5665, 126.9780),
+      center: new kakao.maps.LatLng(userLat, userLon),
       level: 5
     });
 
-
-    // 내 위치 마커 (파란 점)
     const myMarkerImg = new kakao.maps.MarkerImage(
             'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
             new kakao.maps.Size(24, 35)
@@ -501,7 +499,6 @@
       image: myMarkerImg
     });
 
-    // 카페 마커 (explore.html 동일 구조)
     PLACES.forEach(p => {
       if (!p.lat || !p.lng) return;
 
@@ -511,7 +508,6 @@
         title: p.name
       });
 
-      // 커스텀 오버레이: 카페명 말풍선
       const overlay = new kakao.maps.CustomOverlay({
         position: new kakao.maps.LatLng(p.lat, p.lng),
         content: `<div style="
