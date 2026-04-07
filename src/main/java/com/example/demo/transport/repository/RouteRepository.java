@@ -1,4 +1,14 @@
 package com.example.demo.transport.repository;
 
-public interface RouteRepository {
+import com.example.demo.transport.entity.Route;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface RouteRepository extends JpaRepository<Route, Long> {
+    List<Route> findTop10ByOrderBySearchedAtDesc();
+    List<Route> findByStartPlaceContaining(String startPlace);
+    List<Route> findByEndPlaceContaining(String endPlace);
 }
