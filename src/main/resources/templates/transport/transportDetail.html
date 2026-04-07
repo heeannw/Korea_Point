@@ -325,7 +325,7 @@
     function drawMarker(latLng, color, label) {
         new kakao.maps.CustomOverlay({
             position: latLng,
-            yAnchor: 1,
+            yAnchor: 1.3,
             content: `
             <div style="display:flex; flex-direction:column; align-items:center;">
                 <div style="
@@ -418,7 +418,6 @@
                 let originPt = null;
                 const startLabel = routeData.start || '';
                 if (startLabel === '현재위치') {
-                    // GPS 좌표는 hidden field에 없어서 첫 transit step 첫 좌표 사용
                     for (let sc of stepCoords) {
                         if (sc) { originPt = sc.first; break; }
                     }
@@ -518,25 +517,34 @@
 
                 // ✅ 출발 마커
                 if (originPt) {
-                    drawMarker(new kakao.maps.LatLng(originPt.lat, originPt.lng), '#ef4444', '🚩 출발');
+                    drawMarker(new kakao.maps.LatLng(originPt.lat, originPt.lng), '#ef4444', `출발 · ${startLabel}`);
                     allCoords.unshift(originPt);
                 }
 
                 // ✅ 도착 마커
                 if (destPt) {
-                    drawMarker(new kakao.maps.LatLng(destPt.lat, destPt.lng), '#3b9eff', '🏁 도착');
+                    drawMarker(new kakao.maps.LatLng(destPt.lat, destPt.lng), '#3b9eff', '도착');
                     allCoords.push(destPt);
                 }
 
                 // ✅ 환승역 마커
                 steps.forEach((step, idx) => {
+
                     if (idx === 0) return;
-                    if (step.type !== 'subway' && step.type !== 'bus') return;
-                    const coords = stepCoords[idx];
-                    if (!coords) return;
-                    const color = typeColor(step.type, step.color);
-                    const pt = new kakao.maps.LatLng(coords.first.lat, coords.first.lng);
-                    drawTransferMarker(pt, color, step.fromStation || '');
+
+                    const prevStep = steps[idx - 1];
+
+                    // 🚨 환승 조건: 이전도 지하철 & 현재도 지하철
+                    if (prevStep.type === 'subway' && step.type === 'subway') {
+
+                        const coords = stepCoords[idx];
+                        if (!coords) return;
+
+                        const color = typeColor(step.type, step.color);
+                        const pt = new kakao.maps.LatLng(coords.first.lat, coords.first.lng);
+
+                        drawTransferMarker(pt, color, ''); // 텍스트 제거 추천
+                    }
                 });
 
                 // 지도 범위 자동 조정
