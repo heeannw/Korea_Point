@@ -6,151 +6,14 @@
     <title>경로 상세 — KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
-<!--    <style>-->
-<!--        :root {-->
-<!--            &#45;&#45;blue: #3b9eff; &#45;&#45;blue-dk: #1a7de0; &#45;&#45;blue-lt: #eff6ff;-->
-<!--            &#45;&#45;dark: #0f172a; &#45;&#45;mid: #334155; &#45;&#45;gray: #64748b;-->
-<!--            &#45;&#45;border: #dbeafe; &#45;&#45;white: #fff; &#45;&#45;light: #f0f7ff;-->
-<!--            &#45;&#45;gold: #f59e0b; &#45;&#45;green: #16a34a;-->
-<!--            &#45;&#45;r: 12px; &#45;&#45;sh: 0 2px 16px rgba(59,158,255,.10);-->
-<!--        }-->
-<!--        * { margin: 0; padding: 0; box-sizing: border-box; }-->
-<!--        html, body { height: 100%; overflow: hidden; }-->
-<!--        body { font-family: 'DM Sans', sans-serif; background: var(&#45;&#45;white); color: var(&#45;&#45;dark); display: flex; flex-direction: column; }-->
 
-<!--        header {-->
-<!--            height: 56px; display: flex; align-items: center; justify-content: space-between;-->
-<!--            padding: 0 20px; border-bottom: 1px solid var(&#45;&#45;border);-->
-<!--            background: var(&#45;&#45;white); flex-shrink: 0; z-index: 100;-->
-<!--        }-->
-<!--        .logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: var(&#45;&#45;blue-dk); text-decoration: none; }-->
-<!--        .logo span { color: var(&#45;&#45;dark); }-->
-<!--        .header-right { display: flex; gap: 8px; align-items: center; }-->
-<!--        .h-btn {-->
-<!--            padding: 7px 16px; border-radius: 50px; border: 1.5px solid var(&#45;&#45;border);-->
-<!--            background: transparent; font-size: 12px; font-weight: 600; cursor: pointer;-->
-<!--            font-family: 'DM Sans', sans-serif; color: var(&#45;&#45;dark); transition: all .2s;-->
-<!--        }-->
-<!--        .h-btn:hover, .h-btn.active { border-color: var(&#45;&#45;blue); color: var(&#45;&#45;blue); }-->
-<!--        .h-btn-fill { background: var(&#45;&#45;blue); color: #fff; border-color: var(&#45;&#45;blue); }-->
-<!--        .h-btn-fill:hover { background: var(&#45;&#45;blue-dk); color: #fff; }-->
-
-<!--        .app-body { flex: 1; display: flex; overflow: hidden; }-->
-<!--        .sidebar {-->
-<!--            width: 380px; flex-shrink: 0; display: flex; flex-direction: column;-->
-<!--            border-right: 1px solid var(&#45;&#45;border); background: var(&#45;&#45;white); overflow: hidden;-->
-<!--        }-->
-<!--        .route-header { padding: 16px; border-bottom: 1px solid var(&#45;&#45;border); flex-shrink: 0; }-->
-<!--        .back-link {-->
-<!--            display: inline-flex; align-items: center; gap: 6px;-->
-<!--            color: var(&#45;&#45;gray); text-decoration: none; font-size: 12px; font-weight: 600;-->
-<!--            margin-bottom: 12px; transition: color .2s;-->
-<!--        }-->
-<!--        .back-link:hover { color: var(&#45;&#45;blue); }-->
-<!--        .route-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(&#45;&#45;dark); margin-bottom: 4px; }-->
-<!--        .route-sub { font-size: 13px; color: var(&#45;&#45;gray); }-->
-<!--        .stats-row { display: flex; gap: 6px; margin-top: 12px; }-->
-<!--        .stat-chip {-->
-<!--            display: flex; align-items: center; gap: 5px;-->
-<!--            padding: 5px 12px; border-radius: 50px; background: var(&#45;&#45;light);-->
-<!--            border: 1.5px solid var(&#45;&#45;border); font-size: 12px; font-weight: 600; color: var(&#45;&#45;mid);-->
-<!--        }-->
-<!--        .stat-chip .sc-icon { font-size: 13px; }-->
-
-<!--        .congestion-banner {-->
-<!--            display: flex; align-items: center; gap: 10px;-->
-<!--            padding: 10px 16px; background: #fff7ed;-->
-<!--            border-bottom: 1px solid #fed7aa; font-size: 13px; flex-shrink: 0;-->
-<!--        }-->
-<!--        .congestion-banner .label { font-weight: 600; color: var(&#45;&#45;gray); white-space: nowrap; }-->
-<!--        .congestion-chip { display: inline-block; padding: 3px 12px; border-radius: 50px; font-size: 12px; font-weight: 700; }-->
-<!--        .congestion-chip.low  { background: #d1fae5; color: #065f46; }-->
-<!--        .congestion-chip.mid  { background: #fef3c7; color: #92400e; }-->
-<!--        .congestion-chip.high { background: #fee2e2; color: #991b1b; }-->
-<!--        .congestion-bar-wrap { flex: 1; height: 6px; background: var(&#45;&#45;border); border-radius: 3px; overflow: hidden; }-->
-<!--        .congestion-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }-->
-<!--        .congestion-bar-fill.low  { background: #10b981; }-->
-<!--        .congestion-bar-fill.mid  { background: var(&#45;&#45;gold); }-->
-<!--        .congestion-bar-fill.high { background: #ef4444; }-->
-
-<!--        .tabs { display: flex; background: var(&#45;&#45;white); border-bottom: 1px solid var(&#45;&#45;border); flex-shrink: 0; }-->
-<!--        .tab-btn {-->
-<!--            flex: 1; padding: 12px; font-size: 12px; font-weight: 600;-->
-<!--            text-align: center; cursor: pointer; color: var(&#45;&#45;gray);-->
-<!--            border: none; border-bottom: 2px solid transparent;-->
-<!--            background: none; transition: all .2s; font-family: 'DM Sans', sans-serif;-->
-<!--        }-->
-<!--        .tab-btn.active { color: var(&#45;&#45;blue); border-bottom-color: var(&#45;&#45;blue); }-->
-<!--        .tab-content { display: none; padding: 12px; overflow-y: auto; flex: 1; }-->
-<!--        .tab-content.active { display: flex; flex-direction: column; }-->
-<!--        .tab-content::-webkit-scrollbar { width: 4px; }-->
-<!--        .tab-content::-webkit-scrollbar-track { background: transparent; }-->
-<!--        .tab-content::-webkit-scrollbar-thumb { background: var(&#45;&#45;border); border-radius: 2px; }-->
-
-<!--        .step-item {-->
-<!--            display: flex; gap: 12px; padding: 10px;-->
-<!--            border-radius: var(&#45;&#45;r); transition: background .15s; cursor: default; align-items: flex-start;-->
-<!--        }-->
-<!--        .step-item:hover { background: var(&#45;&#45;light); }-->
-<!--        .step-dot-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 32px; }-->
-<!--        .step-dot {-->
-<!--            width: 30px; height: 30px; border-radius: 50%;-->
-<!--            display: flex; align-items: center; justify-content: center;-->
-<!--            font-size: 13px; color: white; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,.15);-->
-<!--        }-->
-<!--        .step-line { width: 2px; height: 28px; background: var(&#45;&#45;border); border-radius: 1px; margin: 3px 0; }-->
-<!--        .step-info { flex: 1; padding-top: 4px; }-->
-<!--        .step-info strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 3px; color: var(&#45;&#45;dark); }-->
-<!--        .step-info span { font-size: 12px; color: var(&#45;&#45;gray); }-->
-<!--        .step-badge { display: inline-block; padding: 2px 8px; border-radius: 50px; font-size: 11px; font-weight: 700; margin-left: 6px; }-->
-
-<!--        .arrival-card {-->
-<!--            background: var(&#45;&#45;light); border: 1.5px solid var(&#45;&#45;border);-->
-<!--            border-radius: var(&#45;&#45;r); padding: 12px 14px; margin-bottom: 8px;-->
-<!--        }-->
-<!--        .arrival-card .arr-line { font-size: 13px; font-weight: 700; color: var(&#45;&#45;dark); margin-bottom: 4px; }-->
-<!--        .arrival-card .arr-msg  { font-size: 12px; color: var(&#45;&#45;gray); }-->
-<!--        .no-data { text-align: center; padding: 40px 20px; color: var(&#45;&#45;gray); font-size: 14px; }-->
-<!--        .error-box { padding: 20px; color: #ef4444; font-size: 14px; }-->
-
-<!--        .map-area { flex: 1; position: relative; overflow: hidden; }-->
-<!--        #map { position: absolute; inset: 0; width: 100%; height: 100%; }-->
-<!--        .map-controls {-->
-<!--            position: absolute; top: 16px; right: 16px;-->
-<!--            display: flex; flex-direction: column; gap: 4px; z-index: 30;-->
-<!--        }-->
-<!--        .mc {-->
-<!--            width: 36px; height: 36px; background: #fff; border: 1px solid var(&#45;&#45;border);-->
-<!--            border-radius: 8px; display: flex; align-items: center; justify-content: center;-->
-<!--            cursor: pointer; font-size: 16px; box-shadow: var(&#45;&#45;sh); transition: background .2s;-->
-<!--        }-->
-<!--        .mc:hover { background: var(&#45;&#45;light); }-->
-<!--        .loc-btn {-->
-<!--            position: absolute; bottom: 24px; right: 16px;-->
-<!--            background: #fff; border: 1px solid var(&#45;&#45;border); border-radius: 50px;-->
-<!--            padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;-->
-<!--            display: flex; align-items: center; gap: 6px; box-shadow: var(&#45;&#45;sh);-->
-<!--            color: var(&#45;&#45;dark); font-family: 'DM Sans', sans-serif; z-index: 30; transition: all .2s;-->
-<!--        }-->
-<!--        .loc-btn:hover { border-color: var(&#45;&#45;blue); color: var(&#45;&#45;blue); }-->
-<!--        .map-legend {-->
-<!--            position: absolute; top: 16px; left: 16px;-->
-<!--            background: rgba(255,255,255,.95); border: 1px solid var(&#45;&#45;border);-->
-<!--            border-radius: 10px; padding: 10px 14px; box-shadow: var(&#45;&#45;sh); z-index: 30; min-width: 130px;-->
-<!--        }-->
-<!--        .legend-title { font-size: 11px; font-weight: 700; color: var(&#45;&#45;gray); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }-->
-<!--        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(&#45;&#45;mid); margin-bottom: 5px; }-->
-<!--        .legend-item:last-child { margin-bottom: 0; }-->
-<!--        .legend-line { width: 24px; height: 4px; border-radius: 2px; }-->
-<!--        .legend-dash { width: 24px; height: 0; border-top: 3px dashed #666666; }-->
-<!--    </style>-->
     <link rel="stylesheet" th:href="@{/css/common/reset.css}">
     <link rel="stylesheet" th:href="@{/css/common/variables.css}">
     <link rel="stylesheet" th:href="@{/css/common/layout.css}">
     <link rel="stylesheet" th:href="@{/css/transport/transportDetail.css}">
+
 </head>
 <body>
-
 <header>
     <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
     <div class="header-right">
@@ -171,17 +34,27 @@
             <div class="stats-row">
                 <div class="stat-chip"><span class="sc-icon">⏱</span><span th:text="${route?.totalTime} + '분'">— 분</span></div>
                 <div class="stat-chip"><span class="sc-icon">🔄</span><span th:text="'환승 ' + ${route?.transferCount} + '회'">환승 —회</span></div>
-                <div class="stat-chip"><span class="sc-icon">🚇</span><span>실시간</span></div>
             </div>
         </div>
 
         <div class="congestion-banner">
-            <span class="label">🚇 혼잡도</span>
-            <span class="congestion-chip" id="congestionChip">불러오는 중...</span>
+
+            <!-- 한 줄 묶기 -->
+            <div class="congestion-top">
+                <span class="label">🚇 혼잡도</span>
+                <span class="congestion-chip" id="congestionChip">불러오는 중...</span>
+            </div>
+
+            <!-- 바 -->
             <div class="congestion-bar-wrap">
                 <div class="congestion-bar-fill" id="congestionBarFill" style="width:0%"></div>
             </div>
+
+            <!-- 메시지 -->
+            <div id="congestionMsg" class="congestion-msg"></div>
+
         </div>
+
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('steps', this)">📋 이동 단계</button>
@@ -237,7 +110,7 @@
 
     function typeColor(type, fallback) {
         if (fallback) return fallback;
-        if (type === 'walk') return '#f59e0b';
+        if (type === 'walk') return '#9ca3af';
         if (type === 'bus')  return '#10b981';
         return '#3b9eff';
     }
@@ -348,6 +221,52 @@
         }).setMap(map);
     }
 
+    //현재위치 마커 표시
+    let myLocation = null;
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            const myLat = pos.coords.latitude;
+            const myLng = pos.coords.longitude;
+
+            myLocation = {lat:myLat, lng:myLng};
+
+            // 별 모양 마커 이미지 (카페 예제랑 동일)
+            const myMarkerImg = new kakao.maps.MarkerImage(
+                'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
+                new kakao.maps.Size(24, 35)
+            );
+
+            new kakao.maps.Marker({
+                map: map,
+                position: new kakao.maps.LatLng(myLat, myLng),
+                title: '내 위치',
+                image: myMarkerImg
+            });
+
+            // 내 위치 라벨
+            new kakao.maps.CustomOverlay({
+                map: map,
+                position: new kakao.maps.LatLng(myLat, myLng),
+                content: `<div style="
+                background:#3b9eff;color:white;
+                padding:3px 10px;border-radius:50px;
+                font-size:11px;font-weight:700;
+                white-space:nowrap;
+                box-shadow:0 2px 6px rgba(0,0,0,0.25);
+                margin-bottom:6px;
+                font-family:'DM Sans',sans-serif;">
+                📍 내 위치
+            </div>`,
+                yAnchor: 2.5
+            }).setMap(map);
+
+        }, () => {
+            // 위치 권한 거부시 무시
+        });
+    }
+
+
     // 지도 범위 조정
     function fitBounds(coordList) {
         if (!coordList.length) return;
@@ -382,9 +301,22 @@
                 let originPt = null;
                 const startLabel = routeData.start || '';
                 if (startLabel === '현재위치') {
-                    for (let sc of stepCoords) {
-                        if (sc) { originPt = sc.first; break; }
+                    // for (let sc of stepCoords) {
+                    //     if (sc) { originPt = sc.first; break; }
+                    // }
+                    // 👉 위치 아직 없으면 기다림
+                    if (!myLocation) {
+                        await new Promise(resolve => {
+                            const wait = setInterval(() => {
+                                if (myLocation) {
+                                    clearInterval(wait);
+                                    resolve();
+                                }
+                            }, 100);
+                        });
                     }
+
+                    originPt = myLocation;
                 } else if (startLabel) {
                     originPt = await kakaoSearch(startLabel);
                 }
@@ -426,20 +358,26 @@
                         }).setMap(map);
 
                     } else if (step.type === 'walk') {
+
                         const prevCoords = idx > 0 ? stepCoords[idx - 1] : null;
                         const nextCoords = idx < steps.length - 1 ? stepCoords[idx + 1] : null;
 
                         let startPt = prevCoords ? prevCoords.last : null;
                         let endPt   = nextCoords ? nextCoords.first : null;
 
-                        // ✅ 첫 도보: 출발지 → 첫 역
-                        if (idx === 0 && originPt && endPt) {
+                        // 🔥 핵심 1: prev 없으면 무조건 origin
+                        if (!prevCoords && originPt) {
                             startPt = originPt;
                         }
-                        // ✅ 마지막 도보: 마지막 역 → 목적지
-                        if (isLast && startPt && destPt) {
+
+                        // 🔥 핵심 2: next 없으면 목적지
+                        if (!nextCoords && destPt) {
                             endPt = destPt;
                         }
+
+                        // 🔥 핵심 3: fallback (강제 연결)
+                        if (!startPt && originPt) startPt = originPt;
+                        if (!endPt && destPt) endPt = destPt;
 
                         if (startPt && endPt) {
                             const drawn = drawWalkLine(startPt, endPt);
@@ -464,17 +402,28 @@
                         ? `<span class="step-badge" style="background:${color}22;color:${color}">${step.line}</span>`
                         : '';
 
+                    const isWalk = step.type === 'walk';
+
                     stepHtml += `
-                        <div class="step-item">
-                            <div class="step-dot-wrap">
-                                <div class="step-dot" style="background:${color}">${icon}</div>
-                                ${!isLast ? '<div class="step-line"></div>' : ''}
+                    <div class="step-item">
+
+                        <div class="step-dot-wrap">
+
+                            <div class="step-dot ${isWalk ? 'walk' : ''}"
+                                 style="${!isWalk ? `background:${color}` : ''}">
+                                ${icon}
                             </div>
-                            <div class="step-info">
-                                <strong>${stepLabel}${lineLabel}</strong>
-                                <span>${step.duration}분</span>
-                            </div>
-                        </div>`;
+
+                            ${!isLast ? '<div class="step-line"></div>' : ''}
+
+                        </div>
+
+                        <div class="step-info">
+                            <strong>${stepLabel}${lineLabel}</strong>
+                            <span>${step.duration}분</span>
+                        </div>
+
+                    </div>`;
                 }
 
                 document.getElementById('stepList').innerHTML = stepHtml;
@@ -668,6 +617,14 @@
                         }
 
                         // 역 제목
+                        function cleanLineName(name) {
+                            return name
+                                .replace(/\[.*?\]/g, '')
+                                .replace(/\(.*?\)/g, '')
+                                .replace(/번째 전역/g, '')
+                                .trim();
+                        }
+
                         html += `<div style="margin-top:10px;font-weight:700;color:#3b9eff">${result.station}역</div>`;
 
                         html += finalList.map(item => {
@@ -681,7 +638,7 @@
 
                             return `
                                 <div class="arrival-card">
-                                    <div class="arr-line">${item.trainLineNm || ''}</div>
+                                    <div class="arr-line">${cleanLineName(item.trainLineNm)}</div>
                                     <div class="arr-msg">${msg}</div>
                                 </div>`;
                         }).join('');
@@ -708,6 +665,8 @@
                         const label = parseInt(data);
                         const chip  = document.getElementById('congestionChip');
                         const fill  = document.getElementById('congestionBarFill');
+                        const msgBox = document.getElementById('congestionMsg');
+
                         let text, cls, pct;
                         if (label === 0)      { text = '여유'; cls = 'low';  pct = 30;  }
                         else if (label === 1) { text = '보통'; cls = 'mid';  pct = 60;  }
@@ -716,6 +675,14 @@
                         chip.className   = 'congestion-chip ' + cls;
                         fill.style.width = pct + '%';
                         fill.className   = 'congestion-bar-fill ' + cls;
+
+                        let msgText = '';
+
+                        if (label === 0)      msgText = "지금 시간대는 비교적 여유로운 편이에요";
+                        else if (label === 1) msgText = "이 시간대는 이용자가 많은 편입니다";
+                        else                  msgText = "출근/퇴근 시간대라 혼잡할 가능성이 있어요";
+
+                        msgBox.innerText = msgText;
                     })
                     .catch(() => {
                         document.getElementById('congestionChip').textContent = '조회 실패';
