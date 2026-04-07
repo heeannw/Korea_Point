@@ -342,11 +342,16 @@
       map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
     }
 
-    // render() 후 DOM 반영된 뒤 스크롤
+    // render() 후 DOM 반영된 뒤 스크롤 + active 카드 강조
     setTimeout(() => {
-      document.getElementById('card-' + idx)
-              ?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
-    }, 50);
+      const card = document.getElementById('card-' + idx);
+      if (card) {
+        card.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+        // active 클래스가 붙었는지 보장
+        document.querySelectorAll('.place-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+      }
+    }, 60);
 
     if (p) showPopup(p);
   }
@@ -523,15 +528,13 @@
       });
       // 마커 클릭도 String으로 전달
       kakao.maps.event.addListener(marker, 'click', () => {
-        // _currentList에서 lat+lng+title 일치하는 항목의 인덱스 찾기
+        // title로 _currentList에서 인덱스 찾기 (가장 안정적)
         const list = window._currentList || PLACES;
-        const listIdx = list.findIndex(x =>
-                x.lat == p.lat && x.lng == p.lng && x.title === p.title
-        );
+        const listIdx = list.findIndex(x => x.title === p.title);
         if (listIdx >= 0) {
-          selectPlace(listIdx);
+          selectPlace(listIdx);  // active 스타일 + 스크롤 + 팝업
         } else {
-          // 현재 필터에 없는 마커: 지도 이동 + 팝업만
+          // 현재 필터에 없는 마커
           if (p.lat && p.lng) map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
           showPopup(p);
         }
