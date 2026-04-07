@@ -247,7 +247,28 @@
     width: 100%;
     text-align: center;
     font-size: 12px;
-    color: #0e5992;
+    color: #000000;
     margin-top: 6px;
     font-weight: 500;
+}
+
+.step-item.active {
+    background: #eff6ff;
+}
+
+/* 기본 */
+.step-item {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* 지하철/버스만 hover */
+.step-item:not(.walk):hover {
+    background: #f1f5f9;
+    transform: translateY(-2px);
+}
+
+/* 도보는 클릭 느낌 제거 */
+.step-item.walk {
+    cursor: default;
 }

@@ -405,7 +405,9 @@
                     const isWalk = step.type === 'walk';
 
                     stepHtml += `
-                    <div class="step-item">
+                    <div class="step-item ${isWalk ? 'walk' : ''}"
+                         data-lat="${step.path?.[0]?.lat || ''}"
+                         data-lng="${step.path?.[0]?.lng || ''}">
 
                         <div class="step-dot-wrap">
 
@@ -426,7 +428,59 @@
                     </div>`;
                 }
 
+                // 도착역 step 추가
+                // 🔥 마지막 subway 기준으로 도착역 추가
+                let lastSubwayStep = null;
+
+                for (let i = steps.length - 1; i >= 0; i--) {
+                    if (steps[i].type === 'subway' && steps[i].path) {
+                        lastSubwayStep = steps[i];
+                        break;
+                    }
+                }
+
+                if (lastSubwayStep) {
+                    const last = lastSubwayStep.path[lastSubwayStep.path.length - 1];
+
+                    stepHtml += `
+                    <div class="step-item"
+                         data-lat="${last.lat}"
+                         data-lng="${last.lng}">
+
+                        <div class="step-dot-wrap">
+                            <div class="step-dot" style="background:#3b9eff">📍</div>
+                        </div>
+
+                        <div class="step-info">
+                            <strong>${lastSubwayStep.toStation} 도착</strong>
+                        </div>
+
+                    </div>`;
+                }
+
                 document.getElementById('stepList').innerHTML = stepHtml;
+
+                //역 클릭 이동
+                document.querySelectorAll('.step-item').forEach(item => {
+                    item.addEventListener('click', () => {
+
+                        document.querySelectorAll('.step-item')
+                            .forEach(el => el.classList.remove('active'));
+
+                        item.classList.add('active');
+
+                        const lat = item.dataset.lat;
+                        const lng = item.dataset.lng;
+
+                        if (!lat || !lng) return;
+
+                        const moveLatLng = new kakao.maps.LatLng(lat, lng);
+
+                        map.setLevel(3); //확대
+                        map.panTo(moveLatLng);//이동
+                    });
+                });
+
 
                 // ✅ 출발 마커
                 if (originPt) {
@@ -679,7 +733,7 @@
                         let msgText = '';
 
                         if (label === 0)      msgText = "지금 시간대는 비교적 여유로운 편이에요";
-                        else if (label === 1) msgText = "이 시간대는 이용자가 많은 편입니다";
+                        else if (label === 1) msgText = "이용객이 점점 늘어나는 시간대에요";
                         else                  msgText = "출근/퇴근 시간대라 혼잡할 가능성이 있어요";
 
                         msgBox.innerText = msgText;
