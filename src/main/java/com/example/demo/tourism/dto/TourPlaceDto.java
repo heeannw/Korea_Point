@@ -13,11 +13,12 @@ public class TourPlaceDto {
     private String google_place_id;
     private String google_name;
     private String google_addr;
-    private Float rating;
+    private Double rating;
     private int user_ratings_total;
     private List<TourReviewDto> reviews;
     private Float score;
     private Float positive_ratio;
+    private Double distance;
 
     public int getId() {
         return id;
@@ -99,11 +100,11 @@ public class TourPlaceDto {
         this.google_addr = google_addr;
     }
 
-    public Float getRating() {
+    public Double getRating() {
         return rating;
     }
 
-    public void setRating(Float rating) {
+    public void setRating(Double rating) {
         this.rating = rating;
     }
 
@@ -137,5 +138,13 @@ public class TourPlaceDto {
 
     public void setPositive_ratio(Float positive_ratio) {
         this.positive_ratio = positive_ratio;
+    }
+
+    public Double getDistance() {
+        return distance;
+    }
+
+    public void setDistance(Double distance) {
+        this.distance = distance;
     }
 }

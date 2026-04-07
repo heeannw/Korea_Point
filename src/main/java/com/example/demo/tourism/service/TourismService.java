@@ -131,8 +131,7 @@ public class TourismService {
     // ─────────────────────────────────────────────────────────
     public List<TourPlaceDto> analyzeLocation(Double lat, Double lon) {
         try {
-            InputStream is = getClass().getClassLoader()
-                    .getResourceAsStream("data/tourism/seoul_recommend_.json"); // ✅ 경로 수정
+            InputStream is = getClass().getClassLoader().getResourceAsStream("data/tourism/seoul_recommend_candidates.json"); // 경로 수정
             if (is == null) throw new RuntimeException("JSON 파일 없음 - 경로 확인 필요");
 
             List<TourPlaceDto> list = mapper.readValue(is, new TypeReference<>() {});
@@ -147,11 +146,12 @@ public class TourismService {
                 double s = score(
                         obj.getTitle(),
                         obj.getType(),
-                        obj.getRating() != null ? obj.getRating() : 0.0, // ✅ null 체크
+                        obj.getRating() != null ? obj.getRating() : 0.0, //
                         obj.getUser_ratings_total(),
                         obj.getReviews() // score() 안에서 null 처리함
                 );
                 obj.setScore((float) s);
+                obj.setDistance(Math.round(distance * 1000.0) / 1000.0);
                 nearbyList.add(obj);
             }
 
@@ -255,5 +255,43 @@ public class TourismService {
         if (v == null) return 0;
         if (v instanceof Number) return ((Number) v).intValue();
         try { return Integer.parseInt(v.toString()); } catch (Exception e) { return 0; }
+    }
+    //검색어 들어왓을떄 위치 찾기
+    public List<TourPlaceDto> searchKeyword(String keyword) {
+        InputStream is = getClass().getClassLoader().getResourceAsStream("data/tourism/seoul_recommend_candidates.json");
+        if (is == null) throw new RuntimeException("JSON 파일 없음");
+
+        try {
+            List<TourPlaceDto> list = mapper.readValue(is, new TypeReference<List<TourPlaceDto>>() {});
+
+            //위치 좌표 찾기
+            List<TourPlaceDto> resultList = new ArrayList<>();
+            for (TourPlaceDto a : list) {
+                String title = a.getTitle() != null ? a.getTitle() : "";
+                String gName = a.getGoogle_name() != null ? a.getGoogle_name() : "";
+                if (title.contains(keyword) || gName.contains(keyword)) {
+                    resultList.add(a);
+                    break; // 찾으면 break
+                }
+            }
+
+
+
+//            System.out.println("lat!! " + lat);
+//            System.out.println("lon!! " + lon);
+//            // ✅ 못 찾으면 빈 리스트 반환
+//            if (lat == null || lon == null) return new ArrayList<>();
+//
+//            // ✅ 2루프: 찾은 좌표 기준으로 2km 이내 필터링
+////            List<TourPlaceDto> nearbyList = new ArrayList<>();
+//
+//            System.out.println(analyzeLocation(lat,lon).get(0).getRating());
+//            System.out.println(analyzeLocation(lat,lon).get(0).getTitle());
+//
+            return resultList;
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

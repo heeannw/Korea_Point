@@ -72,9 +72,20 @@ public class TourismController {
 //        return tourismService.recommend(candidates, userLat, userLng, 5.0, 10);
 //    }
 
-    @RequestMapping("/tour/All")
-    public String tourAll(@ModelAttribute("tour")TourPlaceDto tourPlaceDto)  {
+    @RequestMapping("/tour/all")
+    public String tourAll(Model model)  {
 
+        model.addAttribute("kakaoKey","cd0022ebe44b8280a5811612a2069dd1");
+        return "tourism/explore";
+    }
+
+    @RequestMapping("/tour/search")
+    public String tourSearch(@RequestParam(value = "keyword",required = false) String keyword,Model model)  {
+        List<TourPlaceDto> list = tourismService.searchKeyword("예술의");
+//        tourismService.analyzeLocation()
+        //System.out.println("tour / " + list.get(0).getTitle());
+        //model.addAttribute("list",list);
+        model.addAttribute("kakaoKey","cd0022ebe44b8280a5811612a2069dd1");
         return "tourism/explore";
     }
 
@@ -83,7 +94,12 @@ public class TourismController {
 
         List<TourPlaceDto> nearbyList = tourismService.analyzeLocation(lat,lon);
 
-        model.addAttribute("nearbyList", nearbyList);
+        model.addAttribute("list", nearbyList);
+        model.addAttribute("userlat",lat);
+        model.addAttribute("userlon",lon);
+        model.addAttribute("kakaoKey","cd0022ebe44b8280a5811612a2069dd1");
+
+
         return "tourism/explore";
     }
 }
