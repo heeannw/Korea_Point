@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Route Detail — KoreaPoint</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
+  <style>
+    :root {
+      --blue: #3b9eff; --blue-dk: #1a7de0; --blue-lt: #eff6ff;
+      --dark: #0f172a; --mid: #334155; --gray: #64748b;
+      --border: #dbeafe; --white: #fff; --light: #f0f7ff;
+      --gold: #f59e0b; --green: #16a34a;
+      --r: 12px; --sh: 0 2px 16px rgba(59,158,255,.10);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--white); color: var(--dark); display: flex; flex-direction: column; }
+
+    header {
+      height: 56px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; border-bottom: 1px solid var(--border);
+      background: var(--white); flex-shrink: 0; z-index: 100;
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: var(--blue-dk); text-decoration: none; }
+    .logo span { color: var(--dark); }
+    .header-right { display: flex; gap: 8px; align-items: center; }
+    .h-btn {
+      padding: 7px 16px; border-radius: 50px; border: 1.5px solid var(--border);
+      background: transparent; font-size: 12px; font-weight: 600; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; color: var(--dark); transition: all .2s;
+      text-decoration: none; display: inline-flex; align-items: center;
+    }
+    .h-btn:hover, .h-btn.active { border-color: var(--blue); color: var(--blue); }
+    .h-btn-fill { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .h-btn-fill:hover { background: var(--blue-dk); color: #fff; }
+
+    .app-body { flex: 1; display: flex; overflow: hidden; }
+    .sidebar {
+      width: 380px; flex-shrink: 0; display: flex; flex-direction: column;
+      border-right: 1px solid var(--border); background: var(--white); overflow: hidden;
+    }
+    .route-header { padding: 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--gray); text-decoration: none; font-size: 12px; font-weight: 600;
+      margin-bottom: 12px; transition: color .2s;
+    }
+    .back-link:hover { color: var(--blue); }
+    .route-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+    .route-sub { font-size: 13px; color: var(--gray); }
+    .stats-row { display: flex; gap: 6px; margin-top: 12px; }
+    .stat-chip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 50px; background: var(--light);
+      border: 1.5px solid var(--border); font-size: 12px; font-weight: 600; color: var(--mid);
+    }
+    .stat-chip .sc-icon { font-size: 13px; }
+
+    .congestion-banner {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; background: #fff7ed;
+      border-bottom: 1px solid #fed7aa; font-size: 13px; flex-shrink: 0;
+    }
+    .congestion-banner .label { font-weight: 600; color: var(--gray); white-space: nowrap; }
+    .congestion-chip { display: inline-block; padding: 3px 12px; border-radius: 50px; font-size: 12px; font-weight: 700; }
+    .congestion-chip.low  { background: #d1fae5; color: #065f46; }
+    .congestion-chip.mid  { background: #fef3c7; color: #92400e; }
+    .congestion-chip.high { background: #fee2e2; color: #991b1b; }
+    .congestion-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .congestion-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+    .congestion-bar-fill.low  { background: #10b981; }
+    .congestion-bar-fill.mid  { background: var(--gold); }
+    .congestion-bar-fill.high { background: #ef4444; }
+
+    .tabs { display: flex; background: var(--white); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .tab-btn {
+      flex: 1; padding: 12px; font-size: 12px; font-weight: 600;
+      text-align: center; cursor: pointer; color: var(--gray);
+      border: none; border-bottom: 2px solid transparent;
+      background: none; transition: all .2s; font-family: 'DM Sans', sans-serif;
+    }
+    .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+    .tab-content { display: none; padding: 12px; overflow-y: auto; flex: 1; }
+    .tab-content.active { display: flex; flex-direction: column; }
+    .tab-content::-webkit-scrollbar { width: 4px; }
+    .tab-content::-webkit-scrollbar-track { background: transparent; }
+    .tab-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .step-item {
+      display: flex; gap: 12px; padding: 10px;
+      border-radius: var(--r); transition: background .15s; cursor: default; align-items: flex-start;
+    }
+    .step-item:hover { background: var(--light); }
+    .step-dot-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 32px; }
+    .step-dot {
+      width: 30px; height: 30px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: white; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    .step-line { width: 2px; height: 28px; background: var(--border); border-radius: 1px; margin: 3px 0; }
+    .step-info { flex: 1; padding-top: 4px; }
+    .step-info strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 3px; color: var(--dark); }
+    .step-info span { font-size: 12px; color: var(--gray); }
+    .step-badge { display: inline-block; padding: 2px 8px; border-radius: 50px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+
+    .arrival-card {
+      background: var(--light); border: 1.5px solid var(--border);
+      border-radius: var(--r); padding: 12px 14px; margin-bottom: 8px;
+    }
+    .arrival-card .arr-line { font-size: 13px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+    .arrival-card .arr-msg  { font-size: 12px; color: var(--gray); }
+    .no-data { text-align: center; padding: 40px 20px; color: var(--gray); font-size: 14px; }
+    .error-box { padding: 20px; color: #ef4444; font-size: 14px; }
+
+    .map-area { flex: 1; position: relative; overflow: hidden; }
+    #map { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .map-controls {
+      position: absolute; top: 16px; right: 16px;
+      display: flex; flex-direction: column; gap: 4px; z-index: 30;
+    }
+    .mc {
+      width: 36px; height: 36px; background: #fff; border: 1px solid var(--border);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; box-shadow: var(--sh); transition: background .2s;
+    }
+    .mc:hover { background: var(--light); }
+    .loc-btn {
+      position: absolute; bottom: 24px; right: 16px;
+      background: #fff; border: 1px solid var(--border); border-radius: 50px;
+      padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; box-shadow: var(--sh);
+      color: var(--dark); font-family: 'DM Sans', sans-serif; z-index: 30; transition: all .2s;
+    }
+    .loc-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .map-legend {
+      position: absolute; top: 16px; left: 16px;
+      background: rgba(255,255,255,.95); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 14px; box-shadow: var(--sh); z-index: 30; min-width: 130px;
+    }
+    .legend-title { font-size: 11px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--mid); margin-bottom: 5px; }
+    .legend-item:last-child { margin-bottom: 0; }
+    .legend-line { width: 24px; height: 4px; border-radius: 2px; }
+    .legend-dash { width: 24px; height: 0; border-top: 3px dashed #666666; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
+  <div class="header-right">
+    <!-- ✅ EN 활성 -->
+    <a th:href="@{/en/transport/detail(routeId=${route?.routeId})}" class="h-btn active">EN</a>
+    <a th:href="@{/ko/transport/detail(routeId=${route?.routeId})}" class="h-btn">KR</a>
+    <button class="h-btn h-btn-fill">Login</button>
+  </div>
+</header>
+
+<div class="app-body">
+  <div class="sidebar">
+    <div class="route-header">
+      <a class="back-link"
+         th:href="@{/en/transport/search(start=${route?.start}, end=${route?.end})}"
+         href="#">← Back to Search</a>
+      <div class="route-title" th:text="${route?.start} + ' → ' + ${route?.end}">Origin → Destination</div>
+      <div class="route-sub" th:text="'Depart at ' + ${route?.departTime}">Depart Info</div>
+      <div class="stats-row">
+        <div class="stat-chip"><span class="sc-icon">⏱</span><span th:text="${route?.totalTime} + 'min'">— min</span></div>
+        <div class="stat-chip"><span class="sc-icon">🔄</span><span th:text="${route?.transferCount} + ' transfer(s)'">Transfer</span></div>
+        <div class="stat-chip"><span class="sc-icon">🚇</span><span>Live</span></div>
+      </div>
+    </div>
+
+    <div class="congestion-banner">
+      <span class="label">🚇 Congestion</span>
+      <span class="congestion-chip" id="congestionChip">Loading...</span>
+      <div class="congestion-bar-wrap">
+        <div class="congestion-bar-fill" id="congestionBarFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('steps', this)">📋 Route Steps</button>
+      <button class="tab-btn" onclick="switchTab('arrival', this)">🚇 Live Arrival</button>
+    </div>
+    <div id="tab-steps" class="tab-content active">
+      <div id="stepList"><p class="no-data">Loading...</p></div>
+    </div>
+    <div id="tab-arrival" class="tab-content">
+      <div id="arrivalList"><p class="no-data">Loading...</p></div>
+    </div>
+  </div>
+
+  <div class="map-area">
+    <div id="map"></div>
+    <div class="map-legend">
+      <div class="legend-title">Legend</div>
+      <div class="legend-item"><div class="legend-line" style="background:#3b9eff"></div>Subway</div>
+      <div class="legend-item"><div class="legend-line" style="background:#10b981"></div>Bus</div>
+      <div class="legend-item"><div class="legend-dash"></div>Walk</div>
+    </div>
+    <div class="map-controls">
+      <div class="mc" id="mcZoomIn">＋</div>
+      <div class="mc" id="mcZoomOut">－</div>
+    </div>
+    <button class="loc-btn" id="locBtn">📍 My Location</button>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  const routeId = /*[[${route?.routeId}]]*/ null;
+  /*]]>*/
+</script>
+
+<script>
+  const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
+
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + id).classList.add('active');
+  }
+
+  var map = new kakao.maps.Map(document.getElementById('map'), {
+    center: new kakao.maps.LatLng(37.5665, 126.9780),
+    level: 6
+  });
+
+  document.getElementById('mcZoomIn').addEventListener('click', () => map.setLevel(map.getLevel() - 1));
+  document.getElementById('mcZoomOut').addEventListener('click', () => map.setLevel(map.getLevel() + 1));
+
+  function typeColor(type, fallback) {
+    if (fallback) return fallback;
+    if (type === 'walk') return '#f59e0b';
+    if (type === 'bus')  return '#10b981';
+    return '#3b9eff';
+  }
+  function typeIcon(type) {
+    if (type === 'walk') return '🚶';
+    if (type === 'bus')  return '🚌';
+    return '🚇';
+  }
+
+  function kakaoSearch(query) {
+    return fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}`, {
+      headers: { 'Authorization': KAKAO_KEY }
+    })
+            .then(r => r.json())
+            .then(d => {
+              if (d.documents && d.documents.length > 0) {
+                return { lat: parseFloat(d.documents[0].y), lng: parseFloat(d.documents[0].x) };
+              }
+              return null;
+            })
+            .catch(() => null);
+  }
+
+  function drawWalkLine(startPt, endPt) {
+    const path = [
+      new kakao.maps.LatLng(startPt.lat, startPt.lng),
+      new kakao.maps.LatLng(endPt.lat, endPt.lng)
+    ];
+    new kakao.maps.Polyline({ path, strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: 0.9, strokeStyle: 'solid' }).setMap(map);
+    new kakao.maps.Polyline({ path, strokeWeight: 4, strokeColor: '#666666', strokeOpacity: 0.8, strokeStyle: 'shortdash' }).setMap(map);
+    return [{ lat: startPt.lat, lng: startPt.lng }, { lat: endPt.lat, lng: endPt.lng }];
+  }
+
+  function drawMarker(latLng, color, label) {
+    new kakao.maps.CustomOverlay({
+      position: latLng, yAnchor: 1,
+      content: `<div style="display:flex;flex-direction:column;align-items:center;">
+                <div style="margin-top:6px;background:${color};color:white;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.25);">${label}</div>
+            </div>`
+    }).setMap(map);
+  }
+
+  function drawTransferMarker(latLng, color, label) {
+    new kakao.maps.CustomOverlay({
+      position: latLng, yAnchor: 0.5,
+      content: `<div style="display:flex;flex-direction:column;align-items:center;">
+                <div style="width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid ${color};box-shadow:0 2px 6px rgba(0,0,0,0.2);"></div>
+                ${label ? `<div style="margin-top:6px;background:${color};color:white;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2);">${label}</div>` : ''}
+            </div>`
+    }).setMap(map);
+  }
+
+  function fitBounds(coordList) {
+    if (!coordList.length) return;
+    const bounds = new kakao.maps.LatLngBounds();
+    coordList.forEach(c => bounds.extend(new kakao.maps.LatLng(c.lat, c.lng)));
+    map.setBounds(bounds);
+  }
+
+  if (!routeId) {
+    document.getElementById('stepList').innerHTML = '<p class="no-data">No route data</p>';
+  } else {
+    fetch('/api/transport/route/' + routeId)
+            .then(res => res.json())
+            .then(async routeData => {
+
+              const steps = routeData.steps;
+              let allCoords = [];
+              let stepHtml  = '';
+
+              const stepCoords = steps.map(step => {
+                if (step.path && step.path.length > 0) {
+                  return { first: step.path[0], last: step.path[step.path.length - 1] };
+                }
+                return null;
+              });
+
+              let originPt = null;
+              const startLabel = routeData.start || '';
+              if (startLabel === '현재위치' && routeData.startLat && routeData.startLng) {
+                originPt = { lat: routeData.startLat, lng: routeData.startLng };
+              } else if (startLabel === '현재위치') {
+                for (let sc of stepCoords) {
+                  if (sc) { originPt = sc.first; break; }
+                }
+              } else if (startLabel) {
+                originPt = await kakaoSearch(startLabel);
+              }
+
+              let destPt = null;
+              const endLabel = routeData.end || '';
+              if (endLabel) destPt = await kakaoSearch(endLabel);
+
+              for (let idx = 0; idx < steps.length; idx++) {
+                const step   = steps[idx];
+                const color  = typeColor(step.type, step.color);
+                const icon   = typeIcon(step.type);
+                const isLast = idx === steps.length - 1;
+
+                if (step.path && step.path.length > 0) {
+                  const linePath = step.path.map(p => new kakao.maps.LatLng(p.lat, p.lng));
+                  step.path.forEach(p => allCoords.push(p));
+                  new kakao.maps.Polyline({ path: linePath, strokeWeight: 12, strokeColor: '#ffffff', strokeOpacity: 0.9, strokeStyle: 'solid' }).setMap(map);
+                  new kakao.maps.Polyline({ path: linePath, strokeWeight: 7, strokeColor: color, strokeOpacity: 1, strokeStyle: 'solid' }).setMap(map);
+                } else if (step.type === 'walk') {
+                  const prevCoords = idx > 0 ? stepCoords[idx - 1] : null;
+                  const nextCoords = idx < steps.length - 1 ? stepCoords[idx + 1] : null;
+                  let startPt = prevCoords ? prevCoords.last : null;
+                  let endPt   = nextCoords ? nextCoords.first : null;
+                  if (idx === 0 && originPt && endPt) startPt = originPt;
+                  if (isLast && startPt && destPt) endPt = destPt;
+                  if (startPt && endPt) {
+                    const drawn = drawWalkLine(startPt, endPt);
+                    drawn.forEach(p => allCoords.push(p));
+                  }
+                }
+
+                const from = step.fromStation || '';
+                const to   = step.toStation   || '';
+                let stepLabel = '';
+                if (step.type === 'walk') {
+                  if (from && to && from !== to) stepLabel = `${from} → ${to}`;
+                  else if (from) stepLabel = `Walk from ${from}`;
+                  else if (to)   stepLabel = `Walk to ${to}`;
+                  else           stepLabel = `Walk`;
+                } else {
+                  stepLabel = `${from} → ${to}`;
+                }
+
+                const lineLabel = step.line
+                        ? `<span class="step-badge" style="background:${color}22;color:${color}">${step.line}</span>`
+                        : '';
+
+                stepHtml += `
+                        <div class="step-item">
+                            <div class="step-dot-wrap">
+                                <div class="step-dot" style="background:${color}">${icon}</div>
+                                ${!isLast ? '<div class="step-line"></div>' : ''}
+                            </div>
+                            <div class="step-info">
+                                <strong>${stepLabel}${lineLabel}</strong>
+                                <span>${step.duration} min</span>
+                            </div>
+                        </div>`;
+              }
+
+              document.getElementById('stepList').innerHTML = stepHtml;
+
+              if (originPt) {
+                drawMarker(new kakao.maps.LatLng(originPt.lat, originPt.lng), '#ef4444', `🚩 Depart · ${startLabel}`);
+                allCoords.unshift(originPt);
+              }
+              if (destPt) {
+                drawMarker(new kakao.maps.LatLng(destPt.lat, destPt.lng), '#3b9eff', '🏁 Arrive');
+                allCoords.push(destPt);
+              }
+
+              const subwaySteps = [];
+              steps.forEach((step, idx) => {
+                if (step.type === 'subway') subwaySteps.push({ step, idx });
+              });
+
+              for (let i = 1; i < subwaySteps.length; i++) {
+                const prev = subwaySteps[i - 1];
+                const prevCoords = stepCoords[prev.idx];
+                if (!prevCoords || !prevCoords.last) continue;
+                const color = typeColor(subwaySteps[i].step.type, subwaySteps[i].step.color);
+                drawTransferMarker(new kakao.maps.LatLng(prevCoords.last.lat, prevCoords.last.lng), color, '');
+              }
+
+              fitBounds(allCoords);
+
+              if (destPt) {
+                let alertShown = false;
+                const alertOverlay = new kakao.maps.CustomOverlay({
+                  position: new kakao.maps.LatLng(destPt.lat, destPt.lng),
+                  content: `<div style="background:#ef4444;color:white;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,0.3);white-space:nowrap;">🔔 You're near the destination!</div>`,
+                  yAnchor: 2.5, zIndex: 10
+                });
+
+                function getDistance(lat1, lng1, lat2, lng2) {
+                  const R = 6371000;
+                  const dLat = (lat2 - lat1) * Math.PI / 180;
+                  const dLng = (lng2 - lng1) * Math.PI / 180;
+                  const a = Math.sin(dLat/2) * Math.sin(dLat/2)
+                          + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+                          * Math.sin(dLng/2) * Math.sin(dLng/2);
+                  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                }
+
+                const locationWatcher = setInterval(() => {
+                  navigator.geolocation.getCurrentPosition(pos => {
+                    const dist = getDistance(pos.coords.latitude, pos.coords.longitude, destPt.lat, destPt.lng);
+                    if (dist < 200 && !alertShown) {
+                      alertShown = true;
+                      alertOverlay.setMap(map);
+                      map.setCenter(new kakao.maps.LatLng(destPt.lat, destPt.lng));
+                      map.setLevel(3);
+                      setTimeout(() => alertOverlay.setMap(null), 30000);
+                    } else if (dist >= 200) {
+                      alertShown = false;
+                      alertOverlay.setMap(null);
+                    }
+                  });
+                }, 5000);
+
+                window.addEventListener('beforeunload', () => clearInterval(locationWatcher));
+              }
+
+              // ── Live Arrival ──
+              const stationList = [];
+              for (let step of steps) {
+                if (step.type === 'subway') {
+                  const name = step.fromStation?.replace(/\s+/g, '').replace(/역$/, '');
+                  if (name && !stationList.includes(name)) stationList.push(name);
+                }
+              }
+
+              const requests = stationList.map(st =>
+                      fetch(`/api/transport/subway?station=${encodeURIComponent(st)}`)
+                              .then(res => res.json())
+                              .then(data => ({ station: st, list: data.realtimeArrivalList || [] }))
+              );
+
+              Promise.all(requests).then(results => {
+                let html = '';
+                results.forEach(result => {
+                  const list = result.list;
+                  if (!list.length) return;
+
+                  let directionKeyword = '';
+                  for (let step of steps) {
+                    if (step.type === 'subway') {
+                      directionKeyword = step.toStation.replace(/역$/, '').replace(/\(.*?\)/g, '').replace(/\s+/g, '');
+                      break;
+                    }
+                  }
+
+                  const directionGroups = {};
+                  list.forEach(item => {
+                    if (!item.trainLineNm) return;
+                    const key = item.trainLineNm.split('방면')[0].replace(/\s+/g, '');
+                    if (!directionGroups[key]) directionGroups[key] = [];
+                    directionGroups[key].push(item);
+                  });
+
+                  const filtered = list.filter(item => {
+                    if (!item.trainLineNm) return false;
+                    const directionPart = item.trainLineNm.split('방면')[0];
+                    return directionPart.replace(/\s+/g, '').includes(directionKeyword);
+                  });
+
+                  let finalList = [];
+                  if (filtered.length > 0) {
+                    finalList = filtered.slice(0, 2);
+                  } else {
+                    const matchedGroup = Object.entries(directionGroups).find(([key]) => key.includes(directionKeyword));
+                    const group = matchedGroup ? matchedGroup[1] : Object.values(directionGroups)[0] || [];
+                    finalList = group.slice(0, 2);
+                  }
+
+                  html += `<div style="margin-top:10px;font-weight:700;color:#3b9eff">${result.station} Station</div>`;
+                  html += finalList.map(item => {
+                    const sec = parseInt(item.barvlDt);
+                    let msg = '';
+                    if (sec <= 60 && sec > 0)        msg = '🚨 Arriving soon';
+                    else if (!isNaN(sec) && sec > 0) msg = `Arriving in ${Math.floor(sec / 60)} min`;
+                    else                             msg = item.arvlMsg2 || '';
+                    return `<div class="arrival-card">
+                                <div class="arr-line">${item.trainLineNm || ''}</div>
+                                <div class="arr-msg">${msg}</div>
+                            </div>`;
+                  }).join('');
+                });
+
+                document.getElementById('arrivalList').innerHTML = html || '<p class="no-data">No info available</p>';
+              }).catch(() => {
+                document.getElementById('arrivalList').innerHTML = '<p class="no-data">Failed to load</p>';
+              });
+
+              // ── Congestion ──
+              let station = stationList[0] || '';
+              const stationCode = station
+                      ? (station.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 200) + 1
+                      : 50;
+              const hour = new Date().getHours();
+              const day  = (new Date().getDay() === 0 || new Date().getDay() === 6) ? 0 : 1;
+
+              fetch(`/api/transport/congestion?station=${stationCode}&hour=${hour}&day=${day}`)
+                      .then(res => res.text())
+                      .then(data => {
+                        const label = parseInt(data);
+                        const chip  = document.getElementById('congestionChip');
+                        const fill  = document.getElementById('congestionBarFill');
+                        let text, cls, pct;
+                        if (label === 0)      { text = 'Low';    cls = 'low';  pct = 30;  }
+                        else if (label === 1) { text = 'Medium'; cls = 'mid';  pct = 60;  }
+                        else                  { text = 'High';   cls = 'high'; pct = 100; }
+                        chip.textContent = text;
+                        chip.className   = 'congestion-chip ' + cls;
+                        fill.style.width = pct + '%';
+                        fill.className   = 'congestion-bar-fill ' + cls;
+                      })
+                      .catch(() => {
+                        document.getElementById('congestionChip').textContent = 'Failed';
+                      });
+            })
+            .catch(err => {
+              console.error(err);
+              document.getElementById('stepList').innerHTML = '<p class="error-box">Failed to load data</p>';
+            });
+  }
+</script>
+
+</body>
+</html>
