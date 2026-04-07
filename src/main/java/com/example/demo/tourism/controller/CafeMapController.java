@@ -2,7 +2,6 @@ package com.example.demo.tourism.controller;
 
 import com.example.demo.tourism.dto.CafeDto;
 import com.example.demo.tourism.service.CafeService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
