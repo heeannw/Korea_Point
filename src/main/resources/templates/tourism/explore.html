@@ -265,8 +265,11 @@
   let activeSort     = 'recommended';
   let activePinId    = null;
   let currentPopup   = null;
+  let popupOverlay = null;
   let currentPopupPlace = null;
   let map;
+  let markerMap = [];
+  let selectedMarker = null;
 
   // type이 String/숫자 둘 다 처리
   function typeName(type) {
@@ -357,27 +360,70 @@
   }
 
   function showPopup(p) {
-    if (!p) return;
+    if (!p || !map) return;
     currentPopupPlace = p;
 
-    document.getElementById('popupImg').style.backgroundImage = `url('${p.image ?? ''}')`;
-    document.getElementById('popupName').textContent = p.title ?? '-';
-    document.getElementById('popupMeta').textContent =
-            `★ ${p.rating ?? '-'} · ${distStr(p.distance)} away · ${typeName(p.type)}`;
+    const content = `
+    <div style="
+      background:#fff;
+      border-radius:12px;
+      box-shadow:0 8px 32px rgba(0,0,0,.18);
+      width:240px;
+      overflow:hidden;
+      border:1px solid #dbeafe;
+      position:relative;
+    ">
+      <div style="
+        height:110px;
+        background-image:url('${p.image ?? ''}');
+        background-size:cover;
+        background-position:center;
+        background-color:#f0f7ff;
+        position:relative;
+      ">
+        <button onclick="closePopup()"
+          style="
+            position:absolute;top:6px;right:8px;
+            background:rgba(0,0,0,.4);color:#fff;border:none;
+            border-radius:50%;width:22px;height:22px;cursor:pointer;
+          ">×</button>
+      </div>
+      <div style="padding:12px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:3px;">${p.title ?? '-'}</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:8px;">
+          ★ ${p.rating ?? '-'} · ${distStr(p.distance)} away · ${typeName(p.type)}
+        </div>
+        <a href="#"
+           onclick="openDetailFromPopup(event)"
+           style="
+             display:block;width:100%;padding:8px;background:#3b9eff;color:#fff;
+             border:none;border-radius:8px;font-size:13px;font-weight:600;
+             text-align:center;text-decoration:none;
+           ">
+          View Details →
+        </a>
+      </div>
+    </div>
+  `;
 
-    document.getElementById('popupDetailBtn').onclick = function(e) {
-      e.preventDefault();
-      openDetail(p);
-    };
+    if (popupOverlay) {
+      popupOverlay.setMap(null);
+    }
 
-    const popup = document.getElementById('mapPopup');
-    popup.style.left = '20px';
-    popup.style.top  = '20px';
-    popup.classList.add('show');
+    popupOverlay = new kakao.maps.CustomOverlay({
+      map: map,
+      position: new kakao.maps.LatLng(p.lat, p.lng),
+      content: content,
+      yAnchor: 1.45
+    });
   }
 
   function closePopup() {
-    document.getElementById('mapPopup').classList.remove('show');
+    if (popupOverlay) {
+      popupOverlay.setMap(null);
+      popupOverlay = null;
+    }
+    currentPopupPlace = null;
     activePinId = null;
     render();
   }
@@ -446,6 +492,13 @@
     document.getElementById('detailPanel').classList.remove('open');
   }
 
+  function openDetailFromPopup(e) {
+    e.preventDefault();
+    if (currentPopupPlace) {
+      openDetail(currentPopupPlace);
+    }
+  }
+
   document.getElementById('mapArea').addEventListener('click', function(e) {
     if (!e.target.closest('.map-popup') &&
             !e.target.closest('.detail-panel') &&
@@ -510,6 +563,11 @@
       center: new kakao.maps.LatLng(centerLat, centerLon),
       level: 5
     });
+
+    const activeMarkerImage = new kakao.maps.MarkerImage(
+            "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
+            new kakao.maps.Size(36, 52)
+    );
 
     if (userLat && userLon) {
       new kakao.maps.Marker({
