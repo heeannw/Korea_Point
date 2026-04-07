@@ -129,12 +129,14 @@
 
 <div class="app-body">
   <div class="sidebar">
+    <form action="/tour/search/" method="get">
     <div class="search-bar">
       <div class="search-wrap">
-        <input type="text" placeholder="Search in Seoul..." id="searchInput" oninput="filterPlaces()">
-        <span class="si">🔍</span>
+        <input type="text" placeholder="Search in Seoul..." name="keyword" id="searchInput">
+        <button class="si" type="submit">🔍</button>
       </div>
     </div>
+    </form>
     <div class="filter-row" id="filterRow">
       <div class="chip active" onclick="setCategory('All')">All</div>
       <div class="chip" onclick="setCategory('문화시설')">🏛 문화시설</div>
@@ -257,8 +259,7 @@
     render();
   }
 
-  function filterPlaces() { render(); }
-
+  // 현위치 주위 및 검색어 위치로 반경2km 리스트 반환하기
   function render() {
     const list = getFiltered();
     document.getElementById('countDisplay').textContent = list.length;

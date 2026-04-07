@@ -127,7 +127,7 @@ public class TourismService {
     }
 
     // ─────────────────────────────────────────────────────────
-    // 현위치 기반 2km 이내 추천 ✅ 핵심 메서드
+    // 현위치 기반 2km 이내 추천
     // ─────────────────────────────────────────────────────────
     public List<TourPlaceDto> analyzeLocation(Double lat, Double lon) {
         try {
@@ -271,8 +271,8 @@ public class TourismService {
                 String gName = a.getGoogle_name() != null ? a.getGoogle_name() : "";
                 if (title.contains(keyword) || gName.contains(keyword)) {
                     resultList.add(a);
-                    break; // 찾으면 break
                 }
+
             }
 
 
