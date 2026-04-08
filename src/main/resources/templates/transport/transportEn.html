@@ -42,7 +42,6 @@
 <header>
     <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
     <div class="header-right">
-        <!-- EN -->
         <a th:href="${route != null}
                 ? @{/en/transport/detail(routeId=${route.routeId})}
                 : @{/en/transport/search}"
@@ -51,27 +50,16 @@
             EN
         </a>
 
-        <!-- KR -->
         <a th:href="${route != null}
-                ? @{/ko/transport/detail(routeId=${route.routeId})}
-                : @{/ko/transport/search}"
+                ? @{/transport/detail(routeId=${route.routeId})}
+                : @{/transport/search}"
            class="h-btn"
            th:classappend="${lang == 'ko'} ? ' active'">
             KR
         </a>
-
-        <th:block th:if="${isLoggedIn}">
-            <span class="h-btn" th:text="${currentUserName}"></span>
-            <form th:action="@{/logout}" method="post">
-                <button type="submit" class="h-btn h-btn-fill">Logout</button>
-            </form>
-        </th:block>
-
-        <th:block th:unless="${isLoggedIn}">
-            <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
-        </th:block>
     </div>
 </header>
+
 
 <div class="hero">
     <h1>🚇 Transit Route Search</h1>
@@ -79,7 +67,7 @@
 
     <div class="search-card">
         <form th:action="@{/en/transport/search}" method="get" id="searchForm">
-            <div class="input-group">
+        <div class="input-group">
                 <div class="input-row">
                     <div class="input-icon">🚩</div>
                     <div class="input-wrap">
@@ -122,7 +110,7 @@
     </div>
 
     <div th:if="${routes != null and !#lists.isEmpty(routes)}">
-        <a class="re-search" th:href="@{/en/transport/search}">← Search Again</a>
+        <a class="re-search" th:href="@{/en/transport/search}">← Search again</a>
         <div class="result-header">
             <b th:text="${start}"></b> → <b th:text="${end}"></b> ·
             Depart at <span th:text="${routes[0].departTime}"></span>

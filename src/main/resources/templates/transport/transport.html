@@ -42,7 +42,6 @@
 <header>
     <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
     <div class="header-right">
-        <!-- EN -->
         <a th:href="${route != null}
                 ? @{/en/transport/detail(routeId=${route.routeId})}
                 : @{/en/transport/search}"
@@ -51,10 +50,9 @@
             EN
         </a>
 
-        <!-- KR -->
         <a th:href="${route != null}
-                ? @{/ko/transport/detail(routeId=${route.routeId})}
-                : @{/ko/transport/search}"
+                ? @{/transport/detail(routeId=${route.routeId})}
+                : @{/transport/search}"
            class="h-btn"
            th:classappend="${lang == 'ko'} ? ' active'">
             KR
@@ -73,14 +71,15 @@
     </div>
 </header>
 
+
 <div class="hero">
     <h1>🚇 교통 경로 검색</h1>
     <p>출발지와 도착지를 입력하세요</p>
 
     <div class="search-card">
         <!-- 폼 액션 /ko로 수정 -->
-        <form th:action="@{/ko/transport/search}" method="get" id="searchForm">
-            <div class="input-group">
+        <form th:action="${lang == 'en'} ? @{/en/transport/search} : @{/transport/search}" method="get" id="searchForm">
+        <div class="input-group">
                 <div class="input-row">
                     <div class="input-icon">🚩</div>
                     <div class="input-wrap">
@@ -123,7 +122,11 @@
     </div>
 
     <div th:if="${routes != null and !#lists.isEmpty(routes)}">
-        <a class="re-search" th:href="@{/ko/transport/search}">← 다시 검색하기</a>
+        <a class="re-search"
+           th:href="${lang == 'en'} ? @{/en/transport/search} : @{/transport/search}">
+            ← 다시 검색하기
+        </a>
+
         <div class="result-header">
             <b th:text="${start}"></b> → <b th:text="${end}"></b> ·
             출발 <span th:text="${routes[0].departTime}"></span> 기준

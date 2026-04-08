@@ -23,9 +23,16 @@ public class TransportRouteController {
     private RouteRepository routeRepository;
 
     @GetMapping("/transport/search")
-    public String transportSearchRedirect() {
-        return "redirect:/ko/transport/search";
+    public String transportSearch(
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end,
+            @RequestParam(required = false) String startLat,
+            @RequestParam(required = false) String startLng,
+            Model model,
+            HttpServletRequest request) {
+        return handleSearch(start, end, startLat, startLng, model, "transport/transport", request);
     }
+
 
     @GetMapping("/ko/transport/search")
     public String transportSearchKo(
