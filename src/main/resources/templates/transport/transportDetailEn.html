@@ -17,9 +17,19 @@
 <header>
   <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
   <div class="header-right">
-    <button class="h-btn active">EN</button>
-    <button class="h-btn">KR</button>
-    <button class="h-btn h-btn-fill">Login</button>
+    <a th:href="@{/en/transport/detail(routeId=${route?.routeId})}" class="h-btn">EN</a>
+    <a th:href="@{/ko/transport/detail(routeId=${route?.routeId})}" class="h-btn active">KR</a>
+
+    <th:block th:if="${isLoggedIn}">
+      <span class="h-btn" th:text="${currentUserName}"></span>
+      <form th:action="@{/logout}" method="post">
+        <button type="submit" class="h-btn h-btn-fill">Logout</button>
+      </form>
+    </th:block>
+
+    <th:block th:unless="${isLoggedIn}">
+      <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
+    </th:block>
   </div>
 </header>
 
