@@ -15,12 +15,13 @@ public class FoodRepository {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<Map<String, Object>> loadFoodScores() throws Exception {
-        InputStream is = new ClassPathResource(
-                "model/tourism/food/food_scores.json"
-        ).getInputStream();
+        ClassPathResource resource =
+                new ClassPathResource("model/tourism/food/food_scores.json");
 
-        return objectMapper.readValue(is,
-                new TypeReference<List<Map<String, Object>>>() {});
+        Map<String, Object> root =
+                objectMapper.readValue(resource.getInputStream(), Map.class);
+
+        return (List<Map<String, Object>>) root.get("food_scores");
     }
 
     public List<Map<String, Object>> loadCafeReviews() throws Exception {
@@ -28,7 +29,9 @@ public class FoodRepository {
                 "model/tourism/cafe/review_cafe.json"
         ).getInputStream();
 
-        return objectMapper.readValue(is,
-                new TypeReference<List<Map<String, Object>>>() {});
+        return objectMapper.readValue(
+                is,
+                new TypeReference<List<Map<String, Object>>>() {}
+        );
     }
 }

@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FoodPlaceService {
 
-    private final FoodRepository    jsonRepository;
+    private final FoodRepository jsonRepository;
     private final FoodPlaceRepository jpaRepository;
 
     // ──────────────────────────────────────────────────────────────────────────
