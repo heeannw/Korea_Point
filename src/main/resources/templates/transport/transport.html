@@ -35,8 +35,7 @@
             </form>
         </th:block>
         <th:block th:unless="${isLoggedIn}">
-            <a th:href="@{/oauth2/authorization/google}"
-               class="h-btn h-btn-fill" style="text-decoration:none;">Login</a>
+            <a th:href="@{/home}" class="h-btn h-btn-fill">Login</a>
         </th:block>
     </div>
 </header>

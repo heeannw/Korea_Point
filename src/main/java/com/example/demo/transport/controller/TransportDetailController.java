@@ -4,6 +4,7 @@ import com.example.demo.transport.dto.TransportRouteDto;
 import com.example.demo.transport.repository.RouteRepository;
 import com.example.demo.transport.service.CongestionMlService;
 import com.example.demo.transport.service.TransportRouteService;
+import com.example.demo.user.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -48,10 +49,15 @@ public class TransportDetailController {
     }
 
     private String handleDetail(String routeId, Model model, String viewName) {
+
+        model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
+        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
+
         if (routeId != null && !routeId.isEmpty()) {
             TransportRouteDto route = transportRouteService.getTransportRouteDetail(routeId);
             model.addAttribute("route", route);
         }
+
         return viewName;
     }
 
