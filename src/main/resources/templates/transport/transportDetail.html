@@ -101,8 +101,6 @@
 </script>
 
 <script>
-    const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
-
     //======== UI 제어 ========
     function switchTab(id, btn) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -133,6 +131,8 @@
     }
 
     // 카카오 키워드 검색 → 좌표 반환
+    const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
+
     function kakaoSearch(query) {
         return fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}`, {
             headers: { 'Authorization': KAKAO_KEY }
@@ -140,7 +140,10 @@
             .then(r => r.json())
             .then(d => {
                 if (d.documents && d.documents.length > 0) {
-                    return { lat: parseFloat(d.documents[0].y), lng: parseFloat(d.documents[0].x) };
+                    return {
+                        lat: parseFloat(d.documents[0].y),
+                        lng: parseFloat(d.documents[0].x)
+                    };
                 }
                 return null;
             })
@@ -168,7 +171,7 @@
         new kakao.maps.Polyline({
             path: path,
             strokeWeight: 4,
-            strokeColor: '#666666',   // ✅ 회색으로 변경
+            strokeColor: '#666666',   // 회색으로 변경
             strokeOpacity: 0.8,
             strokeStyle: 'shortdash'  // dashed보다 이게 더 이쁨
         }).setMap(map);
@@ -256,7 +259,7 @@
 
             myLocation = {lat:myLat, lng:myLng};
 
-            // 별 모양 마커 이미지 (카페 예제랑 동일)
+            // 별 모양 마커 이미지
             const myMarkerImg = new kakao.maps.MarkerImage(
                 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
                 new kakao.maps.Size(24, 35)
@@ -320,11 +323,18 @@
                 // 출발지 좌표 (카카오 검색 or GPS)
                 let originPt = null;
                 const startLabel = routeData.start || '';
-                if (startLabel === '현재위치') {
-                    // for (let sc of stepCoords) {
-                    //     if (sc) { originPt = sc.first; break; }
-                    // }
-                    // 👉 위치 아직 없으면 기다림
+
+                // 1순위: 서버 좌표
+                if (routeData.startLat && routeData.startLng) {
+
+                    originPt = {
+                        lat: routeData.startLat,
+                        lng: routeData.startLng
+                    };
+
+                // 2순위: 현재위치 (GPS)
+                } else if (startLabel === '현재위치') {
+
                     if (!myLocation) {
                         await new Promise(resolve => {
                             const wait = setInterval(() => {
@@ -337,7 +347,10 @@
                     }
 
                     originPt = myLocation;
+
+                // 3순위: 검색 fallback
                 } else if (startLabel) {
+
                     originPt = await kakaoSearch(startLabel);
                 }
 
