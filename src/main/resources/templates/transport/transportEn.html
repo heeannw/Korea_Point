@@ -16,6 +16,25 @@
         body { background: var(--light); min-height: 100vh; display: block; }
         header { position: sticky; top: 0; padding: 0 24px; box-shadow: 0 1px 8px rgba(0,0,0,.05); }
         .h-btn { text-decoration: none; display: inline-flex; align-items: center; }
+        .swap-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid var(--green);
+            background: #fff;
+            color: var(--green);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.2s, color 0.2s;
+        }
+        .swap-btn:hover {
+            background: var(--green);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -61,7 +80,7 @@
                 </div>
                 <div class="route-divider">
                     <div class="route-divider-line"></div>
-                    <div class="route-divider-dot"></div>
+                    <button type="button" class="swap-btn" onclick="swapLocations()" title="Swap origin/destination">⇅</button>
                     <div class="route-divider-line"></div>
                 </div>
                 <div class="input-row">
@@ -381,6 +400,21 @@
                 btn.disabled = false;
             }
         );
+    }
+    function swapLocations() {
+        const startInput = document.getElementById('startInput');
+        const endInput   = document.getElementById('endInput');
+        const startLat   = document.getElementById('startLat');
+        const startLng   = document.getElementById('startLng');
+
+        // 현재위치 사용 중이면 좌표도 같이 초기화
+        const tmpVal = startInput.value;
+        startInput.value = endInput.value;
+        endInput.value   = tmpVal;
+
+        // 현재위치 좌표는 도착지로 이동하면 의미 없으므로 초기화
+        startLat.value = '';
+        startLng.value = '';
     }
 </script>
 
