@@ -15,47 +15,27 @@
 <body class="min-h-screen bg-[#FAFAFA] flex flex-col">
 
 <!-- Header -->
-<header class="sticky top-0 z-50 bg-white border-b border-gray-200/80">
-    <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-8">
-            <a th:href="@{/}" class="flex items-center gap-2 no-underline">
-                <div class="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center">
-                    <i data-lucide="globe" class="w-5 h-5 text-white"></i>
-                </div>
-                <span class="text-[18px] text-gray-900 tracking-[-0.3px]" style="font-weight:600;">KoreaConnect</span>
-            </a>
-            <nav class="flex items-center gap-1">
-                <a th:href="@{/community/post-list}"
-                   class="px-3 py-2 rounded-lg text-[14px] no-underline text-[#2563EB] bg-blue-50"
-                   style="font-weight:500;">Community</a>
-            </nav>
-        </div>
-        <div class="flex items-center gap-3">
-            <!-- 로그인한 사용자 -->
-            <th:block th:if="${isLoggedIn}">
-                <span class="text-[14px] text-gray-600"
-                      th:text="${currentUserName} + '님 환영합니다'"></span>
-                <a th:href="@{/community/post/write}"
-                   class="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[14px] no-underline hover:bg-[#1d4ed8] transition-colors"
-                   style="font-weight:500;">Write Post</a>
-                <!-- Logout은 CSRF 보안상 POST 방식 폼으로 처리 -->
-                <form th:action="@{/logout}" method="post" class="m-0">
-                    <button type="submit"
-                            class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-[14px] hover:bg-gray-50 transition-colors cursor-pointer">
-                        Logout
-                    </button>
-                </form>
-            </th:block>
-            <!-- 비로그인 사용자 -->
-            <th:block th:unless="${isLoggedIn}">
-                <a th:href="@{/oauth2/authorization/google}"
-                   class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-[14px] no-underline hover:bg-gray-50 transition-colors"
-                   style="font-weight:500;">Sign In</a>
-            </th:block>
-        </div>
+<link rel="stylesheet" th:href="@{/css/common/variables.css}">
+<link rel="stylesheet" th:href="@{/css/common/reset.css}">
+<link rel="stylesheet" th:href="@{/css/common/layout.css}">
+<header>
+    <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
+    <div class="header-right">
+        <a th:href="@{/en/transport/detail(routeId=${route?.routeId})}" class="h-btn">EN</a>
+        <a th:href="@{/ko/transport/detail(routeId=${route?.routeId})}" class="h-btn active">KR</a>
+
+        <th:block th:if="${isLoggedIn}">
+            <span class="h-btn" th:text="${currentUserName}"></span>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="h-btn h-btn-fill">Logout</button>
+            </form>
+        </th:block>
+
+        <th:block th:unless="${isLoggedIn}">
+            <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
+        </th:block>
     </div>
 </header>
-
 <main class="flex-1">
     <div class="max-w-[1200px] mx-auto px-6 py-8">
         <div class="mb-8">
