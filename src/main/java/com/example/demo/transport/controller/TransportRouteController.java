@@ -11,6 +11,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -23,16 +26,24 @@ public class TransportRouteController {
     private RouteRepository routeRepository;
 
     @GetMapping("/transport/search")
-    public String transportSearch(
+    public String transportSearchRedirect(
             @RequestParam(required = false) String start,
             @RequestParam(required = false) String end,
             @RequestParam(required = false) String startLat,
-            @RequestParam(required = false) String startLng,
-            Model model,
-            HttpServletRequest request) {
-        return handleSearch(start, end, startLat, startLng, model, "transport/transport", request);
+            @RequestParam(required = false) String startLng) {
+        StringBuilder sb = new StringBuilder("redirect:/ko/transport/search");
+        List<String> params = new ArrayList<>();
+        try {
+            if (start    != null && !start.isEmpty())    params.add("start="    + URLEncoder.encode(start,    StandardCharsets.UTF_8));
+            if (end      != null && !end.isEmpty())      params.add("end="      + URLEncoder.encode(end,      StandardCharsets.UTF_8));
+            if (startLat != null && !startLat.isEmpty()) params.add("startLat=" + URLEncoder.encode(startLat, StandardCharsets.UTF_8));
+            if (startLng != null && !startLng.isEmpty()) params.add("startLng=" + URLEncoder.encode(startLng, StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            // 인코딩 실패 시 그냥 /ko/transport/search로 이동
+        }
+        if (!params.isEmpty()) sb.append("?").append(String.join("&", params));
+        return sb.toString();
     }
-
 
     @GetMapping("/ko/transport/search")
     public String transportSearchKo(
@@ -40,8 +51,8 @@ public class TransportRouteController {
             @RequestParam(required = false) String end,
             @RequestParam(required = false) String startLat,
             @RequestParam(required = false) String startLng,
-            Model model,HttpServletRequest request) {
-        return handleSearch(start, end, startLat, startLng, model, "transport/transport", request);
+            Model model) {
+        return handleSearch(start, end, startLat, startLng, model, "transport/transport");
     }
 
     @GetMapping("/en/transport/search")
@@ -50,8 +61,8 @@ public class TransportRouteController {
             @RequestParam(required = false) String end,
             @RequestParam(required = false) String startLat,
             @RequestParam(required = false) String startLng,
-            Model model,HttpServletRequest request) {
-        return handleSearch(start, end, startLat, startLng, model, "transport/transportEn", request);
+            Model model) {
+        return handleSearch(start, end, startLat, startLng, model, "transport/transportEn");
     }
 
     // ✅ 검색 기록 저장
@@ -76,8 +87,7 @@ public class TransportRouteController {
     }
 
     private String handleSearch(String start, String end, String startLat, String startLng,
-                                Model model, String viewName,
-                                HttpServletRequest request) {
+                                Model model, String viewName) {
 
         // 로그인 정보
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
@@ -87,7 +97,7 @@ public class TransportRouteController {
                 ? SecurityUtil.getCurrentUserName()
                 : "guest";
 
-        String lang = request.getRequestURI().startsWith("/en") ? "en" : "ko";
+        String lang = viewName.contains("En") ? "en" : "ko";
         model.addAttribute("lang", lang);
 
         // 검색기록 (한 번만!)
@@ -100,12 +110,12 @@ public class TransportRouteController {
             boolean hasCoords = startLat != null && !startLat.isEmpty()
                     && startLng != null && !startLng.isEmpty();
 
-            // 시작점 없으면 검색 안함 (최근검색만 보여줌)
+            // ✅ 시작점 없으면 검색 안함 (최근검색만 보여줌)
             if ((start == null || start.isEmpty()) && !hasCoords) {
                 return viewName;
             }
 
-            // 도착지 없으면 검색 안함
+            // ✅ 도착지 없으면 검색 안함
             if (end == null || end.isEmpty()) {
                 return viewName;
             }
