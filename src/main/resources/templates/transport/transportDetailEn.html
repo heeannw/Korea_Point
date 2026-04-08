@@ -130,15 +130,17 @@
     return '🚇';
   }
 
-  // ✅ Kakao keyword search → return coordinates
-  function kakaoSearch(query) {
+  // 위도 경도
+  function kakaoSearch(query) { //encodeURIComponent(): URL에 넣기 전에 문자열 깨지지 않게 변환하는 함수
     return fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}`, {
       headers: { 'Authorization': KAKAO_KEY }
     })
             .then(r => r.json())
             .then(d => {
               if (d.documents && d.documents.length > 0) {
-                return { lat: parseFloat(d.documents[0].y), lng: parseFloat(d.documents[0].x) };
+                return {
+                  lat: parseFloat(d.documents[0].y),
+                  lng: parseFloat(d.documents[0].x) };
               }
               return null;
             })
