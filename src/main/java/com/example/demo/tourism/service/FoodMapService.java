@@ -73,7 +73,7 @@ public class FoodMapService {
 
     private void loadCafeJson() throws IOException {
         InputStream is = getClass().getClassLoader()
-                .getResourceAsStream("model/tourism/cafe/cafe_scores.json");
+                .getResourceAsStream("model/model/cafe/cafe_scores.json");
         if (is == null) { System.out.println("⚠ cafe_scores.json 없음 — 카페 목록 비어 있음"); return; }
 
         // JSON 구조: [{name, googleName, lat, lng, avgStar, finalScore, reviewCount, reviewMean}]
@@ -96,7 +96,7 @@ public class FoodMapService {
 
     private void loadCafeReviews() throws IOException {
         InputStream is = getClass().getClassLoader()
-                .getResourceAsStream("model/tourism/cafe/review_cafe.json");
+                .getResourceAsStream("model/model/cafe/review_cafe.json");
         if (is == null) return;
 
         Map<String, List<Map<String, Object>>> raw = mapper.readValue(is, new TypeReference<>() {});

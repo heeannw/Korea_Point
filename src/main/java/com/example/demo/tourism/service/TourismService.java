@@ -80,7 +80,7 @@ public class TourismService {
 
     private void loadLookup() throws Exception {
         InputStream is = getClass().getClassLoader()
-                .getResourceAsStream("model/tourism/model_lookup.json");
+                .getResourceAsStream("model/model/model_lookup.json");
         if (is == null) throw new RuntimeException("model_lookup.json 없음");
 
         JsonNode root = mapper.readTree(is);
