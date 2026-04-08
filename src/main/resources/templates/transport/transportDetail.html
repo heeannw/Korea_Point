@@ -1,3 +1,5 @@
+transportDetail.html
+
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -253,7 +255,7 @@
     let myLocation = null;
 
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
+        navigator.geolocation.getCurrentPosition(pos => { //브라우저가 GPS로 내 위치 가져옴
             const myLat = pos.coords.latitude;
             const myLng = pos.coords.longitude;
 
@@ -294,9 +296,6 @@
         });
     }
 
-
-
-
     //========== main ==========
     if (!routeId) {
         document.getElementById('stepList').innerHTML = '<p class="no-data">경로 데이터 없음</p>';
@@ -306,7 +305,7 @@
             .then(async routeData => {
 
                 const steps = routeData.steps;
-                let allCoords = []; // { lat, lng } 배열
+                let allCoords = []; // 좌표 (lat,lng)
                 let stepHtml  = '';
 
                 // 각 step 첫/마지막 좌표 수집
@@ -332,7 +331,7 @@
                         lng: routeData.startLng
                     };
 
-                // 2순위: 현재위치 (GPS)
+                    // 2순위: 현재위치 (GPS)
                 } else if (startLabel === '현재위치') {
 
                     if (!myLocation) {
@@ -348,7 +347,7 @@
 
                     originPt = myLocation;
 
-                // 3순위: 검색 fallback
+                    // 3순위: 검색 fallback
                 } else if (startLabel) {
 
                     originPt = await kakaoSearch(startLabel);
@@ -576,7 +575,7 @@
                 // 지도 범위 자동 조정
                 fitBounds(allCoords);
 
-                // 목적지 근처 알림 (fitBounds 밖으로 이동)
+                // 목적지 근처 알림
                 if (destPt) {
                     let alertShown = false;
                     const alertOverlay = new kakao.maps.CustomOverlay({
