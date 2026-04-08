@@ -8,7 +8,8 @@ import java.util.List;
 
 @Repository
 public interface RouteRepository extends JpaRepository<Route, Long> {
-    List<Route> findTop10ByOrderBySearchedAtDesc();
+    List<Route> findTop10ByUserIdAndLanguageOrderBySearchedAtDesc(String userId, String language);
     List<Route> findByStartPlaceContaining(String startPlace);
     List<Route> findByEndPlaceContaining(String endPlace);
+    void deleteByUserId(String userId);
 }

@@ -1,6 +1,7 @@
 package com.example.demo.transport.controller;
 
 import com.example.demo.transport.dto.TransportRouteDto;
+import com.example.demo.transport.entity.Route;
 import com.example.demo.transport.repository.RouteRepository;
 import com.example.demo.transport.service.CongestionMlService;
 import com.example.demo.transport.service.TransportRouteService;
@@ -120,14 +121,34 @@ public class TransportDetailController {
     @ResponseBody
     @DeleteMapping("/api/transport/history/{id}")
     public String deleteHistory(@PathVariable Long id) {
+
+        Route route = routeRepository.findById(id).orElse(null);
+
+        if (route == null) return "fail";
+
+        String user = SecurityUtil.isLoggedIn()
+                ? SecurityUtil.getCurrentUserName()
+                : "guest";
+
+        // 내 것만 삭제 가능
+        if (!user.equals(route.getUserId())) {
+            return "forbidden";
+        }
+
         routeRepository.deleteById(id);
         return "ok";
     }
 
     @ResponseBody
     @DeleteMapping("/api/transport/history")
-    public String deleteAllHistory() {
-        routeRepository.deleteAll();
+    public String deleteMyHistory() {
+
+        String user = SecurityUtil.isLoggedIn()
+                ? SecurityUtil.getCurrentUserName()
+                : "guest";
+
+        routeRepository.deleteByUserId(user);
+
         return "ok";
     }
 }

@@ -18,6 +18,12 @@ public class Route {
     private String routeType;
     private LocalDateTime searchedAt;
 
+    @Column
+    private String userId;   // 사용자 구분
+
+    @Column
+    private String language; // "ko" / "en"
+
     @PrePersist
     public void prePersist() {
         this.searchedAt = LocalDateTime.now();
@@ -36,4 +42,9 @@ public class Route {
     public void setRouteType(String routeType) { this.routeType = routeType; }
     public LocalDateTime getSearchedAt() { return searchedAt; }
     public void setSearchedAt(LocalDateTime searchedAt) { this.searchedAt = searchedAt; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
+    public String getLanguage() { return language; }
+    public void setLanguage(String language) { this.language = language; }
 }
