@@ -24,6 +24,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/comments/**").authenticated()
                 .requestMatchers("/tour/**").authenticated()
                 .requestMatchers("/transport/**").authenticated()
+                .requestMatchers("/foodmap/**").authenticated()
                 // 그 외 모든 요청은 허용 (다른 도메인에 영향 없음)
                 .anyRequest().permitAll()
             )
