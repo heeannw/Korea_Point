@@ -36,12 +36,16 @@ public class FoodMapController {
 
     // ── 전체 지도 ─────────────────────────────────────────────────────────────
     @GetMapping("/foodmap/all")
-    public String foodmapAll(Model model) {
+    public String foodmapAll(
+            @RequestParam(value = "category", defaultValue = "ALL") String category,
+            Model model
+    ) {
+        String cat = resolveCategory(category);
         model.addAttribute("kakaoKey",  kakaoKey);
         model.addAttribute("list",      List.of());
         model.addAttribute("userlat",   37.5665);
         model.addAttribute("userlon",   126.9780);
-        model.addAttribute("category",  "ALL");
+        model.addAttribute("category",  cat);
         model.addAttribute("keyword",   "");
         return "tourism/foodmap";
     }

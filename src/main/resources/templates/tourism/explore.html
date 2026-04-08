@@ -258,6 +258,7 @@
   const PLACES    = /*[[${list}]]*/ [];
   const centerLat = /*[[${centerLat}]]*/ 37.5665;
   const centerLon = /*[[${centerLon}]]*/ 126.9780;
+  const needsLocationRefresh = /*[[${needsLocationRefresh}]]*/ false;
 </script>
 
 <script>
@@ -609,6 +610,17 @@
   }
 
   render();
+
+  if (needsLocationRefresh && location.pathname === '/tour/all' && !sessionStorage.getItem('tourLocationRequested')) {
+    sessionStorage.setItem('tourLocationRequested', '1');
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+              pos => location.replace(`/tour/mylocation/${pos.coords.latitude}/${pos.coords.longitude}`),
+              () => {}
+      );
+    }
+  }
 </script>
 
 <script th:src="'//dapi.kakao.com/v2/maps/sdk.js?appkey=' + ${kakaoKey} + '&autoload=false'"></script>
