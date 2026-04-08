@@ -700,9 +700,8 @@
                         // 역 제목
                         function cleanLineName(name) {
                             return name
-                                .replace(/\[.*?\]/g, '')
-                                .replace(/\(.*?\)/g, '')
-                                .replace(/번째 전역/g, '')
+                                .replace(/\[(.*?)\]/g, '$1')  // 대괄호 제거 + 내용 유지
+                                .replace(/\(.*?\)/g, '')      // () 제거
                                 .trim();
                         }
 
@@ -715,11 +714,20 @@
 
                             if (sec <= 60 && sec > 0)        msg = '🚨 곧 도착';
                             else if (!isNaN(sec) && sec > 0) msg = `${Math.floor(sec / 60)}분 후 도착`;
-                            else                             msg = item.arvlMsg2 || '';
+                            else msg = (item.arvlMsg2 || '').replace(/\[/g, '').replace(/\]/g, '');
 
                             return `
                                 <div class="arrival-card">
-                                    <div class="arr-line">${cleanLineName(item.trainLineNm)}</div>
+                                    <div class="arr-line">${
+                                cleanLineName(
+                                    (Array.isArray(item.trainLineNm)
+                                            ? item.trainLineNm[0]
+                                            : item.trainLineNm
+                                    ).split('방면')[1] || (Array.isArray(item.trainLineNm)
+                                        ? item.trainLineNm[0]
+                                        : item.trainLineNm)
+                                )
+                            }</div>
                                     <div class="arr-msg">${msg}</div>
                                 </div>`;
                         }).join('');
