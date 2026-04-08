@@ -103,6 +103,7 @@
 <script>
     const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
 
+    //======== UI 제어 ========
     function switchTab(id, btn) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -118,6 +119,7 @@
     document.getElementById('mcZoomIn').addEventListener('click', () => map.setLevel(map.getLevel() - 1));
     document.getElementById('mcZoomOut').addEventListener('click', () => map.setLevel(map.getLevel() + 1));
 
+    //======== 공통 유틸 ========
     function typeColor(type, fallback) {
         if (fallback) return fallback;
         if (type === 'walk') return '#9ca3af';
@@ -130,7 +132,7 @@
         return '🚇';
     }
 
-    // ✅ 카카오 키워드 검색 → 좌표 반환
+    // 카카오 키워드 검색 → 좌표 반환
     function kakaoSearch(query) {
         return fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}`, {
             headers: { 'Authorization': KAKAO_KEY }
@@ -145,6 +147,7 @@
             .catch(() => null);
     }
 
+    // ===== 지도 렌더링 =====
     function drawWalkLine(startPt, endPt) {
 
         const path = [
@@ -152,7 +155,7 @@
             new kakao.maps.LatLng(endPt.lat,   endPt.lng)
         ];
 
-        // 1️⃣ 흰색 테두리
+        // 흰색 테두리
         new kakao.maps.Polyline({
             path: path,
             strokeWeight: 8,
@@ -161,7 +164,7 @@
             strokeStyle: 'solid'
         }).setMap(map);
 
-        // 2️⃣ 실제 도보 (회색 점선)
+        // 실제 도보 (회색 점선)
         new kakao.maps.Polyline({
             path: path,
             strokeWeight: 4,
@@ -176,7 +179,7 @@
         ];
     }
 
-    // ✅ 마커 + 라벨
+    // 마커 + 라벨
     function drawMarker(latLng, color, label) {
         new kakao.maps.CustomOverlay({
             position: latLng,
@@ -199,7 +202,7 @@
         }).setMap(map);
     }
 
-    // ✅ 환승역 마커
+    // 환승역 마커
     function drawTransferMarker(latLng, color, label) {
         new kakao.maps.CustomOverlay({
             position: latLng,
@@ -230,6 +233,18 @@
         `
         }).setMap(map);
     }
+
+    // 지도 범위 조정
+    function fitBounds(coordList) {
+        if (!coordList.length) return;
+        const bounds = new kakao.maps.LatLngBounds();
+        coordList.forEach(c => bounds.extend(new kakao.maps.LatLng(c.lat, c.lng)));
+        map.setBounds(bounds);
+    }
+    //----------------------------------------------------------------
+
+
+    // ===== 경로 데이터 처리 =====
 
     //현재위치 마커 표시
     let myLocation = null;
@@ -277,14 +292,9 @@
     }
 
 
-    // 지도 범위 조정
-    function fitBounds(coordList) {
-        if (!coordList.length) return;
-        const bounds = new kakao.maps.LatLngBounds();
-        coordList.forEach(c => bounds.extend(new kakao.maps.LatLng(c.lat, c.lng)));
-        map.setBounds(bounds);
-    }
 
+
+    //========== main ==========
     if (!routeId) {
         document.getElementById('stepList').innerHTML = '<p class="no-data">경로 데이터 없음</p>';
     } else {
@@ -296,7 +306,7 @@
                 let allCoords = []; // { lat, lng } 배열
                 let stepHtml  = '';
 
-                // ✅ 각 step 첫/마지막 좌표 수집
+                // 각 step 첫/마지막 좌표 수집
                 const stepCoords = steps.map(step => {
                     if (step.path && step.path.length > 0) {
                         return {
@@ -307,7 +317,7 @@
                     return null;
                 });
 
-                // ✅ 출발지 좌표 (카카오 검색 or GPS)
+                // 출발지 좌표 (카카오 검색 or GPS)
                 let originPt = null;
                 const startLabel = routeData.start || '';
                 if (startLabel === '현재위치') {
@@ -331,7 +341,7 @@
                     originPt = await kakaoSearch(startLabel);
                 }
 
-                // ✅ 목적지 좌표 (카카오 검색)
+                // 목적지 좌표 (카카오 검색)
                 let destPt = null;
                 const endLabel = routeData.end || '';
                 if (endLabel) {
@@ -375,17 +385,17 @@
                         let startPt = prevCoords ? prevCoords.last : null;
                         let endPt   = nextCoords ? nextCoords.first : null;
 
-                        // 🔥 핵심 1: prev 없으면 무조건 origin
+                        // 핵심 1: prev 없으면 무조건 origin
                         if (!prevCoords && originPt) {
                             startPt = originPt;
                         }
 
-                        // 🔥 핵심 2: next 없으면 목적지
+                        // 핵심 2: next 없으면 목적지
                         if (!nextCoords && destPt) {
                             endPt = destPt;
                         }
 
-                        // 🔥 핵심 3: fallback (강제 연결)
+                        // 핵심 3: fallback (강제 연결)
                         if (!startPt && originPt) startPt = originPt;
                         if (!endPt && destPt) endPt = destPt;
 
@@ -439,18 +449,18 @@
                 }
 
                 // 도착역 step 추가
-                // 🔥 마지막 subway 기준으로 도착역 추가
-                let lastSubwayStep = null;
+                // 마지막 교통수단 기준 (subway + bus)
+                let lastTransportStep = null;
 
                 for (let i = steps.length - 1; i >= 0; i--) {
-                    if (steps[i].type === 'subway' && steps[i].path) {
-                        lastSubwayStep = steps[i];
+                    if (steps[i].type !== 'walk' && steps[i].path) {
+                        lastTransportStep = steps[i];
                         break;
                     }
                 }
 
-                if (lastSubwayStep) {
-                    const last = lastSubwayStep.path[lastSubwayStep.path.length - 1];
+                if (lastTransportStep) {
+                    const last = lastTransportStep.path[lastTransportStep.path.length - 1];
 
                     stepHtml += `
                     <div class="step-item"
@@ -462,7 +472,7 @@
                         </div>
 
                         <div class="step-info">
-                            <strong>${lastSubwayStep.toStation} 도착</strong>
+                            <strong>${lastTransportStep.toStation} 도착</strong>
                         </div>
 
                     </div>`;
@@ -492,19 +502,19 @@
                 });
 
 
-                // ✅ 출발 마커
+                // 출발 마커
                 if (originPt) {
                     drawMarker(new kakao.maps.LatLng(originPt.lat, originPt.lng), '#ef4444', `출발 · ${startLabel}`);
                     allCoords.unshift(originPt);
                 }
 
-                // ✅ 도착 마커
+                // 도착 마커
                 if (destPt) {
                     drawMarker(new kakao.maps.LatLng(destPt.lat, destPt.lng), '#3b9eff', '도착');
                     allCoords.push(destPt);
                 }
 
-                // ✅ 환승역 마커
+                // 환승역 마커
                 // subway만 따로 모아서 환승 처리
                 const subwaySteps = [];
 
@@ -553,7 +563,7 @@
                 // 지도 범위 자동 조정
                 fitBounds(allCoords);
 
-                // ✅✅✅목적지 근처 알림 (fitBounds 밖으로 이동)✅✅✅
+                // 목적지 근처 알림 (fitBounds 밖으로 이동)
                 if (destPt) {
                     let alertShown = false;
                     const alertOverlay = new kakao.maps.CustomOverlay({
@@ -600,9 +610,7 @@
                     window.addEventListener('beforeunload', () => clearInterval(locationWatcher));
                 }
 
-                // ── 실시간 도착정보 ──
                 // ── 실시간 도착정보 (출발 + 환승역 모두) ──
-
                 // 역 리스트 만들기
                 let station = '';
                 const stationList = [];
@@ -674,11 +682,6 @@
 
                             return directionPart.replace(/\s+/g, '').includes(directionKeyword);
                         });
-
-                        // const filtered = list.filter(item =>
-                        //     item.trainLineNm &&
-                        //     item.trainLineNm.replace(/\s+/g, '').includes(directionKeyword)
-                        // );
 
                         let finalList = [];
 
