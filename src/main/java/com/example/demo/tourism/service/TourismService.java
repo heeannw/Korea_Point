@@ -326,4 +326,12 @@ public class TourismService {
 
         return alist;
     }
+
+    public List<TourPlaceDto> allDistence(double lat, double lon, List<TourPlaceDto> displayList) {
+        for(TourPlaceDto pd : displayList){
+            double s = haversine(lat,lon,pd.getLat(),pd.getLng());
+            pd.setDistance(s);
+        }
+        return displayList;
+    }
 }
