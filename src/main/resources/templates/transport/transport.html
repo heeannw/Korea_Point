@@ -42,8 +42,23 @@
 <header>
     <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
     <div class="header-right">
-        <a th:href="@{/en/transport/detail(routeId=${route?.routeId})}" class="h-btn">EN</a>
-        <a th:href="@{/ko/transport/detail(routeId=${route?.routeId})}" class="h-btn active">KR</a>
+        <!-- EN -->
+        <a th:href="${route != null}
+                ? @{/en/transport/detail(routeId=${route.routeId})}
+                : @{/en/transport/search}"
+           class="h-btn"
+           th:classappend="${lang == 'en'} ? ' active'">
+            EN
+        </a>
+
+        <!-- KR -->
+        <a th:href="${route != null}
+                ? @{/ko/transport/detail(routeId=${route.routeId})}
+                : @{/ko/transport/search}"
+           class="h-btn"
+           th:classappend="${lang == 'ko'} ? ' active'">
+            KR
+        </a>
 
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}"></span>
@@ -347,10 +362,12 @@
             })
         }).then(() => {
             // 저장 후 상세 페이지 이동
-            location.href = '/ko/transport/detail?routeId=' + routeId;
+            const lang = location.pathname.split('/')[1];
+            location.href = `/${lang}/transport/detail?routeId=` + routeId;
         }).catch(() => {
             // 저장 실패해도 이동
-            location.href = '/ko/transport/detail?routeId=' + routeId;
+            const lang = location.pathname.split('/')[1];
+            location.href = `/${lang}/transport/detail?routeId=` + routeId;
         });
     }
 

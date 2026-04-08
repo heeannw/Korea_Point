@@ -33,8 +33,8 @@ public class TransportRouteController {
             @RequestParam(required = false) String end,
             @RequestParam(required = false) String startLat,
             @RequestParam(required = false) String startLng,
-            Model model) {
-        return handleSearch(start, end, startLat, startLng, model, "transport/transport");
+            Model model,HttpServletRequest request) {
+        return handleSearch(start, end, startLat, startLng, model, "transport/transport", request);
     }
 
     @GetMapping("/en/transport/search")
@@ -43,8 +43,8 @@ public class TransportRouteController {
             @RequestParam(required = false) String end,
             @RequestParam(required = false) String startLat,
             @RequestParam(required = false) String startLng,
-            Model model) {
-        return handleSearch(start, end, startLat, startLng, model, "transport/transportEn");
+            Model model,HttpServletRequest request) {
+        return handleSearch(start, end, startLat, startLng, model, "transport/transportEn", request);
     }
 
     // ✅ 검색 기록 저장
@@ -69,7 +69,8 @@ public class TransportRouteController {
     }
 
     private String handleSearch(String start, String end, String startLat, String startLng,
-                                Model model, String viewName) {
+                                Model model, String viewName,
+                                HttpServletRequest request) {
 
         // 로그인 정보
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
@@ -79,7 +80,8 @@ public class TransportRouteController {
                 ? SecurityUtil.getCurrentUserName()
                 : "guest";
 
-        String lang = viewName.contains("En") ? "en" : "ko";
+        String lang = request.getRequestURI().startsWith("/en") ? "en" : "ko";
+        model.addAttribute("lang", lang);
 
         // 검색기록 (한 번만!)
         model.addAttribute("recentRoutes",
@@ -91,12 +93,12 @@ public class TransportRouteController {
             boolean hasCoords = startLat != null && !startLat.isEmpty()
                     && startLng != null && !startLng.isEmpty();
 
-            // ✅ 시작점 없으면 검색 안함 (최근검색만 보여줌)
+            // 시작점 없으면 검색 안함 (최근검색만 보여줌)
             if ((start == null || start.isEmpty()) && !hasCoords) {
                 return viewName;
             }
 
-            // ✅ 도착지 없으면 검색 안함
+            // 도착지 없으면 검색 안함
             if (end == null || end.isEmpty()) {
                 return viewName;
             }
@@ -113,7 +115,7 @@ public class TransportRouteController {
                 model.addAttribute("start", start);
             }
 
-            // 🔍 디버깅 로그
+            // 디버깅 로그
             System.out.println("=== 경로 조회 결과 ===");
             System.out.println("총 경로 수: " + routes.size());
             for (TransportRouteDto r : routes) {
