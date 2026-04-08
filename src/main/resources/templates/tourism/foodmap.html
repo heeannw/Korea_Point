@@ -263,7 +263,7 @@
                 <div id="dpReviews"></div>
             </div>
             <div class="dp-action">
-                <button class="dp-action-btn" id="dpActionBtn" onclick="openKakaoMap()">🗺️ 카카오맵으로 보기</button>
+                <button class="dp-action-btn" id="dpActionBtn" onclick="openKakaoMap()">🗺️ 교통편 알아보기</button>
             </div>
         </div>
     </div>
@@ -302,15 +302,14 @@
     function switchCategory(cat) {
         const q = document.getElementById('searchInput').value.trim();
         const lat = userLat, lng = userLon;
-
-        // 현재 URL 경로 판단
         const path = location.pathname;
+
         if (q) {
             location.href = `/foodmap/search?keyword=${encodeURIComponent(q)}&category=${cat}`;
         } else if (path.startsWith('/foodmap/mylocation')) {
             location.href = `/foodmap/mylocation/${lat}/${lng}?category=${cat}`;
         } else {
-            location.href = `/foodmap/all`;
+            location.href = `/foodmap/all?category=${cat}`; // ✅ 수정
         }
     }
 
@@ -408,9 +407,16 @@
     // ── 선택 ─────────────────────────────────────────────────────────────────
     function selectPlace(name) {
         activePinId = name;
+        currentPopup = name; // ✅ 추가 (핵심)
         render();
-        document.getElementById('card-' + encodeId(name))?.scrollIntoView({behavior:'smooth', block:'nearest'});
-        showPopup(name);
+
+        const isOpen = document.getElementById('detailPanel').classList.contains('open');
+
+        if (isOpen) {
+            openDetail(name);
+        } else {
+            showPopup(name);
+        }
     }
 
     function showPopup(name) {
@@ -531,7 +537,8 @@
     function openKakaoMap() {
         const p = PLACES.find(x => x.name === currentPopup);
         if (!p) return;
-        window.open(`https://map.kakao.com/link/map/${encodeURIComponent(p.name)},${p.lat},${p.lng}`, '_blank');
+
+        location.href = `/ko/transport/search?lat=${p.lat}&lng=${p.lng}&name=${encodeURIComponent(p.name)}`;
     }
 
     // ── 검색 ─────────────────────────────────────────────────────────────────
@@ -602,37 +609,12 @@
         // 장소 마커
         PLACES.forEach(p => {
             if (!p.lat || !p.lng) return;
-            const isCafe = p.category === 'CAFE';
 
             const marker = new kakao.maps.Marker({
                 map: map,
-                position: new kakao.maps.LatLng(p.lat, p.lng),
-                title: p.name
+                position: new kakao.maps.LatLng(p.lat, p.lng)
+                // ❌ title 제거 (이름 안 뜨게)
             });
-
-            // 라벨 오버레이 (카페: 갈색, 음식점: 빨간색)
-            const labelColor = isCafe ? '#6f4e37' : '#ef4444';
-            const labelBg    = isCafe ? '#fff' : '#fff';
-            const overlay = new kakao.maps.CustomOverlay({
-                position: new kakao.maps.LatLng(p.lat, p.lng),
-                content: `<div style="
-          background:${labelBg};
-          border:1.5px solid ${labelColor};
-          border-radius:8px;
-          padding:3px 8px;
-          font-size:11px;
-          font-weight:700;
-          color:${labelColor};
-          white-space:nowrap;
-          box-shadow:0 2px 8px rgba(0,0,0,.15);
-          transform:translateY(-110%);
-          cursor:pointer;
-          font-family:'DM Sans',sans-serif"
-          onclick="selectPlace('${escQ(p.name)}')">${p.name.substring(0, 8)}</div>`,
-                yAnchor: 1.5,
-                zIndex: 5
-            });
-            overlay.setMap(map);
 
             kakao.maps.event.addListener(marker, 'click', () => selectPlace(p.name));
         });
