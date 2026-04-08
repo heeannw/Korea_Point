@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class TransportRouteService {
@@ -33,7 +34,7 @@ public class TransportRouteService {
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private final Map<String, TransportRouteDto> transportRouteStore = new HashMap<>();
+    private final Map<String, TransportRouteDto> transportRouteStore = new ConcurrentHashMap<>();
 
     private static final Map<Integer, String> SUBWAY_COLORS = new HashMap<>() {{
         put(1, "#0052A4"); put(2, "#00A84D"); put(3, "#EF7C1C");

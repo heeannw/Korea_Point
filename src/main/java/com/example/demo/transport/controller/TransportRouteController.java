@@ -11,6 +11,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -23,8 +26,23 @@ public class TransportRouteController {
     private RouteRepository routeRepository;
 
     @GetMapping("/transport/search")
-    public String transportSearchRedirect() {
-        return "redirect:/ko/transport/search";
+    public String transportSearchRedirect(
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end,
+            @RequestParam(required = false) String startLat,
+            @RequestParam(required = false) String startLng) {
+        StringBuilder sb = new StringBuilder("redirect:/ko/transport/search");
+        List<String> params = new ArrayList<>();
+        try {
+            if (start    != null && !start.isEmpty())    params.add("start="    + URLEncoder.encode(start,    StandardCharsets.UTF_8));
+            if (end      != null && !end.isEmpty())      params.add("end="      + URLEncoder.encode(end,      StandardCharsets.UTF_8));
+            if (startLat != null && !startLat.isEmpty()) params.add("startLat=" + URLEncoder.encode(startLat, StandardCharsets.UTF_8));
+            if (startLng != null && !startLng.isEmpty()) params.add("startLng=" + URLEncoder.encode(startLng, StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            // 인코딩 실패 시 그냥 /ko/transport/search로 이동
+        }
+        if (!params.isEmpty()) sb.append("?").append(String.join("&", params));
+        return sb.toString();
     }
 
     @GetMapping("/ko/transport/search")
@@ -80,6 +98,7 @@ public class TransportRouteController {
                 : "guest";
 
         String lang = viewName.contains("En") ? "en" : "ko";
+        model.addAttribute("lang", lang);
 
         // 검색기록 (한 번만!)
         model.addAttribute("recentRoutes",

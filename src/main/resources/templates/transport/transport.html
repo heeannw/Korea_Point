@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>교통 경로 검색 — KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/common/variables.css}">
@@ -35,6 +37,11 @@
             background: var(--green);
             color: #fff;
         }
+        .h-btn.active {
+            font-weight: 700;
+            color: var(--blue, #3b9eff);
+            border-bottom: 2px solid var(--blue, #3b9eff);
+        }
     </style>
 </head>
 <body>
@@ -42,8 +49,15 @@
 <header>
     <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
     <div class="header-right">
-        <a th:href="@{/en/transport/detail(routeId=${route?.routeId})}" class="h-btn">EN</a>
-        <a th:href="@{/ko/transport/detail(routeId=${route?.routeId})}" class="h-btn active">KR</a>
+        <a th:href="@{/en/transport/search}"
+           class="h-btn">
+            EN
+        </a>
+
+        <a th:href="@{/ko/transport/search}"
+           class="h-btn active">
+            KR
+        </a>
 
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}"></span>
@@ -58,13 +72,14 @@
     </div>
 </header>
 
+
 <div class="hero">
     <h1>🚇 교통 경로 검색</h1>
     <p>출발지와 도착지를 입력하세요</p>
 
     <div class="search-card">
         <!-- 폼 액션 /ko로 수정 -->
-        <form th:action="@{/ko/transport/search}" method="get" id="searchForm">
+        <form th:action="${lang == 'en'} ? @{/en/transport/search} : @{/transport/search}" method="get" id="searchForm">
             <div class="input-group">
                 <div class="input-row">
                     <div class="input-icon">🚩</div>
@@ -108,7 +123,11 @@
     </div>
 
     <div th:if="${routes != null and !#lists.isEmpty(routes)}">
-        <a class="re-search" th:href="@{/ko/transport/search}">← 다시 검색하기</a>
+        <a class="re-search"
+           th:href="${lang == 'en'} ? @{/en/transport/search} : @{/transport/search}">
+            ← 다시 검색하기
+        </a>
+
         <div class="result-header">
             <b th:text="${start}"></b> → <b th:text="${end}"></b> ·
             출발 <span th:text="${routes[0].departTime}"></span> 기준
@@ -214,10 +233,24 @@
     }
     applyTimeFormat();
 
+    function getCsrfToken() {
+        const meta = document.querySelector('meta[name="_csrf"]');
+        const header = document.querySelector('meta[name="_csrf_header"]');
+        if (meta && header) return { header: header.content, token: meta.content };
+        return null;
+    }
+
+    function fetchDelete(url) {
+        const csrf = getCsrfToken();
+        const headers = {};
+        if (csrf) headers[csrf.header] = csrf.token;
+        return fetch(url, { method: 'DELETE', headers });
+    }
+
     function deleteHistory(btn, event) {
         event.stopPropagation();
         const id = btn.getAttribute('data-id');
-        fetch(`/api/transport/history/${id}`, { method: 'DELETE' })
+        fetchDelete(`/api/transport/history/${id}`)
             .then(() => {
                 const card = document.getElementById('recent-' + id);
                 if (card) card.remove();
@@ -225,7 +258,7 @@
     }
 
     function clearAllHistory() {
-        fetch('/api/transport/history', { method: 'DELETE' })
+        fetchDelete('/api/transport/history')
             .then(() => location.reload());
     }
 
@@ -335,9 +368,13 @@
         const endEl   = document.getElementById('endInput');
 
         // 클릭한 경로만 저장
+        const csrf = getCsrfToken();
+        const postHeaders = { 'Content-Type': 'application/json' };
+        if (csrf) postHeaders[csrf.header] = csrf.token;
+
         fetch('/api/transport/history', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: postHeaders,
             body: JSON.stringify({
                 startPlace:    startEl ? startEl.value : '',
                 endPlace:      endEl   ? endEl.value   : '',
@@ -346,11 +383,9 @@
                 routeType:     routeType
             })
         }).then(() => {
-            // 저장 후 상세 페이지 이동
-            location.href = '/ko/transport/detail?routeId=' + routeId;
+            location.href = `/ko/transport/detail?routeId=` + routeId;
         }).catch(() => {
-            // 저장 실패해도 이동
-            location.href = '/ko/transport/detail?routeId=' + routeId;
+            location.href = `/ko/transport/detail?routeId=` + routeId;
         });
     }
 
