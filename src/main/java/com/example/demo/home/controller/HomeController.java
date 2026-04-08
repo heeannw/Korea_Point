@@ -23,15 +23,16 @@ public class HomeController {
     }
 
     private void populateModel(Model model) {
-        model.addAttribute("heroTitle", "Discover");
+        // Updated English hero copy for clearer first-read readability.
+        model.addAttribute("heroTitle", "Discover Korea");
         model.addAttribute("heroSubTitle", "Korea");
         model.addAttribute("heroDescription",
-                "Your curated guide to Korea's finest attractions, hidden dining gems, and insider travel tips.");
+                "Curated guides to the best attractions, food, and local experiences.");
 
         model.addAttribute("heroTitleKo", "한국을");
         model.addAttribute("heroSubTitleKo", "만나보세요");
         model.addAttribute("heroDescriptionKo",
-                "대표 관광지부터 숨은 맛집, 실용적인 교통 팁까지 한국 여행에 필요한 정보를 한곳에서 만나보세요.");
+                "대표 관광지부터 맛집, 현지 정보까지 한국 여행에 필요한 정보를 한곳에 담았습니다.");
 
         model.addAttribute("slides", List.of(
                 Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/c/c3/KOCIS_Korea_BlueSky_In_Seoul_03_%289947223046%29.jpg"),
