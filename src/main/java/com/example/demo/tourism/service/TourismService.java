@@ -309,4 +309,21 @@ public class TourismService {
         c.setReviews(p.getReviews());
         return c;
     }
+
+    public List<TourPlaceDto> allList() {
+        List<TourPlaceDto> alist = new ArrayList<>();
+        for (TourPlaceDto p : cachedCandidates) {
+            TourPlaceDto copy = copy(p);
+
+            double s = score(copy.getTitle(),copy.getType(),copy.getRating() != null ? copy.getRating() : 0.0,
+                    copy.getUser_ratings_total(),copy.getReviews());
+
+            copy.setScore((float) s);
+            alist.add(copy);
+
+        }
+        alist.sort((a, b) -> Float.compare(b.getScore(), a.getScore()));
+
+        return alist;
+    }
 }

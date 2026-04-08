@@ -262,16 +262,16 @@
 
 <script>
   let activeCategory = 'All';
-  let activeSort     = 'recommended';
-  let activePinId    = null;
-  let currentPopup   = null;
+  let activeSort = 'recommended';
+  let activePinId = null;
+  let currentPopup = null;
   let popupOverlay = null;
   let currentPopupPlace = null;
   let map;
   let markerMap = [];
   let selectedMarker = null;
+  let activeMarkerImage;
 
-  // type이 String/숫자 둘 다 처리
   function typeName(type) {
     const m = {'12':'문화시설','14':'박물관','15':'축제','25':'체험관광','28':'자연','38':'쇼핑'};
     return m[String(type)] ?? '기타';
@@ -282,22 +282,51 @@
     return d < 1 ? (d * 1000).toFixed(0) + 'm' : d.toFixed(1) + 'km';
   }
 
+  function highlightMarkerByTitle(title) {
+    markerMap.forEach(item => {
+      item.marker.setImage(null);
+      item.marker.setZIndex(1);
+    });
+
+    const target = markerMap.find(item => item.title === title);
+    if (target) {
+      target.marker.setImage(activeMarkerImage);
+      target.marker.setZIndex(10);
+      selectedMarker = target.marker;
+    }
+  }
+
   function getFiltered() {
     let list = [...PLACES];
     const q = document.getElementById('searchInput').value.toLowerCase();
-    if (activeCategory !== 'All') list = list.filter(p => typeName(p.type) === activeCategory);
-    if (q) list = list.filter(p =>
-            p.title?.toLowerCase().includes(q) || p.addr?.toLowerCase().includes(q)
-    );
-    if (activeSort === 'recommended') list.sort((a,b) => (b.score ?? 0) - (a.score ?? 0));
-    else list.sort((a,b) => (a.distance ?? 999) - (b.distance ?? 999));
+
+    if (activeCategory !== 'All') {
+      list = list.filter(p => typeName(p.type) === activeCategory);
+    }
+
+    if (q) {
+      list = list.filter(p =>
+              p.title?.toLowerCase().includes(q) ||
+              p.addr?.toLowerCase().includes(q)
+      );
+    }
+
+    if (activeSort === 'recommended') {
+      list.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    } else {
+      list.sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
+    }
+
     return list;
   }
 
   function setCategory(c) {
     activeCategory = c;
     document.querySelectorAll('.chip').forEach(ch =>
-            ch.classList.toggle('active', ch.textContent.trim() === c || (c === 'All' && ch.textContent.trim() === 'All'))
+            ch.classList.toggle(
+                    'active',
+                    ch.textContent.trim() === c || (c === 'All' && ch.textContent.trim() === 'All')
+            )
     );
     render();
   }
@@ -305,7 +334,8 @@
   function setSort(s) {
     activeSort = s;
     document.querySelectorAll('.sort-btn').forEach(b =>
-            b.classList.toggle('active',
+            b.classList.toggle(
+                    'active',
                     (s === 'recommended' && b.textContent.includes('Recommended')) ||
                     (s === 'distance' && b.textContent.includes('Distance'))
             )
@@ -315,8 +345,9 @@
 
   function render() {
     const list = getFiltered();
-    window._currentList = list;  // 마커 클릭 시 인덱스로 찾기 위해 저장
+    window._currentList = list;
     document.getElementById('countDisplay').textContent = list.length;
+
     document.getElementById('placeList').innerHTML = list.map((p, i) => `
       <div class="place-card${activePinId == i ? ' active' : ''}"
            id="card-${i}" onclick="selectPlace(${i})">
@@ -332,25 +363,29 @@
             <span class="card-dist">📍 ${distStr(p.distance)}</span>
           </div>
         </div>
-      </div>`).join('');
+      </div>
+    `).join('');
   }
 
   function selectPlace(idx) {
     activePinId = Number(idx);
-    render(); // active 클래스 포함해서 카드 다시 그림
+    render();
 
     const list = window._currentList || PLACES;
     const p = list[idx];
+
+    if (p) {
+      highlightMarkerByTitle(p.title);
+    }
+
     if (p && p.lat && p.lng && map) {
       map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
     }
 
-    // render() 후 DOM 반영된 뒤 스크롤 + active 카드 강조
     setTimeout(() => {
       const card = document.getElementById('card-' + idx);
       if (card) {
-        card.scrollIntoView({behavior: 'smooth', block: 'nearest'});
-        // active 클래스가 붙었는지 보장
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         document.querySelectorAll('.place-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
       }
@@ -364,47 +399,47 @@
     currentPopupPlace = p;
 
     const content = `
-    <div style="
-      background:#fff;
-      border-radius:12px;
-      box-shadow:0 8px 32px rgba(0,0,0,.18);
-      width:240px;
-      overflow:hidden;
-      border:1px solid #dbeafe;
-      position:relative;
-    ">
       <div style="
-        height:110px;
-        background-image:url('${p.image ?? ''}');
-        background-size:cover;
-        background-position:center;
-        background-color:#f0f7ff;
+        background:#fff;
+        border-radius:12px;
+        box-shadow:0 8px 32px rgba(0,0,0,.18);
+        width:240px;
+        overflow:hidden;
+        border:1px solid #dbeafe;
         position:relative;
       ">
-        <button onclick="closePopup()"
-          style="
-            position:absolute;top:6px;right:8px;
-            background:rgba(0,0,0,.4);color:#fff;border:none;
-            border-radius:50%;width:22px;height:22px;cursor:pointer;
-          ">×</button>
-      </div>
-      <div style="padding:12px">
-        <div style="font-size:14px;font-weight:700;margin-bottom:3px;">${p.title ?? '-'}</div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:8px;">
-          ★ ${p.rating ?? '-'} · ${distStr(p.distance)} away · ${typeName(p.type)}
+        <div style="
+          height:110px;
+          background-image:url('${p.image ?? ''}');
+          background-size:cover;
+          background-position:center;
+          background-color:#f0f7ff;
+          position:relative;
+        ">
+          <button onclick="closePopup()"
+            style="
+              position:absolute;top:6px;right:8px;
+              background:rgba(0,0,0,.4);color:#fff;border:none;
+              border-radius:50%;width:22px;height:22px;cursor:pointer;
+            ">×</button>
         </div>
-        <a href="#"
-           onclick="openDetailFromPopup(event)"
-           style="
-             display:block;width:100%;padding:8px;background:#3b9eff;color:#fff;
-             border:none;border-radius:8px;font-size:13px;font-weight:600;
-             text-align:center;text-decoration:none;
-           ">
-          View Details →
-        </a>
+        <div style="padding:12px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:3px;">${p.title ?? '-'}</div>
+          <div style="font-size:12px;color:#64748b;margin-bottom:8px;">
+            ★ ${p.rating ?? '-'} · ${distStr(p.distance)} away · ${typeName(p.type)}
+          </div>
+          <a href="#"
+             onclick="openDetailFromPopup(event)"
+             style="
+               display:block;width:100%;padding:8px;background:#3b9eff;color:#fff;
+               border:none;border-radius:8px;font-size:13px;font-weight:600;
+               text-align:center;text-decoration:none;
+             ">
+            View Details →
+          </a>
+        </div>
       </div>
-    </div>
-  `;
+    `;
 
     if (popupOverlay) {
       popupOverlay.setMap(null);
@@ -430,28 +465,37 @@
 
   function openDetail(p) {
     if (!p) return;
-    document.getElementById('mapPopup').classList.remove('show');
+
+    const hiddenPopup = document.getElementById('mapPopup');
+    if (hiddenPopup) {
+      hiddenPopup.classList.remove('show');
+    }
 
     document.getElementById('dpTitle').textContent = p.title ?? '-';
     document.getElementById('dpImg').style.backgroundImage = `url('${p.image ?? ''}')`;
     document.getElementById('dpName').textContent = p.title ?? '-';
-    document.getElementById('dpSub').textContent  = p.addr ?? '';
+    document.getElementById('dpSub').textContent = p.addr ?? '';
     document.getElementById('dpBadges').innerHTML =
             `<span class="dp-badge db-blue">${typeName(p.type)}</span>
        <span class="dp-badge db-gold">🏆 ${p.score?.toFixed(1) ?? '-'}점</span>`;
+
     document.getElementById('dpStars').innerHTML =
             `<span class="s">★★★★★</span>
        <span class="sc">${p.rating ?? '-'}</span>
        <span class="sm">/ 5.0 &nbsp;·&nbsp; ${p.user_ratings_total?.toLocaleString() ?? '-'} reviews</span>`;
+
     document.getElementById('dpInfoRow').innerHTML = `
       <div class="dp-info"><div class="dp-info-label">Address</div><div class="dp-info-val">${p.addr ?? '-'}</div></div>
       <div class="dp-info"><div class="dp-info-label">Distance</div><div class="dp-info-val">${distStr(p.distance)} away</div></div>
       <div class="dp-info"><div class="dp-info-label">Score</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
-      <div class="dp-info"><div class="dp-info-label">Category</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
+      <div class="dp-info"><div class="dp-info-label">Category</div><div class="dp-info-val">${typeName(p.type)}</div></div>
+    `;
+
     document.getElementById('dpDesc').textContent = '';
 
     const reviews = p.reviews ?? [];
     const avg = p.rating ?? 0;
+
     document.getElementById('dpRevSummary').innerHTML = `
       <div>
         <div class="rev-score">${avg}</div>
@@ -465,7 +509,9 @@
             <div class="rev-track"><div class="rev-fill" style="width:${pct}%"></div></div>
             <span>${pct}%</span></div>`;
     }).join('')}
-      </div></div>`;
+      </div></div>
+    `;
+
     document.getElementById('dpReviews').innerHTML = reviews.slice(0, 5).map(r => `
       <div class="review-item">
         <div class="ri-top">
@@ -476,9 +522,9 @@
           <div class="ri-stars">${'★'.repeat(Math.round(r.rating ?? 0))}</div>
         </div>
         <div class="ri-text">${r.text ?? ''}</div>
-      </div>`).join('');
+      </div>
+    `).join('');
 
-    // Save to Itinerary → /tour/itinerary 이동
     document.getElementById('itineraryBtn').onclick = function() {
       if (p.lat && p.lng) {
         location.href = `/tour/itinerary?lat=${p.lat}&lon=${p.lng}&title=${encodeURIComponent(p.title ?? '')}`;
@@ -520,37 +566,46 @@
     }
   }
 
-  // ── 최근 검색어 ──────────────────────────────────────────
   let hideTimer;
+
   function showRecent() {
     clearTimeout(hideTimer);
     document.getElementById('recentDropdown').classList.add('show');
   }
+
   function hideRecent() {
     hideTimer = setTimeout(() =>
             document.getElementById('recentDropdown').classList.remove('show'), 200);
   }
+
   function doSearch(kw) {
     document.getElementById('searchInput').value = kw;
     document.getElementById('searchForm').submit();
   }
-  // CSRF 토큰 포함 POST 헬퍼
+
   function csrfPost(url, body) {
     const token  = document.querySelector('meta[name="_csrf"]')?.content ?? '';
     const header = document.querySelector('meta[name="_csrf_header"]')?.content ?? 'X-CSRF-TOKEN';
+
     return fetch(url, {
       method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded', [header]: token},
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        [header]: token
+      },
       body: body
     });
   }
+
   function deleteKeyword(kw, event) {
     event.stopPropagation();
     csrfPost('/tour/search/history/delete', 'keyword=' + encodeURIComponent(kw))
             .then(() => location.reload());
   }
+
   function clearAllKeywords() {
-    csrfPost('/tour/search/history/clear', '').then(() => location.reload());
+    csrfPost('/tour/search/history/clear', '')
+            .then(() => location.reload());
   }
 
   render();
@@ -564,36 +619,52 @@
       level: 5
     });
 
-    const activeMarkerImage = new kakao.maps.MarkerImage(
+    activeMarkerImage = new kakao.maps.MarkerImage(
             "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
             new kakao.maps.Size(36, 52)
     );
+
+    const myLocationImage = new kakao.maps.MarkerImage(
+            "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png",
+            new kakao.maps.Size(40, 42)
+    );
+
+    markerMap = [];
 
     if (userLat && userLon) {
       new kakao.maps.Marker({
         map: map,
         position: new kakao.maps.LatLng(userLat, userLon),
-        title: '내 위치'
+        title: '내 위치',
+        image : myLocationImage
       });
     }
 
     PLACES.forEach(p => {
       if (!p.lat || !p.lng) return;
+
       const marker = new kakao.maps.Marker({
         map: map,
         position: new kakao.maps.LatLng(p.lat, p.lng),
         title: p.title ?? ''
       });
-      // 마커 클릭도 String으로 전달
+
+      markerMap.push({
+        title: p.title,
+        marker: marker
+      });
+
       kakao.maps.event.addListener(marker, 'click', () => {
-        // title로 _currentList에서 인덱스 찾기 (가장 안정적)
         const list = window._currentList || PLACES;
         const listIdx = list.findIndex(x => x.title === p.title);
+
         if (listIdx >= 0) {
-          selectPlace(listIdx);  // active 스타일 + 스크롤 + 팝업
+          selectPlace(listIdx);
         } else {
-          // 현재 필터에 없는 마커
-          if (p.lat && p.lng) map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
+          highlightMarkerByTitle(p.title);
+          if (p.lat && p.lng) {
+            map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
+          }
           showPopup(p);
         }
       });

@@ -27,8 +27,27 @@ public class TourismController {
     // ─────────────────────────────────────────────────────────
     @RequestMapping("/tour/all")
     public String tourAll(Model model, HttpSession session) {
+
+        List<TourPlaceDto> displayList = tourismService.allList().stream().limit(50).toList();
+
+        Double userLat = (Double) session.getAttribute("userlat");
+        Double userLon = (Double) session.getAttribute("userlon");
+
+        model.addAttribute("userlat", userLat);
+        model.addAttribute("userlon", userLon);
+
+        if(displayList.isEmpty()){
+            model.addAttribute("centerLat", displayList.get(0).getLat());
+            model.addAttribute("centerLat", displayList.get(0).getLng());
+        } else{
+            model.addAttribute("centerLat", 37.5665);
+            model.addAttribute("centerLon", 126.9780);
+        }
+
+        model.addAttribute("list", displayList);
         model.addAttribute("kakaoKey", kakaoKey);
         model.addAttribute("recentKeywords", getRecentKeywords(session));
+
         return "tourism/explore";
     }
 
@@ -203,4 +222,7 @@ public class TourismController {
         model.addAttribute("centerLat", latSum / count);
         model.addAttribute("centerLon", lonSum / count);
     }
+
+
+
 }
