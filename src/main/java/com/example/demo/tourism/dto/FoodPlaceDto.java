@@ -21,12 +21,12 @@ public class FoodPlaceDto {
 
     private double avgStar;
     private double reviewMean;
-    private int reviewCount;
+    private int    reviewCount;
 
     private double finalScore;
-    private double distance;
+    private double distance;   // km (Haversine)
 
-    private String category; // CAFE / RESTAURANT
+    private String category;   // CAFE / RESTAURANT
 
     private List<FoodReviewDto> reviews;
 }

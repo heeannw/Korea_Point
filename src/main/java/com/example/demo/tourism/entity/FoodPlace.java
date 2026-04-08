@@ -1,13 +1,7 @@
 package com.example.demo.tourism.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Getter
@@ -28,9 +22,9 @@ public class FoodPlace {
 
     private double avgStar;
     private double reviewMean;
-    private int reviewCount;
+    private int    reviewCount;
 
     private double finalScore;
 
-    private String category;
+    private String category;   // CAFE / RESTAURANT
 }
