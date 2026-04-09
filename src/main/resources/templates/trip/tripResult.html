@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>여행 일정 — KoreaPoint</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
+    <style>
+        :root{
+            --blue:#3b9eff;--blue-dk:#1a7de0;--blue-lt:#eff6ff;
+            --dark:#0f172a;--mid:#334155;--gray:#64748b;
+            --border:#dbeafe;--white:#fff;--light:#f0f7ff;
+            --gold:#f59e0b;--green:#16a34a;
+            --r:12px;--sh:0 2px 16px rgba(59,158,255,.10);
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        html,body{height:100%;overflow:hidden}
+        body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);display:flex;flex-direction:column}
+
+        /* ─── 헤더 (transport.html 완전 동일) ─── */
+        header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;z-index:100}
+        .logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--blue-dk);text-decoration:none}
+        .logo span{color:var(--dark)}
+        .header-right{display:flex;gap:8px;align-items:center}
+        .h-btn{padding:7px 16px;border-radius:50px;border:1.5px solid var(--border);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--dark);text-decoration:none;display:inline-flex;align-items:center;transition:all .2s}
+        .h-btn:hover,.h-btn.active{border-color:var(--blue);color:var(--blue)}
+        .h-btn-fill{background:var(--blue);color:#fff;border-color:var(--blue)}
+        .h-btn-fill:hover{background:var(--blue-dk);color:#fff}
+
+        /* ─── 앱 레이아웃 ─── */
+        .app-body{flex:1;display:flex;overflow:hidden}
+
+        /* ─── 사이드바 ─── */
+        .sidebar{width:380px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--white);overflow:hidden}
+
+        .back-bar{padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+        .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--gray);text-decoration:none;font-size:12px;font-weight:600}
+        .back-link:hover{color:var(--blue)}
+        .trip-meta{font-size:12px;color:var(--gray);font-weight:600}
+
+        /* 일차 선택 */
+        .day-selector{padding:10px 14px 8px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;gap:6px;flex-wrap:wrap;background:var(--light)}
+        .day-btn{padding:5px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s}
+        .day-btn:hover{border-color:var(--blue);color:var(--blue)}
+        .day-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+        /* 탭 */
+        .tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+        .tab-btn{flex:1;padding:11px 4px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--gray);font-family:'DM Sans',sans-serif;transition:color .2s}
+        .tab-btn.active{color:var(--blue);border-bottom:2px solid var(--blue)}
+        .tab-content{display:none;flex:1;overflow-y:auto;padding:10px 12px}
+        .tab-content::-webkit-scrollbar{width:4px}
+        .tab-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+        .tab-content.active{display:block}
+
+        /* ─── 슬롯 카드 ─── */
+        .slot-card{display:flex;gap:10px;padding:10px;border-radius:var(--r);cursor:pointer;transition:background .15s,box-shadow .15s;margin-bottom:4px;border:1.5px solid transparent}
+        .slot-card:hover{background:var(--light)}
+        .slot-card.active{border-color:var(--blue);background:var(--blue-lt)}
+
+        .slot-dot-wrap{display:flex;flex-direction:column;align-items:center;width:32px;flex-shrink:0}
+        .slot-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;flex-shrink:0}
+        .slot-dot.tourism{background:#3b9eff}
+        .slot-dot.food   {background:#f59e0b}
+        .slot-dot.cafe   {background:#10b981}
+        .slot-dot.bar    {background:#8b5cf6}
+        .slot-line{width:2px;flex:1;background:var(--border);margin:4px 0;min-height:18px}
+
+        .slot-info{flex:1;min-width:0}
+        .slot-time{font-size:11px;color:var(--gray);font-weight:600;margin-bottom:2px}
+        .slot-name{font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .slot-reason{font-size:11px;color:var(--gray);line-height:1.4}
+        .slot-score{font-size:11px;color:var(--blue);font-weight:700;margin-top:2px}
+
+        /* 대체 후보 */
+        .alt-toggle{font-size:11px;color:var(--blue);cursor:pointer;font-weight:600;margin-top:4px;display:inline-block}
+        .alt-list{display:none;margin-top:5px}
+        .alt-list.show{display:block}
+        .alt-item{padding:5px 10px;border-radius:8px;background:var(--light);font-size:11px;margin-bottom:3px;color:var(--mid);cursor:pointer;transition:background .15s;border:1px solid var(--border)}
+        .alt-item:hover{background:#dbeafe}
+
+        /* 추천 리스트 */
+        .rec-card{display:flex;gap:10px;padding:10px;border-radius:var(--r);cursor:pointer;transition:background .15s;margin-bottom:4px;border:1.5px solid transparent;align-items:flex-start}
+        .rec-card:hover{background:var(--light)}
+        .rec-rank{width:24px;height:24px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+        .rec-info{flex:1;min-width:0}
+        .rec-name{font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .rec-reason{font-size:11px;color:var(--gray)}
+        .rec-score{font-size:11px;color:var(--blue);font-weight:700;margin-top:2px}
+
+        /* ─── 지도 ─── */
+        .map-area{flex:1;position:relative;overflow:hidden}
+        #map{position:absolute;inset:0;width:100%;height:100%}
+        .map-controls{position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:30}
+        .mc{width:36px;height:36px;background:#fff;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;font-weight:700;box-shadow:var(--sh);transition:background .2s}
+        .mc:hover{background:var(--light)}
+        .loc-btn{position:absolute;bottom:80px;right:16px;background:#fff;border:1px solid var(--border);border-radius:50px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--sh);color:var(--dark);font-family:'DM Sans',sans-serif;z-index:30;transition:all .2s}
+        .loc-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+        /* 범례 */
+        .map-legend{position:absolute;bottom:24px;left:16px;z-index:30;background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;box-shadow:var(--sh)}
+        .legend-title{font-weight:700;margin-bottom:6px;color:var(--dark);font-size:12px}
+        .legend-item{display:flex;align-items:center;gap:8px;margin-bottom:3px;color:var(--mid);font-size:12px}
+        .legend-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+
+        /* ─── 장소 상세 패널 ─── */
+        .detail-panel{position:absolute;inset:0;background:#fff;z-index:50;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none}
+        .detail-panel.open{transform:translateX(0);pointer-events:auto}
+        .dp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:5}
+        .dp-back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px;line-height:1}
+        .dp-title{font-size:15px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .dp-img{width:100%;height:160px;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:52px}
+        .dp-body{padding:16px}
+        .dp-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+        .dp-badge{padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700}
+        .db-blue{background:var(--blue-lt);color:var(--blue-dk)}
+        .db-gold{background:#fef3c7;color:#92400e}
+        .dp-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;margin-bottom:2px}
+        .dp-sub{font-size:13px;color:var(--gray);margin-bottom:12px}
+        .dp-stars{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+        .dp-stars .s{color:var(--gold);font-size:15px}
+        .dp-stars .sc{font-size:17px;font-weight:700}
+        .dp-stars .sm{font-size:12px;color:var(--gray)}
+        .dp-info-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+        .dp-info{background:var(--light);border-radius:10px;padding:11px 13px}
+        .dp-info-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+        .dp-info-val{font-size:13px;font-weight:500}
+        .dp-reason{background:var(--blue-lt);border-radius:10px;padding:11px 13px;font-size:12px;color:var(--blue-dk);margin-bottom:12px;display:none}
+        .dp-action{position:sticky;bottom:0;padding:12px 16px;background:#fff;border-top:1px solid var(--border);display:flex;gap:8px}
+        .dp-btn{flex:1;padding:11px;border:none;border-radius:50px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
+        .dp-btn-primary{background:var(--blue);color:#fff}
+        .dp-btn-primary:hover{background:var(--blue-dk)}
+        .dp-btn-secondary{background:var(--light);color:var(--blue);border:1.5px solid var(--blue)}
+        .dp-btn-secondary:hover{background:var(--blue-lt)}
+
+        /* 빈 상태 */
+        .empty-msg{text-align:center;padding:32px 16px;color:var(--gray);font-size:13px}
+
+        /* 로딩 */
+        .loading-overlay{display:none;position:fixed;inset:0;background:rgba(10,22,40,.7);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+        .loading-overlay.show{display:flex}
+        .spinner{width:44px;height:44px;border:4px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .loading-text{color:#fff;font-size:14px;font-weight:600}
+    </style>
+</head>
+<body>
+
+<!-- ─── 헤더 (transport.html 완전 동일) ─── -->
+<header>
+    <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
+    <div class="header-right">
+        <a th:href="@{/en/trip/result}" class="h-btn">EN</a>
+        <a th:href="@{/ko/trip/result}" class="h-btn active">KR</a>
+        <th:block th:if="${isLoggedIn}">
+            <span class="h-btn" th:text="${currentUserName}"></span>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="h-btn h-btn-fill">Logout</button>
+            </form>
+        </th:block>
+        <th:block th:unless="${isLoggedIn}">
+            <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
+        </th:block>
+    </div>
+</header>
+
+<!-- ─── 앱 바디 ─── -->
+<div class="app-body">
+
+    <!-- 사이드바 -->
+    <div class="sidebar">
+        <div class="back-bar">
+            <a class="back-link" href="/ko/trip">← 다시 설정</a>
+            <span class="trip-meta" id="tripMeta">로딩 중...</span>
+        </div>
+        <div class="day-selector" id="daySelector"></div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('schedule',this)">📅 일정</button>
+            <button class="tab-btn" onclick="switchTab('tourism',this)">🏛️ 관광</button>
+            <button class="tab-btn" onclick="switchTab('food',this)">🍽️ 음식</button>
+            <button class="tab-btn" onclick="switchTab('cafe',this)">☕ 카페</button>
+        </div>
+        <div id="tab-schedule" class="tab-content active"><div id="scheduleList"><div class="empty-msg">일정 로딩 중...</div></div></div>
+        <div id="tab-tourism" class="tab-content"><div id="tourismList"><div class="empty-msg">추천 관광지 없음</div></div></div>
+        <div id="tab-food"    class="tab-content"><div id="foodList"><div class="empty-msg">추천 음식점 없음</div></div></div>
+        <div id="tab-cafe"    class="tab-content"><div id="cafeList"><div class="empty-msg">추천 카페 없음</div></div></div>
+    </div>
+
+    <!-- 지도 -->
+    <div class="map-area">
+        <div id="map"></div>
+
+        <div class="map-legend">
+            <div class="legend-title">범례</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#3b9eff"></div>관광지</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>음식점</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>카페</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>바</div>
+        </div>
+
+        <div class="map-controls">
+            <div class="mc" id="mcZI">＋</div>
+            <div class="mc" id="mcZO">－</div>
+        </div>
+        <button class="loc-btn" onclick="goMyLoc()">📍 내 위치</button>
+
+        <!-- 장소 상세 패널 -->
+        <div class="detail-panel" id="detailPanel">
+            <div class="dp-header">
+                <button class="dp-back" onclick="closeDetail()">←</button>
+                <div class="dp-title" id="dpTitle"></div>
+            </div>
+            <div class="dp-img" id="dpImg">🏙️</div>
+            <div class="dp-body">
+                <div class="dp-badge-row" id="dpBadges"></div>
+                <div class="dp-name"   id="dpName"></div>
+                <div class="dp-sub"    id="dpSub"></div>
+                <div class="dp-stars"  id="dpStars"></div>
+                <div class="dp-info-row" id="dpInfoRow"></div>
+                <div class="dp-reason" id="dpReason"></div>
+            </div>
+            <div class="dp-action">
+                <button class="dp-btn dp-btn-secondary" onclick="closeDetail()">← 목록으로</button>
+                <button class="dp-btn dp-btn-primary"   id="dpTransBtn">🚇 교통 검색</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">지도에 일정을 그리는 중...</div>
+</div>
+
+<script>
+    const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
+
+    /* ─── 카카오 지도 초기화 ─── */
+    const map = new kakao.maps.Map(document.getElementById('map'), {
+        center: new kakao.maps.LatLng(37.5665, 126.9780), level: 7
+    });
+    document.getElementById('mcZI').onclick = () => map.setLevel(map.getLevel() - 1);
+    document.getElementById('mcZO').onclick = () => map.setLevel(map.getLevel() + 1);
+
+    const CAT = {
+        tourism:{ color:'#3b9eff', icon:'🏛️', label:'관광' },
+        food:   { color:'#f59e0b', icon:'🍽️', label:'음식' },
+        cafe:   { color:'#10b981', icon:'☕',  label:'카페' },
+        bar:    { color:'#8b5cf6', icon:'🍺',  label:'바'  }
+    };
+
+    /* ─── 상태 ─── */
+    let tripResult = null, tripRequest = null, currentDay = 1;
+    let myLoc = null, activeOverlays = [], activeLines = [], dayCache = {};
+
+    /* ─── 내 위치 ─── */
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            myLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            const img = new kakao.maps.MarkerImage(
+                'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
+                new kakao.maps.Size(24, 35)
+            );
+            new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(myLoc.lat, myLoc.lng), image: img });
+            new kakao.maps.CustomOverlay({
+                map, position: new kakao.maps.LatLng(myLoc.lat, myLoc.lng), yAnchor: 2.5,
+                content: `<div style="background:#3b9eff;color:#fff;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.2);white-space:nowrap;">📍 내 위치</div>`
+            });
+        }, ()=>{});
+    }
+    function goMyLoc() {
+        if (!myLoc) { alert('위치를 불러오는 중입니다.'); return; }
+        map.setLevel(3); map.panTo(new kakao.maps.LatLng(myLoc.lat, myLoc.lng));
+    }
+
+    /* ─── 탭 전환 ─── */
+    function switchTab(id, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + id).classList.add('active');
+    }
+
+    /* ─── 카카오 키워드 검색 → 좌표 ─── */
+    function kakaoSearch(query) {
+        return fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query + ' 서울')}&size=1`, {
+            headers: { Authorization: KAKAO_KEY }
+        })
+            .then(r => r.json())
+            .then(d => d.documents?.[0]
+                ? { lat: parseFloat(d.documents[0].y), lng: parseFloat(d.documents[0].x) }
+                : null)
+            .catch(() => null);
+    }
+
+    /* ─── 지도 초기화 ─── */
+    function clearMap() {
+        activeOverlays.forEach(o => o.setMap(null));
+        activeLines.forEach(l => l.setMap(null));
+        activeOverlays = []; activeLines = [];
+    }
+
+    function fitBounds(coords) {
+        if (!coords.length) return;
+        const b = new kakao.maps.LatLngBounds();
+        coords.forEach(c => b.extend(new kakao.maps.LatLng(c.lat, c.lng)));
+        map.setBounds(b);
+    }
+
+    /* ─── 마커 생성 ─── */
+    function createMarker(lat, lng, slot, idx) {
+        const cfg = CAT[slot.category] || CAT.tourism;
+        const ov = new kakao.maps.CustomOverlay({
+            position: new kakao.maps.LatLng(lat, lng),
+            yAnchor: 1.1,
+            content: `
+        <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer" onclick="focusSlot(${idx})">
+          <div style="
+            width:34px;height:34px;border-radius:50%;
+            background:${cfg.color};border:3px solid #fff;
+            display:flex;align-items:center;justify-content:center;font-size:15px;
+            box-shadow:0 3px 10px rgba(0,0,0,.22);">${cfg.icon}</div>
+          <div style="
+            margin-top:4px;background:${cfg.color};color:#fff;
+            padding:3px 10px;border-radius:50px;
+            font-size:10px;font-weight:700;white-space:nowrap;
+            box-shadow:0 2px 6px rgba(0,0,0,.18);
+            font-family:'DM Sans',sans-serif;">${slot.placeName}</div>
+        </div>`
+        });
+        ov.setMap(map);
+        activeOverlays.push(ov);
+    }
+
+    /* ─── 경로선 (출발 → 마지막 순서대로 파란 실선) ─── */
+    function drawRoute(coords) {
+        if (coords.length < 2) return;
+        const path = coords.map(c => new kakao.maps.LatLng(c.lat, c.lng));
+
+        // 흰 테두리
+        const outline = new kakao.maps.Polyline({
+            path, strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: .9, strokeStyle: 'solid'
+        });
+        // 파란 실선
+        const line = new kakao.maps.Polyline({
+            path, strokeWeight: 4, strokeColor: '#3b9eff', strokeOpacity: .85, strokeStyle: 'solid'
+        });
+        outline.setMap(map); line.setMap(map);
+        activeLines.push(outline, line);
+    }
+
+    /* ─── 일차 지도 + 사이드바 렌더링 ─── */
+    async function drawDay(day) {
+        clearMap(); closeDetail();
+        document.getElementById('loadingOverlay').classList.add('show');
+
+        const dayData = tripResult.schedule.find(d => d.day === day);
+        if (!dayData || !dayData.slots.length) {
+            document.getElementById('loadingOverlay').classList.remove('show');
+            document.getElementById('scheduleList').innerHTML = '<div class="empty-msg">슬롯이 없어요</div>';
+            return;
+        }
+
+        /* 좌표 해결: slot에 lat/lng 있으면 사용, 없으면 카카오 검색 */
+        const resolved = [];
+        for (const slot of dayData.slots) {
+            let lat = slot.lat, lng = slot.lng;
+            if (!lat || !lng) {
+                const c = await kakaoSearch(slot.placeName);
+                if (c) { lat = c.lat; lng = c.lng; }
+            }
+            resolved.push({ slot, lat, lng });
+        }
+        dayCache[day] = resolved;
+
+        /* 마커 + 좌표 수집 */
+        const coords = [];
+        resolved.forEach((item, idx) => {
+            if (item.lat && item.lng) {
+                createMarker(item.lat, item.lng, item.slot, idx);
+                coords.push({ lat: item.lat, lng: item.lng });
+            }
+        });
+
+        /* 경로선 */
+        if (coords.length > 1) drawRoute(coords);
+
+        /* 지도 범위 조정 */
+        if (coords.length) fitBounds(coords);
+
+        document.getElementById('loadingOverlay').classList.remove('show');
+        renderSchedule(day);
+    }
+
+    /* ─── 일정 사이드바 렌더링 ─── */
+    function renderSchedule(day) {
+        const dayData = tripResult.schedule.find(d => d.day === day);
+        if (!dayData) return;
+        document.getElementById('scheduleList').innerHTML = dayData.slots.map((slot, idx) => {
+            const cfg = CAT[slot.category] || CAT.tourism;
+            const isLast = idx === dayData.slots.length - 1;
+            return `
+        <div class="slot-card" id="sc${idx}" onclick="focusSlot(${idx})">
+          <div class="slot-dot-wrap">
+            <div class="slot-dot ${slot.category}">${cfg.icon}</div>
+            ${!isLast ? '<div class="slot-line"></div>' : ''}
+          </div>
+          <div class="slot-info">
+            <div class="slot-time">${slot.time} · ${cfg.label}</div>
+            <div class="slot-name">${slot.placeName}</div>
+            <div class="slot-reason">${slot.reason || ''}</div>
+            <div class="slot-score">score ${(slot.score||0).toFixed(4)}</div>
+            ${slot.alternatives?.length
+                ? `<span class="alt-toggle" onclick="toggleAlt(event,${idx})">대체 후보 ▾</span>
+                 <div class="alt-list" id="al${idx}">
+                 ${slot.alternatives.map(a => `
+                   <div class="alt-item">
+                     ${a.placeName}
+                     <span style="color:var(--blue);font-weight:700"> ${a.score.toFixed(4)}</span>
+                     ${a.distanceKm ? `<span style="color:var(--gray)"> · ${a.distanceKm}km</span>` : ''}
+                   </div>`).join('')}
+                 </div>` : ''}
+          </div>
+        </div>`;
+        }).join('') || '<div class="empty-msg">슬롯이 없어요</div>';
+    }
+
+    /* ─── 슬롯 포커스 ─── */
+    function focusSlot(idx) {
+        document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('active'));
+        document.getElementById('sc' + idx)?.classList.add('active');
+        const item = dayCache[currentDay]?.[idx];
+        if (!item) return;
+        if (item.lat && item.lng) {
+            map.setLevel(4);
+            map.panTo(new kakao.maps.LatLng(item.lat, item.lng));
+        }
+        openDetail(item.slot, item.lat, item.lng);
+    }
+
+    /* ─── 대체 후보 토글 ─── */
+    function toggleAlt(e, idx) {
+        e.stopPropagation();
+        const el = document.getElementById('al' + idx);
+        el?.classList.toggle('show');
+        e.target.textContent = el?.classList.contains('show') ? '대체 후보 ▴' : '대체 후보 ▾';
+    }
+
+    /* ─── 장소 상세 패널 ─── */
+    function openDetail(slot, lat, lng) {
+        const cfg = CAT[slot.category] || CAT.tourism;
+        document.getElementById('dpImg').textContent = cfg.icon;
+        document.getElementById('dpImg').style.fontSize = '52px';
+        document.getElementById('dpTitle').textContent = slot.placeName;
+        document.getElementById('dpName').textContent  = slot.placeName;
+        document.getElementById('dpSub').textContent   = slot.address || '서울';
+
+        const badges = document.getElementById('dpBadges');
+        badges.innerHTML = `<span class="dp-badge db-blue">${cfg.label}</span>`;
+        if (slot.score) badges.innerHTML += `<span class="dp-badge db-gold">score ${slot.score.toFixed(4)}</span>`;
+
+        const stars = document.getElementById('dpStars');
+        if (slot.avgRating) {
+            const f = Math.round(slot.avgRating);
+            stars.innerHTML = `<span class="s">${'★'.repeat(f)}${'☆'.repeat(5-f)}</span><span class="sc">${slot.avgRating.toFixed(1)}</span><span class="sm">(${slot.reviewCount||0}개)</span>`;
+        } else stars.innerHTML = '';
+
+        document.getElementById('dpInfoRow').innerHTML = `
+      <div class="dp-info"><div class="dp-info-label">시간</div><div class="dp-info-val">${slot.time}</div></div>
+      <div class="dp-info"><div class="dp-info-label">카테고리</div><div class="dp-info-val">${cfg.label}</div></div>
+      ${lat ? `<div class="dp-info"><div class="dp-info-label">위도</div><div class="dp-info-val">${lat.toFixed(5)}</div></div>` : ''}
+      ${lng ? `<div class="dp-info"><div class="dp-info-label">경도</div><div class="dp-info-val">${lng.toFixed(5)}</div></div>` : ''}`;
+
+        const reasonEl = document.getElementById('dpReason');
+        if (slot.reason) { reasonEl.textContent = '💡 ' + slot.reason; reasonEl.style.display = 'block'; }
+        else reasonEl.style.display = 'none';
+
+        document.getElementById('dpTransBtn').onclick = () =>
+            location.href = `/ko/transport/search?end=${encodeURIComponent(slot.placeName)}`;
+
+        document.getElementById('detailPanel').classList.add('open');
+    }
+
+    function closeDetail() {
+        document.getElementById('detailPanel').classList.remove('open');
+    }
+
+    /* ─── 추천 리스트 렌더링 ─── */
+    function renderRecList(containerId, list) {
+        document.getElementById(containerId).innerHTML = list?.length
+            ? list.map((p, i) => `
+          <div class="rec-card">
+            <div class="rec-rank">${i+1}</div>
+            <div class="rec-info">
+              <div class="rec-name">${p.name}</div>
+              <div class="rec-reason">${p.reason||''}</div>
+              <div class="rec-score">score ${p.score?.toFixed(4)||'-'}</div>
+            </div>
+          </div>`).join('')
+            : '<div class="empty-msg">추천 결과가 없어요</div>';
+    }
+
+    /* ─── 일차 버튼 생성 ─── */
+    function buildDaySelector(schedule) {
+        document.getElementById('daySelector').innerHTML = schedule.map(d => `
+      <button class="day-btn${d.day===1?' active':''}" id="db${d.day}" onclick="selectDay(${d.day})">
+        ${d.day}일차
+      </button>`).join('');
+    }
+
+    function selectDay(day) {
+        document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('db' + day)?.classList.add('active');
+        currentDay = day;
+        // 탭을 일정으로 강제 이동
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelector('.tab-btn').classList.add('active');
+        document.getElementById('tab-schedule').classList.add('active');
+        drawDay(day);
+    }
+
+    /* ─── 초기화 ─── */
+    window.addEventListener('load', () => {
+        const raw = sessionStorage.getItem('tripResult');
+        if (!raw) {
+            document.getElementById('scheduleList').innerHTML =
+                '<div class="empty-msg">결과가 없습니다.<br><a href="/ko/trip" style="color:var(--blue)">다시 설정하기</a></div>';
+            return;
+        }
+        tripResult  = JSON.parse(raw);
+        tripRequest = JSON.parse(sessionStorage.getItem('tripRequest') || '{}');
+
+        /* 상단 메타 */
+        const days  = tripRequest.travelDays || tripResult.schedule.length;
+        const area  = (tripRequest.preferredAreas||[]).slice(0,2).join(', ') || '서울';
+        document.getElementById('tripMeta').textContent = `${area} · ${days-1}박 ${days}일`;
+
+        buildDaySelector(tripResult.schedule);
+        renderRecList('tourismList', tripResult.tourismList);
+        renderRecList('foodList',    tripResult.foodList);
+        renderRecList('cafeList',    tripResult.cafeList);
+        drawDay(1);
+    });
+</script>
+</body>
+</html>
