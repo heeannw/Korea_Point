@@ -117,16 +117,38 @@
         .db-blue{background:var(--blue-lt);color:var(--blue-dk)}
         .db-gold{background:#fef3c7;color:#92400e}
         .dp-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;margin-bottom:2px}
-        .dp-sub{font-size:13px;color:var(--gray);margin-bottom:12px}
-        .dp-stars{display:flex;align-items:center;gap:6px;margin-bottom:12px}
-        .dp-stars .s{color:var(--gold);font-size:15px}
-        .dp-stars .sc{font-size:17px;font-weight:700}
-        .dp-stars .sm{font-size:12px;color:var(--gray)}
-        .dp-info-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-        .dp-info{background:var(--light);border-radius:10px;padding:11px 13px}
-        .dp-info-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
-        .dp-info-val{font-size:13px;font-weight:500}
-        .dp-reason{background:var(--blue-lt);border-radius:10px;padding:11px 13px;font-size:12px;color:var(--blue-dk);margin-bottom:12px;display:none}
+        .dp-sub{font-size:13px;color:var(--gray);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+        .dp-addr-icon{font-size:12px}
+
+        /* 별점 행 */
+        .dp-rating-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:10px 14px;background:var(--light);border-radius:10px}
+        .dp-star-score{font-size:28px;font-weight:900;font-family:'Playfair Display',serif;color:var(--dark);line-height:1}
+        .dp-star-wrap{display:flex;flex-direction:column;gap:3px}
+        .dp-stars-visual{display:flex;gap:2px}
+        .dp-star{font-size:14px;color:#e2e8f0}
+        .dp-star.filled{color:var(--gold)}
+        .dp-star.half{color:var(--gold);opacity:.6}
+        .dp-review-cnt{font-size:11px;color:var(--gray)}
+
+        /* 리뷰 섹션 */
+        .dp-review-section{margin-top:2px}
+        .dp-section-title{font-size:13px;font-weight:700;color:var(--dark);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+        .review-item{padding:11px 0;border-bottom:1px solid var(--border)}
+        .review-item:last-child{border-bottom:none}
+        .ri-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+        .ri-author{font-size:12px;font-weight:700;color:var(--dark)}
+        .ri-meta{display:flex;align-items:center;gap:6px}
+        .ri-stars{font-size:11px;color:var(--gold)}
+        .ri-time{font-size:10px;color:var(--gray)}
+        .ri-text{font-size:12px;color:var(--mid);line-height:1.6;
+            display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+        .ri-text.expanded{-webkit-line-clamp:unset}
+        .ri-more{font-size:11px;color:var(--blue);cursor:pointer;font-weight:600;margin-top:3px;display:inline-block}
+
+        .no-review{font-size:12px;color:var(--gray);text-align:center;padding:16px 0}
+
+        .dp-reason{background:var(--blue-lt);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--blue-dk);margin-bottom:12px;display:none}
+
         .dp-action{position:sticky;bottom:0;padding:12px 16px;background:#fff;border-top:1px solid var(--border);display:flex;gap:8px}
         .dp-btn{flex:1;padding:11px;border:none;border-radius:50px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
         .dp-btn-primary{background:var(--blue);color:#fff}
@@ -211,18 +233,35 @@
                 <button class="dp-back" onclick="closeDetail()">←</button>
                 <div class="dp-title" id="dpTitle"></div>
             </div>
+            <!-- 이미지 -->
             <div class="dp-img" id="dpImg">🏙️</div>
             <div class="dp-body">
                 <div class="dp-badge-row" id="dpBadges"></div>
-                <div class="dp-name"   id="dpName"></div>
-                <div class="dp-sub"    id="dpSub"></div>
-                <div class="dp-stars"  id="dpStars"></div>
-                <div class="dp-info-row" id="dpInfoRow"></div>
+                <div class="dp-name" id="dpName"></div>
+                <!-- 주소 -->
+                <div class="dp-sub" id="dpSub">
+                    <span class="dp-addr-icon">📍</span>
+                    <span id="dpAddr"></span>
+                </div>
+                <!-- 별점 -->
+                <div class="dp-rating-row" id="dpRatingRow" style="display:none">
+                    <div class="dp-star-score" id="dpStarScore"></div>
+                    <div class="dp-star-wrap">
+                        <div class="dp-stars-visual" id="dpStarsVisual"></div>
+                        <div class="dp-review-cnt" id="dpReviewCnt"></div>
+                    </div>
+                </div>
+                <!-- 추천 이유 -->
                 <div class="dp-reason" id="dpReason"></div>
+                <!-- 리뷰 -->
+                <div class="dp-review-section" id="dpReviewSection" style="display:none">
+                    <div class="dp-section-title">💬 리뷰</div>
+                    <div id="dpReviewList"></div>
+                </div>
             </div>
             <div class="dp-action">
                 <button class="dp-btn dp-btn-secondary" onclick="closeDetail()">← 목록으로</button>
-                <button class="dp-btn dp-btn-primary"   id="dpTransBtn">🚇 교통 검색</button>
+                <button class="dp-btn dp-btn-primary" id="dpTransBtn">🚇 교통 검색</button>
             </div>
         </div>
     </div>
@@ -299,6 +338,7 @@
         activeOverlays.forEach(o => o.setMap(null));
         activeLines.forEach(l => l.setMap(null));
         activeOverlays = []; activeLines = [];
+        currentResolved = [];
     }
 
     function fitBounds(coords) {
@@ -308,30 +348,126 @@
         map.setBounds(b);
     }
 
-    /* ─── 마커 생성 ─── */
-    function createMarker(lat, lng, slot, idx) {
-        const cfg = CAT[slot.category] || CAT.tourism;
-        const ov = new kakao.maps.CustomOverlay({
-            position: new kakao.maps.LatLng(lat, lng),
-            yAnchor: 1.1,
-            content: `
-        <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer" onclick="focusSlot(${idx})">
-          <div style="
-            width:34px;height:34px;border-radius:50%;
-            background:${cfg.color};border:3px solid #fff;
-            display:flex;align-items:center;justify-content:center;font-size:15px;
-            box-shadow:0 3px 10px rgba(0,0,0,.22);">${cfg.icon}</div>
-          <div style="
-            margin-top:4px;background:${cfg.color};color:#fff;
-            padding:3px 10px;border-radius:50px;
-            font-size:10px;font-weight:700;white-space:nowrap;
-            box-shadow:0 2px 6px rgba(0,0,0,.18);
-            font-family:'DM Sans',sans-serif;">${slot.placeName}</div>
-        </div>`
-        });
-        ov.setMap(map);
-        activeOverlays.push(ov);
+    // ── 현재 해상된 아이템 저장 (줌 변경 시 재렌더링용) ──
+    let currentResolved = [];
+
+    /* ─── 픽셀 거리 계산 (지도 좌표 → 화면 픽셀) ─── */
+    function latLngToPixel(lat, lng) {
+        const proj = map.getProjection();
+        return proj.pointFromCoords(new kakao.maps.LatLng(lat, lng));
     }
+
+    /* ─── 커스텀 클러스터링: 가까운 마커를 픽셀 거리 기준으로 그룹핑 ─── */
+    function clusterItems(items, thresholdPx = 50) {
+        const groups = [];
+        const visited = new Array(items.length).fill(false);
+
+        items.forEach((item, i) => {
+            if (visited[i] || !item.lat || !item.lng) return;
+            const group = [i];
+            visited[i] = true;
+
+            const pi = latLngToPixel(item.lat, item.lng);
+
+            items.forEach((other, j) => {
+                if (visited[j] || !other.lat || !other.lng) return;
+                const pj = latLngToPixel(other.lat, other.lng);
+                const dx = pi.x - pj.x, dy = pi.y - pj.y;
+                if (Math.sqrt(dx*dx + dy*dy) < thresholdPx) {
+                    group.push(j);
+                    visited[j] = true;
+                }
+            });
+
+            groups.push(group);
+        });
+        return groups;
+    }
+
+    /* ─── 마커/클러스터 렌더링 ─── */
+    function renderMarkers(resolved) {
+        // 기존 오버레이만 초기화 (경로선은 유지)
+        activeOverlays.forEach(o => o.setMap(null));
+        activeOverlays = [];
+
+        if (!resolved.length) return;
+
+        const groups = clusterItems(resolved, 48);
+
+        groups.forEach(group => {
+            if (group.length === 1) {
+                // ── 단일 마커 ──
+                const item = resolved[group[0]];
+                const idx  = group[0];
+                const cfg  = CAT[item.slot.category] || CAT.tourism;
+
+                const ov = new kakao.maps.CustomOverlay({
+                    position: new kakao.maps.LatLng(item.lat, item.lng),
+                    yAnchor: 1.1, zIndex: 3,
+                    content: `
+            <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer"
+                 onclick="focusSlot(${idx})">
+              <div style="
+                width:34px;height:34px;border-radius:50%;
+                background:${cfg.color};border:3px solid #fff;
+                display:flex;align-items:center;justify-content:center;font-size:15px;
+                box-shadow:0 3px 10px rgba(0,0,0,.22);">${cfg.icon}</div>
+              <div style="
+                margin-top:4px;background:${cfg.color};color:#fff;
+                padding:3px 10px;border-radius:50px;
+                font-size:10px;font-weight:700;white-space:nowrap;
+                box-shadow:0 2px 6px rgba(0,0,0,.18);
+                font-family:'DM Sans',sans-serif;">${item.slot.placeName}</div>
+            </div>`
+                });
+                ov.setMap(map);
+                activeOverlays.push(ov);
+
+            } else {
+                // ── 클러스터 마커 (여러 개 묶음) ──
+                // 중심 좌표 = 그룹 평균
+                const avgLat = group.reduce((s, i) => s + resolved[i].lat, 0) / group.length;
+                const avgLng = group.reduce((s, i) => s + resolved[i].lng, 0) / group.length;
+
+                // 카테고리 조합으로 색상 결정 (첫 번째 카테고리 사용)
+                const firstCfg = CAT[resolved[group[0]].slot.category] || CAT.tourism;
+
+                // 클러스터 클릭 시 확대
+                const idxList = JSON.stringify(group);
+
+                const ov = new kakao.maps.CustomOverlay({
+                    position: new kakao.maps.LatLng(avgLat, avgLng),
+                    yAnchor: 0.5, zIndex: 4,
+                    content: `
+            <div onclick="zoomToCluster(${avgLat},${avgLng})"
+                 style="
+                   width:44px;height:44px;border-radius:50%;
+                   background:rgba(59,158,255,.9);
+                   border:3px solid #fff;
+                   display:flex;flex-direction:column;align-items:center;justify-content:center;
+                   cursor:pointer;
+                   box-shadow:0 4px 14px rgba(59,158,255,.45);
+                   font-family:'DM Sans',sans-serif;">
+              <div style="font-size:16px;font-weight:900;color:#fff;line-height:1">${group.length}</div>
+              <div style="font-size:8px;color:rgba(255,255,255,.8);margin-top:1px">장소</div>
+            </div>`
+                });
+                ov.setMap(map);
+                activeOverlays.push(ov);
+            }
+        });
+    }
+
+    /* ─── 클러스터 클릭 시 해당 위치로 확대 ─── */
+    function zoomToCluster(lat, lng) {
+        map.setLevel(map.getLevel() - 2);
+        map.panTo(new kakao.maps.LatLng(lat, lng));
+    }
+
+    /* ─── 줌 변경 시 재클러스터링 ─── */
+    kakao.maps.event.addListener(map, 'zoom_changed', () => {
+        if (currentResolved.length) renderMarkers(currentResolved);
+    });
 
     /* ─── 경로선 (출발 → 마지막 순서대로 파란 실선) ─── */
     function drawRoute(coords) {
@@ -373,15 +509,13 @@
             resolved.push({ slot, lat, lng });
         }
         dayCache[day] = resolved;
+        currentResolved = resolved;   // 줌 변경 시 재렌더링용
 
-        /* 마커 + 좌표 수집 */
-        const coords = [];
-        resolved.forEach((item, idx) => {
-            if (item.lat && item.lng) {
-                createMarker(item.lat, item.lng, item.slot, idx);
-                coords.push({ lat: item.lat, lng: item.lng });
-            }
-        });
+        /* 마커 렌더링 (커스텀 클러스터링) */
+        renderMarkers(resolved);
+
+        const coords = resolved.filter(i => i.lat && i.lng)
+            .map(i => ({ lat: i.lat, lng: i.lng }));
 
         /* 경로선 */
         if (coords.length > 1) drawRoute(coords);
@@ -450,36 +584,102 @@
     /* ─── 장소 상세 패널 ─── */
     function openDetail(slot, lat, lng) {
         const cfg = CAT[slot.category] || CAT.tourism;
-        document.getElementById('dpImg').textContent = cfg.icon;
-        document.getElementById('dpImg').style.fontSize = '52px';
+
+        // 이미지
+        const imgEl = document.getElementById('dpImg');
+        if (slot.imageUrl) {
+            imgEl.style.backgroundImage = `url('${slot.imageUrl}')`;
+            imgEl.style.backgroundSize  = 'cover';
+            imgEl.style.backgroundPosition = 'center';
+            imgEl.textContent = '';
+        } else {
+            imgEl.style.backgroundImage = '';
+            imgEl.textContent = cfg.icon;
+            imgEl.style.fontSize = '52px';
+        }
+
         document.getElementById('dpTitle').textContent = slot.placeName;
         document.getElementById('dpName').textContent  = slot.placeName;
-        document.getElementById('dpSub').textContent   = slot.address || '서울';
 
+        // 주소
+        const addrEl = document.getElementById('dpAddr');
+        addrEl.textContent = slot.address || '서울';
+        document.getElementById('dpSub').style.display = 'flex';
+
+        // 배지
         const badges = document.getElementById('dpBadges');
         badges.innerHTML = `<span class="dp-badge db-blue">${cfg.label}</span>`;
-        if (slot.score) badges.innerHTML += `<span class="dp-badge db-gold">score ${slot.score.toFixed(4)}</span>`;
 
-        const stars = document.getElementById('dpStars');
-        if (slot.avgRating) {
-            const f = Math.round(slot.avgRating);
-            stars.innerHTML = `<span class="s">${'★'.repeat(f)}${'☆'.repeat(5-f)}</span><span class="sc">${slot.avgRating.toFixed(1)}</span><span class="sm">(${slot.reviewCount||0}개)</span>`;
-        } else stars.innerHTML = '';
+        // 별점
+        const ratingRow = document.getElementById('dpRatingRow');
+        if (slot.avgRating && slot.avgRating > 0) {
+            document.getElementById('dpStarScore').textContent = slot.avgRating.toFixed(1);
+            // 별 시각화 (0.5 단위)
+            const stars = document.getElementById('dpStarsVisual');
+            stars.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                const s = document.createElement('span');
+                s.className = 'dp-star ' + (i <= Math.floor(slot.avgRating) ? 'filled' : (i - slot.avgRating < 1 && i - slot.avgRating > 0 ? 'half' : ''));
+                s.textContent = '★';
+                stars.appendChild(s);
+            }
+            document.getElementById('dpReviewCnt').textContent =
+                slot.reviewCount ? `리뷰 ${slot.reviewCount.toLocaleString()}개` : '';
+            ratingRow.style.display = 'flex';
+        } else {
+            ratingRow.style.display = 'none';
+        }
 
-        document.getElementById('dpInfoRow').innerHTML = `
-      <div class="dp-info"><div class="dp-info-label">시간</div><div class="dp-info-val">${slot.time}</div></div>
-      <div class="dp-info"><div class="dp-info-label">카테고리</div><div class="dp-info-val">${cfg.label}</div></div>
-      ${lat ? `<div class="dp-info"><div class="dp-info-label">위도</div><div class="dp-info-val">${lat.toFixed(5)}</div></div>` : ''}
-      ${lng ? `<div class="dp-info"><div class="dp-info-label">경도</div><div class="dp-info-val">${lng.toFixed(5)}</div></div>` : ''}`;
-
+        // 추천 이유
         const reasonEl = document.getElementById('dpReason');
-        if (slot.reason) { reasonEl.textContent = '💡 ' + slot.reason; reasonEl.style.display = 'block'; }
-        else reasonEl.style.display = 'none';
+        if (slot.reason) {
+            reasonEl.textContent = '💡 ' + slot.reason;
+            reasonEl.style.display = 'block';
+        } else {
+            reasonEl.style.display = 'none';
+        }
 
+        // 리뷰
+        const revSection = document.getElementById('dpReviewSection');
+        const revList    = document.getElementById('dpReviewList');
+        if (slot.reviews && slot.reviews.length > 0) {
+            revList.innerHTML = slot.reviews.map((r, idx) => {
+                const stars = '★'.repeat(Math.round(r.rating)) + '☆'.repeat(5 - Math.round(r.rating));
+                const timeStr = r.timeDesc || '';
+                return `
+          <div class="review-item">
+            <div class="ri-top">
+              <span class="ri-author">${r.author || '익명'}</span>
+              <div class="ri-meta">
+                <span class="ri-stars">${stars}</span>
+                ${timeStr ? `<span class="ri-time">${timeStr}</span>` : ''}
+              </div>
+            </div>
+            <div class="ri-text" id="riText${idx}">${r.text}</div>
+            <span class="ri-more" onclick="toggleReview(${idx})">더 보기</span>
+          </div>`;
+            }).join('');
+            revSection.style.display = 'block';
+        } else {
+            revList.innerHTML = '<div class="no-review">등록된 리뷰가 없어요</div>';
+            revSection.style.display = 'block';
+        }
+
+        // 교통 검색 버튼
         document.getElementById('dpTransBtn').onclick = () =>
             location.href = `/ko/transport/search?end=${encodeURIComponent(slot.placeName)}`;
 
         document.getElementById('detailPanel').classList.add('open');
+    }
+
+    function toggleReview(idx) {
+        const el = document.getElementById('riText' + idx);
+        const btn = el.nextElementSibling;
+        if (el.classList.contains('expanded')) {
+            el.classList.remove('expanded'); btn.textContent = '더 보기';
+        } else {
+            el.classList.add('expanded'); btn.textContent = '접기';
+        }
     }
 
     function closeDetail() {

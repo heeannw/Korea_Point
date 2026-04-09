@@ -244,6 +244,54 @@
         }
         .summary-box b{color:var(--dark)}
 
+        /* ─── 슬롯 빌더 ─── */
+        .slot-add-btn{
+            padding:7px 14px;border-radius:50px;
+            border:1.5px solid var(--border);background:#fff;
+            font-size:12px;font-weight:600;cursor:pointer;
+            font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s;
+        }
+        .slot-add-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt)}
+
+        .slot-item{
+            display:flex;align-items:center;gap:8px;
+            padding:9px 12px;border-radius:10px;
+            border:1.5px solid var(--border);background:#fff;
+            margin-bottom:6px;transition:box-shadow .2s, opacity .2s;
+            user-select:none;
+        }
+        .slot-item.dragging{opacity:.4;box-shadow:0 4px 16px rgba(59,158,255,.2)}
+        .slot-item.drag-over{border-color:var(--blue);background:var(--blue-lt)}
+        .slot-item[data-type="tourism"]{border-left:3px solid #3b9eff}
+        .slot-item[data-type="food"]   {border-left:3px solid #f59e0b}
+        .slot-item[data-type="cafe"]   {border-left:3px solid #10b981}
+        .slot-item[data-type="bar"]    {border-left:3px solid #8b5cf6}
+
+        .slot-drag{cursor:grab;color:var(--gray);font-size:16px;padding:2px 4px;flex-shrink:0}
+        .slot-drag:active{cursor:grabbing}
+        .slot-icon{font-size:17px;flex-shrink:0}
+        .slot-label{font-size:13px;font-weight:700;color:var(--dark);flex-shrink:0;min-width:36px}
+
+        .slot-food-select{
+            padding:4px 10px;border:1.5px solid var(--border);
+            border-radius:50px;font-size:12px;font-weight:600;
+            font-family:'DM Sans',sans-serif;color:var(--gray);
+            outline:none;cursor:pointer;transition:border-color .2s;
+            background:#fff;flex:1;max-width:160px;
+        }
+        .slot-food-select:focus{border-color:var(--blue)}
+        .slot-del{
+            margin-left:auto;background:none;border:none;
+            cursor:pointer;color:#94a3b8;font-size:17px;
+            padding:2px 5px;line-height:1;flex-shrink:0;transition:color .2s;
+        }
+        .slot-del:hover{color:#ef4444}
+        #slotList:empty::after{
+            content:'위 버튼을 눌러 슬롯을 추가해주세요';
+            display:block;text-align:center;padding:20px;
+            font-size:13px;color:var(--gray);
+        }
+
         /* ─── 로딩 ─── */
         .loading-overlay{
             display:none;position:fixed;inset:0;
@@ -367,52 +415,24 @@
             <div class="btn-row"><button class="btn-next" onclick="goNext(1)">다음 →</button></div>
         </div>
 
-        <!-- ─── STEP 2: 하루 일정 ─── -->
+        <!-- ─── STEP 2: 하루 일정 슬롯 빌더 ─── -->
         <div class="form-step" id="step2">
-            <div class="step-title">🗓️ 하루 <span>일정</span>을 구성해주세요</div>
-            <div class="count-grid">
-                <div class="count-card">
-                    <div class="count-icon">🏛️</div>
-                    <div class="count-label">관광</div>
-                    <div class="count-ctrl">
-                        <button class="count-btn" onclick="cc('dailyTourism',-1)">−</button>
-                        <span class="count-val" id="dailyTourismVal">2</span>
-                        <button class="count-btn" onclick="cc('dailyTourism',1)">+</button>
-                    </div>
-                    <input type="hidden" id="dailyTourism" value="2">
-                </div>
-                <div class="count-card">
-                    <div class="count-icon">🍽️</div>
-                    <div class="count-label">식사</div>
-                    <div class="count-ctrl">
-                        <button class="count-btn" onclick="cc('dailyMeal',-1)">−</button>
-                        <span class="count-val" id="dailyMealVal">2</span>
-                        <button class="count-btn" onclick="cc('dailyMeal',1)">+</button>
-                    </div>
-                    <input type="hidden" id="dailyMeal" value="2">
-                </div>
-                <div class="count-card">
-                    <div class="count-icon">☕</div>
-                    <div class="count-label">카페</div>
-                    <div class="count-ctrl">
-                        <button class="count-btn" onclick="cc('dailyCafe',-1)">−</button>
-                        <span class="count-val" id="dailyCafeVal">1</span>
-                        <button class="count-btn" onclick="cc('dailyCafe',1)">+</button>
-                    </div>
-                    <input type="hidden" id="dailyCafe" value="1">
-                </div>
-                <div class="count-card">
-                    <div class="count-icon">🍺</div>
-                    <div class="count-label">바</div>
-                    <div class="count-ctrl">
-                        <button class="count-btn" onclick="cc('dailyBar',-1)">−</button>
-                        <span class="count-val" id="dailyBarVal">0</span>
-                        <button class="count-btn" onclick="cc('dailyBar',1)">+</button>
-                    </div>
-                    <input type="hidden" id="dailyBar" value="0">
-                </div>
+            <div class="step-title">🗓️ 하루 <span>일정</span>을 직접 구성해주세요</div>
+
+            <!-- 슬롯 추가 버튼 행 -->
+            <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">
+                <button class="slot-add-btn" onclick="addSlot('tourism')">🏛️ 관광 추가</button>
+                <button class="slot-add-btn" onclick="addSlot('food')">🍽️ 식사 추가</button>
+                <button class="slot-add-btn" onclick="addSlot('cafe')">☕ 카페 추가</button>
+                <button class="slot-add-btn" onclick="addSlot('bar')">🍺 바 추가</button>
             </div>
-            <p class="field-hint">슬롯이 많을수록 빡빡한 일정이 구성됩니다</p>
+
+            <!-- 슬롯 리스트 (드래그 영역) -->
+            <div id="slotList" style="min-height:60px;margin-bottom:10px"></div>
+
+            <p class="field-hint">☰ 을 드래그해서 순서를 바꿀 수 있어요 · 식사 슬롯은 음식 종류를 선택할 수 있어요</p>
+            <p class="field-hint" id="slotEmptyHint" style="color:#ef4444;display:none">슬롯을 최소 1개 이상 추가해주세요</p>
+
             <div class="btn-row">
                 <button class="btn-back" onclick="goStep(1)">← 이전</button>
                 <button class="btn-next" onclick="goNext(2)">다음 →</button>
@@ -426,7 +446,7 @@
             <div class="chip-section-label">자주 찾는 지역</div>
             <!-- 서버에서 age_popularity 기반으로 동적 렌더링 -->
             <div class="chip-group" id="areaChipsPopular">
-                <div style="color:var(--gray);font-size:12px;padding:8px 0">불러오는 중...</div>
+                <div style="color:var(--gray);font-size:12px;padding:4px 0">불러오는 중...</div>
             </div>
 
             <div class="divider" style="margin:12px 0"></div>
@@ -446,7 +466,7 @@
             </div>
             <div class="area-scroll">
                 <div class="chip-group" id="areaChipsAll">
-                    <div style="color:var(--gray);font-size:12px;padding:8px 0">불러오는 중...</div>
+                    <div style="color:var(--gray);font-size:12px;padding:4px 0">불러오는 중...</div>
                 </div>
             </div>
 
@@ -507,22 +527,16 @@
 </div>
 
 <script>
-    /* ──────────────────────────────────────────────
-       지역 데이터 : 서버 API에서 동적 로드
-       GET /api/trip/areas → { popular: [...], allAreas: [...] }
-       popular  = age_popularity 키 (인기순, 약 54개)
-       allAreas = foreign_coverage 키 전체 (약 198개)
-    ────────────────────────────────────────────── */
-
-    // 이모지 매핑 (popular에만 적용)
+    // ─────────────────────────────────────────────────
+    //  지역 데이터 : 서버 API에서 동적 로드
+    //  GET /api/trip/areas → { popular: [...], allAreas: [...] }
+    // ─────────────────────────────────────────────────
     const AREA_EMOJI = {
         '코엑스':'🏢','롯데월드잠실점':'🎡','국립중앙박물관':'🏛️','여의도한강공원':'🌸',
         '어린이대공원':'🎠','예술의전당':'🎭','올림픽공원':'⚽','반포한강공원':'🌉',
-        '서울숲':'🌿','서울식물원':'🌱','뚝섬한강공원':'🛶','경복궁':'⛩',
-        '서울월드컵경기장':'⚽','전쟁기념관':'🎖️','망원한강공원':'🚲','봉은사':'🕍',
-        '고척스카이돔':'⚾','롯데월드아쿠아리움':'🐠','노들섬':'🎵','낙산공원':'🏰',
-        '조계사':'🏯','하늘공원':'🌅','보라매공원':'🌳','북한산성':'⛰️',
-        '길상사':'🌸','압구정로데오거리':'👗','KT&G상상마당홍대':'🎨',
+        '서울숲':'🌿','뚝섬한강공원':'🛶','경복궁':'⛩','전쟁기념관':'🎖️',
+        '망원한강공원':'🚲','봉은사':'🏯','낙산공원':'🏰','조계사':'🕍',
+        '하늘공원':'🌅','보라매공원':'🌳','길상사':'🌸','압구정로데오거리':'👗',
     };
 
     async function loadAreaData() {
@@ -533,38 +547,35 @@
             renderAllChips    (data.allAreas || []);
         } catch(e) {
             console.error('[지역 로드 실패]', e);
-            // 폴백: 최소 지역 하드코딩
+            // 폴백
             renderPopularChips(['코엑스','경복궁','남산서울타워','광장시장','홍대','명동','이태원','잠실','강남','성수','인사동','북촌한옥마을']);
             renderAllChips([]);
         }
     }
 
-    function makeChip(name, label) {
+    function makeAreaChip(name, label) {
         const el = document.createElement('div');
-        el.className = 'chip';
+        el.className  = 'chip';
         el.dataset.val = name;
         el.textContent = label || name;
         return el;
     }
 
-    function syncChips(name, selected) {
-        // popular ↔ all 양방향 동기화
-        document.querySelectorAll(`#areaChipsPopular .chip[data-val="${name}"],
-                               #areaChipsAll     .chip[data-val="${name}"]`)
-            .forEach(c => c.classList.toggle('selected', selected));
+    /* popular ↔ all 양방향 동기화 */
+    function syncAreaChips(name, selected) {
+        document.querySelectorAll(
+            `#areaChipsPopular .chip[data-val="${name}"],
+       #areaChipsAll     .chip[data-val="${name}"]`
+        ).forEach(c => c.classList.toggle('selected', selected));
     }
 
     function renderPopularChips(list) {
         const group = document.getElementById('areaChipsPopular');
         group.innerHTML = '';
-        // 최대 20개만 표시
         list.slice(0, 20).forEach(name => {
             const emoji = AREA_EMOJI[name] || '📍';
-            const chip  = makeChip(name, `${emoji} ${name}`);
-            chip.addEventListener('click', () => {
-                const next = !chip.classList.contains('selected');
-                syncChips(name, next);
-            });
+            const chip  = makeAreaChip(name, `${emoji} ${name}`);
+            chip.addEventListener('click', () => syncAreaChips(name, !chip.classList.contains('selected')));
             group.appendChild(chip);
         });
     }
@@ -574,30 +585,34 @@
         group.innerHTML = '';
         document.getElementById('areaCount').textContent = list.length;
         list.forEach(name => {
-            const chip = makeChip(name, name);
-            chip.addEventListener('click', () => {
-                const next = !chip.classList.contains('selected');
-                syncChips(name, next);
-            });
+            const chip = makeAreaChip(name, name);
+            chip.addEventListener('click', () => syncAreaChips(name, !chip.classList.contains('selected')));
             group.appendChild(chip);
         });
     }
 
-    /* ── 전체 명소 검색 필터 ── */
+    /* 전체 명소 검색 필터 */
     function filterAreas(keyword) {
         const kw = keyword.trim().toLowerCase();
         document.querySelectorAll('#areaChipsAll .chip').forEach(c => {
-            const match = !kw || c.dataset.val.toLowerCase().includes(kw);
-            c.style.display = match ? '' : 'none';
+            c.style.display = (!kw || c.dataset.val.toLowerCase().includes(kw)) ? '' : 'none';
         });
     }
 
-    /* ── 카테고리 칩 토글 ── */
+    /* 칩 값 수집 (popular + all 중복 제거) */
+    function getAreaChips() {
+        const vals = new Set();
+        document.querySelectorAll('#areaChipsPopular .chip.selected, #areaChipsAll .chip.selected')
+            .forEach(c => vals.add(c.dataset.val));
+        return [...vals];
+    }
+
+    /* 카테고리 칩 토글 */
     document.querySelectorAll('#categoryChips .chip').forEach(c =>
         c.addEventListener('click', () => c.classList.toggle('selected'))
     );
 
-    /* ── 페이지 로드 시 지역 데이터 호출 ── */
+    /* 페이지 로드 시 지역 API 호출 */
     loadAreaData();
 
     /* ── 몇박몇일 자동 계산 ── */
@@ -628,32 +643,122 @@
     }
 
     function goNext(from) {
-        // 간단 유효성 검사
         if (from === 1) {
             if (!document.getElementById('age').value)       { alert('나이를 입력해주세요'); return; }
             if (!document.getElementById('companion').value) { alert('동행 유형을 선택해주세요'); return; }
             if (!document.getElementById('travelDays').value){ alert('여행 일수를 입력해주세요'); return; }
         }
+        if (from === 2) {
+            // 슬롯 최소 1개 체크
+            if (document.querySelectorAll('#slotList .slot-item').length === 0) {
+                document.getElementById('slotEmptyHint').style.display = 'block';
+                return;
+            }
+            document.getElementById('slotEmptyHint').style.display = 'none';
+        }
         if (from === 4) buildSummary();
         goStep(from + 1);
     }
 
-    /* ── 카운터 ── */
-    const countLimits = {dailyTourism:[0,5],dailyMeal:[0,4],dailyCafe:[0,3],dailyBar:[0,3]};
-    function cc(id, delta) {
-        const el = document.getElementById(id);
-        const [min,max] = countLimits[id];
-        const v = Math.min(max, Math.max(min, parseInt(el.value) + delta));
-        el.value = v; document.getElementById(id + 'Val').textContent = v;
+    // ─────────────────────────────────────────────────
+    //  슬롯 빌더
+    // ─────────────────────────────────────────────────
+    const SLOT_CONFIG = {
+        tourism: { icon: '🏛️', label: '관광' },
+        food:    { icon: '🍽️', label: '식사' },
+        cafe:    { icon: '☕',  label: '카페' },
+        bar:     { icon: '🍺',  label: '바'   }
+    };
+
+    const FOOD_CATS = ['선택 안 함', '한식', '중식', '일식', '양식', '고기/해산물', '기타'];
+
+    // 기본 슬롯 초기값 (관광2 식사2 카페1 순)
+    const DEFAULT_SLOTS = [
+        {type:'tourism'}, {type:'tourism'},
+        {type:'food', foodCategory:''}, {type:'food', foodCategory:''},
+        {type:'cafe'}
+    ];
+
+    function renderSlotList() {
+        const list = document.getElementById('slotList');
+        if (list.children.length === 0) {
+            DEFAULT_SLOTS.forEach(s => addSlot(s.type, s.foodCategory));
+        }
     }
 
-    /* ── 칩 값 수집 (popular + all 중복제거) ── */
-    function getAreaChips() {
-        const vals = new Set();
-        document.querySelectorAll('#areaChipsPopular .chip.selected, #areaChipsAll .chip.selected')
-            .forEach(c => vals.add(c.dataset.val));
-        return [...vals];
+    function addSlot(type, foodCategory = '') {
+        const cfg  = SLOT_CONFIG[type];
+        const list = document.getElementById('slotList');
+        const item = document.createElement('div');
+        item.className  = 'slot-item';
+        item.dataset.type = type;
+        item.draggable  = true;
+
+        const foodSelect = type === 'food'
+            ? `<select class="slot-food-select" title="음식 종류 선택">
+           ${FOOD_CATS.map(c => `<option value="${c === '선택 안 함' ? '' : c === '고기/해산물' ? '고기_해산물' : c}"
+             ${(foodCategory === (c === '고기/해산물' ? '고기_해산물' : c)) ? 'selected' : ''}>
+             ${c}</option>`).join('')}
+         </select>`
+            : '';
+
+        item.innerHTML = `
+      <span class="slot-drag" title="드래그해서 순서 변경">☰</span>
+      <span class="slot-icon">${cfg.icon}</span>
+      <span class="slot-label">${cfg.label}</span>
+      ${foodSelect}
+      <button class="slot-del" onclick="removeSlot(this)" title="삭제">✕</button>
+    `;
+
+        // ── 드래그 이벤트 ──
+        item.addEventListener('dragstart', e => {
+            e.dataTransfer.effectAllowed = 'move';
+            item.classList.add('dragging');
+            dragSrc = item;
+        });
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
+
+        item.addEventListener('dragover', e => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            document.querySelectorAll('.slot-item').forEach(i => i.classList.remove('drag-over'));
+            item.classList.add('drag-over');
+        });
+        item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+        item.addEventListener('drop', e => {
+            e.preventDefault();
+            item.classList.remove('drag-over');
+            if (dragSrc && dragSrc !== item) {
+                const allItems = [...list.children];
+                const srcIdx  = allItems.indexOf(dragSrc);
+                const destIdx = allItems.indexOf(item);
+                if (srcIdx < destIdx) list.insertBefore(dragSrc, item.nextSibling);
+                else                  list.insertBefore(dragSrc, item);
+            }
+        });
+
+        list.appendChild(item);
     }
+
+    function removeSlot(btn) {
+        btn.closest('.slot-item').remove();
+    }
+
+    let dragSrc = null;
+
+    // 페이지 로드 시 기본 슬롯 삽입
+    renderSlotList();
+
+    /* ── 슬롯 순서 수집 ── */
+    function getSlotOrders() {
+        return [...document.querySelectorAll('#slotList .slot-item')].map(item => {
+            const type = item.dataset.type;
+            const sel  = item.querySelector('.slot-food-select');
+            return { type, foodCategory: sel ? sel.value : '' };
+        });
+    }
+
+    /* ── 카테고리 칩 값 수집 ── */
     function getCatChips() {
         return [...document.querySelectorAll('#categoryChips .chip.selected')].map(c => c.dataset.val);
     }
@@ -662,15 +767,27 @@
     const cmpMap={solo:'혼자',friend:'친구',couple:'커플',family:'가족'};
     const budMap={low:'절약',medium:'보통',high:'여유'};
     const intMap={relaxed:'느긋',balanced:'적당',packed:'알차게'};
+    const slotLabel = {tourism:'관광', food:'식사', cafe:'카페', bar:'바'};
+    const slotIcon  = {tourism:'🏛️', food:'🍽️', cafe:'☕', bar:'🍺'};
+
     function buildSummary() {
-        const areas = getAreaChips(), cats = getCatChips();
-        const days = document.getElementById('travelDays').value;
-        const must = document.getElementById('mustVisit').value.trim();
-        const desc = document.getElementById('styleDescription').value.trim();
+        const areas  = getAreaChips(), cats = getCatChips();
+        const days   = document.getElementById('travelDays').value;
+        const must   = document.getElementById('mustVisit').value.trim();
+        const desc   = document.getElementById('styleDescription').value.trim();
+        const orders = getSlotOrders();
+
+        // 슬롯 순서 한 줄 표시
+        const slotLine = orders.map(o => {
+            const icon = slotIcon[o.type] || '?';
+            const fc   = o.foodCategory ? ` (${o.foodCategory})` : '';
+            return icon + fc;
+        }).join(' → ');
+
         document.getElementById('summaryBox').innerHTML = [
             `<b>👤 기본</b>: ${document.getElementById('age').value}세 / ${cmpMap[document.getElementById('companion').value]||'-'} / ${budMap[document.getElementById('budget').value]||'-'} / ${intMap[document.getElementById('intensity').value]||'-'}`,
             `<b>🗓️ 여행</b>: ${days}일 (${parseInt(days)-1}박 ${days}일) / ${document.getElementById('startHour').value||10}시~${document.getElementById('endHour').value||21}시`,
-            `<b>📅 하루</b>: 관광 ${document.getElementById('dailyTourism').value} · 식사 ${document.getElementById('dailyMeal').value} · 카페 ${document.getElementById('dailyCafe').value} · 바 ${document.getElementById('dailyBar').value}`,
+            `<b>📅 하루 순서</b>: ${slotLine || '미설정'}`,
             `<b>📍 지역</b>: ${areas.length ? areas.join(', ') : '미선택'}`,
             must ? `<b>🌟 꼭 갈 곳</b>: ${must}` : '',
             `<b>✨ 취향</b>: ${cats.length ? cats.join(', ') : '미선택'}`,
@@ -680,29 +797,38 @@
 
     /* ── 제출 ── */
     function submitRecommend() {
-        const areas = getAreaChips(), cats = getCatChips();
+        const areas    = getAreaChips(), cats = getCatChips();
         const mustList = document.getElementById('mustVisit').value.trim().split(',').map(s=>s.trim()).filter(Boolean);
+        const slotOrders = getSlotOrders();
+
         const payload = {
-            age:              parseInt(document.getElementById('age').value)||25,
-            companion:        document.getElementById('companion').value||'friend',
-            budget:           document.getElementById('budget').value||'medium',
-            travelDays:       parseInt(document.getElementById('travelDays').value)||3,
-            startHour:        parseInt(document.getElementById('startHour').value)||10,
-            endHour:          parseInt(document.getElementById('endHour').value)||21,
-            intensity:        document.getElementById('intensity').value||'balanced',
-            dailyTourism:     parseInt(document.getElementById('dailyTourism').value),
-            dailyMeal:        parseInt(document.getElementById('dailyMeal').value),
-            dailyCafe:        parseInt(document.getElementById('dailyCafe').value),
-            dailyBar:         parseInt(document.getElementById('dailyBar').value),
-            preferredAreas:   areas, mustVisit: mustList, categories: cats,
+            age:              parseInt(document.getElementById('age').value) || 25,
+            companion:        document.getElementById('companion').value     || 'friend',
+            budget:           document.getElementById('budget').value        || 'medium',
+            travelDays:       parseInt(document.getElementById('travelDays').value) || 3,
+            startHour:        parseInt(document.getElementById('startHour').value)  || 10,
+            endHour:          parseInt(document.getElementById('endHour').value)    || 21,
+            intensity:        document.getElementById('intensity').value     || 'balanced',
+            // slotOrders 우선 사용 — 서버에서 이걸 보면 dailyXxx 무시
+            slotOrders,
+            // 폴백용 (slotOrders 없을 때만 서버에서 참조)
+            dailyTourism: slotOrders.filter(s => s.type === 'tourism').length,
+            dailyMeal:    slotOrders.filter(s => s.type === 'food').length,
+            dailyCafe:    slotOrders.filter(s => s.type === 'cafe').length,
+            dailyBar:     slotOrders.filter(s => s.type === 'bar').length,
+            preferredAreas:   areas,
+            mustVisit:        mustList,
+            categories:       cats,
             styleDescription: document.getElementById('styleDescription').value.trim()
         };
+
         const ct = document.querySelector('meta[name="_csrf"]')?.content;
         const ch = document.querySelector('meta[name="_csrf_header"]')?.content;
-        const headers = {'Content-Type':'application/json'};
+        const headers = { 'Content-Type': 'application/json' };
         if (ct && ch) headers[ch] = ct;
+
         document.getElementById('loadingOverlay').classList.add('show');
-        fetch('/api/trip/recommend', {method:'POST',headers,body:JSON.stringify(payload)})
+        fetch('/api/trip/recommend', { method:'POST', headers, body:JSON.stringify(payload) })
             .then(r => r.json())
             .then(data => {
                 sessionStorage.setItem('tripResult',  JSON.stringify(data));

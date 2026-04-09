@@ -27,8 +27,8 @@ public class TripRecommendResponse {
 
     @Data
     public static class DayScheduleDto {
-        private int             day;
-        private List<SlotDto>   slots;
+        private int           day;
+        private List<SlotDto> slots;
     }
 
     @Data
@@ -40,10 +40,26 @@ public class TripRecommendResponse {
         private double distanceKm;
         private Double lat;
         private Double lng;
-        private String address;
-        private String imageUrl;
         private double score;
+
+        // ── 상세 정보 (패널에 표시) ──
+        private String address;       // 한국어 주소
+        private String imageUrl;      // 대표 이미지
+        private double avgRating;     // 평균 별점
+        private int    reviewCount;   // 리뷰 수
+
+        /** 리뷰 목록 (최대 3개) */
+        private List<ReviewDto> reviews;
+
         private List<AlternativeDto> alternatives;
+    }
+
+    @Data
+    public static class ReviewDto {
+        private String author;    // 작성자
+        private double rating;    // 별점
+        private String text;      // 내용
+        private String timeDesc;  // "3 years ago" 또는 날짜
     }
 
     @Data
