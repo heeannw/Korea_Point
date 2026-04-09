@@ -45,7 +45,7 @@ public class TripRecommendService {
             String area
     ) {}
 
-    // ── 🔴 버그 2 수정: 이중중괄호 → static 블록으로 교체 ──
+    // ── AREA_COORDS static 블록 ──
     private static final Map<String, double[]> AREA_COORDS;
     static {
         AREA_COORDS = new LinkedHashMap<>();
@@ -80,8 +80,8 @@ public class TripRecommendService {
     public void loadAllData() {
         try {
             loadModelLookup();
-            foodPlaces    = loadFoodScores();
-            cafePlaces    = loadCafeScores();
+            foodPlaces    = loadScoreFile(FOOD_PATH,  "food");
+            cafePlaces    = loadScoreFile(CAFE_PATH,  "cafe");
             tourismPlaces = loadTourismCandidates();
             log.info("[TripService] 로드 완료 | 관광:{} 음식:{} 카페:{} | 자주찾는:{} 전체지역:{}",
                     tourismPlaces.size(), foodPlaces.size(), cafePlaces.size(),
@@ -137,37 +137,68 @@ public class TripRecommendService {
         }
     }
 
-    private List<PlaceData> loadFoodScores() throws Exception {
-        List<Map<String, Object>> raw = readJson(FOOD_PATH, new TypeReference<>() {});
+    /**
+     * food_scores.json / cafe_scores.json 공통 로더
+     *
+     * 파일 구조가 배열([{...}]) 또는 객체({"key":{...}}) 모두 대응
+     * defaultCategory: food / cafe 기본값 (파일 내 category 필드 있으면 덮어씀)
+     */
+    @SuppressWarnings("unchecked")
+    private List<PlaceData> loadScoreFile(String path, String defaultCategory) throws Exception {
+        Object raw = readJsonRaw(path);
+        List<Map<String, Object>> items = new ArrayList<>();
+
+        if (raw instanceof List<?> arr) {
+            // ✅ 정상 케이스: 배열
+            arr.forEach(o -> { if (o instanceof Map<?,?> m) items.add((Map<String,Object>) m); });
+
+        } else if (raw instanceof Map<?,?> rootMap) {
+            // ✅ 객체 래퍼 케이스: { "data": [...] } 또는 { "이름": {...} }
+            // 먼저 "data", "list", "items" 같은 배열 키를 찾아본다
+            boolean found = false;
+            for (String key : List.of("data", "list", "items", "places", "restaurants", "cafes")) {
+                Object inner = rootMap.get(key);
+                if (inner instanceof List<?> innerArr) {
+                    innerArr.forEach(o -> { if (o instanceof Map<?,?> m) items.add((Map<String,Object>) m); });
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                // 값들이 모두 Map이면 각 값을 item으로 처리
+                rootMap.forEach((k, v) -> {
+                    if (v instanceof Map<?,?> m) {
+                        Map<String, Object> item = new HashMap<>((Map<String,Object>) m);
+                        // 키(k)를 name으로 추가
+                        item.putIfAbsent("name", k.toString());
+                        items.add(item);
+                    }
+                });
+            }
+        }
+
+        log.info("[TripService] {} 파싱 완료: {}개 항목", path, items.size());
+
         List<PlaceData> list = new ArrayList<>();
-        for (Map<String, Object> m : raw) {
-            // 🔴 버그 3 수정: str() 대신 firstStr() 사용 → null 안전
-            String name  = firstStr(m, "name");
-            double lat   = dbl(m, "lat");
-            double lng   = dbl(m, "lng");
-            double score = dbl(m, "finalScore");
-            double star  = dbl(m, "avgStar");
+        for (Map<String, Object> m : items) {
+            String name  = firstStr(m, "name", "googleName");
+            double lat   = firstDbl(m, "lat", "latitude");
+            double lng   = firstDbl(m, "lng", "longitude");
+            double score = firstDbl(m, "finalScore", "score", "avgStar");
+            double star  = firstDbl(m, "avgStar", "rating");
             int    cnt   = intVal(m, "reviewCount");
-            String cat   = "바".equals(str(m, "category")) ? "bar" : "food";
+
+            // food 파일은 category 필드 있음 (바/한식/중식...)
+            String rawCat = str(m, "category");
+            String cat;
+            if ("cafe".equals(defaultCategory)) {
+                cat = "cafe";
+            } else {
+                cat = "바".equals(rawCat) ? "bar" : "food";
+            }
+
             if (name.isBlank() || lat == 0) continue;
             list.add(new PlaceData(name, cat, lat, lng, score, star, cnt, areaFromCoord(lat, lng)));
-        }
-        return list;
-    }
-
-    private List<PlaceData> loadCafeScores() throws Exception {
-        List<Map<String, Object>> raw = readJson(CAFE_PATH, new TypeReference<>() {});
-        List<PlaceData> list = new ArrayList<>();
-        for (Map<String, Object> m : raw) {
-            // 🔴 버그 3 수정: str() 대신 firstStr() 사용 → null 안전
-            String name  = firstStr(m, "name");
-            double lat   = dbl(m, "lat");
-            double lng   = dbl(m, "lng");
-            double score = dbl(m, "finalScore");
-            double star  = dbl(m, "avgStar");
-            int    cnt   = intVal(m, "reviewCount");
-            if (name.isBlank() || lat == 0) continue;
-            list.add(new PlaceData(name, "cafe", lat, lng, score, star, cnt, areaFromCoord(lat, lng)));
         }
         return list;
     }
@@ -229,7 +260,6 @@ public class TripRecommendService {
         return resp;
     }
 
-    // 🔴 버그 1 수정: 람다 안에서 s 재할당 불가 → calculateScore() 로 분리
     private List<ScoredPlace> scoreAll(List<PlaceData> places, TripRecommendRequest req) {
         return places.stream()
                 .map(p -> new ScoredPlace(p, calculateScore(p, req), buildReason(p, req)))
@@ -237,18 +267,14 @@ public class TripRecommendService {
                 .collect(Collectors.toList());
     }
 
-    /** 🔴 버그 1 수정: 점수 계산을 별도 메서드로 분리 (람다 effectively-final 제약 해소) */
     private double calculateScore(PlaceData p, TripRecommendRequest req) {
         double s = p.score();
 
-        // 꼭 가고 싶은 장소 +0.35
         if (req.getMustVisit() != null &&
                 req.getMustVisit().stream()
                         .anyMatch(mv -> p.name().contains(mv) || mv.contains(p.name()))) {
             s += 0.35;
         }
-
-        // 선호 지역 +0.18
         if (req.getPreferredAreas() != null &&
                 req.getPreferredAreas().stream()
                         .anyMatch(a -> p.area().contains(a)
@@ -256,8 +282,6 @@ public class TripRecommendService {
                                 || a.contains(p.name()))) {
             s += 0.18;
         }
-
-        // 취향 카테고리
         if (req.getCategories() != null) {
             List<String> cats = req.getCategories();
             if (cats.contains("local"))                                       s += 0.08;
@@ -270,14 +294,9 @@ public class TripRecommendService {
             if (cats.contains("nature")   && "tourism".equals(p.category())) s += 0.06;
             if (cats.contains("shopping") && "tourism".equals(p.category())) s += 0.04;
         }
-
-        // 외국인 커버리지
         s *= foreignCoverage.getOrDefault(p.name(), 1.0);
-
-        // 예산 보정
         if ("high".equals(req.getBudget())) s += 0.03;
         if ("low".equals(req.getBudget()))  s -= 0.02;
-
         return Math.max(0, s);
     }
 
@@ -452,7 +471,7 @@ public class TripRecommendService {
             Object v = m.get(k);
             if (v instanceof String s && !s.isBlank()) return s;
         }
-        return "";  // null 대신 빈 문자열 반환 → isBlank() NPE 없음
+        return "";
     }
 
     private double firstDbl(Map<String, Object> m, String... keys) {
