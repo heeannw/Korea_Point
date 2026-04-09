@@ -28,10 +28,11 @@ public class TourismController {
     @RequestMapping("/tour/allKO")
     public String tourAllKO(Model model, HttpSession session,
                             @RequestParam(value = "lat", required = false) double lat,
-                            @RequestParam(value = "lon", required = false) double lon
+                            @RequestParam(value = "lon", required = false) double lon,
+                            @RequestParam(value = "lang") String lang
     ) {
 
-        List<TourPlaceDto> displayList = tourismService.allList();
+        List<TourPlaceDto> displayList = tourismService.allList(lang);
         displayList = displayList.stream().limit(50).toList();
         session.setAttribute("userlat",lat);
         session.setAttribute("userlon",lon);
@@ -52,10 +53,11 @@ public class TourismController {
     @RequestMapping("/tour/allEN")
     public String tourAllEN(Model model, HttpSession session,
                             @RequestParam(value = "lat", required = false) double lat,
-                            @RequestParam(value = "lon", required = false) double lon
+                            @RequestParam(value = "lon", required = false) double lon,
+                            @RequestParam(value = "lang") String lang
     ) {
 
-        List<TourPlaceDto> displayList = tourismService.allList();
+        List<TourPlaceDto> displayList = tourismService.allList(lang);
         displayList = displayList.stream().limit(50).toList();
         session.setAttribute("userlat",lat);
         session.setAttribute("userlon",lon);
@@ -79,7 +81,7 @@ public class TourismController {
     @RequestMapping("/tour/search/")
     public String tourSearch(
             @RequestParam(required = false) String keyword,
-            Model model,
+            Model model, @RequestParam("lang") String lang,
             HttpSession session) {
 
         Double userlat = (Double) session.getAttribute("userlat");
@@ -89,26 +91,28 @@ public class TourismController {
 
         if (keyword != null && !keyword.isBlank()) {
             // 검색어 저장
+
             saveKeyword(session, keyword.trim());
 
             // 내 위치 좌표 함께 전달 → 거리 계산
-            list = tourismService.searchKeyword(keyword.trim(), userlat, userlon);
+            list = tourismService.searchKeyword(keyword.trim(), userlat, userlon,lang);
 
             if (list.isEmpty()) {
                 // 검색 결과 없으면 현재위치 기반 추천으로 fallback
                 double fallbackLat = userlat != null ? userlat : 37.5665;
                 double fallbackLon = userlon != null ? userlon : 126.9780;
-                list = tourismService.analyzeLocation(fallbackLat, fallbackLon);
+                list = tourismService.analyzeLocation(fallbackLat, fallbackLon,lang);
                 model.addAttribute("searchFallback", true);
             }
         } else {
             double fallbackLat = userlat != null ? userlat : 37.5665;
             double fallbackLon = userlon != null ? userlon : 126.9780;
-            list = tourismService.analyzeLocation(fallbackLat, fallbackLon);
+            list = tourismService.analyzeLocation(fallbackLat, fallbackLon,lang);
         }
 
         setMapCenter(model, list, userlat, userlon);
 
+        model.addAttribute("lang", lang);
         model.addAttribute("userlat", userlat);
         model.addAttribute("userlon", userlon);
         model.addAttribute("list", list);
@@ -121,7 +125,7 @@ public class TourismController {
 
     @RequestMapping("/tour/searchEN")
     public String tourSearchEn(
-            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String keyword, @RequestParam("lang") String lang,
             Model model,
             HttpSession session) {
 
@@ -135,19 +139,19 @@ public class TourismController {
             saveKeyword(session, keyword.trim());
 
             // 내 위치 좌표 함께 전달 → 거리 계산
-            list = tourismService.searchKeyword(keyword.trim(), userlat, userlon);
+            list = tourismService.searchKeyword(keyword.trim(), userlat, userlon,lang);
 
             if (list.isEmpty()) {
                 // 검색 결과 없으면 현재위치 기반 추천으로 fallback
                 double fallbackLat = userlat != null ? userlat : 37.5665;
                 double fallbackLon = userlon != null ? userlon : 126.9780;
-                list = tourismService.analyzeLocation(fallbackLat, fallbackLon);
+                list = tourismService.analyzeLocation(fallbackLat, fallbackLon,lang);
                 model.addAttribute("searchFallback", true);
             }
         } else {
             double fallbackLat = userlat != null ? userlat : 37.5665;
             double fallbackLon = userlon != null ? userlon : 126.9780;
-            list = tourismService.analyzeLocation(fallbackLat, fallbackLon);
+            list = tourismService.analyzeLocation(fallbackLat, fallbackLon,lang);
         }
 
         setMapCenter(model, list, userlat, userlon);
@@ -169,6 +173,7 @@ public class TourismController {
     public String myLocation(
             @PathVariable Double lat,
             @PathVariable Double lon,
+            @RequestParam("lang") String lang,
             Model model,
             HttpSession session) {
 
@@ -176,7 +181,7 @@ public class TourismController {
         session.setAttribute("userlat", lat);
         session.setAttribute("userlon", lon);
 
-        List<TourPlaceDto> nearbyList = tourismService.analyzeLocation(lat, lon);
+        List<TourPlaceDto> nearbyList = tourismService.analyzeLocation(lat, lon, lang);
 
         model.addAttribute("list", nearbyList);
         model.addAttribute("centerLat", lat);
@@ -193,6 +198,7 @@ public class TourismController {
     public String myLocationEN(
             @PathVariable Double lat,
             @PathVariable Double lon,
+            @RequestParam("lang") String lang,
             Model model,
             HttpSession session) {
 
@@ -200,7 +206,7 @@ public class TourismController {
         session.setAttribute("userlat", lat);
         session.setAttribute("userlon", lon);
 
-        List<TourPlaceDto> nearbyList = tourismService.analyzeLocation(lat, lon);
+        List<TourPlaceDto> nearbyList = tourismService.analyzeLocation(lat, lon,lang);
 
         model.addAttribute("list", nearbyList);
         model.addAttribute("centerLat", lat);
@@ -220,13 +226,14 @@ public class TourismController {
     public String itinerary(
             @RequestParam Double lat,
             @RequestParam Double lon,
+            @RequestParam("lang") String lang,
             @RequestParam(required = false) String title,
             @RequestParam(defaultValue = "1.0") double radius,
             Model model,
             HttpSession session) {
 
         // 해당 장소 근처 음식점/카페
-        List<TourPlaceDto> foodPlaces = tourismService.getNearbyFoodPlaces(lat, lon, radius);
+        List<TourPlaceDto> foodPlaces = tourismService.getNearbyFoodPlaces(lat, lon, radius,lang);
 
         model.addAttribute("placeLat", lat);
         model.addAttribute("placeLon", lon);
