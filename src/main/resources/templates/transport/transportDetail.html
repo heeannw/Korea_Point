@@ -37,8 +37,7 @@
     <div class="sidebar">
         <div class="route-header">
             <a class="back-link"
-               th:href="@{/transport/search(start=${route?.start}, end=${route?.end})}"
-               href="#">← 검색으로 돌아가기</a>
+               th:href="@{/ko/transport/search(start=${route?.start}, end=${route?.end})}"               href="#">← 검색으로 돌아가기</a>
             <div class="route-title" th:text="${route?.start} + ' → ' + ${route?.end}">출발지 → 목적지</div>
             <div class="route-sub" th:text="'출발 ' + ${route?.departTime}">출발 정보</div>
             <div class="stats-row">
@@ -90,7 +89,9 @@
             <div class="mc" id="mcZoomIn">＋</div>
             <div class="mc" id="mcZoomOut">－</div>
         </div>
-        <button class="loc-btn" id="locBtn">📍 내 위치</button>
+        <button class="loc-btn" onclick="getLocation()">
+            📍 내 위치
+        </button>
     </div>
 </div>
 
@@ -101,7 +102,15 @@
 </script>
 
 <script>
+    // =====지도 초기화 =====
+    var map = new kakao.maps.Map(document.getElementById('map'), {
+        center: new kakao.maps.LatLng(37.5665, 126.9780),
+        level: 6
+    });
+
     //======== UI 제어 ========
+
+    //탭 초기화
     function switchTab(id, btn) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -109,10 +118,19 @@
         document.getElementById('tab-' + id).classList.add('active');
     }
 
-    var map = new kakao.maps.Map(document.getElementById('map'), {
-        center: new kakao.maps.LatLng(37.5665, 126.9780),
-        level: 6
-    });
+    // 내 위치 클릭
+    function getLocation() {
+
+        if (!myLocation) {
+            alert("현재 위치를 아직 불러오는 중입니다.");
+            return;
+        }
+
+        const moveLatLng = new kakao.maps.LatLng(myLocation.lat, myLocation.lng);
+
+        map.setLevel(3);   // 적당히 확대
+        map.panTo(moveLatLng); // 중심 이동
+    }
 
     document.getElementById('mcZoomIn').addEventListener('click', () => map.setLevel(map.getLevel() - 1));
     document.getElementById('mcZoomOut').addEventListener('click', () => map.setLevel(map.getLevel() + 1));

@@ -37,7 +37,7 @@
   <div class="sidebar">
     <div class="route-header">
       <a class="back-link"
-         th:href="@{/transport/search(start=${route?.start}, end=${route?.end})}"
+         th:href="@{/en/transport/search(start=${route?.start}, end=${route?.end})}"
          href="#">← Back to Search</a>
       <div class="route-title" th:text="${route?.start} + ' → ' + ${route?.end}">Origin → Destination</div>
       <div class="route-sub" th:text="'Departs ' + ${route?.departTime}">Departure Info</div>
@@ -90,7 +90,9 @@
       <div class="mc" id="mcZoomIn">＋</div>
       <div class="mc" id="mcZoomOut">－</div>
     </div>
-    <button class="loc-btn" id="locBtn">📍 My Location</button>
+    <button class="loc-btn" onclick="getLocation()">
+      📍 My Location
+    </button>
   </div>
 </div>
 
@@ -101,6 +103,13 @@
 </script>
 
 <script>
+
+  //map reset
+  var map = new kakao.maps.Map(document.getElementById('map'), {
+    center: new kakao.maps.LatLng(37.5665, 126.9780),
+    level: 6
+  });
+
   //======== UI Control ========
   function switchTab(id, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -109,10 +118,18 @@
     document.getElementById('tab-' + id).classList.add('active');
   }
 
-  var map = new kakao.maps.Map(document.getElementById('map'), {
-    center: new kakao.maps.LatLng(37.5665, 126.9780),
-    level: 6
-  });
+  function getLocation() {
+
+    if (!myLocation) {
+      alert("Your current location is still being loaded.");
+      return;
+    }
+
+    const moveLatLng = new kakao.maps.LatLng(myLocation.lat, myLocation.lng);
+
+    map.setLevel(3);   // 적당히 확대
+    map.panTo(moveLatLng); // 중심 이동
+  }
 
   document.getElementById('mcZoomIn').addEventListener('click', () => map.setLevel(map.getLevel() - 1));
   document.getElementById('mcZoomOut').addEventListener('click', () => map.setLevel(map.getLevel() + 1));
