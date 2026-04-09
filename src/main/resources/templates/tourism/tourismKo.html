@@ -183,11 +183,12 @@
 
     <!-- 검색창 + 최근 검색어 -->
     <div class="search-bar">
-      <form action="/tour/searchEN" method="get" id="searchForm">
+      <form action="/tour/search/" method="get" id="searchForm">
         <div class="search-wrap">
           <input type="text" placeholder="Search in Seoul..." name="keyword" id="searchInput"
                  th:value="${keyword}" autocomplete="off"
                  onfocus="showRecent()" onblur="hideRecent()">
+          <input name="lang" value="KO" type="hidden">
           <button class="si" type="submit">🔍</button>
         </div>
       </form>
@@ -219,13 +220,13 @@
     <div class="filter-wrap">
       <button class="scroll-btn left" id="scrollLeft" onclick="scrollFilter(-1)" disabled>‹</button>
       <div class="filter-row" id="filterRow">
-        <div class="chip active" data-cat="All" onclick="setCategory('All')">🗺️ 전체</div>
-        <div class="chip" data-cat="Cultural Site" onclick="setCategory('Cultural Site')">🏛️ 문화시설</div>
-        <div class="chip" data-cat="Museum" onclick="setCategory('Museum')">🏺 박물관</div>
-        <div class="chip" data-cat="Nature" onclick="setCategory('Nature')">🌿 자연</div>
-        <div class="chip" data-cat="Shopping" onclick="setCategory('Shopping')">🛍️ 쇼핑</div>
-        <div class="chip" data-cat="Experience" onclick="setCategory('Experience')">🎡 체험관광</div>
-        <div class="chip" data-cat="Festival" onclick="setCategory('Festival')">🎉 축제</div>
+        <div class="chip active" data-cat="All" onclick="setCategory('전체')">🗺️ 전체</div>
+        <div class="chip" data-cat="Cultural Site" onclick="setCategory('문화시설')">🏛️ 문화시설</div>
+        <div class="chip" data-cat="Museum" onclick="setCategory('박물관')">🏺 박물관</div>
+        <div class="chip" data-cat="Nature" onclick="setCategory('자연')">🌿 자연</div>
+        <div class="chip" data-cat="Shopping" onclick="setCategory('쇼핑')">🛍️ 쇼핑</div>
+        <div class="chip" data-cat="Experience" onclick="setCategory('체험관광')">🎡 체험관광</div>
+        <div class="chip" data-cat="Festival" onclick="setCategory('축제')">🎉 축제</div>
       </div>
       <button class="scroll-btn right" id="scrollRight" onclick="scrollFilter(1)">›</button>
     </div>
@@ -273,8 +274,8 @@
         <div id="dpReviews"></div>
       </div>
       <div class="dp-action">
-        <button class="dp-action-btn" id="itineraryBtn">❤️ Save to Itinerary</button>
-        <button class="dp-action-btn" id="itineraryBtn2">❤️ Save to Itinerary</button>
+        <button class="dp-action-btn" id="itineraryBtn" >근처 음식점 및 카페</button>
+        <button class="dp-action-btn" id="itineraryBtn2" >관광지 찾아가기</button>
       </div>
     </div>
   </div>
@@ -289,6 +290,7 @@
 </script>
 
 <script>
+  let lang   = /*[[${lang}]]*/ 37.5665;
   let activeCategory = 'All';
   let activeSort = 'recommended';
   let activePinId = null;
@@ -297,6 +299,7 @@
   let map;
   let markerMap = [];
   let selectedMarker = null;
+  let currentPlace = null;
 
   /* ── 카테고리별 마커 색상 & 이모지 ── */
   const CATEGORY_COLOR = {
@@ -374,8 +377,8 @@
   /* ── 공통 유틸 ── */
   function typeName(type) {
     const m = {
-      '12':'Cultural Site','14':'Museum','15':'Festival',
-      '25':'Experience','28':'Nature','38':'Shopping'
+      '12':'문화시설','14':'박물관','15':'축제',
+      '25':'체험관광','28':'자연','38':'쇼핑'
     };
     return m[String(type)] ?? 'Other';
   }
@@ -537,7 +540,7 @@
         </div>
         <div style="padding:12px">
           <div style="font-size:11px;font-weight:700;color:${color};margin-bottom:3px;">${typeName(p.type)}</div>
-          <div style="font-size:14px;font-weight:700;margin-bottom:3px;color:#0f172a">${p.google_name ?? p.title ?? '-'}</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:3px;color:#0f172a">${p.title ?? '-'}</div>
           <div style="font-size:12px;color:#64748b;margin-bottom:8px;">
             ★ ${p.rating ?? '-'} · ${distStr(p.distance)} away
           </div>
@@ -566,6 +569,22 @@
       yAnchor: 1.45,
       zIndex: 10    /* 마커 기본 zIndex(1)보다 높게 설정 */
     });
+  }
+
+  function getNearbyRestaurants(){
+
+    if(!currentPopupPlace){
+      alert("Place not selected");
+      return;
+    }
+
+    const lat = currentPopupPlace.lat;
+    const lon = currentPopupPlace.lng;
+    const title = currentPopupPlace.title;
+
+
+    location.href =
+            `/ko/transport/search?lat=${lat}&lon=${lon}&title=${encodeURIComponent(title)}&lang=${lang}`;
   }
 
   function closePopup() {
@@ -636,14 +655,35 @@
       </div>
     `).join('');
 
-    document.getElementById('itineraryBtn').style.background = color;
+
+    document.getElementById('detailPanel').classList.add('open');
+
     document.getElementById('itineraryBtn').onclick = function() {
       if (p.lat && p.lng) {
-        location.href = `/tour/itinerary?lat=${p.lat}&lon=${p.lng}&title=${encodeURIComponent(p.title ?? '')}`;
+        location.href = `/tour/itinerary?lat=${p.lat}&lon=${p.lng}&title=${encodeURIComponent(p.title ?? '')}&lang=${lang}`;
       }
     };
 
-    document.getElementById('detailPanel').classList.add('open');
+    document.getElementById('itineraryBtn2').onclick = function() {
+      if (!(p.lat && p.lng)) {
+        alert("관광지 좌표가 없습니다.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+              function(pos) {
+                const userLat = pos.coords.latitude;
+                const userLon = pos.coords.longitude;
+
+                location.href =
+                        `/ko/transport/search?userLat=${userLat}&userLon=${userLon}&lat=${p.lat}&lon=${p.lng}&title=${encodeURIComponent(p.title ?? '')}&lang=${lang}`;
+              },
+              function() {
+                location.href =
+                        `/ko/transport/search?userLat=null&userLon=null&lat=${p.lat}&lon=${p.lng}&title=${encodeURIComponent(p.title ?? '')}&lang=${lang}`;
+              }
+      );
+    };
   }
 
   function closeDetail() {
@@ -672,18 +712,6 @@
     }
   });
 
-  function getLocation() {
-    const options = { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 };
-    navigator.geolocation.getCurrentPosition(
-            pos => {
-              location.href = `/tour/mylocationKo/${pos.coords.latitude}/${pos.coords.longitude}`;
-            },
-            err => {
-              location.href = '/tour/mylocationKo/37.5665/126.9780';
-            },
-            options
-    );
-  }
 
   let hideTimer;
   function showRecent() {
@@ -755,7 +783,7 @@
       const marker = new kakao.maps.Marker({
         map: map,
         position: new kakao.maps.LatLng(p.lat, p.lng),
-        title: p.google_name ?? '',
+        title: p.title ?? '',
         image: markerImage,
         zIndex: 1
       });

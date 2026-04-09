@@ -13,13 +13,13 @@
     const ok = confirm("Allow access to your location to find nearby attractions?");
 
     if (!ok) {
-      location.href = "/tour/allKO?lang=KR";
+      location.href = "/tour/all?lang=KR";
       return;
     }
 
     if (!navigator.geolocation) {
       alert("Location is not supported by this browser.");
-      location.href = "/tour/allKO?lang=KR";
+      location.href = "/tour/all?lang=KR";
       return;
     }
 
@@ -28,11 +28,11 @@
               const lat = pos.coords.latitude;
               const lon = pos.coords.longitude;
 
-              location.href = "/tour/allKO?lang=KR&lat=" + lat + "&lon=" + lon;
+              location.href = "/tour/all?lang=KR&lat=" + lat + "&lon=" + lon;
             },
             function () {
               alert("Unable to retrieve your location.");
-              location.href = "/tour/allKO?lang=KR";
+              location.href = "/tour/all?lang=KR";
             },
             {
               enableHighAccuracy: true,
