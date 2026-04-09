@@ -1,0 +1,8 @@
+
+:root {
+    --blue: #3b9eff; --blue-dk: #1a7de0; --blue-lt: #eff6ff;
+    --dark: #0f172a; --mid: #334155; --gray: #64748b;
+    --border: #dbeafe; --white: #fff; --light: #f0f7ff;
+    --gold: #f59e0b; --green: #16a34a;
+    --r: 12px; --sh: 0 2px 16px rgba(59,158,255,.10);
+}

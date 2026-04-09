@@ -1,0 +1,89 @@
+/* ================= 헤더 ================= */
+header {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--white);
+    flex-shrink: 0;
+    z-index: 100;
+}
+
+.logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--blue-dk);
+    text-decoration: none;
+}
+
+.logo span { color: var(--dark); }
+
+.header-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.h-btn {
+    padding: 7px 16px;
+    border-radius: 50px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--dark);
+    transition: all .2s;
+}
+
+.h-btn:hover, .h-btn.active {
+    border-color: var(--blue);
+    color: var(--blue);
+}
+
+.h-btn-fill {
+    background: var(--blue);
+    color: #fff;
+    border-color: var(--blue);
+}
+
+.h-btn-fill:hover {
+    background: var(--blue-dk);
+    color: #fff;
+}
+
+/* ================= 전체 레이아웃 ================= */
+.app-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 380px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    background: var(--white);
+    overflow: hidden;
+}
+
+.map-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+#map {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+
