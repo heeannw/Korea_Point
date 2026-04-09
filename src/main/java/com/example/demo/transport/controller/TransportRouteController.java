@@ -125,7 +125,7 @@ public class TransportRouteController {
                 double lng = Double.parseDouble(startLng);
 
                 routes = transportRouteService.getTransportRoutesByCoords(lat, lng, end);
-                model.addAttribute("start", "현재위치");
+                model.addAttribute("start", lang.equals("en") ? "Current Location" : "현재위치");
 
             } else {
                 routes = transportRouteService.getTransportRoutes(start, end);
