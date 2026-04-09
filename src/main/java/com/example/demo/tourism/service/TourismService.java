@@ -78,6 +78,7 @@ public class TourismService {
         }
     }
 
+
     private void loadLookup() throws Exception {
         InputStream is = getClass().getClassLoader()
                 .getResourceAsStream("model/tourism/model_lookup.json");
