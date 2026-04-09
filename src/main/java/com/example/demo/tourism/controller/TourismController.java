@@ -237,5 +237,12 @@ public class TourismController {
     }
 
 
+    @RequestMapping("tour/gotransport")
+    public String goTransport(@RequestParam("userlat") Double userlat,@RequestParam("userlon") Double userlon,
+                              @RequestParam("title") String title,@RequestParam("lat") Double pleceLat,@RequestParam("lon") Double pleceLon){
+
+        return null;
+    }
+
 
 }

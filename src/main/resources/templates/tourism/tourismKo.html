@@ -275,7 +275,7 @@
       </div>
       <div class="dp-action">
         <button class="dp-action-btn" id="itineraryBtn" >근처 음식점 및 카페</button>
-        <button class="dp-action-btn" id="itineraryBtn2" >관광지 찾아가기</button>
+        <button class="dp-action-btn" id="itineraryBtn2" type="button" >관광지 찾아가기</button>
       </div>
     </div>
   </div>
@@ -665,6 +665,8 @@
     };
 
     document.getElementById('itineraryBtn2').onclick = function() {
+      console.log('관광지 찾아가기 버튼 클릭됨');
+
       if (!(p.lat && p.lng)) {
         alert("관광지 좌표가 없습니다.");
         return;
@@ -676,7 +678,7 @@
                 const userLon = pos.coords.longitude;
 
                 location.href =
-                        `/ko/transport/search?userLat=${userLat}&userLon=${userLon}&lat=${p.lat}&lon=${p.lng}&title=${encodeURIComponent(p.title ?? '')}&lang=${lang}`;
+                        `/ko/transport/search?start=${userLat},${userLon}&lat=${p.lat}&lon=${p.lng}&end=${encodeURIComponent(p.title ?? '')}&lang=${lang}`;
               },
               function() {
                 location.href =
