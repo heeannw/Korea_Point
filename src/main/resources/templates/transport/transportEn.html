@@ -442,6 +442,14 @@
         startLat.value = '';
         startLng.value = '';
     }
+
+    //04.09 버그로 인해 수정
+    function getCsrfToken() {
+        const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+        if (token && header) return { token, header };
+        return null;
+    }
 </script>
 
 </body>
