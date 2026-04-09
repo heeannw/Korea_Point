@@ -390,6 +390,17 @@
                     const icon   = typeIcon(step.type);
                     const isLast = idx === steps.length - 1;
 
+                    if (step.fromStation.includes("잠실") && step.toStation.includes("이수")) {
+                        // 기존 path 유지
+                        if (step.path && step.path.length > 2) {
+
+                            step.path.splice(2, 0,
+                                {lat:37.511775, lng:127.078828},
+                                {lat:37.511907, lng:127.092495}
+                            );
+                        }
+                    }
+
                     if (step.path && step.path.length > 0) {
                         // 지하철/버스 실선
                         const linePath = step.path.map(p => new kakao.maps.LatLng(p.lat, p.lng));
