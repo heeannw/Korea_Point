@@ -272,3 +272,15 @@
 .step-item.walk {
     cursor: default;
 }
+
+.congestion-bar-fill.low { background: #3b82f6; }   /* 파랑 */
+.congestion-bar-fill.mid { background: #f59e0b; }   /* 주황 */
+.congestion-bar-fill.high { background: #ef4444; }  /* 빨강 */
+
+.congestion-chip.low { color: #3b82f6; }
+.congestion-chip.mid { color: #f59e0b; }
+.congestion-chip.high { color: #ef4444; }
+
+.congestion-bar-fill {
+    transition: width 0.5s ease;
+}

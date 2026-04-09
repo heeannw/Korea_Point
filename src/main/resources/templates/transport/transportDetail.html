@@ -51,7 +51,7 @@
             <!-- 한 줄 묶기 -->
             <div class="congestion-top">
                 <span class="label">🚇 혼잡도</span>
-                <span class="congestion-chip" id="congestionChip">불러오는 중...</span>
+                <span class="congestion-chip" th:text="${congestionText}">불러오는 중 ...</span>
             </div>
 
             <!-- 바 -->
@@ -60,7 +60,10 @@
             </div>
 
             <!-- 메시지 -->
-            <div id="congestionMsg" class="congestion-msg"></div>
+            <div id="congestionMsg"
+                 class="congestion-msg"
+                 th:text="${congestionMsg}">
+            </div>
 
         </div>
 
@@ -99,6 +102,10 @@
     /*<![CDATA[*/
     const routeId = /*[[${route?.routeId}]]*/ null;
     /*]]>*/
+</script>
+
+<script th:inline="javascript">
+    const congestionText = /*[[${congestionText}]]*/ '보통';
 </script>
 
 <script>
@@ -776,34 +783,31 @@
                 const hour = new Date().getHours();
                 const day  = (new Date().getDay() === 0 || new Date().getDay() === 6) ? 0 : 1;
 
-                fetch(`/api/transport/congestion?station=${stationCode}&hour=${hour}&day=${day}`)
-                    .then(res => res.text())
-                    .then(data => {
-                        const label = parseInt(data);
-                        const chip  = document.getElementById('congestionChip');
-                        const fill  = document.getElementById('congestionBarFill');
-                        const msgBox = document.getElementById('congestionMsg');
+                const fill = document.getElementById('congestionBarFill');
+                const msgBox = document.getElementById('congestionMsg');
+                const chip = document.querySelector('.congestion-chip');
 
-                        let text, cls, pct;
-                        if (label === 0)      { text = '여유'; cls = 'low';  pct = 30;  }
-                        else if (label === 1) { text = '보통'; cls = 'mid';  pct = 60;  }
-                        else                  { text = '혼잡'; cls = 'high'; pct = 100; }
-                        chip.textContent = text;
-                        chip.className   = 'congestion-chip ' + cls;
-                        fill.style.width = pct + '%';
-                        fill.className   = 'congestion-bar-fill ' + cls;
+                let pct = 50;
+                let cls = '';
 
-                        let msgText = '';
+                if (congestionText === '여유') {
+                    pct = 30;
+                    cls = 'low';
+                } else if (congestionText === '보통') {
+                    pct = 60;
+                    cls = 'mid';
+                } else {
+                    pct = 100;
+                    cls = 'high';
+                }
 
-                        if (label === 0)      msgText = "지금 시간대는 비교적 여유로운 편이에요";
-                        else if (label === 1) msgText = "이용객이 점점 늘어나는 시간대에요";
-                        else                  msgText = "출근/퇴근 시간대라 혼잡할 가능성이 있어요";
+                // 바 채우기
+                fill.style.width = pct + '%';
+                fill.className = 'congestion-bar-fill ' + cls;
 
-                        msgBox.innerText = msgText;
-                    })
-                    .catch(() => {
-                        document.getElementById('congestionChip').textContent = '조회 실패';
-                    });
+                // 텍스트 색상
+                chip.className = 'congestion-chip ' + cls;
+
             })
             .catch(err => {
                 console.error(err);

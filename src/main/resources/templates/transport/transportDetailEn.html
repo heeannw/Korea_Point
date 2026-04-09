@@ -52,7 +52,7 @@
       <!-- Group in one line -->
       <div class="congestion-top">
         <span class="label">🚇 Congestion</span>
-        <span class="congestion-chip" id="congestionChip">Loading...</span>
+        <span class="congestion-chip" th:text="${congestionText}">불러오는 중 ...</span>
       </div>
 
       <!-- Bar -->
@@ -61,7 +61,10 @@
       </div>
 
       <!-- Message -->
-      <div id="congestionMsg" class="congestion-msg"></div>
+      <div id="congestionMsg"
+           class="congestion-msg"
+           th:text="${congestionMsg}">
+      </div>
 
     </div>
 
@@ -101,6 +104,11 @@
   const routeId = /*[[${route?.routeId}]]*/ null;
   /*]]>*/
 </script>
+
+<script th:inline="javascript">
+  const congestionText = /*[[${congestionText}]]*/ 'normal';
+</script>
+
 
 <script>
 
@@ -775,34 +783,31 @@
               const hour = new Date().getHours();
               const day  = (new Date().getDay() === 0 || new Date().getDay() === 6) ? 0 : 1;
 
-              fetch(`/api/transport/congestion?station=${stationCode}&hour=${hour}&day=${day}`)
-                      .then(res => res.text())
-                      .then(data => {
-                        const label = parseInt(data);
-                        const chip  = document.getElementById('congestionChip');
-                        const fill  = document.getElementById('congestionBarFill');
-                        const msgBox = document.getElementById('congestionMsg');
+              const fill = document.getElementById('congestionBarFill');
+              const msgBox = document.getElementById('congestionMsg');
+              const chip = document.querySelector('.congestion-chip');
 
-                        let text, cls, pct;
-                        if (label === 0)      { text = 'Comfortable'; cls = 'low';  pct = 30;  }
-                        else if (label === 1) { text = 'Moderate';    cls = 'mid';  pct = 60;  }
-                        else                  { text = 'Crowded';     cls = 'high'; pct = 100; }
-                        chip.textContent = text;
-                        chip.className   = 'congestion-chip ' + cls;
-                        fill.style.width = pct + '%';
-                        fill.className   = 'congestion-bar-fill ' + cls;
+              let pct = 50;
+              let cls = '';
 
-                        let msgText = '';
+              if (congestionText === 'Comfortable') {
+                pct = 30;
+                cls = 'low';
+              } else if (congestionText === 'Moderate') {
+                pct = 60;
+                cls = 'mid';
+              } else {
+                pct = 100;
+                cls = 'high';
+              }
 
-                        if (label === 0)      msgText = "It's relatively uncrowded at this time.";
-                        else if (label === 1) msgText = "Passenger volume is gradually increasing.";
-                        else                  msgText = "This may be a peak commute hour — expect crowds.";
+              // Fill bar
+              fill.style.width = pct + '%';
+              fill.className = 'congestion-bar-fill ' + cls;
 
-                        msgBox.innerText = msgText;
-                      })
-                      .catch(() => {
-                        document.getElementById('congestionChip').textContent = 'Failed to load';
-                      });
+              // Text color
+              chip.className = 'congestion-chip ' + cls;
+
             })
             .catch(err => {
               console.error(err);
