@@ -7,9 +7,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
 
-  <link rel="stylesheet" th:href="@{/css/common/reset.css}">
-  <link rel="stylesheet" th:href="@{/css/common/variables.css}">
-  <link rel="stylesheet" th:href="@{/css/common/layout.css}">
+  <link rel="stylesheet" th:href="@{/css/transport/t_common/reset.css}">
+  <link rel="stylesheet" th:href="@{/css/transport/t_common/variable.css}">
+  <link rel="stylesheet" th:href="@{/css/transport/t_common/layout.css}">
   <link rel="stylesheet" th:href="@{/css/transport/transportDetail.css}">
 
 </head>
@@ -17,8 +17,8 @@
 <header>
   <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
   <div class="header-right">
-    <a th:href="@{/en/transport/detail(routeId=${route?.routeId})}" class="h-btn">EN</a>
-    <a th:href="@{/ko/transport/detail(routeId=${route?.routeId})}" class="h-btn active">KR</a>
+    <a th:href="@{/en/transport/detail(routeId=${route?.routeId})}" class="h-btn active">EN</a>
+    <a th:href="@{/ko/transport/detail(routeId=${route?.routeId})}" class="h-btn">KR</a>
 
     <th:block th:if="${isLoggedIn}">
       <span class="h-btn" th:text="${currentUserName}"></span>
@@ -49,7 +49,7 @@
 
     <div class="congestion-banner">
 
-      <!-- Grouped row -->
+      <!-- Group in one line -->
       <div class="congestion-top">
         <span class="label">🚇 Congestion</span>
         <span class="congestion-chip" id="congestionChip">Loading...</span>
@@ -68,7 +68,7 @@
 
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('steps', this)">📋 Steps</button>
-      <button class="tab-btn" onclick="switchTab('arrival', this)">🚇 Live Arrival Info</button>
+      <button class="tab-btn" onclick="switchTab('arrival', this)">🚇 Live Arrivals</button>
     </div>
     <div id="tab-steps" class="tab-content active">
       <div id="stepList"><p class="no-data">Loading...</p></div>
@@ -84,7 +84,7 @@
       <div class="legend-title">Legend</div>
       <div class="legend-item"><div class="legend-line" style="background:#3b9eff"></div>Subway</div>
       <div class="legend-item"><div class="legend-line" style="background:#10b981"></div>Bus</div>
-      <div class="legend-item"><div class="legend-dash"></div>Walk</div>
+      <div class="legend-item"><div class="legend-dash"></div>Walking</div>
     </div>
     <div class="map-controls">
       <div class="mc" id="mcZoomIn">＋</div>
@@ -101,8 +101,7 @@
 </script>
 
 <script>
-  const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
-
+  //======== UI Control ========
   function switchTab(id, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -118,6 +117,7 @@
   document.getElementById('mcZoomIn').addEventListener('click', () => map.setLevel(map.getLevel() - 1));
   document.getElementById('mcZoomOut').addEventListener('click', () => map.setLevel(map.getLevel() + 1));
 
+  //======== Common Utilities ========
   function typeColor(type, fallback) {
     if (fallback) return fallback;
     if (type === 'walk') return '#9ca3af';
@@ -130,8 +130,10 @@
     return '🚇';
   }
 
-  // 위도 경도
-  function kakaoSearch(query) { //encodeURIComponent(): URL에 넣기 전에 문자열 깨지지 않게 변환하는 함수
+  // Kakao keyword search → return coordinates
+  const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
+
+  function kakaoSearch(query) {
     return fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}`, {
       headers: { 'Authorization': KAKAO_KEY }
     })
@@ -140,13 +142,15 @@
               if (d.documents && d.documents.length > 0) {
                 return {
                   lat: parseFloat(d.documents[0].y),
-                  lng: parseFloat(d.documents[0].x) };
+                  lng: parseFloat(d.documents[0].x)
+                };
               }
               return null;
             })
             .catch(() => null);
   }
 
+  // ===== Map Rendering =====
   function drawWalkLine(startPt, endPt) {
 
     const path = [
@@ -154,7 +158,7 @@
       new kakao.maps.LatLng(endPt.lat,   endPt.lng)
     ];
 
-    // 1️⃣ White border
+    // White border
     new kakao.maps.Polyline({
       path: path,
       strokeWeight: 8,
@@ -163,13 +167,13 @@
       strokeStyle: 'solid'
     }).setMap(map);
 
-    // 2️⃣ Actual walk line (gray dashed)
+    // Actual walking line (gray dashed)
     new kakao.maps.Polyline({
       path: path,
       strokeWeight: 4,
-      strokeColor: '#666666',   // ✅ Changed to gray
+      strokeColor: '#666666',
       strokeOpacity: 0.8,
-      strokeStyle: 'shortdash'  // looks better than dashed
+      strokeStyle: 'shortdash'
     }).setMap(map);
 
     return [
@@ -178,7 +182,7 @@
     ];
   }
 
-  // ✅ Marker + label
+  // Marker + label
   function drawMarker(latLng, color, label) {
     new kakao.maps.CustomOverlay({
       position: latLng,
@@ -201,7 +205,7 @@
     }).setMap(map);
   }
 
-  // ✅ Transfer station marker
+  // Transfer station marker
   function drawTransferMarker(latLng, color, label) {
     new kakao.maps.CustomOverlay({
       position: latLng,
@@ -233,17 +237,29 @@
     }).setMap(map);
   }
 
+  // Auto fit map bounds
+  function fitBounds(coordList) {
+    if (!coordList.length) return;
+    const bounds = new kakao.maps.LatLngBounds();
+    coordList.forEach(c => bounds.extend(new kakao.maps.LatLng(c.lat, c.lng)));
+    map.setBounds(bounds);
+  }
+  //----------------------------------------------------------------
+
+
+  // ===== Route Data Processing =====
+
   // Show current location marker
   let myLocation = null;
 
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
+    navigator.geolocation.getCurrentPosition(pos => { // Browser gets my location via GPS
       const myLat = pos.coords.latitude;
       const myLng = pos.coords.longitude;
 
       myLocation = {lat:myLat, lng:myLng};
 
-      // Star marker image (same as cafe example)
+      // Star marker image
       const myMarkerImg = new kakao.maps.MarkerImage(
               'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
               new kakao.maps.Size(24, 35)
@@ -278,15 +294,7 @@
     });
   }
 
-
-  // Fit map bounds
-  function fitBounds(coordList) {
-    if (!coordList.length) return;
-    const bounds = new kakao.maps.LatLngBounds();
-    coordList.forEach(c => bounds.extend(new kakao.maps.LatLng(c.lat, c.lng)));
-    map.setBounds(bounds);
-  }
-
+  //========== main ==========
   if (!routeId) {
     document.getElementById('stepList').innerHTML = '<p class="no-data">No route data</p>';
   } else {
@@ -295,10 +303,10 @@
             .then(async routeData => {
 
               const steps = routeData.steps;
-              let allCoords = []; // { lat, lng } array
+              let allCoords = []; // coordinates (lat,lng)
               let stepHtml  = '';
 
-              // ✅ Collect first/last coords of each step
+              // Collect first/last coordinates for each step
               const stepCoords = steps.map(step => {
                 if (step.path && step.path.length > 0) {
                   return {
@@ -309,11 +317,21 @@
                 return null;
               });
 
-              // ✅ Origin coordinates (Kakao search or GPS)
+              // Origin coordinates (Kakao search or GPS)
               let originPt = null;
               const startLabel = routeData.start || '';
-              if (startLabel === '현재위치') {
-                // Wait if location not yet available
+
+              // Priority 1: Server coordinates
+              if (routeData.startLat && routeData.startLng) {
+
+                originPt = {
+                  lat: routeData.startLat,
+                  lng: routeData.startLng
+                };
+
+                // Priority 2: Current location (GPS)
+              } else if (startLabel === '현재위치') {
+
                 if (!myLocation) {
                   await new Promise(resolve => {
                     const wait = setInterval(() => {
@@ -326,18 +344,21 @@
                 }
 
                 originPt = myLocation;
+
+                // Priority 3: Search fallback
               } else if (startLabel) {
+
                 originPt = await kakaoSearch(startLabel);
               }
 
-              // ✅ Destination coordinates (Kakao search)
+              // Destination coordinates (Kakao search)
               let destPt = null;
               const endLabel = routeData.end || '';
               if (endLabel) {
                 destPt = await kakaoSearch(endLabel);
               }
 
-              // ── Draw route ──
+              // ── Draw Route ──
               for (let idx = 0; idx < steps.length; idx++) {
                 const step   = steps[idx];
                 const color  = typeColor(step.type, step.color);
@@ -374,17 +395,17 @@
                   let startPt = prevCoords ? prevCoords.last : null;
                   let endPt   = nextCoords ? nextCoords.first : null;
 
-                  // 🔥 Key 1: if no prev, always use origin
+                  // Key 1: If no prev, always use origin
                   if (!prevCoords && originPt) {
                     startPt = originPt;
                   }
 
-                  // 🔥 Key 2: if no next, use destination
+                  // Key 2: If no next, use destination
                   if (!nextCoords && destPt) {
                     endPt = destPt;
                   }
 
-                  // 🔥 Key 3: fallback (force connect)
+                  // Key 3: Fallback (force connect)
                   if (!startPt && originPt) startPt = originPt;
                   if (!endPt && destPt) endPt = destPt;
 
@@ -394,15 +415,15 @@
                   }
                 }
 
-                // ── Step list ──
+                // ── Step List ──
                 const from = step.fromStation || '';
                 const to   = step.toStation   || '';
                 let stepLabel = '';
                 if (step.type === 'walk') {
                   if (from && to && from !== to) stepLabel = `${from} → ${to}`;
-                  else if (from) stepLabel = `Walk from ${from} exit`;
+                  else if (from) stepLabel = `Walk from exit ${from}`;
                   else if (to)   stepLabel = `Walk to ${to}`;
-                  else           stepLabel = `Walk`;
+                  else           stepLabel = `Walking`;
                 } else {
                   stepLabel = `${from} → ${to}`;
                 }
@@ -437,19 +458,19 @@
                     </div>`;
               }
 
-              // Add arrival station step
-              // 🔥 Add arrival based on last subway step
-              let lastSubwayStep = null;
+              // Add arrival step
+              // Based on last transit step (subway + bus)
+              let lastTransportStep = null;
 
               for (let i = steps.length - 1; i >= 0; i--) {
-                if (steps[i].type === 'subway' && steps[i].path) {
-                  lastSubwayStep = steps[i];
+                if (steps[i].type !== 'walk' && steps[i].path) {
+                  lastTransportStep = steps[i];
                   break;
                 }
               }
 
-              if (lastSubwayStep) {
-                const last = lastSubwayStep.path[lastSubwayStep.path.length - 1];
+              if (lastTransportStep) {
+                const last = lastTransportStep.path[lastTransportStep.path.length - 1];
 
                 stepHtml += `
                     <div class="step-item"
@@ -461,7 +482,7 @@
                         </div>
 
                         <div class="step-info">
-                            <strong>Arrived at ${lastSubwayStep.toStation}</strong>
+                            <strong>Arrive at ${lastTransportStep.toStation}</strong>
                         </div>
 
                     </div>`;
@@ -469,7 +490,7 @@
 
               document.getElementById('stepList').innerHTML = stepHtml;
 
-              // Click on station to move map
+              // Click step to move map
               document.querySelectorAll('.step-item').forEach(item => {
                 item.addEventListener('click', () => {
 
@@ -485,25 +506,25 @@
 
                   const moveLatLng = new kakao.maps.LatLng(lat, lng);
 
-                  map.setLevel(3); // zoom in
-                  map.panTo(moveLatLng); // move
+                  map.setLevel(3); // Zoom in
+                  map.panTo(moveLatLng); // Move
                 });
               });
 
 
-              // ✅ Origin marker
+              // Origin marker
               if (originPt) {
                 drawMarker(new kakao.maps.LatLng(originPt.lat, originPt.lng), '#ef4444', `Depart · ${startLabel}`);
                 allCoords.unshift(originPt);
               }
 
-              // ✅ Destination marker
+              // Destination marker
               if (destPt) {
                 drawMarker(new kakao.maps.LatLng(destPt.lat, destPt.lng), '#3b9eff', 'Arrive');
                 allCoords.push(destPt);
               }
 
-              // ✅ Transfer station markers
+              // Transfer station markers
               // Collect subway steps separately for transfer handling
               const subwaySteps = [];
 
@@ -516,9 +537,9 @@
                 }
               });
 
-              // Draw transfer markers (all transfers)
-              // Handle all transit types (including bus)
-              // Bundle transport type + coords together
+              // Draw transfer markers (all marked)
+              // Handle all transfers (including bus)
+              // Group transport steps with coordinates
               const transportSteps = steps
                       .map((step, idx) => ({
                         step,
@@ -549,10 +570,10 @@
                 drawTransferMarker(pt, color, '');
               }
 
-              // Auto-fit map bounds
+              // Auto adjust map bounds
               fitBounds(allCoords);
 
-              // ✅✅✅ Near destination alert (moved outside fitBounds) ✅✅✅
+              // Alert near destination
               if (destPt) {
                 let alertShown = false;
                 const alertOverlay = new kakao.maps.CustomOverlay({
@@ -599,9 +620,7 @@
                 window.addEventListener('beforeunload', () => clearInterval(locationWatcher));
               }
 
-              // ── Live arrival info ──
-              // ── Live arrival info (origin + all transfer stations) ──
-
+              // ── Live Arrival Info (departure + all transfer stations) ──
               // Build station list
               let station = '';
               const stationList = [];
@@ -688,12 +707,11 @@
                     finalList = group.slice(0, 2);
                   }
 
-                  // Station title
+                  // Clean line name
                   function cleanLineName(name) {
                     return name
-                            .replace(/\[.*?\]/g, '')
-                            .replace(/\(.*?\)/g, '')
-                            .replace(/번째 전역/g, '')
+                            .replace(/\[(.*?)\]/g, '$1')  // Remove brackets, keep content
+                            .replace(/\(.*?\)/g, '')      // Remove ()
                             .trim();
                   }
 
@@ -706,11 +724,20 @@
 
                     if (sec <= 60 && sec > 0)        msg = '🚨 Arriving soon';
                     else if (!isNaN(sec) && sec > 0) msg = `Arrives in ${Math.floor(sec / 60)} min`;
-                    else                             msg = item.arvlMsg2 || '';
+                    else msg = (item.arvlMsg2 || '').replace(/\[/g, '').replace(/\]/g, '');
 
                     return `
                                 <div class="arrival-card">
-                                    <div class="arr-line">${cleanLineName(item.trainLineNm)}</div>
+                                    <div class="arr-line">${
+                            cleanLineName(
+                                    (Array.isArray(item.trainLineNm)
+                                                    ? item.trainLineNm[0]
+                                                    : item.trainLineNm
+                                    ).split('방면')[1] || (Array.isArray(item.trainLineNm)
+                                            ? item.trainLineNm[0]
+                                            : item.trainLineNm)
+                            )
+                    }</div>
                                     <div class="arr-msg">${msg}</div>
                                 </div>`;
                   }).join('');
@@ -740,9 +767,9 @@
                         const msgBox = document.getElementById('congestionMsg');
 
                         let text, cls, pct;
-                        if (label === 0)      { text = 'Low';    cls = 'low';  pct = 30;  }
-                        else if (label === 1) { text = 'Normal'; cls = 'mid';  pct = 60;  }
-                        else                  { text = 'Busy';   cls = 'high'; pct = 100; }
+                        if (label === 0)      { text = 'Comfortable'; cls = 'low';  pct = 30;  }
+                        else if (label === 1) { text = 'Moderate';    cls = 'mid';  pct = 60;  }
+                        else                  { text = 'Crowded';     cls = 'high'; pct = 100; }
                         chip.textContent = text;
                         chip.className   = 'congestion-chip ' + cls;
                         fill.style.width = pct + '%';
@@ -750,9 +777,9 @@
 
                         let msgText = '';
 
-                        if (label === 0)      msgText = "It's relatively quiet at this time";
-                        else if (label === 1) msgText = "Passenger numbers are gradually increasing";
-                        else                  msgText = "It may be crowded due to rush hour";
+                        if (label === 0)      msgText = "It's relatively uncrowded at this time.";
+                        else if (label === 1) msgText = "Passenger volume is gradually increasing.";
+                        else                  msgText = "This may be a peak commute hour — expect crowds.";
 
                         msgBox.innerText = msgText;
                       })
