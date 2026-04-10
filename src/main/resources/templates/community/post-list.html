@@ -19,7 +19,7 @@
 <link rel="stylesheet" th:href="@{/css/common/reset.css}">
 <link rel="stylesheet" th:href="@{/css/common/layout.css}">
 <header>
-    <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
+    <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
     <div class="header-right">
         <a th:href="@{/en/transport/detail(routeId=${route?.routeId})}" class="h-btn">EN</a>
         <a th:href="@{/ko/transport/detail(routeId=${route?.routeId})}" class="h-btn active">KR</a>
@@ -213,16 +213,6 @@
                         <p th:if="${#lists.isEmpty(data.trendingPosts)}"
                            class="text-[13px] text-gray-400">아직 게시글이 없습니다.</p>
                     </div>
-                </div>
-
-                <!-- 커뮤니티 가입 -->
-                <div class="bg-white rounded-xl border border-gray-200/80 p-5 shadow-soft">
-                    <h3 class="text-[14px] text-gray-900 mb-2" style="font-weight:600;">Join the Community</h3>
-                    <p class="text-[13px] text-gray-500 mb-4 leading-relaxed">Sign in to share your experiences and
-                        connect with other travelers.</p>
-                    <a th:href="@{/oauth2/authorization/google}"
-                       class="flex items-center justify-center gap-2 w-full py-2.5 border border-gray-200 rounded-lg text-[13px] text-gray-700 no-underline hover:bg-gray-50 transition-colors"
-                       style="font-weight:500;">Continue with Google</a>
                 </div>
 
                 <!-- Quick Tips -->

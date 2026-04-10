@@ -5,6 +5,7 @@ import com.example.demo.community.service.CommunityService;
 import com.example.demo.community.service.CommentService;
 import com.example.demo.community.service.PostService;
 import com.example.demo.user.util.SecurityUtil;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -54,8 +55,8 @@ public class CommunityController {
 
     // 게시글 상세
     @GetMapping("/post/{id}")
-    public String getPostDetail(@PathVariable Long id, Model model) {
-        model.addAttribute("post", postService.getPostDetail(id));
+    public String getPostDetail(@PathVariable Long id, Model model, HttpSession session) {
+        model.addAttribute("post", postService.getPostDetail(id, session));
         model.addAttribute("comments", commentService.getCommentsByPost(id));
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
