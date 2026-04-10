@@ -39,11 +39,8 @@ public class CongestionMlService {
     }
 
     public int predict(int hour, int day, int line, int stationNum) {
-
         try {
-            float[] inputData = new float[]{
-                    hour, day, line, stationNum
-            };
+            float[] inputData = new float[]{ hour, day, line, stationNum };
 
             OnnxTensor inputTensor = OnnxTensor.createTensor(
                     env,
@@ -55,13 +52,26 @@ public class CongestionMlService {
                     Collections.singletonMap("float_input", inputTensor)
             );
 
-            float[][] output = (float[][]) result.get(0).getValue();
+            Object value = result.get(0).getValue();
 
-            return (int) output[0][0];
+            // ✅ long[] 타입 대응
+            if (value instanceof long[]) {
+                return (int) ((long[]) value)[0];
+            }
+            // float[][] 타입 대응
+            if (value instanceof float[][]) {
+                return (int) ((float[][]) value)[0][0];
+            }
+            // long[][] 타입 대응
+            if (value instanceof long[][]) {
+                return (int) ((long[][]) value)[0][0];
+            }
+
+            return 1; // fallback
 
         } catch (Exception e) {
             e.printStackTrace();
-            return 1; // fallback (보통)
+            return 1;
         }
     }
 
