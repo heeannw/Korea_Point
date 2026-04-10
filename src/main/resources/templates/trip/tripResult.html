@@ -18,7 +18,7 @@
         html,body{height:100%;overflow:hidden}
         body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);display:flex;flex-direction:column}
 
-        /* ─── 헤더 (transport.html 완전 동일) ─── */
+        /* ─── 헤더 ─── */
         header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;z-index:100}
         .logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--blue-dk);text-decoration:none}
         .logo span{color:var(--dark)}
@@ -39,13 +39,11 @@
         .back-link:hover{color:var(--blue)}
         .trip-meta{font-size:12px;color:var(--gray);font-weight:600}
 
-        /* 일차 선택 */
         .day-selector{padding:10px 14px 8px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;gap:6px;flex-wrap:wrap;background:var(--light)}
         .day-btn{padding:5px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s}
         .day-btn:hover{border-color:var(--blue);color:var(--blue)}
         .day-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
 
-        /* 탭 */
         .tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
         .tab-btn{flex:1;padding:11px 4px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--gray);font-family:'DM Sans',sans-serif;transition:color .2s}
         .tab-btn.active{color:var(--blue);border-bottom:2px solid var(--blue)}
@@ -73,14 +71,12 @@
         .slot-reason{font-size:11px;color:var(--gray);line-height:1.4}
         .slot-score{font-size:11px;color:var(--blue);font-weight:700;margin-top:2px}
 
-        /* 대체 후보 */
         .alt-toggle{font-size:11px;color:var(--blue);cursor:pointer;font-weight:600;margin-top:4px;display:inline-block}
         .alt-list{display:none;margin-top:5px}
         .alt-list.show{display:block}
         .alt-item{padding:5px 10px;border-radius:8px;background:var(--light);font-size:11px;margin-bottom:3px;color:var(--mid);cursor:pointer;transition:background .15s;border:1px solid var(--border)}
         .alt-item:hover{background:#dbeafe}
 
-        /* 추천 리스트 */
         .rec-card{display:flex;gap:10px;padding:10px;border-radius:var(--r);cursor:pointer;transition:background .15s;margin-bottom:4px;border:1.5px solid transparent;align-items:flex-start}
         .rec-card:hover{background:var(--light)}
         .rec-rank{width:24px;height:24px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
@@ -98,7 +94,6 @@
         .loc-btn{position:absolute;bottom:80px;right:16px;background:#fff;border:1px solid var(--border);border-radius:50px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--sh);color:var(--dark);font-family:'DM Sans',sans-serif;z-index:30;transition:all .2s}
         .loc-btn:hover{border-color:var(--blue);color:var(--blue)}
 
-        /* 범례 */
         .map-legend{position:absolute;bottom:24px;left:16px;z-index:30;background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;box-shadow:var(--sh)}
         .legend-title{font-weight:700;margin-bottom:6px;color:var(--dark);font-size:12px}
         .legend-item{display:flex;align-items:center;gap:8px;margin-bottom:3px;color:var(--mid);font-size:12px}
@@ -120,7 +115,6 @@
         .dp-sub{font-size:13px;color:var(--gray);margin-bottom:10px;display:flex;align-items:center;gap:5px}
         .dp-addr-icon{font-size:12px}
 
-        /* 별점 행 */
         .dp-rating-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:10px 14px;background:var(--light);border-radius:10px}
         .dp-star-score{font-size:28px;font-weight:900;font-family:'Playfair Display',serif;color:var(--dark);line-height:1}
         .dp-star-wrap{display:flex;flex-direction:column;gap:3px}
@@ -130,7 +124,6 @@
         .dp-star.half{color:var(--gold);opacity:.6}
         .dp-review-cnt{font-size:11px;color:var(--gray)}
 
-        /* 리뷰 섹션 */
         .dp-review-section{margin-top:2px}
         .dp-section-title{font-size:13px;font-weight:700;color:var(--dark);margin-bottom:8px;display:flex;align-items:center;gap:5px}
         .review-item{padding:11px 0;border-bottom:1px solid var(--border)}
@@ -146,35 +139,48 @@
         .ri-more{font-size:11px;color:var(--blue);cursor:pointer;font-weight:600;margin-top:3px;display:inline-block}
 
         .no-review{font-size:12px;color:var(--gray);text-align:center;padding:16px 0}
-
         .dp-reason{background:var(--blue-lt);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--blue-dk);margin-bottom:12px;display:none}
 
         .dp-action{position:sticky;bottom:0;padding:12px 16px;background:#fff;border-top:1px solid var(--border);display:flex;gap:8px}
         .dp-btn{flex:1;padding:11px;border:none;border-radius:50px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
+        .dp-btn-swap{background:#10b981;color:#fff;font-size:12px}
+        .dp-btn-swap:hover{background:#059669}
         .dp-btn-primary{background:var(--blue);color:#fff}
         .dp-btn-primary:hover{background:var(--blue-dk)}
         .dp-btn-secondary{background:var(--light);color:var(--blue);border:1.5px solid var(--blue)}
         .dp-btn-secondary:hover{background:var(--blue-lt)}
 
-        /* 빈 상태 */
         .empty-msg{text-align:center;padding:32px 16px;color:var(--gray);font-size:13px}
 
-        /* 로딩 */
         .loading-overlay{display:none;position:fixed;inset:0;background:rgba(10,22,40,.7);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:14px}
         .loading-overlay.show{display:flex}
         .spinner{width:44px;height:44px;border:4px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
         @keyframes spin{to{transform:rotate(360deg)}}
         .loading-text{color:#fff;font-size:14px;font-weight:600}
+
+        /* ─── 토스트 ─── */
+        .toast{
+            position:fixed;bottom:80px;left:50%;
+            transform:translateX(-50%) translateY(20px);
+            background:rgba(15,23,42,.88);color:#fff;
+            padding:10px 22px;border-radius:50px;
+            font-size:13px;font-weight:600;white-space:nowrap;
+            z-index:9999;opacity:0;
+            transition:opacity .25s,transform .25s;
+            pointer-events:none;
+        }
+        .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
     </style>
 </head>
 <body>
 
-<!-- ─── 헤더 (transport.html 완전 동일) ─── -->
+<!-- ─── 헤더 ─── -->
 <header>
     <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
     <div class="header-right">
-        <a th:href="@{/en/trip/result}" class="h-btn">EN</a>
-        <a th:href="@{/ko/trip/result}" class="h-btn active">KR</a>
+        <!-- sessionStorage 유지한 채 언어 전환 -->
+        <a href="/en/trip/result" class="h-btn">EN</a>
+        <a href="/ko/trip/result" class="h-btn active">KR</a>
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}"></span>
             <form th:action="@{/logout}" method="post">
@@ -233,17 +239,14 @@
                 <button class="dp-back" onclick="closeDetail()">←</button>
                 <div class="dp-title" id="dpTitle"></div>
             </div>
-            <!-- 이미지 -->
             <div class="dp-img" id="dpImg">🏙️</div>
             <div class="dp-body">
                 <div class="dp-badge-row" id="dpBadges"></div>
                 <div class="dp-name" id="dpName"></div>
-                <!-- 주소 -->
                 <div class="dp-sub" id="dpSub">
                     <span class="dp-addr-icon">📍</span>
                     <span id="dpAddr"></span>
                 </div>
-                <!-- 별점 -->
                 <div class="dp-rating-row" id="dpRatingRow" style="display:none">
                     <div class="dp-star-score" id="dpStarScore"></div>
                     <div class="dp-star-wrap">
@@ -251,9 +254,7 @@
                         <div class="dp-review-cnt" id="dpReviewCnt"></div>
                     </div>
                 </div>
-                <!-- 추천 이유 -->
                 <div class="dp-reason" id="dpReason"></div>
-                <!-- 리뷰 -->
                 <div class="dp-review-section" id="dpReviewSection" style="display:none">
                     <div class="dp-section-title">💬 리뷰</div>
                     <div id="dpReviewList"></div>
@@ -261,6 +262,7 @@
             </div>
             <div class="dp-action">
                 <button class="dp-btn dp-btn-secondary" onclick="closeDetail()">← 목록으로</button>
+                <button class="dp-btn dp-btn-swap" id="dpSwapBtn" style="display:none" onclick="confirmSwap()">🔄 이 장소로 교체</button>
                 <button class="dp-btn dp-btn-primary" id="dpTransBtn">🚇 교통 검색</button>
             </div>
         </div>
@@ -272,8 +274,19 @@
     <div class="loading-text">지도에 일정을 그리는 중...</div>
 </div>
 
+<!-- 토스트 -->
+<div class="toast" id="toast"></div>
+
 <script>
     const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
+
+    /* ─── 토스트 ─── */
+    function showToast(msg, duration = 2500) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), duration);
+    }
 
     /* ─── 카카오 지도 초기화 ─── */
     const map = new kakao.maps.Map(document.getElementById('map'), {
@@ -289,7 +302,6 @@
         bar:    { color:'#8b5cf6', icon:'🍺',  label:'바'  }
     };
 
-    /* ─── 상태 ─── */
     let tripResult = null, tripRequest = null, currentDay = 1;
     let myLoc = null, activeOverlays = [], activeLines = [], dayCache = {};
 
@@ -348,123 +360,69 @@
         map.setBounds(b);
     }
 
-    // ── 현재 해상된 아이템 저장 (줌 변경 시 재렌더링용) ──
     let currentResolved = [];
 
-    /* ─── 픽셀 거리 계산 (지도 좌표 → 화면 픽셀) ─── */
     function latLngToPixel(lat, lng) {
         const proj = map.getProjection();
         return proj.pointFromCoords(new kakao.maps.LatLng(lat, lng));
     }
 
-    /* ─── 커스텀 클러스터링: 가까운 마커를 픽셀 거리 기준으로 그룹핑 ─── */
     function clusterItems(items, thresholdPx = 50) {
         const groups = [];
         const visited = new Array(items.length).fill(false);
-
         items.forEach((item, i) => {
             if (visited[i] || !item.lat || !item.lng) return;
             const group = [i];
             visited[i] = true;
-
             const pi = latLngToPixel(item.lat, item.lng);
-
             items.forEach((other, j) => {
                 if (visited[j] || !other.lat || !other.lng) return;
                 const pj = latLngToPixel(other.lat, other.lng);
                 const dx = pi.x - pj.x, dy = pi.y - pj.y;
-                if (Math.sqrt(dx*dx + dy*dy) < thresholdPx) {
-                    group.push(j);
-                    visited[j] = true;
-                }
+                if (Math.sqrt(dx*dx + dy*dy) < thresholdPx) { group.push(j); visited[j] = true; }
             });
-
             groups.push(group);
         });
         return groups;
     }
 
-    /* ─── 마커/클러스터 렌더링 ─── */
     function renderMarkers(resolved) {
-        // 기존 오버레이만 초기화 (경로선은 유지)
         activeOverlays.forEach(o => o.setMap(null));
         activeOverlays = [];
-
         if (!resolved.length) return;
-
         const groups = clusterItems(resolved, 48);
-
         groups.forEach(group => {
             if (group.length === 1) {
-                // ── 단일 마커 ──
-                const item = resolved[group[0]];
-                const idx  = group[0];
+                const item = resolved[group[0]], idx = group[0];
                 const cfg  = CAT[item.slot.category] || CAT.tourism;
-
                 const ov = new kakao.maps.CustomOverlay({
-                    position: new kakao.maps.LatLng(item.lat, item.lng),
-                    yAnchor: 1.1, zIndex: 3,
-                    content: `
-            <div style="display:flex;flex-direction:column;align-items:center;cursor:pointer"
-                 onclick="focusSlot(${idx})">
-              <div style="
-                width:34px;height:34px;border-radius:50%;
-                background:${cfg.color};border:3px solid #fff;
-                display:flex;align-items:center;justify-content:center;font-size:15px;
-                box-shadow:0 3px 10px rgba(0,0,0,.22);">${cfg.icon}</div>
-              <div style="
-                margin-top:4px;background:${cfg.color};color:#fff;
-                padding:3px 10px;border-radius:50px;
-                font-size:10px;font-weight:700;white-space:nowrap;
-                box-shadow:0 2px 6px rgba(0,0,0,.18);
-                font-family:'DM Sans',sans-serif;">${item.slot.placeName}</div>
-            </div>`
+                    position: new kakao.maps.LatLng(item.lat, item.lng), yAnchor: 1.1, zIndex: 3,
+                    content: `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer" onclick="focusSlot(${idx})">
+                        <div style="width:34px;height:34px;border-radius:50%;background:${cfg.color};border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 3px 10px rgba(0,0,0,.22);">${cfg.icon}</div>
+                        <div style="margin-top:4px;background:${cfg.color};color:#fff;padding:3px 10px;border-radius:50px;font-size:10px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.18);font-family:'DM Sans',sans-serif;">${item.slot.placeName}</div>
+                    </div>`
                 });
-                ov.setMap(map);
-                activeOverlays.push(ov);
-
+                ov.setMap(map); activeOverlays.push(ov);
             } else {
-                // ── 클러스터 마커 (여러 개 묶음) ──
-                // 중심 좌표 = 그룹 평균
-                const avgLat = group.reduce((s, i) => s + resolved[i].lat, 0) / group.length;
-                const avgLng = group.reduce((s, i) => s + resolved[i].lng, 0) / group.length;
-
-                // 카테고리 조합으로 색상 결정 (첫 번째 카테고리 사용)
-                const firstCfg = CAT[resolved[group[0]].slot.category] || CAT.tourism;
-
-                // 클러스터 클릭 시 확대
-                const idxList = JSON.stringify(group);
-
+                const avgLat = group.reduce((s,i) => s+resolved[i].lat, 0)/group.length;
+                const avgLng = group.reduce((s,i) => s+resolved[i].lng, 0)/group.length;
                 const ov = new kakao.maps.CustomOverlay({
-                    position: new kakao.maps.LatLng(avgLat, avgLng),
-                    yAnchor: 0.5, zIndex: 4,
-                    content: `
-            <div onclick="zoomToCluster(${avgLat},${avgLng})"
-                 style="
-                   width:44px;height:44px;border-radius:50%;
-                   background:rgba(59,158,255,.9);
-                   border:3px solid #fff;
-                   display:flex;flex-direction:column;align-items:center;justify-content:center;
-                   cursor:pointer;
-                   box-shadow:0 4px 14px rgba(59,158,255,.45);
-                   font-family:'DM Sans',sans-serif;">
-              <div style="font-size:16px;font-weight:900;color:#fff;line-height:1">${group.length}</div>
-              <div style="font-size:8px;color:rgba(255,255,255,.8);margin-top:1px">장소</div>
-            </div>`
+                    position: new kakao.maps.LatLng(avgLat, avgLng), yAnchor: 0.5, zIndex: 4,
+                    content: `<div onclick="zoomToCluster(${avgLat},${avgLng})" style="width:44px;height:44px;border-radius:50%;background:rgba(59,158,255,.9);border:3px solid #fff;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(59,158,255,.45);font-family:'DM Sans',sans-serif;">
+                        <div style="font-size:16px;font-weight:900;color:#fff;line-height:1">${group.length}</div>
+                        <div style="font-size:8px;color:rgba(255,255,255,.8);margin-top:1px">장소</div>
+                    </div>`
                 });
-                ov.setMap(map);
-                activeOverlays.push(ov);
+                ov.setMap(map); activeOverlays.push(ov);
             }
         });
     }
 
-    /* ─── 클러스터 클릭 시 해당 위치로 확대 ─── */
     function zoomToCluster(lat, lng) {
         map.setLevel(map.getLevel() - 2);
         map.panTo(new kakao.maps.LatLng(lat, lng));
     }
 
-    /* ─── 오버레이만 재렌더링 (경로선 유지) ─── */
     function renderMarkersOnly(resolved) {
         activeOverlays.forEach(o => o.setMap(null));
         activeOverlays = [];
@@ -496,7 +454,6 @@
         });
     }
 
-    /* ─── 줌 변경 시 재클러스터링 (디바운스, 경로선 유지) ─── */
     let _zoomTimer = null;
     kakao.maps.event.addListener(map, 'zoom_changed', () => {
         if (!currentResolved.length) return;
@@ -504,24 +461,15 @@
         _zoomTimer = setTimeout(() => renderMarkersOnly(currentResolved), 150);
     });
 
-    /* ─── 경로선 (출발 → 마지막 순서대로 파란 실선) ─── */
     function drawRoute(coords) {
         if (coords.length < 2) return;
         const path = coords.map(c => new kakao.maps.LatLng(c.lat, c.lng));
-
-        // 흰 테두리
-        const outline = new kakao.maps.Polyline({
-            path, strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: .9, strokeStyle: 'solid'
-        });
-        // 파란 실선
-        const line = new kakao.maps.Polyline({
-            path, strokeWeight: 4, strokeColor: '#3b9eff', strokeOpacity: .85, strokeStyle: 'solid'
-        });
+        const outline = new kakao.maps.Polyline({ path, strokeWeight:8, strokeColor:'#ffffff', strokeOpacity:.9, strokeStyle:'solid' });
+        const line    = new kakao.maps.Polyline({ path, strokeWeight:4, strokeColor:'#3b9eff', strokeOpacity:.85, strokeStyle:'solid' });
         outline.setMap(map); line.setMap(map);
         activeLines.push(outline, line);
     }
 
-    /* ─── 일차 지도 + 사이드바 렌더링 ─── */
     async function drawDay(day) {
         clearMap(); closeDetail();
         document.getElementById('loadingOverlay').classList.add('show');
@@ -533,7 +481,6 @@
             return;
         }
 
-        /* 좌표 해결: slot에 lat/lng 있으면 사용, 없으면 카카오 검색 */
         const resolved = [];
         for (const slot of dayData.slots) {
             let lat = slot.lat, lng = slot.lng;
@@ -544,25 +491,17 @@
             resolved.push({ slot, lat, lng });
         }
         dayCache[day] = resolved;
-        currentResolved = resolved;   // 줌 변경 시 재렌더링용
+        currentResolved = resolved;
 
-        /* 마커 렌더링 (커스텀 클러스터링) */
         renderMarkers(resolved);
-
-        const coords = resolved.filter(i => i.lat && i.lng)
-            .map(i => ({ lat: i.lat, lng: i.lng }));
-
-        /* 경로선 */
+        const coords = resolved.filter(i => i.lat && i.lng).map(i => ({ lat: i.lat, lng: i.lng }));
         if (coords.length > 1) drawRoute(coords);
-
-        /* 지도 범위 조정 */
         if (coords.length) fitBounds(coords);
 
         document.getElementById('loadingOverlay').classList.remove('show');
         renderSchedule(day);
     }
 
-    /* ─── 일정 사이드바 렌더링 ─── */
     function renderSchedule(day) {
         const dayData = tripResult.schedule.find(d => d.day === day);
         if (!dayData) return;
@@ -595,20 +534,15 @@
         }).join('') || '<div class="empty-msg">슬롯이 없어요</div>';
     }
 
-    /* ─── 슬롯 포커스 ─── */
     function focusSlot(idx) {
         document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('active'));
         document.getElementById('sc' + idx)?.classList.add('active');
         const item = dayCache[currentDay]?.[idx];
         if (!item) return;
-        if (item.lat && item.lng) {
-            map.setLevel(3);
-            map.panTo(new kakao.maps.LatLng(item.lat, item.lng));
-        }
+        if (item.lat && item.lng) { map.setLevel(3); map.panTo(new kakao.maps.LatLng(item.lat, item.lng)); }
         openDetail(item.slot, item.lat, item.lng);
     }
 
-    /* ─── 대체 후보 선택 ─── */
     function selectAlt(e, slotIdx, altIdx) {
         e.stopPropagation();
         const dayData = tripResult.schedule.find(d => d.day === currentDay);
@@ -617,13 +551,11 @@
         const alt = origSlot?.alternatives?.[altIdx];
         if (!alt) return;
 
-        // 전체 일정에서 같은 장소명의 슬롯을 찾아 리뷰·별점 데이터 재사용
         let matchSlot = null;
         for (const day of tripResult.schedule) {
             matchSlot = day.slots.find(s => s.placeName === alt.placeName);
             if (matchSlot) break;
         }
-        // 추천 목록에서도 탐색
         if (!matchSlot) {
             const allRec = [...(tripResult.foodList||[]), ...(tripResult.tourismList||[]), ...(tripResult.cafeList||[])];
             const rec = allRec.find(r => r.name === alt.placeName);
@@ -643,14 +575,11 @@
             reviews:     matchSlot?.reviews     || []
         };
 
-        if (alt.lat && alt.lng) {
-            map.setLevel(3);
-            map.panTo(new kakao.maps.LatLng(alt.lat, alt.lng));
-        }
-        openDetail(altSlot, alt.lat, alt.lng);
+        if (alt.lat && alt.lng) { map.setLevel(3); map.panTo(new kakao.maps.LatLng(alt.lat, alt.lng)); }
+        _pendingSwap = { dayIdx: currentDay, slotIdx, altSlot, alt };
+        openDetail(altSlot, alt.lat, alt.lng, true);
     }
 
-    /* ─── 대체 후보 토글 ─── */
     function toggleAlt(e, idx) {
         e.stopPropagation();
         const el = document.getElementById('al' + idx);
@@ -658,11 +587,39 @@
         e.target.textContent = el?.classList.contains('show') ? '대체 후보 ▴' : '대체 후보 ▾';
     }
 
+    /* ─── 교체 확정 ─── */
+    let _pendingSwap = null;
+
+    function confirmSwap() {
+        if (!_pendingSwap) return;
+        const { dayIdx, slotIdx, altSlot, alt } = _pendingSwap;
+        const dayData = tripResult.schedule.find(d => d.day === dayIdx);
+        if (!dayData) return;
+        const orig = dayData.slots[slotIdx];
+        dayData.slots[slotIdx] = {
+            ...orig,
+            placeName: altSlot.placeName, reason: altSlot.reason,
+            score: altSlot.score, lat: alt.lat, lng: alt.lng,
+            address: altSlot.address, imageUrl: altSlot.imageUrl,
+            avgRating: altSlot.avgRating, reviewCount: altSlot.reviewCount,
+            reviews: altSlot.reviews, alternatives: orig.alternatives
+        };
+        if (dayCache[dayIdx]?.[slotIdx]) {
+            dayCache[dayIdx][slotIdx].slot = dayData.slots[slotIdx];
+            dayCache[dayIdx][slotIdx].lat  = alt.lat;
+            dayCache[dayIdx][slotIdx].lng  = alt.lng;
+        }
+        _pendingSwap = null;
+        closeDetail();
+        renderSchedule(dayIdx);
+        renderMarkers(dayCache[dayIdx]);
+        currentResolved = dayCache[dayIdx];
+    }
+
     /* ─── 장소 상세 패널 ─── */
-    function openDetail(slot, lat, lng) {
+    function openDetail(slot, lat, lng, isAlt = false) {
         const cfg = CAT[slot.category] || CAT.tourism;
 
-        // 이미지
         const imgEl = document.getElementById('dpImg');
         if (slot.imageUrl) {
             imgEl.style.backgroundImage = `url('${slot.imageUrl}')`;
@@ -678,20 +635,16 @@
         document.getElementById('dpTitle').textContent = slot.placeName;
         document.getElementById('dpName').textContent  = slot.placeName;
 
-        // 주소
         const addrEl = document.getElementById('dpAddr');
         addrEl.textContent = slot.address || '서울';
         document.getElementById('dpSub').style.display = 'flex';
 
-        // 배지
         const badges = document.getElementById('dpBadges');
         badges.innerHTML = `<span class="dp-badge db-blue">${cfg.label}</span>`;
 
-        // 별점
         const ratingRow = document.getElementById('dpRatingRow');
         if (slot.avgRating && slot.avgRating > 0) {
             document.getElementById('dpStarScore').textContent = slot.avgRating.toFixed(1);
-            // 별 시각화 (0.5 단위)
             const stars = document.getElementById('dpStarsVisual');
             stars.innerHTML = '';
             for (let i = 1; i <= 5; i++) {
@@ -707,29 +660,22 @@
             ratingRow.style.display = 'none';
         }
 
-        // 추천 이유
         const reasonEl = document.getElementById('dpReason');
-        if (slot.reason) {
-            reasonEl.textContent = '💡 ' + slot.reason;
-            reasonEl.style.display = 'block';
-        } else {
-            reasonEl.style.display = 'none';
-        }
+        if (slot.reason) { reasonEl.textContent = '💡 ' + slot.reason; reasonEl.style.display = 'block'; }
+        else { reasonEl.style.display = 'none'; }
 
-        // 리뷰
         const revSection = document.getElementById('dpReviewSection');
         const revList    = document.getElementById('dpReviewList');
         if (slot.reviews && slot.reviews.length > 0) {
             revList.innerHTML = slot.reviews.map((r, idx) => {
                 const stars = '★'.repeat(Math.round(r.rating)) + '☆'.repeat(5 - Math.round(r.rating));
-                const timeStr = r.timeDesc || '';
                 return `
           <div class="review-item">
             <div class="ri-top">
               <span class="ri-author">${r.author || '익명'}</span>
               <div class="ri-meta">
                 <span class="ri-stars">${stars}</span>
-                ${timeStr ? `<span class="ri-time">${timeStr}</span>` : ''}
+                ${r.timeDesc ? `<span class="ri-time">${r.timeDesc}</span>` : ''}
               </div>
             </div>
             <div class="ri-text" id="riText${idx}">${r.text}</div>
@@ -742,18 +688,19 @@
             revSection.style.display = 'block';
         }
 
-        // 교통 검색 버튼 — 현재 위치를 출발지로 자동 입력
+        // ── 교통 검색 버튼 — 위치 권한 요청 전 토스트로 안내 ──
         document.getElementById('dpTransBtn').onclick = () => {
             const dest = encodeURIComponent(slot.placeName);
             const base = `/ko/transport/search?end=${dest}`;
 
             if (!navigator.geolocation) {
-                // 위치 API 없으면 그냥 이동
                 location.href = base;
                 return;
             }
 
-            // 버튼 로딩 상태
+            // ✅ 위치 권한 팝업 뜨기 전에 토스트로 먼저 안내
+            showToast('📍 현재 위치를 출발지로 사용합니다');
+
             const btn = document.getElementById('dpTransBtn');
             const orig = btn.textContent;
             btn.textContent = '📍 위치 확인 중...';
@@ -761,32 +708,29 @@
 
             navigator.geolocation.getCurrentPosition(
                 pos => {
-                    // 성공: 좌표를 URL에 담아 이동
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
                     location.href = `${base}&startLat=${lat}&startLng=${lng}`;
                 },
                 () => {
-                    // 실패(거부 등): 출발지 없이 이동
+                    // 거부 또는 타임아웃 → 도착지만 입력된 상태로 이동
                     btn.textContent = orig;
                     btn.disabled = false;
                     location.href = base;
                 },
-                { timeout: 5000 }  // 5초 안에 못 받으면 포기
+                { timeout: 5000 }
             );
         };
 
+        document.getElementById('dpSwapBtn').style.display = isAlt ? 'flex' : 'none';
         document.getElementById('detailPanel').classList.add('open');
     }
 
     function toggleReview(idx) {
         const el = document.getElementById('riText' + idx);
         const btn = el.nextElementSibling;
-        if (el.classList.contains('expanded')) {
-            el.classList.remove('expanded'); btn.textContent = '더 보기';
-        } else {
-            el.classList.add('expanded'); btn.textContent = '접기';
-        }
+        if (el.classList.contains('expanded')) { el.classList.remove('expanded'); btn.textContent = '더 보기'; }
+        else { el.classList.add('expanded'); btn.textContent = '접기'; }
     }
 
     function closeDetail() {
@@ -820,7 +764,6 @@
         document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('db' + day)?.classList.add('active');
         currentDay = day;
-        // 탭을 일정으로 강제 이동
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelector('.tab-btn').classList.add('active');
@@ -839,9 +782,8 @@
         tripResult  = JSON.parse(raw);
         tripRequest = JSON.parse(sessionStorage.getItem('tripRequest') || '{}');
 
-        /* 상단 메타 */
-        const days  = tripRequest.travelDays || tripResult.schedule.length;
-        const area  = (tripRequest.preferredAreas||[]).slice(0,2).join(', ') || '서울';
+        const days = tripRequest.travelDays || tripResult.schedule.length;
+        const area = (tripRequest.preferredAreas||[]).slice(0,2).join(', ') || '서울';
         document.getElementById('tripMeta').textContent = `${area} · ${days-1}박 ${days}일`;
 
         buildDaySelector(tripResult.schedule);

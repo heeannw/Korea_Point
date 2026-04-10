@@ -27,18 +27,36 @@ public class TripController {
         model.addAttribute("currentUserName",  userName);
     }
 
-    // ── 여행 플래너 메인 ──
-    @GetMapping({"/ko/trip", "/en/trip"})
-    public String tripMain(Model model, HttpSession session) {
+    // ── 여행 플래너 메인 (KO) ──
+    @GetMapping("/ko/trip")
+    public String tripMainKo(Model model, HttpSession session) {
         session(model, session);
+        model.addAttribute("lang", "ko");
         return "trip/tripMain";
     }
 
-    // ── 추천 결과 ──
-    @GetMapping({"/ko/trip/result", "/en/trip/result"})
-    public String tripResult(Model model, HttpSession session) {
+    // ── 여행 플래너 메인 (EN) ──
+    @GetMapping("/en/trip")
+    public String tripMainEn(Model model, HttpSession session) {
         session(model, session);
+        model.addAttribute("lang", "en");
+        return "trip/tripMainEn";
+    }
+
+    // ── 추천 결과 (KO) ──
+    @GetMapping("/ko/trip/result")
+    public String tripResultKo(Model model, HttpSession session) {
+        session(model, session);
+        model.addAttribute("lang", "ko");
         return "trip/tripResult";
+    }
+
+    // ── 추천 결과 (EN) ──
+    @GetMapping("/en/trip/result")
+    public String tripResultEn(Model model, HttpSession session) {
+        session(model, session);
+        model.addAttribute("lang", "en");
+        return "trip/tripResultEn";
     }
 
     // ── REST: 지역 목록 (GET /api/trip/areas) ──
