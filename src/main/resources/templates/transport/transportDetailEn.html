@@ -159,8 +159,8 @@
     if (!msg) return "";
 
     msg = msg.replace(/(\d+)분 후 도착/g, "Arriving in $1 min");
-    msg = msg.replace(/전역/g, "1 stop away");
-    msg = msg.replace(/(\d+)번째/g, "$1 stops away");
+    // msg = msg.replace(/전역/g, "1 stop away");
+    msg = msg.replace(/(\d+)번째 전역/g, "$1 stops away");
 
     msg = msg.replace("곧 도착", "Arriving soon");
     msg = msg.replace("도착", "Arrived");
