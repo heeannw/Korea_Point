@@ -54,7 +54,7 @@ public class CongestionMlService {
 
             Object value = result.get(0).getValue();
 
-            // ✅ long[] 타입 대응
+            // long[] 타입 대응
             if (value instanceof long[]) {
                 return (int) ((long[]) value)[0];
             }
