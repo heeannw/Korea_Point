@@ -163,6 +163,15 @@ public class TransportRouteService {
             JsonNode path = paths.get(i);
             JsonNode info = path.get("info");
 
+            // info 또는 필수 필드가 없는 경로는 스킵
+            if (info == null || info.get("totalTime") == null
+                    || info.get("busTransitCount") == null
+                    || info.get("subwayTransitCount") == null
+                    || info.get("totalWalk") == null) {
+                System.out.println("경로 " + i + ": info 필드 누락 → 스킵");
+                continue;
+            }
+
             float time     = info.get("totalTime").asInt();
             float transfer = info.get("busTransitCount").asInt()
                     + info.get("subwayTransitCount").asInt();
@@ -274,8 +283,10 @@ public class TransportRouteService {
     // -----------------------------------------------
     private List<TransportStepDto> parseTransportSteps(JsonNode subPaths) {
         List<TransportStepDto> steps = new ArrayList<>();
+        if (subPaths == null) return steps;
 
         for (JsonNode sp : subPaths) {
+            if (sp.get("trafficType") == null || sp.get("sectionTime") == null) continue;
             int trafficType = sp.get("trafficType").asInt();
             int sectionTime = sp.get("sectionTime").asInt();
             JsonNode stations = sp.has("passStopList")
@@ -284,6 +295,7 @@ public class TransportRouteService {
             List<Map<String, Double>> pathCoords = new ArrayList<>();
             if (stations != null) {
                 for (JsonNode s : stations) {
+                    if (s.get("y") == null || s.get("x") == null) continue;
                     Map<String, Double> point = new HashMap<>();
                     point.put("lat", s.get("y").asDouble());
                     point.put("lng", s.get("x").asDouble());
@@ -292,7 +304,10 @@ public class TransportRouteService {
             }
 
             if (trafficType == 1) {
-                JsonNode lane     = sp.get("lane").get(0);
+                JsonNode laneArr  = sp.get("lane");
+                if (laneArr == null || laneArr.isEmpty()) continue;
+                JsonNode lane     = laneArr.get(0);
+                if (lane.get("subwayCode") == null || lane.get("name") == null) continue;
                 int    subwayCode = lane.get("subwayCode").asInt();
                 String color      = SUBWAY_COLORS.getOrDefault(subwayCode, "#888888");
                 String lineName   = lane.get("name").asText();
@@ -310,7 +325,10 @@ public class TransportRouteService {
                 steps.add(step);
 
             } else if (trafficType == 2) {
-                JsonNode lane  = sp.get("lane").get(0);
+                JsonNode laneArr = sp.get("lane");
+                if (laneArr == null || laneArr.isEmpty()) continue;
+                JsonNode lane  = laneArr.get(0);
+                if (lane.get("busNo") == null) continue;
                 int    busType = lane.has("type") ? lane.get("type").asInt() : 1;
                 String color   = BUS_COLORS.getOrDefault(busType, "#3A7BD5");
                 String busNo   = lane.get("busNo").asText();
