@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Location Permission</title>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+
+<script>
+
+  let lang = /*[[${lang}]]*/ 'ko'
+  $(document).ready(function () {
+
+    // ✅ 이미 동의한 경우 → alert 없이 바로 위치 가져오기
+    const alreadyAllowed = localStorage.getItem('locationAllowed') === 'true';
+
+    if (alreadyAllowed) {
+      // 동의 이력 있음 → 바로 위치 요청
+      getLocationAndGo();
+      return;
+    }
+
+    // 첫 방문 → confirm 표시
+    const ok = confirm("Allow access to your location to find nearby attractions?");
+
+    if (!ok) {
+      location.href = "/tour/all?lang=EN&lat=37.5665&lon=126.9780";
+      return;
+    }
+
+    // 동의 → localStorage에 저장
+    localStorage.setItem('locationAllowed', 'true');
+    getLocationAndGo();
+
+    function getLocationAndGo() {
+      if (!navigator.geolocation) {
+        alert("Location is not supported by this browser.");
+        location.href = "/tour/all?lang=EN&lat=37.5665&lon=126.9780";
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          location.href = "/tour/all?lat=" + lat + "&lon=" + lon + "&lang=" + lang;
+        },
+        function () {
+          // 위치 거부 또는 실패 → 기본 좌표(서울 시청)로 이동
+          location.href = "/tour/all?lat=37.5665&lon=126.9780?lang=" + lang;
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 60000
+        }
+      );
+    }
+
+  });
+</script>
+
+</body>
+</html>

@@ -5,7 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Korea Point | Discover Korea</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Cormorant+Garamond:wght@600;700&family=Sora:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!--
+        home.html map
+        1. style: page-wide CSS
+        2. header: logo / language buttons / login button
+        3. hero: main slider and headline
+        4. categories: service shortcuts
+        5. popular-section: top attraction cards
+        6. community-section: latest posts
+        7. footer: policy links and social links
+        8. script: hero slider behavior
+    -->
     <style>
+        /* ===== 1. Design Tokens And Base Reset ===== */
         :root {
             --primary: #3b9eff;
             --primary-dark: #1a7de0;
@@ -44,6 +56,7 @@
             font: inherit;
         }
 
+        /* ===== 2. Header ===== */
         header {
             position: sticky;
             top: 0;
@@ -117,6 +130,7 @@
             color: #ffffff;
         }
 
+        /* ===== 3. Hero ===== */
         .hero {
             position: relative;
             height: 100vh;
@@ -356,8 +370,11 @@
             font-size: 15px;
             font-weight: 600;
             color: var(--gray);
+            text-align: center;
+            line-height: 1.35;
         }
 
+        /* ===== 4. Shared Section Heading Styles ===== */
         .section {
             max-width: 1440px;
             margin: 0 auto;
@@ -427,6 +444,7 @@
             gap: 12px;
         }
 
+        /* ===== 5. Popular Attractions ===== */
         .popular-section .section-header {
             display: flex;
             align-items: flex-end;
@@ -499,7 +517,11 @@
             flex: 1 1 auto;
             height: auto;
             min-height: 460px;
-            background-position: center top;
+            background-position: center 50%;
+        }
+
+        .popular-card.namsan-card .popular-image {
+            background-position: center 25%;
         }
 
         .popular-body {
@@ -538,6 +560,7 @@
             font-weight: 400;
         }
 
+        /* ===== 6. Community Feed ===== */
         .community-section {
             background: var(--dark);
         }
@@ -664,6 +687,7 @@
             white-space: nowrap;
         }
 
+        /* ===== 7. Footer ===== */
         footer {
             background: #ffffff;
             padding: 32px 80px 28px;
@@ -805,6 +829,7 @@
             color: #a0aabc;
         }
 
+        /* ===== 8. Responsive Rules ===== */
         @media (max-width: 1024px) {
             .section,
             .community-inner,
@@ -836,7 +861,11 @@
             .popular-card.featured .popular-image {
                 height: 240px;
                 min-height: 0;
-                background-position: center;
+                background-position: center 48%;
+            }
+
+            .popular-card.namsan-card .popular-image {
+                background-position: center 25%;
             }
         }
 
@@ -935,6 +964,7 @@
     </style>
 </head>
 <body>
+<!-- Header: top navigation and language buttons -->
 <header>
     <a class="logo" th:href="@{/}" href="/">Korea<span>Point</span></a>
 
@@ -945,12 +975,13 @@
     </div>
 </header>
 
+<!-- Hero: full-width slider with the main home message -->
 <section class="hero">
     <div class="slider-track" id="sliderTrack">
         <div class="slide"
              th:each="slide : ${slides}"
              th:style="|background-image:url('${slide.imageUrl}')|"
-             style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/c/c3/KOCIS_Korea_BlueSky_In_Seoul_03_%289947223046%29.jpg')"></div>
+             style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/c/cc/N_Seoul_Tower_%2813952097192%29.jpg')"></div>
     </div>
 
     <button class="hero-arrow left" type="button" onclick="moveSlide(-1)" aria-label="Previous slide">
@@ -988,10 +1019,11 @@
     </div>
 </section>
 
+<!-- Categories: shortcuts to each major service page -->
 <section class="categories" id="categorySection">
     <div class="category-grid">
         <a class="category-item" th:href="@{/foodmap/all(category='RESTAURANT')}" href="/foodmap/all?category=RESTAURANT">
-            <span class="category-icon">🍽</span>
+            <span class="category-icon">🍴</span>
             <span>Food</span>
         </a>
         <a class="category-item" th:href="@{/foodmap/all(category='CAFE')}" href="/foodmap/all?category=CAFE">
@@ -999,7 +1031,7 @@
             <span>Cafe</span>
         </a>
         <a class="category-item" th:href="@{/tour/all}" href="/tour/all">
-            <span class="category-icon">🗺</span>
+            <span class="category-icon">📷</span>
             <span>Tour</span>
         </a>
         <a class="category-item" th:href="@{/transport/search}" href="/transport/search">
@@ -1010,9 +1042,14 @@
             <span class="category-icon">💬</span>
             <span>Community</span>
         </a>
+        <div class="category-item" aria-label="Custom Trip">
+            <span class="category-icon">🧳</span>
+            <span>Custom Trip</span>
+        </div>
     </div>
 </section>
 
+<!-- Popular attractions: each card opens the matching tour search -->
 <section class="section popular-section">
     <div class="section-header">
         <div>
@@ -1023,6 +1060,7 @@
     </div>
 
     <div class="popular-grid">
+        <!-- Featured card: the first attraction in the list -->
         <a class="popular-card featured"
            th:if="${!#lists.isEmpty(attractions)}"
            th:with="attraction=${attractions[0]}, tourKeyword=${attraction.title == 'Namsan Seoul Tower' ? 'N Seoul Tower' : attraction.title}"
@@ -1032,7 +1070,7 @@
                 <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 1</div>
                 <div class="popular-image"
                      th:style="|background-image:url('${attraction.imageUrl}')|"
-                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Gyeongbokgung_Palace_Geunjeongjeon.jpg/800px-Gyeongbokgung_Palace_Geunjeongjeon.jpg')"></div>
+                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/4/46/%EA%B2%BD%EB%B3%B5%EA%B6%81_%ED%9D%A5%EB%A1%80%EB%AC%B8_%EC%A0%84%EC%B2%B4_%EC%A0%84%EA%B2%BD%28%EA%B6%81%EB%8A%A5%EC%9C%A0%EC%A0%81%EB%B3%B8%EB%B6%80%29-min.jpg')"></div>
             </div>
             <div class="popular-body">
                 <div class="popular-title" th:text="${attraction.title}">Gyeongbokgung Palace</div>
@@ -1044,9 +1082,11 @@
             </div>
         </a>
 
+        <!-- Remaining cards: render the rest of the attractions -->
         <a class="popular-card"
            th:each="attraction, iter : ${attractions}"
            th:if="${!iter.first}"
+           th:classappend="${attraction.title == 'Namsan Seoul Tower'} ? ' namsan-card'"
            th:with="tourKeyword=${attraction.title == 'Namsan Seoul Tower' ? 'N Seoul Tower' : attraction.title}"
            th:href="@{/tour/search/(keyword=${tourKeyword})}"
            href="/tour/search/?keyword=Bukchon%20Hanok%20Village">
@@ -1054,7 +1094,7 @@
                 <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 2</div>
                 <div class="popular-image"
                      th:style="|background-image:url('${attraction.imageUrl}')|"
-                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Gyeongbokgung_Palace_Geunjeongjeon.jpg/800px-Gyeongbokgung_Palace_Geunjeongjeon.jpg')"></div>
+                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/4/46/%EA%B2%BD%EB%B3%B5%EA%B6%81_%ED%9D%A5%EB%A1%80%EB%AC%B8_%EC%A0%84%EC%B2%B4_%EC%A0%84%EA%B2%BD%28%EA%B6%81%EB%8A%A5%EC%9C%A0%EC%A0%81%EB%B3%B8%EB%B6%80%29-min.jpg')"></div>
             </div>
             <div class="popular-body">
                 <div class="popular-title" th:text="${attraction.title}">Bukchon Hanok Village</div>
@@ -1068,6 +1108,7 @@
     </div>
 </section>
 
+<!-- Community preview: latest posts from the board -->
 <section class="community-section">
     <div class="community-inner">
         <div class="section-header-row">
@@ -1115,6 +1156,7 @@
     </div>
 </section>
 
+<!-- Footer: service info, policy links, and social links -->
 <footer>
     <div class="footer-inner">
         <div class="footer-top">
@@ -1170,6 +1212,7 @@
 </footer>
 
 <script>
+    // Slider state shared by arrows, dots, and autoplay.
     let current = 0;
     const track = document.getElementById("sliderTrack");
     const dots = document.querySelectorAll(".hero-dot");
@@ -1182,6 +1225,7 @@
         totalEl.textContent = String(total).padStart(2, "0");
     }
 
+    // Jump directly to a specific slide and refresh the active UI state.
     function goSlide(index) {
         if (total === 0) return;
         current = index;
@@ -1196,11 +1240,13 @@
         }
     }
 
+    // Move one step backward or forward from arrows/autoplay.
     function moveSlide(direction) {
         if (total === 0) return;
         goSlide((current + direction + total) % total);
     }
 
+    // Only autoplay when there is more than one slide to rotate.
     if (total > 1) {
         autoPlay = setInterval(() => moveSlide(1), 5000);
     }

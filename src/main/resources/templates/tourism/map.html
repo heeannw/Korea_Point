@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:lang="${lang == 'en' ? 'en' : 'ko'}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf"        th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <title th:text="${lang == 'en' ? 'Cafe Map — KoreaPoint' : '카페 추천 지도 — KoreaPoint'}">카페 추천 지도 — KoreaPoint</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brown:#6f4e37; --brown-dk:#4a3220; --brown-lt:#fdf6f0;
+      --dark:#0f172a;  --mid:#334155;      --gray:#64748b;
+      --border:#e8d5c4; --white:#fff;      --light:#fdf6f0;
+      --gold:#f59e0b;  --green:#16a34a;
+      --r:12px; --sh:0 2px 16px rgba(111,78,55,.12);
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%;overflow:hidden}
+    body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);display:flex;flex-direction:column}
+
+    header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;z-index:100}
+    .logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--brown-dk);text-decoration:none}
+    .logo span{color:var(--dark)}
+    .header-right{display:flex;gap:8px;align-items:center}
+    .h-btn{padding:7px 16px;border-radius:50px;border:1.5px solid var(--border);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--dark);text-decoration:none;display:inline-flex;align-items:center;transition:all .2s}
+    .h-btn:hover,.h-btn.active{border-color:var(--brown);color:var(--brown)}
+    .h-btn-fill{background:var(--brown);color:#fff;border-color:var(--brown)}
+    .h-btn-fill:hover{background:var(--brown-dk);color:#fff}
+
+    .app-body{flex:1;display:flex;overflow:hidden}
+    .sidebar{width:380px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--white)}
+
+    /* ── 검색창 + 자동완성 ── */
+    .search-bar{padding:14px 16px 0;flex-shrink:0;position:relative}
+    .search-wrap{position:relative}
+    .search-wrap input{width:100%;padding:10px 42px 10px 16px;border:1.5px solid var(--border);border-radius:50px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--light);transition:border .2s;color:var(--dark)}
+    .search-wrap input:focus{border-color:var(--brown);background:#fff}
+    .search-wrap .si{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0}
+
+    /* ── 드롭다운 (최근검색 + 자동완성 공용) ── */
+    .suggest-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);z-index:300;display:none;max-height:280px;overflow-y:auto}
+    .suggest-dropdown.show{display:block}
+    .suggest-section-title{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;padding:10px 14px 4px;display:flex;justify-content:space-between;align-items:center}
+    .suggest-section-title button{background:none;border:none;font-size:11px;color:var(--brown);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600}
+    .suggest-item{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;cursor:pointer;transition:background .15s}
+    .suggest-item:hover{background:var(--light)}
+    .suggest-item-kw{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dark);flex:1}
+    .suggest-item-kw .icon{color:var(--gray);font-size:13px}
+    .suggest-del{background:none;border:none;color:var(--gray);cursor:pointer;font-size:14px;padding:2px 6px}
+    .suggest-del:hover{color:var(--dark)}
+    .suggest-empty{padding:14px;text-align:center;font-size:13px;color:var(--gray)}
+    .suggest-divider{border:none;border-top:1px solid var(--border);margin:4px 0}
+
+    /* ── 카테고리 필터 + 스크롤 버튼 ── */
+    .filter-wrap{padding:10px 0 0;display:flex;align-items:center;flex-shrink:0}
+    .scroll-btn{flex-shrink:0;width:28px;height:28px;border:1.5px solid var(--border);border-radius:50%;background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--gray);transition:all .2s;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+    .scroll-btn:hover{border-color:var(--brown);color:var(--brown);background:var(--light)}
+    .scroll-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
+    .scroll-btn.left{margin-left:8px}
+    .scroll-btn.right{margin-right:8px}
+    .filter-row{flex:1;display:flex;gap:6px;overflow-x:auto;padding:0 6px;scrollbar-width:none;scroll-behavior:smooth}
+    .filter-row::-webkit-scrollbar{display:none}
+    .chip{padding:5px 14px;border-radius:50px;border:1.5px solid var(--border);background:var(--white);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:'DM Sans',sans-serif;color:var(--gray)}
+    .chip:hover{border-color:var(--brown);color:var(--brown)}
+    .chip.active{background:var(--brown);color:#fff;border-color:var(--brown)}
+
+    .sort-row{padding:10px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .result-count{font-size:13px;color:var(--gray)}
+    .result-count strong{color:var(--dark)}
+    .sort-btns{display:flex;gap:4px}
+    .sort-btn{padding:4px 12px;border-radius:50px;border:1.5px solid var(--border);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s}
+    .sort-btn.active{background:var(--brown-lt);color:var(--brown);border-color:var(--brown)}
+
+    .place-list{flex:1;overflow-y:auto;padding:0 12px 12px}
+    .place-list::-webkit-scrollbar{width:4px}
+    .place-list::-webkit-scrollbar-track{background:transparent}
+    .place-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+    .place-card{display:flex;gap:12px;padding:12px;border-radius:var(--r);cursor:pointer;transition:background .15s,box-shadow .15s;margin-bottom:4px;border:1.5px solid transparent}
+    .place-card:hover{background:var(--light)}
+    .place-card.active{background:var(--brown-lt);border-color:var(--brown)}
+    .place-card .thumb{width:72px;height:72px;border-radius:10px;background-size:cover;background-position:center;flex-shrink:0;position:relative;background-color:var(--light);display:flex;align-items:center;justify-content:center;font-size:28px}
+    .place-card .rank{position:absolute;top:-6px;left:-6px;width:20px;height:20px;background:var(--brown);color:#fff;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+    .card-info{flex:1;min-width:0}
+    .card-name{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .card-cat{font-size:11px;color:var(--brown);font-weight:600;margin-bottom:4px}
+    .card-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray)}
+    .stars-s{color:var(--gold);font-size:11px}
+    .card-dist{font-size:11px;color:var(--gray);background:var(--light);padding:2px 8px;border-radius:50px;white-space:nowrap}
+
+    .map-area{flex:1;position:relative;overflow:hidden}
+    #kakaoMap{position:absolute;inset:0;z-index:1}
+    .map-controls{position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:30}
+    .mc{width:36px;height:36px;background:#fff;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;box-shadow:var(--sh);transition:background .2s}
+    .mc:hover{background:var(--light)}
+    .loc-btn{position:absolute;bottom:24px;right:16px;background:#fff;border:1px solid var(--border);border-radius:50px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--sh);color:var(--dark);font-family:'DM Sans',sans-serif;z-index:30;transition:all .2s}
+    .loc-btn:hover{border-color:var(--brown);color:var(--brown)}
+
+    .map-popup{position:absolute;z-index:40;background:#fff;border-radius:var(--r);box-shadow:0 8px 32px rgba(0,0,0,.18);width:240px;display:none;overflow:hidden;animation:popIn .2s ease}
+    .map-popup.show{display:block}
+    @keyframes popIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .popup-img{height:90px;background-color:var(--light);position:relative;display:flex;align-items:center;justify-content:center;font-size:36px}
+    .popup-close{position:absolute;top:6px;right:8px;background:rgba(0,0,0,.4);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;line-height:1}
+    .popup-body{padding:12px}
+    .popup-name{font-size:14px;font-weight:700;margin-bottom:3px}
+    .popup-meta{font-size:12px;color:var(--gray);margin-bottom:8px}
+    .popup-btn{display:block;width:100%;padding:8px;background:var(--brown);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;text-align:center;text-decoration:none}
+    .popup-btn:hover{background:var(--brown-dk)}
+
+    .detail-panel{position:absolute;inset:0;background:#fff;z-index:50;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none}
+    .detail-panel.open{transform:translateX(0);pointer-events:auto}
+    .dp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:5}
+    .dp-back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px;line-height:1}
+    .dp-title{font-size:16px;font-weight:700;flex:1}
+    .dp-img{width:100%;height:160px;background-color:var(--light);display:flex;align-items:center;justify-content:center;font-size:56px}
+    .dp-body{padding:16px}
+    .dp-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+    .dp-badge{padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700}
+    .db-brown{background:var(--brown-lt);color:var(--brown-dk)}
+    .db-gold{background:#fef3c7;color:#92400e}
+    .db-green{background:#f0fdf4;color:#166534}
+    .dp-name{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;margin-bottom:2px}
+    .dp-sub{font-size:14px;color:var(--gray);margin-bottom:12px}
+    .dp-stars{display:flex;align-items:center;gap:6px;margin-bottom:14px}
+    .dp-stars .s{color:var(--gold);font-size:16px}
+    .dp-stars .sc{font-size:18px;font-weight:700}
+    .dp-stars .sm{font-size:13px;color:var(--gray)}
+    .dp-info-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+    .dp-info{background:var(--light);border-radius:10px;padding:12px 14px}
+    .dp-info-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+    .dp-info-val{font-size:13px;font-weight:500;line-height:1.4}
+    .dp-section-title{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--dark)}
+
+    .rev-summary{display:flex;align-items:center;gap:16px;background:var(--light);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+    .rev-score{font-size:42px;font-weight:900;font-family:'Playfair Display',serif;line-height:1}
+    .rev-right{flex:1}
+    .rev-bars{display:flex;flex-direction:column;gap:5px}
+    .rev-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gray)}
+    .rev-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+    .rev-fill{height:100%;background:var(--gold);border-radius:3px}
+    .review-item{padding:12px 0;border-bottom:1px solid var(--border)}
+    .review-item:last-child{border-bottom:none}
+    .ri-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+    .ri-name{font-size:13px;font-weight:600}
+    .ri-stars{font-size:12px;color:var(--gold)}
+    .ri-text{font-size:13px;color:var(--mid);line-height:1.6}
+
+    /* ── 상세 하단 버튼 ── */
+    .dp-action{position:sticky;bottom:0;padding:12px 16px;background:#fff;border-top:1px solid var(--border);display:flex;gap:8px}
+    .dp-action-btn{flex:1;padding:12px;border:none;border-radius:50px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
+    .dp-btn-transport{background:var(--brown);color:#fff}
+    .dp-btn-transport:hover{background:var(--brown-dk)}
+    .dp-btn-tour{background:#2563eb;color:#fff;border:none}
+    .dp-btn-tour:hover{background:#1e40af}
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--gray);gap:8px;text-align:center;padding:20px}
+    .empty-state .ei{font-size:40px}
+    .empty-state p{font-size:14px;line-height:1.6}
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
+  <div class="header-right">
+    <!-- KO 버튼: ko일 때 active(클릭 불가), en일 때 클릭하면 ko로 전환 -->
+    <th:block th:if="${lang == 'en'}">
+      <button class="h-btn"        onclick="switchLang('ko')">KR</button>
+      <button class="h-btn active">EN</button>
+    </th:block>
+    <th:block th:unless="${lang == 'en'}">
+      <button class="h-btn active">KR</button>
+      <button class="h-btn"        onclick="switchLang('en')">EN</button>
+    </th:block>
+    <th:block th:if="${isLoggedIn}">
+      <span class="h-btn" th:text="${currentUserName}"></span>
+      <form th:action="@{/logout}" method="post">
+        <button type="submit" class="h-btn h-btn-fill">Logout</button>
+      </form>
+    </th:block>
+    <th:block th:unless="${isLoggedIn}">
+      <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
+    </th:block>
+  </div>
+</header>
+
+<div class="app-body">
+  <div class="sidebar">
+
+    <!-- 검색창 -->
+    <div class="search-bar">
+      <div class="search-wrap">
+        <input type="text" id="searchInput"
+               th:value="${keyword}"
+               th:placeholder="${lang == 'en' ? 'Search cafe name...' : '카페 이름으로 검색...'}"
+               autocomplete="off"
+               onkeydown="handleSearchKey(event)"
+               oninput="handleSearchInput()"
+               onfocus="showDropdown()"
+               onblur="scheduleHideDropdown()">
+        <button class="si" type="button" onclick="goSearch()">🔍</button>
+      </div>
+      <div class="suggest-dropdown" id="suggestDropdown">
+        <div id="suggestContent"></div>
+      </div>
+    </div>
+
+    <!-- 카테고리 필터 -->
+    <div class="filter-wrap">
+      <button class="scroll-btn left" id="scrollLeft" onclick="scrollFilter(-1)" disabled>‹</button>
+      <div class="filter-row" id="filterRow">
+        <div class="chip active" data-cat="all"       onclick="setCategory('all')"      th:text="${lang == 'en' ? 'All' : '전체'}">전체</div>
+        <div class="chip"       data-cat="highrating" onclick="setCategory('highrating')" th:text="${lang == 'en' ? '⭐ High Rating' : '⭐ 고평점'}">⭐ 고평점</div>
+        <div class="chip"       data-cat="manyreviews" onclick="setCategory('manyreviews')" th:text="${lang == 'en' ? '💬 Many Reviews' : '💬 리뷰많음'}">💬 리뷰많음</div>
+      </div>
+      <button class="scroll-btn right" id="scrollRight" onclick="scrollFilter(1)">›</button>
+    </div>
+
+    <div class="sort-row">
+      <div class="result-count">
+        <strong id="countDisplay">0</strong>
+        <span th:text="${lang == 'en' ? ' cafes' : ' 개 카페'}"> 개 카페</span>
+      </div>
+      <div class="sort-btns">
+        <button class="sort-btn active" onclick="setSort('recommended')" th:text="${lang == 'en' ? '⭐ AI Pick' : '⭐ AI추천'}">⭐ AI추천</button>
+        <button class="sort-btn"        onclick="setSort('distance')"    th:text="${lang == 'en' ? '📍 Distance' : '📍 거리순'}">📍 거리순</button>
+      </div>
+    </div>
+
+    <div class="place-list" id="placeList"></div>
+  </div>
+
+  <div class="map-area" id="mapArea">
+    <div id="kakaoMap"></div>
+
+    <div class="map-controls" style="z-index:30">
+      <div class="mc" onclick="map&&map.setLevel(map.getLevel()-1)">＋</div>
+      <div class="mc" onclick="map&&map.setLevel(map.getLevel()+1)">－</div>
+    </div>
+
+    <button class="loc-btn" onclick="getLocation()"
+            th:text="${lang == 'en' ? '📍 Near Me' : '📍 현재 위치로 추천'}">📍 현재 위치로 추천</button>
+
+    <!-- 팝업 -->
+    <div class="map-popup" id="mapPopup">
+      <div class="popup-img" id="popupImg">
+        <button class="popup-close" onclick="closePopup()">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-name" id="popupName"></div>
+        <div class="popup-meta" id="popupMeta"></div>
+        <a class="popup-btn" href="#" onclick="openDetail(currentPopupName);return false"
+           th:text="${lang == 'en' ? 'Details →' : '상세보기 →'}">상세보기 →</a>
+      </div>
+    </div>
+
+    <!-- 상세 패널 -->
+    <div class="detail-panel" id="detailPanel">
+      <div class="dp-header">
+        <button class="dp-back" onclick="closeDetail()">←</button>
+        <div class="dp-title" id="dpTitle"></div>
+      </div>
+      <div class="dp-img" id="dpImg">☕</div>
+      <div class="dp-body">
+        <div class="dp-badge-row" id="dpBadges"></div>
+        <div class="dp-name"      id="dpName"></div>
+        <div class="dp-sub"       id="dpSub"></div>
+        <div class="dp-stars"     id="dpStars"></div>
+        <div class="dp-info-row"  id="dpInfoRow"></div>
+        <div class="dp-section-title" th:text="${lang == 'en' ? 'Reviews' : '리뷰'}">리뷰</div>
+        <div class="rev-summary"  id="dpRevSummary"></div>
+        <div id="dpReviews"></div>
+      </div>
+      <div class="dp-action">
+        <button class="dp-action-btn dp-btn-transport" onclick="openTransportMap()"
+                th:text="${lang == 'en' ? '🚇 Directions' : '🚇 교통'}">🚇 교통</button>
+        <button class="dp-action-btn dp-btn-tour" onclick="openTourMap()"
+                th:text="${lang == 'en' ? '🗺️ Tourism' : '🗺️ 근처 관광지'}">🗺️ 근처 관광지</button>
+        <button class="dp-action-btn" onclick="openFoodMap()"
+                style="background:#f472b6;color:#fff;border:none"
+                th:text="${lang == 'en' ? '🍽️ Nearby Food' : '🍽️ 근처 음식점'}">🍽️ 근처 음식점</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Thymeleaf → JS 변수 주입 -->
+<script th:inline="javascript">
+  const userLat  = /*[[${userlat}]]*/ 37.5665;
+  const userLon  = /*[[${userlon}]]*/ 126.9780;
+  const PLACES   = /*[[${list}]]*/    [];
+  const LANG     = /*[[${lang}]]*/    'ko';  // 'ko' 또는 'en'
+
+  // 언어별 UI 텍스트 상수
+  const T = {
+    searchSuggestion : LANG === 'en' ? '🔍 Suggestions'    : '🔍 연관 검색어',
+    recentKeywords   : LANG === 'en' ? '🕐 Recent'         : '🕐 최근 검색어',
+    clearAll         : LANG === 'en' ? 'Clear all'          : '전체 삭제',
+    searchPlaceholder: LANG === 'en' ? 'Type to search...'  : '검색어를 입력하세요',
+    emptyState       : LANG === 'en' ? 'Press "Near Me" or search a cafe name'
+            : '현재 위치 버튼을 누르거나<br>카페 이름을 검색해보세요',
+    cafeBadge        : LANG === 'en' ? 'Cafe'               : '카페',
+    popularBadge     : LANG === 'en' ? 'Popular'            : '인기',
+    reviewLabel      : LANG === 'en' ? 'reviews'            : '개',
+    labelAvgReview   : LANG === 'en' ? 'Avg. Review'        : '평균 리뷰 별점',
+    labelDistance    : LANG === 'en' ? 'Distance'           : '거리',
+    labelAiScore     : LANG === 'en' ? 'AI Score'           : 'AI 추천 점수',
+    labelCoords      : LANG === 'en' ? 'Coordinates'        : '좌표',
+    noReviews        : LANG === 'en' ? 'No reviews yet.'    : '등록된 리뷰가 없습니다.',
+    detailsBtn       : LANG === 'en' ? 'Details →'          : '상세보기 →',
+    distSuffix       : LANG === 'en' ? ''                   : ' 거리',
+    reviewerLabel    : LANG === 'en' ? 'Reviewer'           : '리뷰어',
+    aiLabel          : LANG === 'en' ? 'AI'                 : 'AI',
+  };
+
+  // URL prefix: 한국어는 /cafe/..., 영어는 /en/cafe/...
+  const PREFIX      = LANG === 'en' ? '/en' : '';
+  const TOUR_LANG   = LANG === 'en' ? 'EN'  : 'KR';
+  const TRANSPORT_PREFIX = LANG === 'en' ? '/en' : '/ko';
+</script>
+
+<script>
+  let activeCategory   = 'all';
+  let activeSort       = 'recommended';
+  let activePinId      = null;
+  let currentPopupName = null;
+  let map;
+  let popupOverlay     = null;
+
+  /* ── 최근 검색어 (localStorage) ── */
+  const RECENT_KEY = LANG === 'en' ? 'cafe_en_recent_keywords' : 'cafe_recent_keywords';
+
+  function getRecent() {
+    try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; }
+  }
+  function saveRecent(kw) {
+    if (!kw.trim()) return;
+    let list = getRecent().filter(k => k !== kw);
+    list.unshift(kw);
+    if (list.length > 8) list = list.slice(0, 8);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+  }
+  function deleteRecent(kw, e) {
+    e.stopPropagation();
+    const list = getRecent().filter(k => k !== kw);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+    renderDropdown(document.getElementById('searchInput').value);
+  }
+  function clearAllRecent() {
+    localStorage.removeItem(RECENT_KEY);
+    renderDropdown('');
+  }
+
+  /* ── 자동완성 후보 ── */
+  function getSuggestions(q) {
+    if (!q) return [];
+    const lower = q.toLowerCase();
+    return PLACES
+            .filter(p => (p.name ?? '').toLowerCase().includes(lower) || (p.googleName ?? '').toLowerCase().includes(lower))
+            .slice(0, 6)
+            .map(p => p.name);
+  }
+
+  /* ── 드롭다운 렌더 ── */
+  function renderDropdown(q) {
+    const box = document.getElementById('suggestContent');
+    const suggestions = getSuggestions(q);
+    const recent = getRecent();
+    let html = '';
+
+    if (suggestions.length > 0) {
+      html += `<div class="suggest-section-title"><span>${T.searchSuggestion}</span></div>`;
+      suggestions.forEach(s => {
+        html += `<div class="suggest-item" onmousedown="doSearch('${escJS(s)}')">
+          <div class="suggest-item-kw"><span class="icon">☕</span><span>${s}</span></div>
+        </div>`;
+      });
+      if (recent.length > 0) html += `<hr class="suggest-divider">`;
+    }
+
+    if (recent.length > 0) {
+      html += `<div class="suggest-section-title"><span>${T.recentKeywords}</span>
+        <button type="button" onmousedown="clearAllRecent()">${T.clearAll}</button></div>`;
+      recent.forEach(kw => {
+        html += `<div class="suggest-item">
+          <div class="suggest-item-kw" onmousedown="doSearch('${escJS(kw)}')">
+            <span class="icon">🕐</span><span>${kw}</span>
+          </div>
+          <button class="suggest-del" onmousedown="deleteRecent('${escJS(kw)}', event)">✕</button>
+        </div>`;
+      });
+    }
+
+    if (!html) html = `<div class="suggest-empty">${T.searchPlaceholder}</div>`;
+    box.innerHTML = html;
+  }
+
+  function showDropdown() {
+    renderDropdown(document.getElementById('searchInput').value);
+    document.getElementById('suggestDropdown').classList.add('show');
+  }
+  let hideDropdownTimer;
+  function scheduleHideDropdown() {
+    hideDropdownTimer = setTimeout(() => {
+      document.getElementById('suggestDropdown').classList.remove('show');
+    }, 200);
+  }
+  function handleSearchInput() {
+    renderDropdown(document.getElementById('searchInput').value);
+    document.getElementById('suggestDropdown').classList.add('show');
+    render();
+  }
+  function handleSearchKey(e) {
+    if (e.key === 'Enter') goSearch();
+    if (e.key === 'Escape') document.getElementById('suggestDropdown').classList.remove('show');
+  }
+  function doSearch(kw) {
+    document.getElementById('searchInput').value = kw;
+    document.getElementById('suggestDropdown').classList.remove('show');
+    saveRecent(kw);
+    location.href = `${PREFIX}/cafe/search?keyword=${encodeURIComponent(kw)}`;
+  }
+  function goSearch() {
+    const q = document.getElementById('searchInput').value.trim();
+    if (q) { saveRecent(q); location.href = `${PREFIX}/cafe/search?keyword=${encodeURIComponent(q)}`; }
+  }
+
+  /* ── 필터 스크롤 버튼 ── */
+  function scrollFilter(dir) {
+    document.getElementById('filterRow').scrollLeft += dir * 120;
+    setTimeout(updateScrollBtns, 150);
+  }
+  function updateScrollBtns() {
+    const row = document.getElementById('filterRow');
+    document.getElementById('scrollLeft').disabled  = row.scrollLeft <= 0;
+    document.getElementById('scrollRight').disabled = row.scrollLeft + row.clientWidth >= row.scrollWidth - 1;
+  }
+  document.getElementById('filterRow').addEventListener('scroll', updateScrollBtns);
+  window.addEventListener('load', updateScrollBtns);
+
+  /* ── 카테고리 / 정렬 ── */
+  function setCategory(c) {
+    activeCategory = c;
+    document.querySelectorAll('.chip').forEach(ch => ch.classList.toggle('active', ch.dataset.cat === c));
+    render();
+  }
+  function setSort(s) {
+    activeSort = s;
+    document.querySelectorAll('.sort-btn').forEach((b, i) =>
+            b.classList.toggle('active', (s === 'recommended' && i === 0) || (s === 'distance' && i === 1))
+    );
+    render();
+  }
+
+  /* ── 필터 + 정렬 ── */
+  function getFiltered() {
+    let list = [...PLACES];
+    const q = (document.getElementById('searchInput').value || '').toLowerCase();
+    if (activeCategory === 'highrating')  list = list.filter(p => (p.avgStar ?? 0) >= 4.3);
+    if (activeCategory === 'manyreviews') list = list.filter(p => (p.reviewCount ?? 0) >= 5);
+    if (q) list = list.filter(p =>
+            (p.name ?? '').toLowerCase().includes(q) || (p.googleName ?? '').toLowerCase().includes(q)
+    );
+    if (activeSort === 'recommended') list.sort((a,b) => (b.finalScore ?? 0) - (a.finalScore ?? 0));
+    else                              list.sort((a,b) => (a.distance ?? 99) - (b.distance ?? 99));
+    return list;
+  }
+
+  /* ── 유틸 ── */
+  function distStr(d) {
+    if (d == null || d === 0) return '-';
+    return d < 1 ? (d * 1000).toFixed(0) + 'm' : d.toFixed(1) + 'km';
+  }
+  function encodeId(name) { return btoa(encodeURIComponent(name || '')).replace(/[^a-zA-Z0-9]/g, ''); }
+  function escJS(s) { return (s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
+  /* ── 렌더 ── */
+  function render() {
+    const list = getFiltered();
+    document.getElementById('countDisplay').textContent = list.length;
+    const el = document.getElementById('placeList');
+
+    if (list.length === 0) {
+      el.innerHTML = `<div class="empty-state"><div class="ei">☕</div>
+        <p>${T.emptyState}</p></div>`;
+      return;
+    }
+
+    el.innerHTML = list.map((p, i) => `
+      <div class="place-card${activePinId === p.name ? ' active' : ''}"
+           id="card-${encodeId(p.name)}"
+           onclick="selectPlace('${escJS(p.name)}')">
+        <div class="thumb">
+          <div class="rank">${i + 1}</div>☕
+        </div>
+        <div class="card-info">
+          <div class="card-cat">${T.cafeBadge} · ${T.aiLabel} ${((p.finalScore ?? 0) * 100).toFixed(0)}${LANG === 'en' ? 'pt' : '점'}</div>
+          <div class="card-name">${p.name ?? '-'}</div>
+          <div class="card-meta">
+            <span class="stars-s">★</span>${(p.avgStar ?? 0).toFixed(1)}
+            (${LANG === 'en' ? (p.reviewCount ?? 0) + ' reviews' : '리뷰 ' + (p.reviewCount ?? 0) + '개'})
+            <span class="card-dist">📍 ${distStr(p.distance)}</span>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  /* ── 선택 ── */
+  function selectPlace(name) {
+    closeDetail();
+    activePinId = name;
+    render();
+    document.getElementById('card-' + encodeId(name))?.scrollIntoView({behavior:'smooth', block:'nearest'});
+    const p = PLACES.find(x => x.name === name);
+    if (p && p.lat && p.lng && map) map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
+    showPopupOverlay(name);
+  }
+
+  /* ── 팝업 오버레이 ── */
+  function showPopupOverlay(name) {
+    if (popupOverlay) { popupOverlay.setMap(null); popupOverlay = null; }
+    currentPopupName = name;
+    const p = PLACES.find(x => x.name === name);
+    if (!p || !p.lat || !p.lng || !map) return;
+
+    const content = `
+      <div style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);
+                  width:240px;overflow:hidden;border:1px solid #e8d5c4;">
+        <div style="height:90px;background:#fdf6f0;display:flex;align-items:center;
+                    justify-content:center;font-size:36px;position:relative;">
+          ☕
+          <button onmousedown="closePopup()"
+            style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.4);
+                   color:#fff;border:none;border-radius:50%;width:22px;height:22px;
+                   cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
+        </div>
+        <div style="padding:12px;">
+          <div style="font-size:14px;font-weight:700;margin-bottom:3px;">${p.name ?? '-'}</div>
+          <div style="font-size:12px;color:#64748b;margin-bottom:8px;">
+            ★ ${(p.avgStar ?? 0).toFixed(1)} · ${distStr(p.distance)} · ${T.aiLabel} ${((p.finalScore??0)*100).toFixed(0)}${LANG === 'en' ? 'pt' : '점'}
+          </div>
+          <a href="#" onmousedown="openDetail('${escJS(name)}');event.preventDefault()"
+             style="display:block;width:100%;padding:8px;background:#6f4e37;color:#fff;
+                    border-radius:8px;font-size:13px;font-weight:600;text-align:center;text-decoration:none;">
+            ${T.detailsBtn}
+          </a>
+        </div>
+      </div>`;
+
+    popupOverlay = new kakao.maps.CustomOverlay({
+      map: map,
+      position: new kakao.maps.LatLng(p.lat, p.lng),
+      content: content,
+      yAnchor: 1.45,
+      zIndex: 40
+    });
+  }
+
+  function closePopup() {
+    if (popupOverlay) { popupOverlay.setMap(null); popupOverlay = null; }
+    currentPopupName = null;
+    activePinId = null;
+    render();
+  }
+
+  /* ── 상세 패널 ── */
+  function openDetail(name) {
+    const p = PLACES.find(x => x.name === name);
+    if (!p) return;
+    if (popupOverlay) { popupOverlay.setMap(null); popupOverlay = null; }
+
+    document.getElementById('dpTitle').textContent = p.name ?? '-';
+    document.getElementById('dpName').textContent  = p.name ?? '-';
+    document.getElementById('dpSub').textContent   = p.googleName ?? '';
+
+    document.getElementById('dpBadges').innerHTML =
+            `<span class="dp-badge db-brown">${T.cafeBadge}</span>
+       <span class="dp-badge db-gold">🏆 ${((p.finalScore??0)*100).toFixed(0)}${LANG === 'en' ? 'pt' : '점'}</span>
+       ${(p.reviewCount??0) >= 10 ? `<span class="dp-badge db-green">${T.popularBadge}</span>` : ''}`;
+
+    const stars = Math.round(p.avgStar ?? 0);
+    document.getElementById('dpStars').innerHTML =
+            `<span class="s">${'★'.repeat(stars)}${'☆'.repeat(5-stars)}</span>
+       <span class="sc">${(p.avgStar??0).toFixed(1)}</span>
+       <span class="sm">/ 5.0 &nbsp;·&nbsp; ${LANG === 'en' ? (p.reviewCount??0) + ' reviews' : '리뷰 ' + (p.reviewCount??0) + '개'}</span>`;
+
+    document.getElementById('dpInfoRow').innerHTML = `
+      <div class="dp-info"><div class="dp-info-label">${T.labelAvgReview}</div>
+        <div class="dp-info-val">★ ${(p.reviewMean??0).toFixed(1)} / 5.0</div></div>
+      <div class="dp-info"><div class="dp-info-label">${T.labelDistance}</div>
+        <div class="dp-info-val">${distStr(p.distance)}${T.distSuffix}</div></div>
+      <div class="dp-info"><div class="dp-info-label">${T.labelAiScore}</div>
+        <div class="dp-info-val">🏆 ${((p.finalScore??0)*100).toFixed(1)} / 100</div></div>
+      <div class="dp-info"><div class="dp-info-label">${T.labelCoords}</div>
+        <div class="dp-info-val">${(p.lat??0).toFixed(4)}, ${(p.lng??0).toFixed(4)}</div></div>`;
+
+    const reviews = p.reviews ?? [];
+    const avg = (p.reviewMean ?? p.avgStar ?? 0).toFixed(1);
+    document.getElementById('dpRevSummary').innerHTML = `
+      <div><div class="rev-score">${avg}</div>
+        <div style="color:var(--gold);font-size:14px;margin-top:4px">${'★'.repeat(Math.round(parseFloat(avg)))}</div>
+      </div>
+      <div class="rev-right"><div class="rev-bars">
+        ${[5,4,3,2,1].map(s => {
+      const cnt = reviews.filter(r => Math.round(r.rating ?? 0) === s).length;
+      const pct = reviews.length ? Math.round(cnt / reviews.length * 100) : 0;
+      return `<div class="rev-row"><span>${s}</span>
+            <div class="rev-track"><div class="rev-fill" style="width:${pct}%"></div></div>
+            <span>${pct}%</span></div>`;
+    }).join('')}
+      </div></div>`;
+
+    document.getElementById('dpReviews').innerHTML = reviews.length > 0
+            ? reviews.slice(0, 5).map(r => `
+        <div class="review-item">
+          <div class="ri-top"><div><div class="ri-name">${T.reviewerLabel}</div></div>
+            <div class="ri-stars">${'★'.repeat(Math.round(r.rating ?? 0))}</div></div>
+          <div class="ri-text">${r.content ?? ''}</div>
+        </div>`).join('')
+            : `<p style="color:var(--gray);font-size:13px;padding:12px 0">${T.noReviews}</p>`;
+
+    window._detailPlace = p;
+    document.getElementById('detailPanel').classList.add('open');
+  }
+
+  function closeDetail() {
+    document.getElementById('detailPanel').classList.remove('open');
+    window._detailPlace = null;
+  }
+
+  /* ── 버튼 액션 ── */
+  function openTransportMap() {
+    const p = window._detailPlace;
+    if (!p) return;
+    const endTitle = encodeURIComponent(p.name);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+              pos => location.href = `${TRANSPORT_PREFIX}/transport/search?startLat=${pos.coords.latitude}&startLng=${pos.coords.longitude}&end=${endTitle}`,
+              ()   => location.href = `${TRANSPORT_PREFIX}/transport/search?startLat=${userLat}&startLng=${userLon}&end=${endTitle}`
+      );
+    } else {
+      location.href = `${TRANSPORT_PREFIX}/transport/search?startLat=${userLat}&startLng=${userLon}&end=${endTitle}`;
+    }
+  }
+
+  function openTourMap() {
+    const p = window._detailPlace;
+    if (!p) return;
+    location.href = `/tour/all?lang=${TOUR_LANG}&lat=${p.lat}&lon=${p.lng}`;
+  }
+
+  function openFoodMap() {
+    const p = window._detailPlace;
+    if (!p) return;
+    location.href = `${PREFIX}/foodmap/mylocation/${p.lat}/${p.lng}`;
+  }
+
+  /* ── 현위치 ── */
+  function getLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+              pos => location.href = `${PREFIX}/cafe/mylocation/${pos.coords.latitude}/${pos.coords.longitude}`,
+              ()  => location.href = `${PREFIX}/cafe/mylocation/37.5665/126.9780`
+      );
+    } else {
+      location.href = `${PREFIX}/cafe/mylocation/37.5665/126.9780`;
+    }
+  }
+
+  /* ── 언어 전환 ── */
+  function switchLang(toLang) {
+    const path   = location.pathname;
+    const search = location.search;
+    if (toLang === 'en') {
+      location.href = path.replace('/cafe/', '/en/cafe/') + search;
+    } else {
+      location.href = path.replace('/en/cafe/', '/cafe/') + search;
+    }
+  }
+
+  document.getElementById('mapArea').addEventListener('click', function(e) {
+    if (!e.target.closest('.map-popup') && !e.target.closest('.detail-panel')) closePopup();
+  });
+
+  render();
+  setTimeout(updateScrollBtns, 100);
+
+  if (PLACES.length === 0 && !location.pathname.includes('/cafe/mylocation')) {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+              pos => location.href = `${PREFIX}/cafe/mylocation/${pos.coords.latitude}/${pos.coords.longitude}`,
+              ()  => location.href = `${PREFIX}/cafe/mylocation/37.5665/126.9780`
+      );
+    } else {
+      location.href = `${PREFIX}/cafe/mylocation/37.5665/126.9780`;
+    }
+  }
+</script>
+
+<script th:src="|https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoKey}&autoload=false|"></script>
+<script>
+  kakao.maps.load(function () {
+    map = new kakao.maps.Map(document.getElementById('kakaoMap'), {
+      center: new kakao.maps.LatLng(userLat, userLon),
+      level: 5
+    });
+
+    const myMarkerImg = new kakao.maps.MarkerImage(
+            'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
+            new kakao.maps.Size(30, 40)
+    );
+    new kakao.maps.Marker({
+      map,
+      position: new kakao.maps.LatLng(userLat, userLon),
+      title: LANG === 'en' ? 'My Location' : '내 위치',
+      image: myMarkerImg
+    });
+
+    PLACES.forEach(p => {
+      if (!p.lat || !p.lng) return;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+        <ellipse cx="16" cy="38" rx="6" ry="2.5" fill="rgba(0,0,0,0.18)"/>
+        <path d="M16 2 C8.268 2 2 8.268 2 16 C2 26 16 38 16 38 C16 38 30 26 30 16 C30 8.268 23.732 2 16 2Z"
+              fill="#6f4e37" stroke="#4a3220" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="7" fill="white" opacity="0.9"/>
+        <text x="16" y="20" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#4a3220">☕</text>
+      </svg>`;
+      const markerImage = new kakao.maps.MarkerImage(
+              'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+              new kakao.maps.Size(32, 40)
+      );
+      const marker = new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(p.lat, p.lng), title: p.name, image: markerImage });
+      kakao.maps.event.addListener(marker, 'click', () => selectPlace(p.name));
+    });
+  });
+</script>
+</body>
+</html>
