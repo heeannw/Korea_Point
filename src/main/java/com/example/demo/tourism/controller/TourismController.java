@@ -60,6 +60,7 @@ public class TourismController {
     public String tourSearch(
             @RequestParam(required = false) String keyword,
             Model model, @RequestParam("lang") String lang,
+            @RequestParam(value = "spotname",defaultValue = "my location") String spotname,
             HttpSession session) {
 
         Double userlat = (Double) session.getAttribute("userlat");
@@ -119,6 +120,7 @@ public class TourismController {
 
         List<TourPlaceDto> nearbyList = tourismService.analyzeLocation(lat, lon, lang);
 
+        model.addAttribute("spotname", "내위치");
         model.addAttribute("lang", lang);
         model.addAttribute("list", nearbyList);
         model.addAttribute("centerLat", lat);

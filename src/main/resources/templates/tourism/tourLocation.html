@@ -8,6 +8,8 @@
 <body>
 
 <script>
+
+  let lang = [[${lang}]]
   $(document).ready(function () {
 
     // ✅ 이미 동의한 경우 → alert 없이 바로 위치 가져오기
@@ -42,11 +44,11 @@
         function (pos) {
           const lat = pos.coords.latitude;
           const lon = pos.coords.longitude;
-          location.href = "/tour/all?lang=EN&lat=" + lat + "&lon=" + lon;
+          location.href = "/tour/all?lat=" + lat + "&lon=" + lon + "&lang=" + lang;
         },
         function () {
           // 위치 거부 또는 실패 → 기본 좌표(서울 시청)로 이동
-          location.href = "/tour/all?lang=EN&lat=37.5665&lon=126.9780";
+          location.href = "/tour/all?lat=37.5665&lon=126.9780?lang=" + lang;
         },
         {
           enableHighAccuracy: true,

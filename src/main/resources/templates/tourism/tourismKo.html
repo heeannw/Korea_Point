@@ -159,6 +159,20 @@
       text-align:center;
     }
     .dp-action-btn:hover{background:var(--blue-dk)}
+    .food-btn:hover{background: #ed59a7;}
+    .cafe-btn:hover{background: #322012;}
+    .route-btn:hover{background:#1a7de0;}
+    .food-btn{
+      background:#F472B6FF;
+    }
+
+    .cafe-btn{
+      background:#4A3220FF;
+    }
+
+    .route-btn{
+      background:#3b9eff;
+    }
   </style>
 </head>
 <body>
@@ -211,7 +225,7 @@
     <div class="filter-wrap">
       <button class="scroll-btn left" id="scrollLeft" onclick="scrollFilter(-1)" disabled>‹</button>
       <div class="filter-row" id="filterRow">
-        <div class="chip active" data-cat="All" onclick="setCategory('전체')">🗺️ 전체</div>
+        <div class="chip active" data-cat="All" onclick="setCategory('All')">🗺️ 전체</div>
         <div class="chip" data-cat="Cultural Site" onclick="setCategory('문화시설')">🏛️ 문화시설</div>
         <div class="chip" data-cat="Museum" onclick="setCategory('박물관')">🏺 박물관</div>
         <div class="chip" data-cat="Nature" onclick="setCategory('자연')">🌿 자연</div>
@@ -261,9 +275,9 @@
         <div id="dpReviews"></div>
       </div>
       <div class="dp-action">
-        <button class="dp-action-btn" id="itineraryBtn">🍽️근처 음식점</button>
-        <button class="dp-action-btn" id="itineraryBtn1">☕️근처 카페</button>
-        <button class="dp-action-btn" id="itineraryBtn2" type="button">🚊관광지 찾아가기</button>
+        <button class="dp-action-btn food-btn" id="itineraryBtn">🍽️근처 음식점</button>
+        <button class="dp-action-btn cafe-btn" id="itineraryBtn1">☕️근처 카페</button>
+        <button class="dp-action-btn route-btn" id="itineraryBtn2" type="button">🚊관광지 찾아가기</button>
       </div>
     </div>
   </div>
@@ -527,17 +541,16 @@
         <div class="ri-text">${r.text ?? ''}</div>
       </div>`).join('');
 
-    document.getElementById('detailPanel').classList.add('open');
 
     document.getElementById('itineraryBtn').onclick = function() {
       if (p.lat && p.lng) {
-        location.href = `/en/cafe/mylocation/${p.lat}/${p.lng}`;
+        location.href = `/en/foodmap/mylocation/${p.lat}/${p.lng}`;
       }
     };
 
     document.getElementById('itineraryBtn1').onclick = function() {
       if (p.lat && p.lng) {
-        location.href = `/en/foodmap/mylocation/${p.lat}/${p.lng}`;
+        location.href = `/en/cafe/mylocation/${p.lat}/${p.lng}`;
       }
     };
 
@@ -562,6 +575,8 @@
               }
       );
     };
+
+    document.getElementById('detailPanel').classList.add('open');
   }
 
   function closeDetail() {
@@ -681,8 +696,8 @@
       level: 5
     });
     const myLocationImage = new kakao.maps.MarkerImage(
-            "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png",
-            new kakao.maps.Size(40, 42)
+            'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
+            new kakao.maps.Size(36, 48)
     );
     markerMap = [];
     if (userLat && userLon) {
