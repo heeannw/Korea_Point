@@ -390,7 +390,7 @@
         activeOverlays.forEach(o => o.setMap(null));
         activeOverlays = [];
         if (!resolved.length) return;
-        const groups = clusterItems(resolved, 48);
+        const groups = clusterItems(resolved, map.getLevel() * 5);
         groups.forEach(group => {
             if (group.length === 1) {
                 const item = resolved[group[0]], idx = group[0];
@@ -427,7 +427,7 @@
         activeOverlays.forEach(o => o.setMap(null));
         activeOverlays = [];
         if (!resolved.length) return;
-        clusterItems(resolved, 48).forEach(group => {
+        clusterItems(resolved, map.getLevel() * 5).forEach(group => {
             if (group.length === 1) {
                 const item = resolved[group[0]], idx = group[0];
                 const cfg = CAT[item.slot.category] || CAT.tourism;
