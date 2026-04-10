@@ -7,9 +7,9 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>Transit Search — KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/common/variables.css}">
-    <link rel="stylesheet" th:href="@{/css/common/reset.css}">
-    <link rel="stylesheet" th:href="@{/css/common/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/transport/t_common/variable.css}">
+    <link rel="stylesheet" th:href="@{/css/transport/t_common/reset.css}">
+    <link rel="stylesheet" th:href="@{/css/transport/t_common/layout.css}">
     <link rel="stylesheet" th:href="@{/css/transport/transportSearch.css}">
     <style>
         /* 공통 CSS와 다른 부분만 오버라이드 */
@@ -336,6 +336,11 @@
     setupAutocomplete('startInput', 'startAcList');
     setupAutocomplete('endInput', 'endAcList');
 
+    // Auto-fill destination from URL parameter (?end=placeName)
+    (function(){ const p = new URLSearchParams(location.search);
+        if(p.get('end'))   document.getElementById('endInput').value   = p.get('end');
+        if(p.get('start')) document.getElementById('startInput').value = p.get('start'); })();
+
     function goDetail(el) {
         const routeId = el.getAttribute('data-route-id');
         const typeText = el.querySelector('.route-type').textContent.trim();
@@ -441,6 +446,14 @@
         // 현재위치 좌표는 도착지로 이동하면 의미 없으므로 초기화
         startLat.value = '';
         startLng.value = '';
+    }
+
+    //04.09 버그로 인해 수정
+    function getCsrfToken() {
+        const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+        if (token && header) return { token, header };
+        return null;
     }
 </script>
 
