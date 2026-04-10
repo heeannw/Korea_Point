@@ -5,7 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Korea Point | 한국 여행 가이드</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Cormorant+Garamond:wght@600;700&family=Sora:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!--
+        home.ko.html 구조 안내
+        1. style: 전체 CSS
+        2. header: 로고 / 언어 버튼 / 로그인 버튼
+        3. hero: 메인 슬라이더와 대표 문구
+        4. categories: 주요 서비스 바로가기
+        5. popular-section: 인기 관광지 카드
+        6. community-section: 최신 게시글 목록
+        7. footer: 정책 링크와 소셜 링크
+        8. script: 히어로 슬라이더 동작
+    -->
     <style>
+        /* ===== 1. 디자인 토큰 및 기본 리셋 ===== */
         :root {
             --primary: #3b9eff;
             --primary-dark: #1a7de0;
@@ -45,6 +57,7 @@
             font: inherit;
         }
 
+        /* ===== 2. 헤더 ===== */
         header {
             position: sticky;
             top: 0;
@@ -118,6 +131,7 @@
             color: #ffffff;
         }
 
+        /* ===== 3. 히어로 ===== */
         .hero {
             position: relative;
             height: 100vh;
@@ -348,8 +362,11 @@
             font-size: 15px;
             font-weight: 600;
             color: var(--gray);
+            text-align: center;
+            line-height: 1.35;
         }
 
+        /* ===== 4. 공통 섹션 제목 스타일 ===== */
         .section {
             max-width: 1440px;
             margin: 0 auto;
@@ -420,6 +437,7 @@
             gap: 12px;
         }
 
+        /* ===== 5. 인기 관광지 ===== */
         .popular-section .section-header {
             display: flex;
             align-items: flex-end;
@@ -490,7 +508,11 @@
             flex: 1 1 auto;
             height: auto;
             min-height: 460px;
-            background-position: center top;
+            background-position: center 50%;
+        }
+
+        .popular-card.namsan-card .popular-image {
+            background-position: center 25%;
         }
 
         .popular-body {
@@ -529,6 +551,7 @@
             font-weight: 400;
         }
 
+        /* ===== 6. 커뮤니티 피드 ===== */
         .community-section {
             background: var(--dark);
         }
@@ -655,6 +678,7 @@
             white-space: nowrap;
         }
 
+        /* ===== 7. 푸터 ===== */
         footer {
             background: #ffffff;
             padding: 32px 80px 28px;
@@ -796,6 +820,7 @@
             color: #a0aabc;
         }
 
+        /* ===== 8. 반응형 규칙 ===== */
         @media (max-width: 1024px) {
             .section,
             .community-inner,
@@ -827,7 +852,11 @@
             .popular-card.featured .popular-image {
                 height: 240px;
                 min-height: 0;
-                background-position: center;
+                background-position: center 48%;
+            }
+
+            .popular-card.namsan-card .popular-image {
+                background-position: center 25%;
             }
         }
 
@@ -909,6 +938,7 @@
     </style>
 </head>
 <body>
+<!-- 헤더: 상단 로고와 언어 버튼 -->
 <header>
     <a class="logo" th:href="@{/ko}" href="/ko">Korea<span>Point</span></a>
 
@@ -919,12 +949,13 @@
     </div>
 </header>
 
+<!-- 히어로: 메인 문구가 들어가는 전체 폭 슬라이더 -->
 <section class="hero">
     <div class="slider-track" id="sliderTrack">
         <div class="slide"
              th:each="slide : ${slides}"
              th:style="|background-image:url('${slide.imageUrl}')|"
-             style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/c/c3/KOCIS_Korea_BlueSky_In_Seoul_03_%289947223046%29.jpg')"></div>
+             style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/c/cc/N_Seoul_Tower_%2813952097192%29.jpg')"></div>
     </div>
 
     <button class="hero-arrow left" type="button" onclick="moveSlide(-1)" aria-label="Previous slide">
@@ -964,18 +995,19 @@
     </div>
 </section>
 
+<!-- 카테고리: 주요 서비스 페이지로 이동하는 바로가기 -->
 <section class="categories" id="categorySection">
     <div class="category-grid">
         <a class="category-item" th:href="@{/foodmap/all(category='RESTAURANT')}" href="/foodmap/all?category=RESTAURANT">
-            <span class="category-icon">🍽</span>
+            <span class="category-icon">🍴</span>
             <span>음식</span>
         </a>
         <a class="category-item" th:href="@{/foodmap/all(category='CAFE')}" href="/foodmap/all?category=CAFE">
             <span class="category-icon">☕</span>
             <span>카페</span>
         </a>
-        <a class="category-item" th:href="@{/tour/all}" href="/tour/all">
-            <span class="category-icon">🗺</span>
+        <a class="category-item" th:href="@{/tour/location(lang=ko)}" href="/tour/all?lang=ko">
+            <span class="category-icon">📷</span>
             <span>관광</span>
         </a>
         <a class="category-item" th:href="@{/transport/search}" href="/transport/search">
@@ -986,9 +1018,14 @@
             <span class="category-icon">💬</span>
             <span>커뮤니티</span>
         </a>
+        <div class="category-item" aria-label="나만의 여행">
+            <span class="category-icon">🧳</span>
+            <span>나만의 여행</span>
+        </div>
     </div>
 </section>
 
+<!-- 인기 관광지: 한국어 홈에서 보여주는 상위 3개 관광지 카드 -->
 <section class="section popular-section">
     <div class="section-header">
         <div>
@@ -999,6 +1036,7 @@
     </div>
 
     <div class="popular-grid">
+        <!-- 대표 카드: 목록의 첫 번째 관광지 카드 -->
         <article class="popular-card featured"
                  th:if="${!#lists.isEmpty(attractions)}"
                  th:with="attraction=${attractions[0]}">
@@ -1006,7 +1044,7 @@
                 <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 1</div>
                 <div class="popular-image"
                      th:style="|background-image:url('${attraction.imageUrl}')|"
-                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Gyeongbokgung_Palace_Geunjeongjeon.jpg/800px-Gyeongbokgung_Palace_Geunjeongjeon.jpg')"></div>
+                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/4/46/%EA%B2%BD%EB%B3%B5%EA%B6%81_%ED%9D%A5%EB%A1%80%EB%AC%B8_%EC%A0%84%EC%B2%B4_%EC%A0%84%EA%B2%BD%28%EA%B6%81%EB%8A%A5%EC%9C%A0%EC%A0%81%EB%B3%B8%EB%B6%80%29-min.jpg')"></div>
             </div>
             <div class="popular-body">
                 <div class="popular-title" th:text="${attraction.titleKo}">경복궁</div>
@@ -1018,14 +1056,16 @@
             </div>
         </article>
 
+        <!-- 나머지 카드: 남은 관광지 카드를 반복 출력 -->
         <article class="popular-card"
                  th:each="attraction, iter : ${attractions}"
+                 th:classappend="${attraction.titleKo == '남산서울타워'} ? ' namsan-card'"
                  th:if="${!iter.first}">
             <div class="popular-media">
                 <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 2</div>
                 <div class="popular-image"
                      th:style="|background-image:url('${attraction.imageUrl}')|"
-                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Gyeongbokgung_Palace_Geunjeongjeon.jpg/800px-Gyeongbokgung_Palace_Geunjeongjeon.jpg')"></div>
+                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/4/46/%EA%B2%BD%EB%B3%B5%EA%B6%81_%ED%9D%A5%EB%A1%80%EB%AC%B8_%EC%A0%84%EC%B2%B4_%EC%A0%84%EA%B2%BD%28%EA%B6%81%EB%8A%A5%EC%9C%A0%EC%A0%81%EB%B3%B8%EB%B6%80%29-min.jpg')"></div>
             </div>
             <div class="popular-body">
                 <div class="popular-title" th:text="${attraction.titleKo}">북촌한옥마을</div>
@@ -1039,6 +1079,7 @@
     </div>
 </section>
 
+<!-- 커뮤니티 미리보기: 게시판 최신 글 목록 -->
 <section class="community-section">
     <div class="community-inner">
         <div class="section-header-row">
@@ -1086,6 +1127,7 @@
     </div>
 </section>
 
+<!-- 푸터: 서비스 정보, 정책 링크, 소셜 링크 -->
 <footer>
     <div class="footer-inner">
         <div class="footer-top">
@@ -1150,6 +1192,7 @@
 </footer>
 
 <script>
+    // 화살표, 점 표시, 자동 재생이 함께 쓰는 슬라이더 상태값입니다.
     let current = 0;
     const track = document.getElementById("sliderTrack");
     const dots = document.querySelectorAll(".hero-dot");
@@ -1162,6 +1205,7 @@
         totalEl.textContent = String(total).padStart(2, "0");
     }
 
+    // 특정 슬라이드로 바로 이동하고 현재 활성 상태를 함께 갱신합니다.
     function goSlide(index) {
         if (total === 0) return;
         current = index;
@@ -1176,11 +1220,13 @@
         }
     }
 
+    // 화살표 또는 자동 재생 기준으로 한 칸 앞뒤로 이동합니다.
     function moveSlide(direction) {
         if (total === 0) return;
         goSlide((current + direction + total) % total);
     }
 
+    // 슬라이드가 2개 이상일 때만 자동 재생합니다.
     if (total > 1) {
         autoPlay = setInterval(() => moveSlide(1), 5000);
     }
