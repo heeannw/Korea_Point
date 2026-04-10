@@ -336,6 +336,11 @@
     setupAutocomplete('startInput', 'startAcList');
     setupAutocomplete('endInput', 'endAcList');
 
+    // Auto-fill destination from URL parameter (?end=placeName)
+    (function(){ const p = new URLSearchParams(location.search);
+        if(p.get('end'))   document.getElementById('endInput').value   = p.get('end');
+        if(p.get('start')) document.getElementById('startInput').value = p.get('start'); })();
+
     function goDetail(el) {
         const routeId = el.getAttribute('data-route-id');
         const typeText = el.querySelector('.route-type').textContent.trim();

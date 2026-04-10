@@ -345,6 +345,13 @@
     setupAutocomplete('startInput', 'startAcList');
     setupAutocomplete('endInput', 'endAcList');
 
+    // URL 파라미터로 출발지/도착지 자동 입력 (?end=장소명)
+    (function() {
+        const p = new URLSearchParams(location.search);
+        if (p.get('end'))   document.getElementById('endInput').value   = p.get('end');
+        if (p.get('start')) document.getElementById('startInput').value = p.get('start');
+    })();
+
     function goDetail(el) {
         const routeId = el.getAttribute('data-route-id');
 

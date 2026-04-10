@@ -111,7 +111,9 @@ public class TransportRouteController {
                     && startLng != null && !startLng.isEmpty();
 
             // ✅ 시작점 없으면 검색 안함 (최근검색만 보여줌)
+            // 단, end는 model에 담아서 input에 자동 입력되도록 함
             if ((start == null || start.isEmpty()) && !hasCoords) {
+                if (end != null && !end.isEmpty()) model.addAttribute("end", end);
                 return viewName;
             }
 

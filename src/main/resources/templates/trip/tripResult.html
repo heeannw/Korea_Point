@@ -464,9 +464,44 @@
         map.panTo(new kakao.maps.LatLng(lat, lng));
     }
 
-    /* ─── 줌 변경 시 재클러스터링 ─── */
+    /* ─── 오버레이만 재렌더링 (경로선 유지) ─── */
+    function renderMarkersOnly(resolved) {
+        activeOverlays.forEach(o => o.setMap(null));
+        activeOverlays = [];
+        if (!resolved.length) return;
+        clusterItems(resolved, 48).forEach(group => {
+            if (group.length === 1) {
+                const item = resolved[group[0]], idx = group[0];
+                const cfg = CAT[item.slot.category] || CAT.tourism;
+                const ov = new kakao.maps.CustomOverlay({
+                    position: new kakao.maps.LatLng(item.lat, item.lng), yAnchor: 1.1, zIndex: 3,
+                    content: `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer" onclick="focusSlot(${idx})">
+                        <div style="width:34px;height:34px;border-radius:50%;background:${cfg.color};border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 3px 10px rgba(0,0,0,.22);">${cfg.icon}</div>
+                        <div style="margin-top:4px;background:${cfg.color};color:#fff;padding:3px 10px;border-radius:50px;font-size:10px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.18);font-family:'DM Sans',sans-serif;">${item.slot.placeName}</div>
+                    </div>`
+                });
+                ov.setMap(map); activeOverlays.push(ov);
+            } else {
+                const avgLat = group.reduce((s,i) => s+resolved[i].lat, 0)/group.length;
+                const avgLng = group.reduce((s,i) => s+resolved[i].lng, 0)/group.length;
+                const ov = new kakao.maps.CustomOverlay({
+                    position: new kakao.maps.LatLng(avgLat, avgLng), yAnchor: 0.5, zIndex: 4,
+                    content: `<div onclick="zoomToCluster(${avgLat},${avgLng})" style="width:44px;height:44px;border-radius:50%;background:rgba(59,158,255,.9);border:3px solid #fff;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(59,158,255,.45);font-family:'DM Sans',sans-serif;">
+                        <div style="font-size:16px;font-weight:900;color:#fff;line-height:1">${group.length}</div>
+                        <div style="font-size:8px;color:rgba(255,255,255,.8);margin-top:1px">장소</div>
+                    </div>`
+                });
+                ov.setMap(map); activeOverlays.push(ov);
+            }
+        });
+    }
+
+    /* ─── 줌 변경 시 재클러스터링 (디바운스, 경로선 유지) ─── */
+    let _zoomTimer = null;
     kakao.maps.event.addListener(map, 'zoom_changed', () => {
-        if (currentResolved.length) renderMarkers(currentResolved);
+        if (!currentResolved.length) return;
+        clearTimeout(_zoomTimer);
+        _zoomTimer = setTimeout(() => renderMarkersOnly(currentResolved), 150);
     });
 
     /* ─── 경로선 (출발 → 마지막 순서대로 파란 실선) ─── */
@@ -548,8 +583,8 @@
             ${slot.alternatives?.length
                 ? `<span class="alt-toggle" onclick="toggleAlt(event,${idx})">대체 후보 ▾</span>
                  <div class="alt-list" id="al${idx}">
-                 ${slot.alternatives.map(a => `
-                   <div class="alt-item">
+                 ${slot.alternatives.map((a, ai) => `
+                   <div class="alt-item" onclick="selectAlt(event,${idx},${ai})">
                      ${a.placeName}
                      <span style="color:var(--blue);font-weight:700"> ${a.score.toFixed(4)}</span>
                      ${a.distanceKm ? `<span style="color:var(--gray)"> · ${a.distanceKm}km</span>` : ''}
@@ -567,10 +602,52 @@
         const item = dayCache[currentDay]?.[idx];
         if (!item) return;
         if (item.lat && item.lng) {
-            map.setLevel(4);
+            map.setLevel(3);
             map.panTo(new kakao.maps.LatLng(item.lat, item.lng));
         }
         openDetail(item.slot, item.lat, item.lng);
+    }
+
+    /* ─── 대체 후보 선택 ─── */
+    function selectAlt(e, slotIdx, altIdx) {
+        e.stopPropagation();
+        const dayData = tripResult.schedule.find(d => d.day === currentDay);
+        if (!dayData) return;
+        const origSlot = dayData.slots[slotIdx];
+        const alt = origSlot?.alternatives?.[altIdx];
+        if (!alt) return;
+
+        // 전체 일정에서 같은 장소명의 슬롯을 찾아 리뷰·별점 데이터 재사용
+        let matchSlot = null;
+        for (const day of tripResult.schedule) {
+            matchSlot = day.slots.find(s => s.placeName === alt.placeName);
+            if (matchSlot) break;
+        }
+        // 추천 목록에서도 탐색
+        if (!matchSlot) {
+            const allRec = [...(tripResult.foodList||[]), ...(tripResult.tourismList||[]), ...(tripResult.cafeList||[])];
+            const rec = allRec.find(r => r.name === alt.placeName);
+            if (rec) matchSlot = { placeName: rec.name, avgRating: rec.avgRating, reviewCount: rec.reviewCount, address: rec.address, imageUrl: rec.imageUrl, reviews: [] };
+        }
+
+        const altSlot = {
+            placeName:   alt.placeName,
+            category:    origSlot.category,
+            time:        origSlot.time,
+            reason:      `대체 후보 (원래: ${origSlot.placeName})`,
+            score:       alt.score,
+            avgRating:   matchSlot?.avgRating   || 0,
+            reviewCount: matchSlot?.reviewCount || 0,
+            address:     matchSlot?.address     || '',
+            imageUrl:    matchSlot?.imageUrl    || '',
+            reviews:     matchSlot?.reviews     || []
+        };
+
+        if (alt.lat && alt.lng) {
+            map.setLevel(3);
+            map.panTo(new kakao.maps.LatLng(alt.lat, alt.lng));
+        }
+        openDetail(altSlot, alt.lat, alt.lng);
     }
 
     /* ─── 대체 후보 토글 ─── */
@@ -665,9 +742,39 @@
             revSection.style.display = 'block';
         }
 
-        // 교통 검색 버튼
-        document.getElementById('dpTransBtn').onclick = () =>
-            location.href = `/ko/transport/search?end=${encodeURIComponent(slot.placeName)}`;
+        // 교통 검색 버튼 — 현재 위치를 출발지로 자동 입력
+        document.getElementById('dpTransBtn').onclick = () => {
+            const dest = encodeURIComponent(slot.placeName);
+            const base = `/ko/transport/search?end=${dest}`;
+
+            if (!navigator.geolocation) {
+                // 위치 API 없으면 그냥 이동
+                location.href = base;
+                return;
+            }
+
+            // 버튼 로딩 상태
+            const btn = document.getElementById('dpTransBtn');
+            const orig = btn.textContent;
+            btn.textContent = '📍 위치 확인 중...';
+            btn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    // 성공: 좌표를 URL에 담아 이동
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    location.href = `${base}&startLat=${lat}&startLng=${lng}`;
+                },
+                () => {
+                    // 실패(거부 등): 출발지 없이 이동
+                    btn.textContent = orig;
+                    btn.disabled = false;
+                    location.href = base;
+                },
+                { timeout: 5000 }  // 5초 안에 못 받으면 포기
+            );
+        };
 
         document.getElementById('detailPanel').classList.add('open');
     }
