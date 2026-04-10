@@ -374,7 +374,7 @@
     activeOverlays.forEach(o => o.setMap(null));
     activeOverlays = [];
     if (!resolved.length) return;
-    clusterItems(resolved, 48).forEach(group => {
+    clusterItems(resolved, Math.max(40, 120 / map.getLevel())).forEach(group => {
       if (group.length === 1) {
         const item = resolved[group[0]], idx = group[0];
         const cfg = CAT[item.slot.category] || CAT.tourism;
@@ -567,8 +567,14 @@
     _pendingSwap = null;
     closeDetail();
     renderSchedule(dayIdx);
-    renderMarkers(dayCache[dayIdx]);
-    currentResolved = dayCache[dayIdx];
+    activeLines.forEach(l => l.setMap(null));
+    activeLines = [];
+    const newResolved = dayCache[dayIdx];
+    renderMarkers(newResolved);
+    currentResolved = newResolved;
+    const coords = newResolved.filter(i => i.lat && i.lng).map(i => ({ lat: i.lat, lng: i.lng }));
+    if (coords.length > 1) drawRoute(coords);
+    if (coords.length) fitBounds(coords);
   }
 
   /* ─── 장소 상세 패널 ─── */
