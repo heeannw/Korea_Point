@@ -7,6 +7,8 @@ import com.example.demo.community.service.PostService;
 import com.example.demo.user.util.SecurityUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -20,14 +22,21 @@ public class CommunityController {
     private final PostService postService;
     private final CommentService commentService;
 
-    // 게시글 목록 (카테고리 필터, 검색어 지원)
+    // 게시글 목록 (카테고리 필터, 검색어, 페이지, 정렬 지원)
     @GetMapping("/post-list")
     public String getPosts(@RequestParam(required = false) Long categoryId,
                            @RequestParam(required = false) String keyword,
+                           @RequestParam(defaultValue = "0") int page,
+                           @RequestParam(defaultValue = "latest") String sort,
                            Model model) {
-        model.addAttribute("data", communityService.getCommunityPageData(categoryId, keyword));
+        Sort sortOrder = "popular".equals(sort)
+                ? Sort.by("viewCount").descending()
+                : Sort.by("createdAt").descending();
+        var pageable = PageRequest.of(page, 10, sortOrder);
+        model.addAttribute("data", communityService.getCommunityPageData(categoryId, keyword, pageable));
         model.addAttribute("selectedCategory", categoryId);
-        model.addAttribute("keyword", keyword);
+        model.addAttribute("keyword", keyword != null ? keyword : "");
+        model.addAttribute("sort", sort);
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         return "community/post-list";

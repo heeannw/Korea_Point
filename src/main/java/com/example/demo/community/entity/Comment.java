@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "comment")
+@Table(name = "comments")
 public class Comment {
 
     @Id
@@ -47,7 +47,7 @@ public class Comment {
     private List<Comment> children = new ArrayList<>();
 
     // 내용 (소프트 딜리트 시 "삭제된 댓글입니다" 표시용으로 nullable)
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "CLOB")
     private String content;
 
     // 소프트 딜리트 (NULL이면 정상, 값 있으면 삭제 — 대댓글 고아 방지)

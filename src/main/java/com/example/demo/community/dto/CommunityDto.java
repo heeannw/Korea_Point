@@ -1,6 +1,7 @@
 package com.example.demo.community.dto;
 
 import lombok.*;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -9,7 +10,7 @@ import java.util.List;
 @Builder
 public class CommunityDto {
 
-    private List<PostDto> posts;
+    private Page<PostDto> posts;
     private List<CategoryDto> categories;
     private List<PostDto> trendingPosts;
 }

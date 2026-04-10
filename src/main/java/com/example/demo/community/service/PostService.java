@@ -9,6 +9,8 @@ import com.example.demo.community.repository.PostRepository;
 import com.example.demo.user.entity.User;
 import com.example.demo.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,40 +25,28 @@ public class PostService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
 
-    // 전체 게시글 목록
+    // 전체 게시글 목록 (페이징)
     @Transactional(readOnly = true)
-    public List<PostDto> getPosts() {
-        return postRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()
-                .stream()
-                .map(this::toDto)
-                .toList();
+    public Page<PostDto> getPosts(Pageable pageable) {
+        return postRepository.findByDeletedAtIsNull(pageable).map(this::toDto);
     }
 
-    // 카테고리별 게시글 목록
+    // 카테고리별 게시글 목록 (페이징)
     @Transactional(readOnly = true)
-    public List<PostDto> getPostsByCategory(Long categoryId) {
-        return postRepository.findByCategoryIdAndDeletedAtIsNullOrderByCreatedAtDesc(categoryId)
-                .stream()
-                .map(this::toDto)
-                .toList();
+    public Page<PostDto> getPostsByCategory(Long categoryId, Pageable pageable) {
+        return postRepository.findByCategoryIdAndDeletedAtIsNull(categoryId, pageable).map(this::toDto);
     }
 
-    // 제목 검색 (전체 카테고리)
+    // 제목 검색 (전체 카테고리, 페이징)
     @Transactional(readOnly = true)
-    public List<PostDto> searchPosts(String keyword) {
-        return postRepository.findByTitleContainingIgnoreCaseAndDeletedAtIsNullOrderByCreatedAtDesc(keyword)
-                .stream()
-                .map(this::toDto)
-                .toList();
+    public Page<PostDto> searchPosts(String keyword, Pageable pageable) {
+        return postRepository.findByTitleContainingIgnoreCaseAndDeletedAtIsNull(keyword, pageable).map(this::toDto);
     }
 
-    // 카테고리 + 키워드 동시 필터링
+    // 카테고리 + 키워드 동시 필터링 (페이징)
     @Transactional(readOnly = true)
-    public List<PostDto> searchPostsByCategory(Long categoryId, String keyword) {
-        return postRepository.findByCategoryIdAndTitleContainingIgnoreCaseAndDeletedAtIsNullOrderByCreatedAtDesc(categoryId, keyword)
-                .stream()
-                .map(this::toDto)
-                .toList();
+    public Page<PostDto> searchPostsByCategory(Long categoryId, String keyword, Pageable pageable) {
+        return postRepository.findByCategoryIdAndTitleContainingIgnoreCaseAndDeletedAtIsNull(categoryId, keyword, pageable).map(this::toDto);
     }
 
     // 인기글 상위 5개
