@@ -29,11 +29,17 @@ public class TripRecommendService {
     private static final String REVIEWS_FOOD_PATH = "model/tourism/food/reviews_food.json";
     private static final String REVIEW_CAFE_PATH  = "model/tourism/cafe/review_cafe.json";
     private static final String LOOKUP_PATH       = "model/tourism/model_lookup.json";
-    private static final String CANDIDATE_PATH    = "data/tourism/seoul_recommend_candidates.json";
+
+    // 언어별 candidates 경로
+    private static final String CANDIDATE_PATH_KO = "tourdata/tourism/seoul_recommend_candidates_translated_KR.json";
+    private static final String CANDIDATE_PATH_EN = "tourdata/tourism/seoul_recommend_candidates_translated_EN.json";
+
+    // 언어별 관광지 캐시
+    private List<PlaceData> tourismPlacesKo = new ArrayList<>();
+    private List<PlaceData> tourismPlacesEn = new ArrayList<>();
 
     private List<PlaceData> foodPlaces    = new ArrayList<>();
     private List<PlaceData> cafePlaces    = new ArrayList<>();
-    private List<PlaceData> tourismPlaces = new ArrayList<>();
 
     private Map<String, Double> foreignCoverage = new LinkedHashMap<>();
     private Map<String, Double> agePopularity   = new LinkedHashMap<>();
@@ -88,12 +94,14 @@ public class TripRecommendService {
     public void loadAllData() {
         try {
             loadModelLookup();
-            loadReviews();           // 리뷰 먼저 캐시
-            foodPlaces    = loadScoreFile(FOOD_PATH, "food");
-            cafePlaces    = loadScoreFile(CAFE_PATH, "cafe");
-            tourismPlaces = loadTourismCandidates();
-            log.info("[TripService] 로드 완료 | 관광:{} 음식:{} 카페:{} | 리뷰캐시:{} | 지역:{}",
-                    tourismPlaces.size(), foodPlaces.size(), cafePlaces.size(),
+            loadReviews();
+            foodPlaces      = loadScoreFile(FOOD_PATH, "food");
+            cafePlaces      = loadScoreFile(CAFE_PATH, "cafe");
+            tourismPlacesKo = loadTourismCandidates(CANDIDATE_PATH_KO);
+            tourismPlacesEn = loadTourismCandidates(CANDIDATE_PATH_EN);
+            log.info("[TripService] 로드 완료 | 관광KO:{} 관광EN:{} 음식:{} 카페:{} | 리뷰캐시:{} | 지역:{}",
+                    tourismPlacesKo.size(), tourismPlacesEn.size(),
+                    foodPlaces.size(), cafePlaces.size(),
                     reviewCache.size(), allAreaList.size());
         } catch (Exception e) {
             log.error("[TripService] 데이터 로드 실패", e);
@@ -203,8 +211,8 @@ public class TripRecommendService {
     }
 
     @SuppressWarnings("unchecked")
-    private List<PlaceData> loadTourismCandidates() throws Exception {
-        Object raw = readJsonRaw(CANDIDATE_PATH);
+    private List<PlaceData> loadTourismCandidates(String path) throws Exception {
+        Object raw = readJsonRaw(path);
         List<Map<String, Object>> items = new ArrayList<>();
         if (raw instanceof List<?> arr) arr.forEach(o -> { if (o instanceof Map<?,?> m) items.add((Map<String,Object>) m); });
         else if (raw instanceof Map<?,?> root) {
@@ -259,6 +267,10 @@ public class TripRecommendService {
     //  추천 + 일정 생성
     // ────────────────────────────────────────────
     public TripRecommendResponse recommend(TripRecommendRequest req) {
+        // 언어별 관광지 데이터 선택
+        List<PlaceData> tourismPlaces = "en".equalsIgnoreCase(req.getLang())
+                ? tourismPlacesEn : tourismPlacesKo;
+
         List<ScoredPlace> tourism = scoreAll(tourismPlaces, req);
         List<ScoredPlace> food    = scoreAll(foodPlaces.stream().filter(p -> !"bar".equals(p.category())).collect(Collectors.toList()), req);
         List<ScoredPlace> cafe    = scoreAll(cafePlaces, req);
@@ -268,7 +280,7 @@ public class TripRecommendService {
         resp.setTourismList(toRecList(tourism, 10));
         resp.setFoodList   (toRecList(food,    10));
         resp.setCafeList   (toRecList(cafe,    10));
-        resp.setSchedule   (buildSchedule(req, tourism, food, cafe, bar));
+        resp.setSchedule   (buildSchedule(req, tourism, food, cafe, bar, tourismPlaces));
         return resp;
     }
 
@@ -324,7 +336,8 @@ public class TripRecommendService {
                                                List<ScoredPlace> tourism,
                                                List<ScoredPlace> food,
                                                List<ScoredPlace> cafe,
-                                               List<ScoredPlace> bar) {
+                                               List<ScoredPlace> bar,
+                                               List<PlaceData> tourismPlaces) {
         List<SlotOrder> orders = (req.getSlotOrders() != null && !req.getSlotOrders().isEmpty())
                 ? req.getSlotOrders() : buildDefaultOrders(req);
 

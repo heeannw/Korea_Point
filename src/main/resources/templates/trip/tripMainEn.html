@@ -326,13 +326,14 @@
                     </select>
                 </div>
                 <div class="field-group">
-                    <label class="field-label">Budget</label>
-                    <select class="field-input" id="budget">
-                        <option value="">Select…</option>
-                        <option value="low">Budget 💰</option>
-                        <option value="medium">Moderate 💰💰</option>
-                        <option value="high">Comfortable 💰💰💰</option>
-                    </select>
+                    <label class="field-label">Daily Budget <span style="font-weight:400;color:var(--gray);text-transform:none">(10,000 KRW units)</span></label>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <input class="field-input" id="budget" type="number" min="1" max="100"
+                               placeholder="e.g. 5" style="flex:1"
+                               oninput="updateBudgetLabel(this.value)">
+                        <span id="budgetLabel" style="font-size:12px;color:var(--gray);white-space:nowrap;min-width:80px"></span>
+                    </div>
+                    <p class="field-hint">Per person/day: food + sights + transport</p>
                 </div>
                 <div class="field-group">
                     <label class="field-label">Trip Pace</label>
@@ -494,6 +495,23 @@
         '망원한강공원':'🚲','봉은사':'🏯','낙산공원':'🏰','조계사':'🕍',
         '하늘공원':'🌅','보라매공원':'🌳','길상사':'🌸','압구정로데오거리':'👗',
     };
+
+    /* ── Budget label ── */
+    function updateBudgetLabel(val) {
+        const n = parseInt(val);
+        const el = document.getElementById('budgetLabel');
+        if (!n || n <= 0) { el.textContent = ''; return; }
+        if (n <= 5)       el.textContent = '💰 Budget';
+        else if (n <= 15) el.textContent = '💰💰 Moderate';
+        else              el.textContent = '💰💰💰 Splurge';
+    }
+
+    function getBudgetLevel(manwon) {
+        const n = parseInt(manwon) || 10;
+        if (n <= 5)  return 'low';
+        if (n <= 15) return 'medium';
+        return 'high';
+    }
 
     async function loadAreaData() {
         try {
@@ -726,7 +744,7 @@
         }).join(' → ');
 
         document.getElementById('summaryBox').innerHTML = [
-            `<b>👤 Basics</b>: ${document.getElementById('age').value}y / ${cmpMap[document.getElementById('companion').value]||'-'} / ${budMap[document.getElementById('budget').value]||'-'} / ${intMap[document.getElementById('intensity').value]||'-'}`,
+            `<b>👤 Basics</b>: ${document.getElementById('age').value}y / ${cmpMap[document.getElementById('companion').value]||'-'} / ${document.getElementById('budget').value||'-'} (₩${(parseInt(document.getElementById('budget').value)||0)*10000}+/day) / ${intMap[document.getElementById('intensity').value]||'-'}`,
             `<b>🗓️ Trip</b>: ${days} days / ${document.getElementById('startHour').value||10}:00–${document.getElementById('endHour').value||21}:00`,
             `<b>📅 Daily Order</b>: ${slotLine || 'Not set'}`,
             `<b>📍 Areas</b>: ${areas.length ? areas.join(', ') : 'None selected'}`,
@@ -745,7 +763,8 @@
         const payload = {
             age:              parseInt(document.getElementById('age').value) || 25,
             companion:        document.getElementById('companion').value     || 'friend',
-            budget:           document.getElementById('budget').value        || 'medium',
+            budget:           getBudgetLevel(document.getElementById('budget').value),
+            lang:             'en',
             travelDays:       parseInt(document.getElementById('travelDays').value) || 3,
             startHour:        parseInt(document.getElementById('startHour').value)  || 10,
             endHour:          parseInt(document.getElementById('endHour').value)    || 21,
