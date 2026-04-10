@@ -135,8 +135,29 @@
     .ri-date{font-size:11px;color:var(--gray)}
     .ri-stars{font-size:12px;color:var(--gold)}
     .ri-text{font-size:13px;color:var(--mid);line-height:1.6}
-    .dp-action{position:sticky;bottom:0;padding:12px 16px;background:#fff;border-top:1px solid var(--border);display:flex;gap:10px;}
-    .dp-action-btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
+    .dp-action{
+      position:sticky;
+      bottom:0;
+      padding:12px 16px;
+      background:#fff;
+      border-top:1px solid var(--border);
+      display:flex;
+      gap:6px;
+    }
+    .dp-action-btn{
+      flex:1;        /* ✅ 이게 핵심 - 3등분 */
+      padding:13px 6px;
+      background:var(--blue);
+      color:#fff;
+      border:none;
+      border-radius:50px;
+      font-size:11px;  /* ✅ 3개 들어가게 작게 */
+      font-weight:700;
+      cursor:pointer;
+      font-family:'DM Sans',sans-serif;
+      transition:background .2s;
+      text-align:center;
+    }
     .dp-action-btn:hover{background:var(--blue-dk)}
   </style>
 </head>
@@ -240,8 +261,9 @@
         <div id="dpReviews"></div>
       </div>
       <div class="dp-action">
-        <button class="dp-action-btn" id="itineraryBtn">근처 음식점 및 카페</button>
-        <button class="dp-action-btn" id="itineraryBtn2" type="button">관광지 찾아가기</button>
+        <button class="dp-action-btn" id="itineraryBtn">🍽️근처 음식점</button>
+        <button class="dp-action-btn" id="itineraryBtn1">☕️근처 카페</button>
+        <button class="dp-action-btn" id="itineraryBtn2" type="button">🚊관광지 찾아가기</button>
       </div>
     </div>
   </div>
@@ -509,7 +531,13 @@
 
     document.getElementById('itineraryBtn').onclick = function() {
       if (p.lat && p.lng) {
-        location.href = `/tour/itinerary?lat=${p.lat}&lon=${p.lng}&title=${encodeURIComponent(p.title ?? '')}&lang=${lang}`;
+        location.href = `/en/cafe/mylocation/${p.lat}/${p.lng}`;
+      }
+    };
+
+    document.getElementById('itineraryBtn1').onclick = function() {
+      if (p.lat && p.lng) {
+        location.href = `/en/foodmap/mylocation/${p.lat}/${p.lng}`;
       }
     };
 

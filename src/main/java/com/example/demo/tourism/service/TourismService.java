@@ -94,7 +94,7 @@ public class TourismService {
     // JSON 한 번만 파싱해서 캐싱
     private void loadCandidatesKR() throws Exception {
         InputStream is = getClass().getClassLoader()
-                .getResourceAsStream("data/tourism/seoul_recommend_candidates.json");
+                .getResourceAsStream("data/tourism/seoul_recommend_candidates_translated_KR.json");
         cachedCandidatesKR = mapper.readValue(is, new TypeReference<>() {});
     }
 
