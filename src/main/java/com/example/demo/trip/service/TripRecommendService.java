@@ -332,8 +332,25 @@ public class TripRecommendService {
         Set<String> used = new HashSet<>();
         double anchorLat = 37.5665, anchorLng = 126.9780;
         if (req.getPreferredAreas() != null && !req.getPreferredAreas().isEmpty()) {
-            double[] coord = AREA_COORDS.getOrDefault(req.getPreferredAreas().get(0), new double[]{37.5665, 126.9780});
-            anchorLat = coord[0]; anchorLng = coord[1];
+            for (String area : req.getPreferredAreas()) {
+                // 1순위: AREA_COORDS 행정구역명 직접 매칭
+                if (AREA_COORDS.containsKey(area)) {
+                    double[] coord = AREA_COORDS.get(area);
+                    anchorLat = coord[0]; anchorLng = coord[1];
+                    break;
+                }
+                // 2순위: tourismPlaces에서 같은 이름 장소 좌표 사용
+                Optional<PlaceData> match = tourismPlaces.stream()
+                        .filter(p -> p.name().equals(area)
+                                || p.name().contains(area)
+                                || area.contains(p.name()))
+                        .findFirst();
+                if (match.isPresent() && match.get().lat() != 0) {
+                    anchorLat = match.get().lat();
+                    anchorLng = match.get().lng();
+                    break;
+                }
+            }
         }
 
         Map<String, List<ScoredPlace>> foodByCat = new HashMap<>();
@@ -351,13 +368,13 @@ public class TripRecommendService {
                 if (hour >= end) break;
                 switch (order.getType()) {
                     case "tourism" -> {
-                        ScoredPlace p = pickNext(tourism, used, anchorLat, anchorLng, 6.0);
+                        ScoredPlace p = pickNext(tourism, used, anchorLat, anchorLng, 10.0);
                         if (p != null) { used.add(p.place.name()); slots.add(makeSlot(hour, "tourism", p, tourism)); if (p.place.lat() != 0) { anchorLat = p.place.lat(); anchorLng = p.place.lng(); } hour += 2; }
                     }
                     case "food" -> {
                         String fc = order.getFoodCategory();
                         List<ScoredPlace> pool = (fc != null && !fc.isBlank() && foodByCat.containsKey(fc)) ? foodByCat.get(fc) : food;
-                        ScoredPlace p = pickNext(pool, used, anchorLat, anchorLng, 3.0);
+                        ScoredPlace p = pickNext(pool, used, anchorLat, anchorLng, 8.0);
                         if (p != null) {
                             used.add(p.place.name());
                             SlotDto slot = makeSlot(hour, "food", p, pool);
@@ -368,11 +385,11 @@ public class TripRecommendService {
                         }
                     }
                     case "cafe" -> {
-                        ScoredPlace p = pickNext(cafe, used, anchorLat, anchorLng, 2.0);
+                        ScoredPlace p = pickNext(cafe, used, anchorLat, anchorLng, 8.0);
                         if (p != null) { used.add(p.place.name()); slots.add(makeSlot(hour, "cafe", p, cafe)); hour += 1; }
                     }
                     case "bar" -> {
-                        ScoredPlace p = pickNext(bar, used, anchorLat, anchorLng, 3.0);
+                        ScoredPlace p = pickNext(bar, used, anchorLat, anchorLng, 8.0);
                         if (p != null) { used.add(p.place.name()); slots.add(makeSlot(hour, "bar", p, bar)); hour += 1; }
                     }
                 }
@@ -485,7 +502,14 @@ public class TripRecommendService {
         for (String k : keys) { Object v = m.get(k); if (v instanceof String s && !s.isBlank()) return s; } return "";
     }
     private double firstDbl(Map<String, Object> m, String... keys) {
-        for (String k : keys) { Object v = m.get(k); if (v instanceof Number n) return n.doubleValue(); } return 0.0;
+        for (String k : keys) {
+            Object v = m.get(k);
+            if (v instanceof Number n) return n.doubleValue();
+            if (v instanceof String s && !s.isBlank()) {
+                try { return Double.parseDouble(s); } catch (Exception ignored) {}
+            }
+        }
+        return 0.0;
     }
     private String str(Map<String, Object> m, String key) {
         Object v = m.get(key); return v instanceof String s ? s : (v != null ? v.toString() : "");
