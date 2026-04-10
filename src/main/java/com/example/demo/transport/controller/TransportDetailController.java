@@ -41,23 +41,134 @@ public class TransportDetailController {
 
     @GetMapping("/ko/transport/detail")
     public String transportDetailKo(@RequestParam(required = false) String routeId, Model model) {
-        return handleDetail(routeId, model, "transport/transportDetail");
+        return handleDetail(routeId, model, "transport/transportDetail", "ko");
     }
 
     @GetMapping("/en/transport/detail")
     public String transportDetailEn(@RequestParam(required = false) String routeId, Model model) {
-        return handleDetail(routeId, model, "transport/transportDetailEn");
+        return handleDetail(routeId, model, "transport/transportDetailEn", "en");
     }
 
-    private String handleDetail(String routeId, Model model, String viewName) {
+    private String handleDetail(String routeId, Model model, String viewName, String lang) {
 
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
 
+        TransportRouteDto route = null;
+
         if (routeId != null && !routeId.isEmpty()) {
-            TransportRouteDto route = transportRouteService.getTransportRouteDetail(routeId);
+            route = transportRouteService.getTransportRouteDetail(routeId);
+        }
+
+        int hour = java.time.LocalTime.now().getHour();
+        int day = (java.time.LocalDate.now().getDayOfWeek().getValue() >= 6) ? 0 : 1;
+        int line = 2;
+        String station = "강남"; // 기본값
+
+        if (route != null && route.getSteps() != null) {
+
+            for (var step : route.getSteps()) {
+
+                if ("subway".equals(step.getType()) && step.getLine() != null) {
+
+                    station = step.getFromStation();
+
+                    String lineName = step.getLine();
+
+                    String cleanLine = lineName.replaceAll("[^가-힣0-9]", "");
+                    String onlyNumber = cleanLine.replaceAll("[^0-9]", "");
+
+                    if (!onlyNumber.isEmpty()) {
+                        line = Integer.parseInt(onlyNumber);
+                    } else {
+                        if (cleanLine.contains("경의중앙")) line = 10;
+                        else if (cleanLine.contains("분당")) line = 11;
+                        else if (cleanLine.contains("공항")) line = 12;
+                        else if (cleanLine.contains("신분당")) line = 14;
+                        else if (cleanLine.contains("우이신설")) line = 15;
+                        else line = 0;
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        int transfer = 1;
+        int time = 30;
+
+        if (route != null) {
+            transfer = route.getTransferCount();
+            time = route.getTotalTime();
             model.addAttribute("route", route);
         }
+
+        // fallback (학습 안된 노선)
+        if (line == 0) {
+            model.addAttribute("congestionText",
+                    "en".equals(lang) ? "Moderate" : "보통");
+
+            model.addAttribute("congestionMsg",
+                    "en".equals(lang)
+                            ? "No data available for this line"
+                            : "혼잡도 데이터가 부족한 노선입니다");
+
+            return viewName;
+        }
+
+        // station → 숫자 변환
+        int stationNum = Math.abs(station.hashCode() % 1000);
+
+        // ONNX 실행
+        int congestion = congestionMlService.predict(hour, day, line, stationNum);
+
+        String congestionText = "";
+
+        if ("en".equals(lang)) {
+            switch (congestion) {
+                case 0: congestionText = "Comfortable"; break;
+                case 1: congestionText = "Moderate"; break;
+                case 2: congestionText = "Crowded"; break;
+            }
+        } else {
+            switch (congestion) {
+                case 0: congestionText = "여유"; break;
+                case 1: congestionText = "보통"; break;
+                case 2: congestionText = "혼잡"; break;
+            }
+        }
+
+        model.addAttribute("congestionText", congestionText);
+
+        String congestionMsg = "";
+
+        if ("en".equals(lang)) {
+            switch (congestion) {
+                case 0:
+                    congestionMsg = "It's a comfortable time to travel 😊";
+                    break;
+                case 1:
+                    congestionMsg = "Passenger volume is increasing 🚶";
+                    break;
+                case 2:
+                    congestionMsg = "It's a crowded time ⚠️ Consider another route";
+                    break;
+            }
+        } else {
+            switch (congestion) {
+                case 0:
+                    congestionMsg = "현재 시간대에는 비교적 쾌적하게 이동할 수 있습니다 😊";
+                    break;
+                case 1:
+                    congestionMsg = "이용객이 점점 늘어나는 시간대입니다 🚶";
+                    break;
+                case 2:
+                    congestionMsg = "혼잡한 시간대입니다 ⚠️ 다른 경로를 고려해보세요";
+                    break;
+            }
+        }
+
+        model.addAttribute("congestionMsg", congestionMsg);
 
         return viewName;
     }
@@ -108,14 +219,6 @@ public class TransportDetailController {
         rd.close();
         conn.disconnect();
         return sb.toString();
-    }
-
-    @ResponseBody
-    @GetMapping("/api/transport/congestion")
-    public int getCongestion(@RequestParam float station,
-                             @RequestParam float hour,
-                             @RequestParam float day) throws Exception {
-        return congestionMlService.predict(station, hour, day);
     }
 
     @ResponseBody

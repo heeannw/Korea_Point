@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Trip Planner — KoreaPoint</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --blue:#3b9eff;--blue-dk:#1a7de0;--blue-lt:#eff6ff;
+            --dark:#0f172a;--mid:#334155;--gray:#64748b;
+            --border:#dbeafe;--white:#fff;--light:#f0f7ff;
+            --gold:#f59e0b;--green:#16a34a;
+            --r:12px;--sh:0 2px 16px rgba(59,158,255,.10);
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        html,body{min-height:100%;overflow-x:hidden;overflow-y:auto}
+        body{font-family:'DM Sans',sans-serif;color:var(--dark);background:#f8fafc}
+
+        header{
+            height:56px;display:flex;align-items:center;justify-content:space-between;
+            padding:0 20px;border-bottom:1px solid var(--border);background:var(--white);
+            position:sticky;top:0;z-index:200;box-shadow:0 1px 8px rgba(0,0,0,.05);
+        }
+        .logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--blue-dk);text-decoration:none}
+        .logo span{color:var(--dark)}
+        .header-right{display:flex;gap:8px;align-items:center}
+        .h-btn{
+            padding:7px 16px;border-radius:50px;border:1.5px solid var(--border);
+            background:transparent;font-size:12px;font-weight:600;cursor:pointer;
+            font-family:'DM Sans',sans-serif;color:var(--dark);text-decoration:none;
+            display:inline-flex;align-items:center;transition:all .2s;
+        }
+        .h-btn:hover,.h-btn.active{border-color:var(--blue);color:var(--blue)}
+        .h-btn-fill{background:var(--blue);color:#fff;border-color:var(--blue)}
+        .h-btn-fill:hover{background:var(--blue-dk);color:#fff}
+
+        .page-wrap{
+            min-height:calc(100vh - 56px);
+            background:#f0f7ff;
+            padding:48px 20px 64px;
+            display:flex;flex-direction:column;align-items:center;
+        }
+
+        .page-title-area{text-align:center;margin-bottom:32px}
+        .page-eyebrow{
+            display:inline-flex;align-items:center;gap:6px;
+            background:var(--blue-lt);border:1.5px solid var(--border);
+            border-radius:50px;padding:5px 14px;
+            font-size:12px;font-weight:700;color:var(--blue-dk);
+            margin-bottom:14px;letter-spacing:.3px;
+        }
+        .page-h1{
+            font-family:'Playfair Display',serif;
+            font-size:clamp(26px,4vw,36px);font-weight:900;
+            color:var(--dark);margin-bottom:8px;line-height:1.15;
+        }
+        .page-h1 span{color:var(--blue)}
+        .page-sub{font-size:14px;color:var(--gray);font-weight:400}
+
+        .step-bar{
+            display:flex;align-items:center;justify-content:center;
+            margin-bottom:32px;
+        }
+        .sb-step{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:64px}
+        .sb-dot{
+            width:30px;height:30px;border-radius:50%;
+            border:2px solid var(--border);background:#fff;
+            display:flex;align-items:center;justify-content:center;
+            font-size:11px;font-weight:700;color:var(--gray);transition:all .3s;
+        }
+        .sb-step.active .sb-dot{border-color:var(--blue);background:var(--blue);color:#fff;box-shadow:0 0 0 4px rgba(59,158,255,.18)}
+        .sb-step.done   .sb-dot{border-color:var(--green);background:var(--green);color:#fff}
+        .sb-label{font-size:10px;font-weight:600;color:var(--gray);white-space:nowrap}
+        .sb-step.active .sb-label{color:var(--blue)}
+        .sb-step.done   .sb-label{color:var(--green)}
+        .sb-line{width:48px;height:2px;background:var(--border);margin-bottom:16px;flex-shrink:0;transition:background .3s}
+        .sb-line.done{background:var(--green)}
+
+        .step-card{
+            width:100%;max-width:660px;
+            background:#fff;border-radius:20px;
+            padding:32px 28px;
+            box-shadow:0 4px 24px rgba(59,158,255,.10), 0 1px 4px rgba(0,0,0,.06);
+            border:1px solid var(--border);
+        }
+        .step-title{
+            font-family:'Playfair Display',serif;
+            font-size:20px;font-weight:700;
+            margin-bottom:24px;color:var(--dark);
+        }
+        .step-title span{color:var(--blue)}
+
+        .form-step{display:none}
+        .form-step.active{display:block;animation:fadeUp .22s ease}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+        .field-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+            gap:14px;margin-bottom:20px;
+        }
+        .field-group{display:flex;flex-direction:column;gap:6px}
+        .field-label{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px}
+        .field-input{
+            padding:11px 14px;
+            border:1.5px solid var(--border);border-radius:10px;
+            font-size:14px;font-family:'DM Sans',sans-serif;
+            outline:none;transition:border-color .2s;
+            background:#fff;color:var(--dark);width:100%;
+        }
+        .field-input:focus{border-color:var(--blue)}
+        .field-input::placeholder{color:#c0ccda}
+
+        .nights-row{
+            display:flex;align-items:center;gap:10px;
+            padding:12px 16px;
+            background:var(--blue-lt);border:1.5px solid var(--border);
+            border-radius:10px;margin-bottom:20px;font-size:13px;
+        }
+        .nights-badge{
+            background:var(--blue);color:#fff;
+            border-radius:50px;padding:3px 12px;
+            font-size:12px;font-weight:700;white-space:nowrap;
+        }
+        .time-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px}
+
+        .chip-section-label{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+        .chip-group{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+        .chip{
+            padding:7px 14px;border-radius:50px;
+            border:1.5px solid var(--border);background:#fff;
+            font-size:12px;font-weight:600;cursor:pointer;
+            transition:all .2s;font-family:'DM Sans',sans-serif;
+            color:var(--gray);display:flex;align-items:center;gap:4px;white-space:nowrap;
+        }
+        .chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt)}
+        .chip.selected{background:var(--blue);color:#fff;border-color:var(--blue)}
+        .chip.selected:hover{background:var(--blue-dk)}
+
+        .area-scroll{max-height:220px;overflow-y:auto;padding:4px 2px}
+        .area-scroll::-webkit-scrollbar{width:4px}
+        .area-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+        .field-textarea{
+            width:100%;padding:11px 14px;
+            border:1.5px solid var(--border);border-radius:10px;
+            font-size:13px;font-family:'DM Sans',sans-serif;
+            outline:none;resize:vertical;min-height:90px;
+            transition:border-color .2s;color:var(--dark);
+        }
+        .field-textarea:focus{border-color:var(--blue)}
+        .field-textarea::placeholder{color:#c0ccda}
+        .field-hint{font-size:11px;color:var(--gray);margin-top:5px}
+        .divider{height:1px;background:var(--border);margin:20px 0}
+
+        .btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+        .btn-back{
+            padding:11px 24px;border-radius:50px;
+            border:1.5px solid var(--border);background:#fff;
+            font-size:13px;font-weight:600;cursor:pointer;
+            font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s;
+        }
+        .btn-back:hover{border-color:var(--blue);color:var(--blue)}
+        .btn-next{
+            padding:11px 28px;border-radius:50px;
+            background:var(--blue);color:#fff;border:none;
+            font-size:13px;font-weight:700;cursor:pointer;
+            font-family:'DM Sans',sans-serif;
+            box-shadow:0 4px 14px rgba(59,158,255,.28);transition:all .2s;
+        }
+        .btn-next:hover{background:var(--blue-dk)}
+        .btn-submit{
+            padding:13px 36px;border-radius:50px;
+            background:var(--blue);color:#fff;border:none;
+            font-size:14px;font-weight:700;cursor:pointer;
+            font-family:'DM Sans',sans-serif;
+            box-shadow:0 4px 20px rgba(59,158,255,.35);transition:all .2s;
+        }
+        .btn-submit:hover{background:var(--blue-dk)}
+
+        .summary-box{
+            background:var(--light);border:1.5px solid var(--border);
+            border-radius:14px;padding:18px;font-size:13px;
+            color:var(--mid);line-height:2;
+        }
+        .summary-box b{color:var(--dark)}
+
+        .slot-add-btn{
+            padding:7px 14px;border-radius:50px;
+            border:1.5px solid var(--border);background:#fff;
+            font-size:12px;font-weight:600;cursor:pointer;
+            font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s;
+        }
+        .slot-add-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt)}
+
+        .slot-item{
+            display:flex;align-items:center;gap:8px;
+            padding:9px 12px;border-radius:10px;
+            border:1.5px solid var(--border);background:#fff;
+            margin-bottom:6px;transition:box-shadow .2s, opacity .2s;
+            user-select:none;
+        }
+        .slot-item.dragging{opacity:.4;box-shadow:0 4px 16px rgba(59,158,255,.2)}
+        .slot-item.drag-over{border-color:var(--blue);background:var(--blue-lt)}
+        .slot-item[data-type="tourism"]{border-left:3px solid #3b9eff}
+        .slot-item[data-type="food"]   {border-left:3px solid #f59e0b}
+        .slot-item[data-type="cafe"]   {border-left:3px solid #10b981}
+        .slot-item[data-type="bar"]    {border-left:3px solid #8b5cf6}
+
+        .slot-drag{cursor:grab;color:var(--gray);font-size:16px;padding:2px 4px;flex-shrink:0}
+        .slot-drag:active{cursor:grabbing}
+        .slot-icon{font-size:17px;flex-shrink:0}
+        .slot-label{font-size:13px;font-weight:700;color:var(--dark);flex-shrink:0;min-width:36px}
+        .slot-food-select{
+            padding:4px 10px;border:1.5px solid var(--border);
+            border-radius:50px;font-size:12px;font-weight:600;
+            font-family:'DM Sans',sans-serif;color:var(--gray);
+            outline:none;cursor:pointer;transition:border-color .2s;
+            background:#fff;flex:1;max-width:180px;
+        }
+        .slot-food-select:focus{border-color:var(--blue)}
+        .slot-del{
+            margin-left:auto;background:none;border:none;
+            cursor:pointer;color:#94a3b8;font-size:17px;
+            padding:2px 5px;line-height:1;flex-shrink:0;transition:color .2s;
+        }
+        .slot-del:hover{color:#ef4444}
+        #slotList:empty::after{
+            content:'Add slots using the buttons above';
+            display:block;text-align:center;padding:20px;
+            font-size:13px;color:var(--gray);
+        }
+
+        .loading-overlay{
+            display:none;position:fixed;inset:0;
+            background:rgba(10,22,40,.72);z-index:9999;
+            align-items:center;justify-content:center;flex-direction:column;gap:14px;
+        }
+        .loading-overlay.show{display:flex}
+        .spinner{
+            width:48px;height:48px;
+            border:4px solid rgba(255,255,255,.2);border-top-color:#fff;
+            border-radius:50%;animation:spin .7s linear infinite;
+        }
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .loading-text{color:#fff;font-size:14px;font-weight:600}
+
+        /* ─── 토스트 ─── */
+        .toast{
+            position:fixed;bottom:32px;left:50%;
+            transform:translateX(-50%) translateY(20px);
+            background:rgba(15,23,42,.88);color:#fff;
+            padding:10px 22px;border-radius:50px;
+            font-size:13px;font-weight:600;white-space:nowrap;
+            z-index:9999;opacity:0;
+            transition:opacity .25s,transform .25s;
+            pointer-events:none;
+        }
+        .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    </style>
+</head>
+<body>
+
+<!-- ─── 헤더 ─── -->
+<header>
+    <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
+    <div class="header-right">
+        <a href="/en/trip" class="h-btn active">EN</a>
+        <a href="/ko/trip" class="h-btn">KR</a>
+        <th:block th:if="${isLoggedIn}">
+            <span class="h-btn" th:text="${currentUserName}"></span>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="h-btn h-btn-fill">Logout</button>
+            </form>
+        </th:block>
+        <th:block th:unless="${isLoggedIn}">
+            <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
+        </th:block>
+    </div>
+</header>
+
+<!-- ─── 페이지 래퍼 ─── -->
+<div class="page-wrap">
+
+    <div class="page-title-area">
+        <div class="page-eyebrow">✈️ Seoul Trip Planner</div>
+        <h1 class="page-h1">Your Personal <span>Seoul</span> Planner</h1>
+        <p class="page-sub">Tell us your preferences and we'll build the perfect itinerary</p>
+    </div>
+
+    <!-- 스텝 바 -->
+    <div class="step-bar" id="stepBar">
+        <div class="sb-step active" id="si1"><div class="sb-dot" id="sd1">1</div><div class="sb-label">Basics</div></div>
+        <div class="sb-line" id="sl1"></div>
+        <div class="sb-step" id="si2"><div class="sb-dot" id="sd2">2</div><div class="sb-label">Schedule</div></div>
+        <div class="sb-line" id="sl2"></div>
+        <div class="sb-step" id="si3"><div class="sb-dot" id="sd3">3</div><div class="sb-label">Areas</div></div>
+        <div class="sb-line" id="sl3"></div>
+        <div class="sb-step" id="si4"><div class="sb-dot" id="sd4">4</div><div class="sb-label">Vibe</div></div>
+        <div class="sb-line" id="sl4"></div>
+        <div class="sb-step" id="si5"><div class="sb-dot" id="sd5">5</div><div class="sb-label">Review</div></div>
+    </div>
+
+    <div class="step-card">
+
+        <!-- STEP 1 -->
+        <div class="form-step active" id="step1">
+            <div class="step-title">👤 Tell us about <span>yourself</span></div>
+
+            <div class="field-grid">
+                <div class="field-group">
+                    <label class="field-label">Age</label>
+                    <input class="field-input" id="age" type="number" min="10" max="99" placeholder="Your age">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Traveling with</label>
+                    <select class="field-input" id="companion">
+                        <option value="">Select…</option>
+                        <option value="solo">Solo 🙋</option>
+                        <option value="friend">Friends 👫</option>
+                        <option value="couple">Couple 💑</option>
+                        <option value="family">Family 👨‍👩‍👧</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Budget</label>
+                    <select class="field-input" id="budget">
+                        <option value="">Select…</option>
+                        <option value="low">Budget 💰</option>
+                        <option value="medium">Moderate 💰💰</option>
+                        <option value="high">Comfortable 💰💰💰</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Trip Pace</label>
+                    <select class="field-input" id="intensity">
+                        <option value="">Select…</option>
+                        <option value="relaxed">Relaxed 😌</option>
+                        <option value="balanced">Balanced 😊</option>
+                        <option value="packed">Packed 🔥</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="time-row">
+                <div class="field-group">
+                    <label class="field-label">Days</label>
+                    <input class="field-input" id="travelDays" type="number" min="1" max="14" placeholder="e.g. 3">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Start Hour</label>
+                    <input class="field-input" id="startHour" type="number" min="6" max="20" placeholder="e.g. 10">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">End Hour</label>
+                    <input class="field-input" id="endHour" type="number" min="12" max="24" placeholder="e.g. 21">
+                </div>
+            </div>
+
+            <div class="nights-row" id="nightsRow" style="display:none">
+                <span class="nights-badge" id="nightsBadge">0N 1D</span>
+                <span id="nightsDesc" style="color:var(--mid);font-size:13px"></span>
+            </div>
+
+            <div class="btn-row"><button class="btn-next" onclick="goNext(1)">Next →</button></div>
+        </div>
+
+        <!-- STEP 2 -->
+        <div class="form-step" id="step2">
+            <div class="step-title">🗓️ Build your <span>daily schedule</span></div>
+
+            <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">
+                <button class="slot-add-btn" onclick="addSlot('tourism')">🏛️ Add Sightseeing</button>
+                <button class="slot-add-btn" onclick="addSlot('food')">🍽️ Add Meal</button>
+                <button class="slot-add-btn" onclick="addSlot('cafe')">☕ Add Café</button>
+                <button class="slot-add-btn" onclick="addSlot('bar')">🍺 Add Bar</button>
+            </div>
+
+            <div id="slotList" style="min-height:60px;margin-bottom:10px"></div>
+
+            <p class="field-hint">☰ Drag to reorder · Meal slots can specify a cuisine type</p>
+            <p class="field-hint" id="slotEmptyHint" style="color:#ef4444;display:none">Please add at least one slot</p>
+
+            <div class="btn-row">
+                <button class="btn-back" onclick="goStep(1)">← Back</button>
+                <button class="btn-next" onclick="goNext(2)">Next →</button>
+            </div>
+        </div>
+
+        <!-- STEP 3 -->
+        <div class="form-step" id="step3">
+            <div class="step-title">📍 Choose preferred <span>areas</span> <small style="font-size:12px;font-weight:400;color:var(--gray)">(multiple OK)</small></div>
+
+            <div class="chip-section-label">Popular Areas</div>
+            <div class="chip-group" id="areaChipsPopular">
+                <div style="color:var(--gray);font-size:12px;padding:4px 0">Loading…</div>
+            </div>
+
+            <div class="divider" style="margin:12px 0"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <div class="chip-section-label" style="margin-bottom:0">
+                    All Areas &amp; Landmarks
+                    <span style="font-weight:400;color:var(--gray);text-transform:none">(scroll · <span id="areaCount">-</span>)</span>
+                </div>
+                <input id="areaSearch" type="text" placeholder="🔍 Search…"
+                       style="padding:5px 10px;border:1.5px solid var(--border);border-radius:50px;
+                      font-size:12px;font-family:'DM Sans',sans-serif;outline:none;width:120px;
+                      transition:border-color .2s"
+                       oninput="filterAreas(this.value)"
+                       onfocus="this.style.borderColor='var(--blue)'"
+                       onblur="this.style.borderColor='var(--border)'">
+            </div>
+            <div class="area-scroll">
+                <div class="chip-group" id="areaChipsAll">
+                    <div style="color:var(--gray);font-size:12px;padding:4px 0">Loading…</div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="field-group">
+                <label class="field-label">🌟 Must-visit places <span style="font-weight:400;color:var(--gray);text-transform:none">(comma separated)</span></label>
+                <input class="field-input" id="mustVisit" type="text" placeholder="e.g. Gwangjang Market, COEX, Namsan Tower">
+                <p class="field-hint">These places will be prioritised in your itinerary</p>
+            </div>
+            <div class="btn-row">
+                <button class="btn-back" onclick="goStep(2)">← Back</button>
+                <button class="btn-next" onclick="goNext(3)">Next →</button>
+            </div>
+        </div>
+
+        <!-- STEP 4 -->
+        <div class="form-step" id="step4">
+            <div class="step-title">✨ Pick your travel <span>vibe</span> <small style="font-size:12px;font-weight:400;color:var(--gray)">(multiple OK)</small></div>
+            <div class="chip-group" id="categoryChips">
+                <div class="chip" data-val="local">🏘️ Local Eats</div>
+                <div class="chip" data-val="photo">📷 Photo Spots</div>
+                <div class="chip" data-val="cafe">☕ Café Hopping</div>
+                <div class="chip" data-val="food">🍜 Food Adventure</div>
+                <div class="chip" data-val="night">🌙 Nightlife</div>
+                <div class="chip" data-val="culture">🎭 Culture &amp; History</div>
+                <div class="chip" data-val="nature">🌿 Nature &amp; Parks</div>
+                <div class="chip" data-val="shopping">🛍️ Shopping</div>
+                <div class="chip" data-val="healing">🧘 Relaxation</div>
+                <div class="chip" data-val="adventure">🏃 Activities</div>
+            </div>
+            <div class="divider"></div>
+            <div class="field-group">
+                <label class="field-label">💬 Describe your ideal trip freely</label>
+                <textarea class="field-textarea" id="styleDescription" placeholder="e.g. I'd love to enjoy quiet cafés, explore local markets and catch a night view."></textarea>
+            </div>
+            <div class="btn-row">
+                <button class="btn-back" onclick="goStep(3)">← Back</button>
+                <button class="btn-next" onclick="goNext(4)">Next →</button>
+            </div>
+        </div>
+
+        <!-- STEP 5 -->
+        <div class="form-step" id="step5">
+            <div class="step-title">🚀 Ready to build your <span>itinerary</span>?</div>
+            <div class="summary-box" id="summaryBox"></div>
+            <div class="btn-row">
+                <button class="btn-back" onclick="goStep(4)">← Edit</button>
+                <button class="btn-submit" onclick="submitRecommend()">✈️ Generate Trip Plan</button>
+            </div>
+        </div>
+
+    </div><!-- /step-card -->
+</div><!-- /page-wrap -->
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">AI is designing your perfect Seoul trip…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    /* ─── 토스트 ─── */
+    function showToast(msg, duration = 2500) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    // ─── Area data ───
+    const AREA_EMOJI = {
+        '코엑스':'🏢','롯데월드잠실점':'🎡','국립중앙박물관':'🏛️','여의도한강공원':'🌸',
+        '어린이대공원':'🎠','예술의전당':'🎭','올림픽공원':'⚽','반포한강공원':'🌉',
+        '서울숲':'🌿','뚝섬한강공원':'🛶','경복궁':'⛩','전쟁기념관':'🎖️',
+        '망원한강공원':'🚲','봉은사':'🏯','낙산공원':'🏰','조계사':'🕍',
+        '하늘공원':'🌅','보라매공원':'🌳','길상사':'🌸','압구정로데오거리':'👗',
+    };
+
+    async function loadAreaData() {
+        try {
+            const res  = await fetch('/api/trip/areas');
+            const data = await res.json();
+            renderPopularChips(data.popular  || []);
+            renderAllChips    (data.allAreas || []);
+        } catch(e) {
+            renderPopularChips(['코엑스','경복궁','남산서울타워','광장시장','홍대','명동','이태원','잠실','강남','성수','인사동','북촌한옥마을']);
+            renderAllChips([]);
+        }
+    }
+
+    function makeAreaChip(name, label) {
+        const el = document.createElement('div');
+        el.className  = 'chip';
+        el.dataset.val = name;
+        el.textContent = label || name;
+        return el;
+    }
+
+    function syncAreaChips(name, selected) {
+        document.querySelectorAll(
+            `#areaChipsPopular .chip[data-val="${name}"],
+       #areaChipsAll     .chip[data-val="${name}"]`
+        ).forEach(c => c.classList.toggle('selected', selected));
+    }
+
+    function renderPopularChips(list) {
+        const group = document.getElementById('areaChipsPopular');
+        group.innerHTML = '';
+        list.slice(0, 20).forEach(name => {
+            const emoji = AREA_EMOJI[name] || '📍';
+            const chip  = makeAreaChip(name, `${emoji} ${name}`);
+            chip.addEventListener('click', () => syncAreaChips(name, !chip.classList.contains('selected')));
+            group.appendChild(chip);
+        });
+    }
+
+    function renderAllChips(list) {
+        const group = document.getElementById('areaChipsAll');
+        group.innerHTML = '';
+        document.getElementById('areaCount').textContent = list.length;
+        list.forEach(name => {
+            const chip = makeAreaChip(name, name);
+            chip.addEventListener('click', () => syncAreaChips(name, !chip.classList.contains('selected')));
+            group.appendChild(chip);
+        });
+    }
+
+    function filterAreas(keyword) {
+        const kw = keyword.trim().toLowerCase();
+        document.querySelectorAll('#areaChipsAll .chip').forEach(c => {
+            c.style.display = (!kw || c.dataset.val.toLowerCase().includes(kw)) ? '' : 'none';
+        });
+    }
+
+    function getAreaChips() {
+        const vals = new Set();
+        document.querySelectorAll('#areaChipsPopular .chip.selected, #areaChipsAll .chip.selected')
+            .forEach(c => vals.add(c.dataset.val));
+        return [...vals];
+    }
+
+    document.querySelectorAll('#categoryChips .chip').forEach(c =>
+        c.addEventListener('click', () => c.classList.toggle('selected'))
+    );
+
+    loadAreaData();
+
+    /* ── nights calc ── */
+    function updateNights() {
+        const days = parseInt(document.getElementById('travelDays').value);
+        if (!days || days < 1) { document.getElementById('nightsRow').style.display = 'none'; return; }
+        const nights = days - 1;
+        document.getElementById('nightsBadge').textContent = `${nights}N ${days}D`;
+        document.getElementById('nightsDesc').textContent  = `A total of ${days}-day itinerary will be generated`;
+        document.getElementById('nightsRow').style.display = 'flex';
+    }
+    document.getElementById('travelDays').addEventListener('input', updateNights);
+
+    /* ── step navigation ── */
+    function goStep(n) {
+        document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+        document.getElementById('step' + n).classList.add('active');
+        for (let i = 1; i <= 5; i++) {
+            const si = document.getElementById('si' + i);
+            const sd = document.getElementById('sd' + i);
+            si.classList.remove('active','done');
+            if      (i < n)  { si.classList.add('done');   sd.textContent = '✓'; }
+            else if (i === n) { si.classList.add('active'); sd.textContent = i; }
+            else              { sd.textContent = i; }
+            if (i < 5) document.getElementById('sl' + i).classList.toggle('done', i < n);
+        }
+        window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    function goNext(from) {
+        if (from === 1) {
+            if (!document.getElementById('age').value)       { alert('Please enter your age'); return; }
+            if (!document.getElementById('companion').value) { alert('Please select who you\'re traveling with'); return; }
+            if (!document.getElementById('travelDays').value){ alert('Please enter the number of days'); return; }
+        }
+        if (from === 2) {
+            if (document.querySelectorAll('#slotList .slot-item').length === 0) {
+                document.getElementById('slotEmptyHint').style.display = 'block';
+                return;
+            }
+            document.getElementById('slotEmptyHint').style.display = 'none';
+        }
+        if (from === 4) buildSummary();
+        goStep(from + 1);
+    }
+
+    // ─── Slot builder ───
+    const SLOT_CONFIG = {
+        tourism: { icon: '🏛️', label: 'Sightseeing' },
+        food:    { icon: '🍽️', label: 'Meal' },
+        cafe:    { icon: '☕',  label: 'Café' },
+        bar:     { icon: '🍺',  label: 'Bar' }
+    };
+
+    const FOOD_CATS_EN = [
+        { val: '',            label: 'Any Cuisine' },
+        { val: '한식',         label: 'Korean' },
+        { val: '중식',         label: 'Chinese' },
+        { val: '일식',         label: 'Japanese' },
+        { val: '양식',         label: 'Western' },
+        { val: '고기_해산물',   label: 'BBQ / Seafood' },
+        { val: '기타',         label: 'Other' },
+    ];
+
+    const DEFAULT_SLOTS = [
+        {type:'tourism'}, {type:'tourism'},
+        {type:'food', foodCategory:''}, {type:'food', foodCategory:''},
+        {type:'cafe'}
+    ];
+
+    function renderSlotList() {
+        const list = document.getElementById('slotList');
+        if (list.children.length === 0) {
+            DEFAULT_SLOTS.forEach(s => addSlot(s.type, s.foodCategory));
+        }
+    }
+
+    function addSlot(type, foodCategory = '') {
+        const cfg  = SLOT_CONFIG[type];
+        const list = document.getElementById('slotList');
+        const item = document.createElement('div');
+        item.className  = 'slot-item';
+        item.dataset.type = type;
+        item.draggable  = true;
+
+        const foodSelect = type === 'food'
+            ? `<select class="slot-food-select" title="Select cuisine">
+           ${FOOD_CATS_EN.map(c => `<option value="${c.val}" ${foodCategory === c.val ? 'selected' : ''}>${c.label}</option>`).join('')}
+         </select>`
+            : '';
+
+        item.innerHTML = `
+      <span class="slot-drag" title="Drag to reorder">☰</span>
+      <span class="slot-icon">${cfg.icon}</span>
+      <span class="slot-label">${cfg.label}</span>
+      ${foodSelect}
+      <button class="slot-del" onclick="removeSlot(this)" title="Remove">✕</button>
+    `;
+
+        item.addEventListener('dragstart', e => {
+            e.dataTransfer.effectAllowed = 'move';
+            item.classList.add('dragging');
+            dragSrc = item;
+        });
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
+        item.addEventListener('dragover', e => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            document.querySelectorAll('.slot-item').forEach(i => i.classList.remove('drag-over'));
+            item.classList.add('drag-over');
+        });
+        item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+        item.addEventListener('drop', e => {
+            e.preventDefault();
+            item.classList.remove('drag-over');
+            if (dragSrc && dragSrc !== item) {
+                const allItems = [...list.children];
+                const srcIdx  = allItems.indexOf(dragSrc);
+                const destIdx = allItems.indexOf(item);
+                if (srcIdx < destIdx) list.insertBefore(dragSrc, item.nextSibling);
+                else                  list.insertBefore(dragSrc, item);
+            }
+        });
+
+        list.appendChild(item);
+    }
+
+    function removeSlot(btn) { btn.closest('.slot-item').remove(); }
+
+    let dragSrc = null;
+    renderSlotList();
+
+    function getSlotOrders() {
+        return [...document.querySelectorAll('#slotList .slot-item')].map(item => {
+            const type = item.dataset.type;
+            const sel  = item.querySelector('.slot-food-select');
+            return { type, foodCategory: sel ? sel.value : '' };
+        });
+    }
+
+    function getCatChips() {
+        return [...document.querySelectorAll('#categoryChips .chip.selected')].map(c => c.dataset.val);
+    }
+
+    /* ── summary ── */
+    const cmpMap = {solo:'Solo',friend:'Friends',couple:'Couple',family:'Family'};
+    const budMap = {low:'Budget',medium:'Moderate',high:'Comfortable'};
+    const intMap = {relaxed:'Relaxed',balanced:'Balanced',packed:'Packed'};
+    const slotIconMap = {tourism:'🏛️', food:'🍽️', cafe:'☕', bar:'🍺'};
+
+    function buildSummary() {
+        const areas  = getAreaChips(), cats = getCatChips();
+        const days   = document.getElementById('travelDays').value;
+        const must   = document.getElementById('mustVisit').value.trim();
+        const desc   = document.getElementById('styleDescription').value.trim();
+        const orders = getSlotOrders();
+
+        const slotLine = orders.map(o => {
+            const icon = slotIconMap[o.type] || '?';
+            const fc   = o.foodCategory ? ` (${o.foodCategory})` : '';
+            return icon + fc;
+        }).join(' → ');
+
+        document.getElementById('summaryBox').innerHTML = [
+            `<b>👤 Basics</b>: ${document.getElementById('age').value}y / ${cmpMap[document.getElementById('companion').value]||'-'} / ${budMap[document.getElementById('budget').value]||'-'} / ${intMap[document.getElementById('intensity').value]||'-'}`,
+            `<b>🗓️ Trip</b>: ${days} days / ${document.getElementById('startHour').value||10}:00–${document.getElementById('endHour').value||21}:00`,
+            `<b>📅 Daily Order</b>: ${slotLine || 'Not set'}`,
+            `<b>📍 Areas</b>: ${areas.length ? areas.join(', ') : 'None selected'}`,
+            must ? `<b>🌟 Must-visit</b>: ${must}` : '',
+            `<b>✨ Vibe</b>: ${cats.length ? cats.join(', ') : 'None selected'}`,
+            desc ? `<b>💬 Style</b>: ${desc}` : '',
+        ].filter(Boolean).join('<br>');
+    }
+
+    /* ── submit ── */
+    function submitRecommend() {
+        const areas    = getAreaChips(), cats = getCatChips();
+        const mustList = document.getElementById('mustVisit').value.trim().split(',').map(s=>s.trim()).filter(Boolean);
+        const slotOrders = getSlotOrders();
+
+        const payload = {
+            age:              parseInt(document.getElementById('age').value) || 25,
+            companion:        document.getElementById('companion').value     || 'friend',
+            budget:           document.getElementById('budget').value        || 'medium',
+            travelDays:       parseInt(document.getElementById('travelDays').value) || 3,
+            startHour:        parseInt(document.getElementById('startHour').value)  || 10,
+            endHour:          parseInt(document.getElementById('endHour').value)    || 21,
+            intensity:        document.getElementById('intensity').value     || 'balanced',
+            slotOrders,
+            dailyTourism: slotOrders.filter(s => s.type === 'tourism').length,
+            dailyMeal:    slotOrders.filter(s => s.type === 'food').length,
+            dailyCafe:    slotOrders.filter(s => s.type === 'cafe').length,
+            dailyBar:     slotOrders.filter(s => s.type === 'bar').length,
+            preferredAreas:   areas,
+            mustVisit:        mustList,
+            categories:       cats,
+            styleDescription: document.getElementById('styleDescription').value.trim()
+        };
+
+        const ct = document.querySelector('meta[name="_csrf"]')?.content;
+        const ch = document.querySelector('meta[name="_csrf_header"]')?.content;
+        const headers = { 'Content-Type': 'application/json' };
+        if (ct && ch) headers[ch] = ct;
+
+        document.getElementById('loadingOverlay').classList.add('show');
+        fetch('/api/trip/recommend', { method:'POST', headers, body:JSON.stringify(payload) })
+            .then(r => r.json())
+            .then(data => {
+                sessionStorage.setItem('tripResult',  JSON.stringify(data));
+                sessionStorage.setItem('tripRequest', JSON.stringify(payload));
+                sessionStorage.setItem('tripLang', 'en');
+                location.href = '/en/trip/result';
+            })
+            .catch(() => {
+                document.getElementById('loadingOverlay').classList.remove('show');
+                alert('Failed to generate recommendations. Please try again.');
+            });
+    }
+</script>
+</body>
+</html>

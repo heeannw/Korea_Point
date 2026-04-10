@@ -85,11 +85,21 @@ public class TransportRouteService {
 
         if (startCoords == null || endCoords == null) return List.of();
 
-        return searchAndClassify(
+        List<TransportRouteDto> result = searchAndClassify(
                 startCoords[0], startCoords[1],
                 endCoords[0], endCoords[1],
                 start, end
         );
+
+        // ✅ 출발지 좌표 저장 → detail 페이지 지도에서 사용
+        final double startLng = startCoords[0];
+        final double startLat = startCoords[1];
+        result.forEach(dto -> {
+            dto.setStartLat(startLat);
+            dto.setStartLng(startLng);
+        });
+
+        return result;
     }
 
     // -----------------------------------------------
