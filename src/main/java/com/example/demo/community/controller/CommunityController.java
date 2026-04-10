@@ -33,7 +33,17 @@ public class CommunityController {
                 ? Sort.by("viewCount").descending()
                 : Sort.by("createdAt").descending();
         var pageable = PageRequest.of(page, 10, sortOrder);
-        model.addAttribute("data", communityService.getCommunityPageData(categoryId, keyword, pageable));
+        var data = communityService.getCommunityPageData(categoryId, keyword, pageable);
+
+        int totalPages  = data.getPosts().getTotalPages();
+        int currentPage = data.getPosts().getNumber();
+        int startPage   = Math.max(0, currentPage - 4);
+        int endPage     = Math.min(startPage + 9, totalPages - 1);
+        startPage       = Math.max(0, endPage - 9);  // endPage가 잘린 경우 startPage 재조정
+
+        model.addAttribute("data", data);
+        model.addAttribute("startPage", startPage);
+        model.addAttribute("endPage", endPage);
         model.addAttribute("selectedCategory", categoryId);
         model.addAttribute("keyword", keyword != null ? keyword : "");
         model.addAttribute("sort", sort);
