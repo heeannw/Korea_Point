@@ -56,7 +56,8 @@ public class TourismService {
     private final Map<String, Double> agePopularity   = new HashMap<>();
 
     // 캐시 - 서버 시작 시 한 번만 로드
-    private List<TourPlaceDto> cachedCandidates = null;
+    private List<TourPlaceDto> cachedCandidatesKR = null;
+    private List<TourPlaceDto> cachedCandidatesEN = null;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -67,15 +68,13 @@ public class TourismService {
     public void init() {
         try {
             loadLookup();
-            loadCandidates();   // 캐싱
-            System.out.println("✅ TourismService 초기화 완료");
-            System.out.println("   candidates=" + cachedCandidates.size() + "개"
-                    + " coverage=" + foreignCoverage.size() + "개"
-                    + " agePop=" + agePopularity.size() + "개");
-        } catch (Exception e) {
-            System.out.println("⚠️ TourismService 로드 실패");
-            e.printStackTrace();
-        }
+            loadCandidatesKR();  // 기존 loadCandidates() → KR로 이름 변경
+            loadCandidatesEN();  // 추가
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    private List<TourPlaceDto> getCandidates(String lang) {
+        return "EN".equalsIgnoreCase(lang) ? cachedCandidatesEN : cachedCandidatesKR;
     }
 
     private void loadLookup() throws Exception {
@@ -93,20 +92,25 @@ public class TourismService {
     }
 
     // JSON 한 번만 파싱해서 캐싱
-    private void loadCandidates() throws Exception {
+    private void loadCandidatesKR() throws Exception {
         InputStream is = getClass().getClassLoader()
-                .getResourceAsStream("data/tourism/seoul_recommend_candidates.json");
-        if (is == null) throw new RuntimeException("seoul_recommend_candidates.json 없음");
-        cachedCandidates = mapper.readValue(is, new TypeReference<>() {});
+                .getResourceAsStream("data/tourism/seoul_recommend_candidates_translated_KR.json");
+        cachedCandidatesKR = mapper.readValue(is, new TypeReference<>() {});
+    }
+
+    private void loadCandidatesEN() throws Exception {
+        InputStream is = getClass().getClassLoader()
+                .getResourceAsStream("data/tourism/seoul_recommend_candidates_translated_EN.json");
+        cachedCandidatesEN = mapper.readValue(is, new TypeReference<>() {});
     }
 
     // ─────────────────────────────────────────────────────────
     // 현위치 기반 2km 이내 추천 (캐시 사용으로 빠름)
     // ─────────────────────────────────────────────────────────
-    public List<TourPlaceDto> analyzeLocation(Double lat, Double lon) {
+    public List<TourPlaceDto> analyzeLocation(Double lat, Double lon, String lang) {
         List<TourPlaceDto> result = new ArrayList<>();
 
-        for (TourPlaceDto p : cachedCandidates) {
+        for (TourPlaceDto p : getCandidates(lang)) {
             if (p.getLat() == null || p.getLng() == null) continue;
 
             double dist = haversine(lat, lon, p.getLat(), p.getLng());
@@ -129,18 +133,18 @@ public class TourismService {
     // ─────────────────────────────────────────────────────────
     // 키워드 검색 + 내 위치까지 거리 표시
     // ─────────────────────────────────────────────────────────
-    public List<TourPlaceDto> searchKeyword(String keyword) {
-        return searchKeyword(keyword, null, null);
+    public List<TourPlaceDto> searchKeyword(String keyword,String lang) {
+        return searchKeyword(keyword, null, null,lang);
     }
 
     // 내 위치 좌표를 함께 받으면 distance 계산
-    public List<TourPlaceDto> searchKeyword(String keyword, Double userLat, Double userLon) {
+    public List<TourPlaceDto> searchKeyword(String keyword, Double userLat, Double userLon, String lang) {
         if (keyword == null || keyword.isBlank()) return List.of();
 
         String kw = keyword.trim().toLowerCase();
         List<TourPlaceDto> result = new ArrayList<>();
 
-        for (TourPlaceDto p : cachedCandidates) {
+        for (TourPlaceDto p : getCandidates(lang)) {
             String title  = p.getTitle()       != null ? p.getTitle().toLowerCase()       : "";
             String gName  = p.getGoogle_name() != null ? p.getGoogle_name().toLowerCase() : "";
             String addr   = p.getAddr()        != null ? p.getAddr().toLowerCase()        : "";
@@ -172,10 +176,10 @@ public class TourismService {
             "restaurant","cafe","coffee","food","dining","bistro","bar"
     ));
 
-    public List<TourPlaceDto> getNearbyFoodPlaces(Double lat, Double lon, double radiusKm) {
+    public List<TourPlaceDto> getNearbyFoodPlaces(Double lat, Double lon, double radiusKm, String lang) {
         List<TourPlaceDto> result = new ArrayList<>();
 
-        for (TourPlaceDto p : cachedCandidates) {
+        for (TourPlaceDto p : getCandidates(lang)) {
             if (p.getLat() == null || p.getLng() == null) continue;
 
             double dist = haversine(lat, lon, p.getLat(), p.getLng());
@@ -310,9 +314,9 @@ public class TourismService {
         return c;
     }
 
-    public List<TourPlaceDto> allList() {
+    public List<TourPlaceDto> allList(String lang) {
         List<TourPlaceDto> alist = new ArrayList<>();
-        for (TourPlaceDto p : cachedCandidates) {
+        for (TourPlaceDto p : getCandidates(lang)) {
             TourPlaceDto copy = copy(p);
 
             double s = score(copy.getTitle(),copy.getType(),copy.getRating() != null ? copy.getRating() : 0.0,
@@ -325,5 +329,13 @@ public class TourismService {
         alist.sort((a, b) -> Float.compare(b.getScore(), a.getScore()));
 
         return alist;
+    }
+
+    public List<TourPlaceDto> allDistence(double lat, double lon, List<TourPlaceDto> displayList) {
+        for(TourPlaceDto pd : displayList){
+            double s = haversine(lat,lon,pd.getLat(),pd.getLng());
+            pd.setDistance(s);
+        }
+        return displayList;
     }
 }

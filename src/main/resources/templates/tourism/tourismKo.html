@@ -33,8 +33,13 @@
     .search-wrap input{width:100%;padding:10px 42px 10px 16px;border:1.5px solid var(--border);border-radius:50px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--light);transition:border .2s;color:var(--dark)}
     .search-wrap input:focus{border-color:var(--blue);background:#fff}
     .search-wrap .si{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1}
-    /* 최근 검색어 */
-    .recent-dropdown{position:absolute;top:calc(100% + 4px);left:16px;right:16px;background:#fff;border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);z-index:300;display:none}
+    .suggest-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);z-index:301;display:none;max-height:220px;overflow-y:auto}
+    .suggest-dropdown.show{display:block}
+    .suggest-item{padding:9px 14px;cursor:pointer;font-size:13px;color:var(--dark);display:flex;align-items:center;gap:8px;transition:background .15s}
+    .suggest-item:hover{background:var(--light)}
+    .suggest-item .si-icon{color:var(--blue);font-size:12px}
+    .suggest-item .si-cat{font-size:11px;color:var(--gray);margin-left:auto}
+    .recent-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);z-index:300;display:none}
     .recent-dropdown.show{display:block}
     .recent-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px 6px;border-bottom:1px solid var(--border)}
     .recent-header span{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px}
@@ -46,11 +51,24 @@
     .recent-del{background:none;border:none;color:var(--gray);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px}
     .recent-del:hover{color:var(--dark)}
     .recent-empty{padding:14px;text-align:center;font-size:13px;color:var(--gray)}
-    .filter-row{padding:10px 16px 0;display:flex;gap:6px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+    .filter-wrap{padding:10px 0 0;display:flex;align-items:center;gap:0;flex-shrink:0;position:relative}
+    .scroll-btn{flex-shrink:0;width:28px;height:28px;border:1.5px solid var(--border);border-radius:50%;background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--gray);transition:all .2s;box-shadow:0 1px 6px rgba(0,0,0,.08);z-index:2}
+    .scroll-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt)}
+    .scroll-btn:disabled{opacity:0.3;cursor:default;pointer-events:none}
+    .scroll-btn.left{margin-left:8px}
+    .scroll-btn.right{margin-right:8px}
+    .filter-row{flex:1;display:flex;gap:6px;overflow-x:auto;padding:0 6px;scrollbar-width:none;scroll-behavior:smooth}
     .filter-row::-webkit-scrollbar{display:none}
-    .chip{padding:5px 14px;border-radius:50px;border:1.5px solid var(--border);background:var(--white);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:'DM Sans',sans-serif;color:var(--gray)}
+    .chip{padding:6px 14px;border-radius:50px;border:1.5px solid var(--border);background:var(--white);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:'DM Sans',sans-serif;color:var(--gray);display:flex;align-items:center;gap:5px;}
     .chip:hover{border-color:var(--blue);color:var(--blue)}
     .chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+    .chip[data-cat="All"].active{background:var(--blue);border-color:var(--blue);color:#fff}
+    .chip[data-cat="Cultural Site"]:hover,.chip[data-cat="Cultural Site"].active{background:#ef4444;border-color:#ef4444;color:#fff}
+    .chip[data-cat="Museum"]:hover,.chip[data-cat="Museum"].active{background:#f59e0b;border-color:#f59e0b;color:#fff}
+    .chip[data-cat="Festival"]:hover,.chip[data-cat="Festival"].active{background:#ec4899;border-color:#ec4899;color:#fff}
+    .chip[data-cat="Experience"]:hover,.chip[data-cat="Experience"].active{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
+    .chip[data-cat="Nature"]:hover,.chip[data-cat="Nature"].active{background:#22c55e;border-color:#22c55e;color:#fff}
+    .chip[data-cat="Shopping"]:hover,.chip[data-cat="Shopping"].active{background:#3b9eff;border-color:#3b9eff;color:#fff}
     .sort-row{padding:10px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
     .result-count{font-size:13px;color:var(--gray)}
     .result-count strong{color:var(--dark)}
@@ -79,16 +97,6 @@
     .mc:hover{background:var(--light)}
     .loc-btn{position:absolute;bottom:24px;right:16px;background:#fff;border:1px solid var(--border);border-radius:50px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--sh);color:var(--dark);font-family:'DM Sans',sans-serif;z-index:30;transition:all .2s}
     .loc-btn:hover{border-color:var(--blue);color:var(--blue)}
-    .map-popup{position:absolute;z-index:40;background:#fff;border-radius:var(--r);box-shadow:0 8px 32px rgba(0,0,0,.18);width:240px;display:none;overflow:hidden;animation:popIn .2s ease}
-    .map-popup.show{display:block}
-    @keyframes popIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-    .popup-img{height:110px;background-size:cover;background-position:center;position:relative;background-color:var(--light)}
-    .popup-close{position:absolute;top:6px;right:8px;background:rgba(0,0,0,.4);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;line-height:1}
-    .popup-body{padding:12px}
-    .popup-name{font-size:14px;font-weight:700;margin-bottom:3px}
-    .popup-meta{font-size:12px;color:var(--gray);margin-bottom:8px}
-    .popup-btn{display:block;width:100%;padding:8px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;text-align:center;text-decoration:none}
-    .popup-btn:hover{background:var(--blue-dk)}
     .detail-panel{position:absolute;inset:0;background:#fff;z-index:50;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none;}
     .detail-panel.open{transform:translateX(0);pointer-events:auto;}
     .dp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:5}
@@ -127,15 +135,50 @@
     .ri-date{font-size:11px;color:var(--gray)}
     .ri-stars{font-size:12px;color:var(--gold)}
     .ri-text{font-size:13px;color:var(--mid);line-height:1.6}
-    .dp-action{position:sticky;bottom:0;padding:12px 16px;background:#fff;border-top:1px solid var(--border)}
-    .dp-action-btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
+    .dp-action{
+      position:sticky;
+      bottom:0;
+      padding:12px 16px;
+      background:#fff;
+      border-top:1px solid var(--border);
+      display:flex;
+      gap:6px;
+    }
+    .dp-action-btn{
+      flex:1;        /* ✅ 이게 핵심 - 3등분 */
+      padding:13px 6px;
+      background:var(--blue);
+      color:#fff;
+      border:none;
+      border-radius:50px;
+      font-size:11px;  /* ✅ 3개 들어가게 작게 */
+      font-weight:700;
+      cursor:pointer;
+      font-family:'DM Sans',sans-serif;
+      transition:background .2s;
+      text-align:center;
+    }
     .dp-action-btn:hover{background:var(--blue-dk)}
+    .food-btn:hover{background: #ed59a7;}
+    .cafe-btn:hover{background: #322012;}
+    .route-btn:hover{background:#1a7de0;}
+    .food-btn{
+      background:#F472B6FF;
+    }
+
+    .cafe-btn{
+      background:#4A3220FF;
+    }
+
+    .route-btn{
+      background:#3b9eff;
+    }
   </style>
 </head>
 <body>
 
 <header>
-  <a class="logo" href="/tour/all">Korea<span>Point</span></a>
+  <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
   <div class="header-right">
     <button class="h-btn active">EN</button>
     <button class="h-btn">KR</button>
@@ -145,49 +188,52 @@
 
 <div class="app-body">
   <div class="sidebar">
-
-    <!-- 검색창 + 최근 검색어 드롭다운 -->
     <div class="search-bar">
       <form action="/tour/search/" method="get" id="searchForm">
         <div class="search-wrap">
           <input type="text" placeholder="Search in Seoul..." name="keyword" id="searchInput"
                  th:value="${keyword}" autocomplete="off"
-                 onfocus="showRecent()" onblur="hideRecent()">
+                 onfocus="onSearchFocus()" onblur="onSearchBlur()" oninput="onSearchInput(this.value)">
+          <input name="lang" value="KO" type="hidden">
           <button class="si" type="submit">🔍</button>
-        </div>
-      </form>
-
-      <div class="recent-dropdown" id="recentDropdown">
-        <div th:if="${recentKeywords != null and !#lists.isEmpty(recentKeywords)}">
-          <div class="recent-header">
-            <span>Recent</span>
-            <button type="button" onclick="clearAllKeywords()">Clear all</button>
-          </div>
-          <div th:each="kw : ${recentKeywords}">
-            <div class="recent-item">
-              <div class="recent-item-kw" th:data-kw="${kw}" onclick="doSearch(this.dataset.kw)">
-                <span>🕐</span><span th:text="${kw}"></span>
+          <div class="suggest-dropdown" id="suggestDropdown"></div>
+          <div class="recent-dropdown" id="recentDropdown">
+            <div th:if="${recentKeywords != null and !#lists.isEmpty(recentKeywords)}">
+              <div class="recent-header">
+                <span>Recent</span>
+                <button type="button" onclick="clearAllKeywords()">Clear all</button>
               </div>
-              <button class="recent-del" type="button"
-                      th:data-kw="${kw}" onclick="deleteKeyword(this.dataset.kw, event)">✕</button>
+              <div th:each="kw : ${recentKeywords}">
+                <div class="recent-item">
+                  <div class="recent-item-kw" th:data-kw="${kw}" onclick="doSearch(this.dataset.kw)">
+                    <span>🕐</span><span th:text="${kw}"></span>
+                  </div>
+                  <button class="recent-del" type="button"
+                          th:data-kw="${kw}" onclick="deleteKeyword(this.dataset.kw, event)">✕</button>
+                </div>
+              </div>
+            </div>
+            <div class="recent-empty"
+                 th:if="${recentKeywords == null or #lists.isEmpty(recentKeywords)}">
+              No recent searches
             </div>
           </div>
         </div>
-        <div class="recent-empty"
-             th:if="${recentKeywords == null or #lists.isEmpty(recentKeywords)}">
-          No recent searches
-        </div>
-      </div>
+      </form>
     </div>
 
-    <div class="filter-row" id="filterRow">
-      <div class="chip active" onclick="setCategory('All')">All</div>
-      <div class="chip" onclick="setCategory('문화시설')">🏛 문화시설</div>
-      <div class="chip" onclick="setCategory('박물관')">🏺 박물관</div>
-      <div class="chip" onclick="setCategory('자연')">🌿 자연</div>
-      <div class="chip" onclick="setCategory('쇼핑')">🛍️ 쇼핑</div>
-      <div class="chip" onclick="setCategory('체험관광')">🎡 체험관광</div>
-      <div class="chip" onclick="setCategory('축제')">🎉 축제</div>
+    <div class="filter-wrap">
+      <button class="scroll-btn left" id="scrollLeft" onclick="scrollFilter(-1)" disabled>‹</button>
+      <div class="filter-row" id="filterRow">
+        <div class="chip active" data-cat="All" onclick="setCategory('All')">🗺️ 전체</div>
+        <div class="chip" data-cat="Cultural Site" onclick="setCategory('문화시설')">🏛️ 문화시설</div>
+        <div class="chip" data-cat="Museum" onclick="setCategory('박물관')">🏺 박물관</div>
+        <div class="chip" data-cat="Nature" onclick="setCategory('자연')">🌿 자연</div>
+        <div class="chip" data-cat="Shopping" onclick="setCategory('쇼핑')">🛍️ 쇼핑</div>
+        <div class="chip" data-cat="Experience" onclick="setCategory('체험관광')">🎡 체험관광</div>
+        <div class="chip" data-cat="Festival" onclick="setCategory('축제')">🎉 축제</div>
+      </div>
+      <button class="scroll-btn right" id="scrollRight" onclick="scrollFilter(1)">›</button>
     </div>
 
     <div class="sort-row">
@@ -199,32 +245,15 @@
     </div>
 
     <div class="place-list" id="placeList"></div>
-
-    <div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;">
-      <button type="button" onclick="getLocation()"
-              style="width:100%;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">
-        📍 My Location
-      </button>
-    </div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;"></div>
   </div>
 
   <div class="map-area" id="mapArea">
     <div id="kakaoMap" style="position:absolute;inset:0;z-index:0;"></div>
-
+    <button class="loc-btn" onclick="getLocation()">📍 My Location</button>
     <div class="map-controls" style="z-index:30;">
       <div class="mc" onclick="map&&map.setLevel(map.getLevel()-1)">＋</div>
       <div class="mc" onclick="map&&map.setLevel(map.getLevel()+1)">－</div>
-    </div>
-
-    <div class="map-popup" id="mapPopup">
-      <div class="popup-img" id="popupImg">
-        <button class="popup-close" onclick="closePopup()">×</button>
-      </div>
-      <div class="popup-body">
-        <div class="popup-name" id="popupName"></div>
-        <div class="popup-meta" id="popupMeta"></div>
-        <a class="popup-btn" href="#" id="popupDetailBtn">View Details →</a>
-      </div>
     </div>
 
     <div class="detail-panel" id="detailPanel">
@@ -246,7 +275,9 @@
         <div id="dpReviews"></div>
       </div>
       <div class="dp-action">
-        <button class="dp-action-btn" id="itineraryBtn">❤️ Save to Itinerary</button>
+        <button class="dp-action-btn food-btn" id="itineraryBtn">🍽️근처 음식점</button>
+        <button class="dp-action-btn cafe-btn" id="itineraryBtn1">☕️근처 카페</button>
+        <button class="dp-action-btn route-btn" id="itineraryBtn2" type="button">🚊관광지 찾아가기</button>
       </div>
     </div>
   </div>
@@ -258,40 +289,95 @@
   const PLACES    = /*[[${list}]]*/ [];
   const centerLat = /*[[${centerLat}]]*/ 37.5665;
   const centerLon = /*[[${centerLon}]]*/ 126.9780;
-  const needsLocationRefresh = /*[[${needsLocationRefresh}]]*/ false;
 </script>
 
 <script>
+  let lang = /*[[${lang}]]*/ 'KO';
   let activeCategory = 'All';
   let activeSort = 'recommended';
   let activePinId = null;
-  let currentPopup = null;
   let popupOverlay = null;
   let currentPopupPlace = null;
   let map;
   let markerMap = [];
   let selectedMarker = null;
-  let activeMarkerImage;
+  let _markerJustClicked = false;
 
-  function typeName(type) {
-    const m = {'12':'문화시설','14':'박물관','15':'축제','25':'체험관광','28':'자연','38':'쇼핑'};
-    return m[String(type)] ?? '기타';
+  const CATEGORY_COLOR = {
+    '12': '#ef4444', '14': '#f59e0b', '15': '#ec4899',
+    '25': '#8b5cf6', '28': '#22c55e', '38': '#3b9eff',
+  };
+  const CATEGORY_EMOJI = {
+    '12': '🏛️', '14': '🏺', '15': '🎉',
+    '25': '🎡', '28': '🌿', '38': '🛍️',
+  };
+
+  function createMarkerImage(color, emoji) {
+    const em = emoji ?? '📍';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 36 48">
+      <path d="M18 0 C8.1 0 0 8.1 0 18 C0 31.5 18 48 18 48 C18 48 36 31.5 36 18 C36 8.1 27.9 0 18 0Z" fill="${color}" stroke="white" stroke-width="2"/>
+      <circle cx="18" cy="17" r="11" fill="white" opacity="0.95"/>
+      <text x="18" y="22" text-anchor="middle" font-size="13" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${em}</text>
+    </svg>`;
+    return new kakao.maps.MarkerImage(
+            'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+            new kakao.maps.Size(36, 48),
+            { offset: new kakao.maps.Point(18, 48) }
+    );
   }
 
+  function createActiveMarkerImage(color, emoji) {
+    const em = emoji ?? '📍';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="46" height="60" viewBox="0 0 46 60">
+      <ellipse cx="23" cy="58" rx="10" ry="3" fill="rgba(0,0,0,0.18)"/>
+      <path d="M23 0 C10.3 0 0 10.3 0 23 C0 40.25 23 60 23 60 C23 60 46 40.25 46 23 C46 10.3 35.7 0 23 0Z" fill="${color}" stroke="white" stroke-width="2.5"/>
+      <circle cx="23" cy="22" r="14" fill="white" opacity="0.97"/>
+      <text x="23" y="29" text-anchor="middle" font-size="17" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${em}</text>
+    </svg>`;
+    return new kakao.maps.MarkerImage(
+            'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+            new kakao.maps.Size(46, 60),
+            { offset: new kakao.maps.Point(23, 60) }
+    );
+  }
+
+  function scrollFilter(dir) {
+    const row = document.getElementById('filterRow');
+    row.scrollLeft += dir * 120;
+    setTimeout(updateScrollBtns, 150);
+  }
+  function updateScrollBtns() {
+    const row = document.getElementById('filterRow');
+    document.getElementById('scrollLeft').disabled  = row.scrollLeft <= 0;
+    document.getElementById('scrollRight').disabled = row.scrollLeft + row.clientWidth >= row.scrollWidth - 1;
+  }
+  document.getElementById('filterRow').addEventListener('scroll', updateScrollBtns);
+  window.addEventListener('load', updateScrollBtns);
+
+  function typeName(type) {
+    const m = { '12':'문화시설','14':'박물관','15':'축제','25':'체험관광','28':'자연','38':'쇼핑' };
+    return m[String(type)] ?? 'Other';
+  }
   function distStr(d) {
     if (d == null) return '-';
     return d < 1 ? (d * 1000).toFixed(0) + 'm' : d.toFixed(1) + 'km';
   }
+  function getCatColor(type) {
+    return CATEGORY_COLOR[String(type)] ?? '#64748b';
+  }
 
   function highlightMarkerByTitle(title) {
     markerMap.forEach(item => {
-      item.marker.setImage(null);
+      const color = CATEGORY_COLOR[String(item.type)] ?? '#64748b';
+      const emoji = CATEGORY_EMOJI[String(item.type)] ?? '📍';
+      item.marker.setImage(createMarkerImage(color, emoji));
       item.marker.setZIndex(1);
     });
-
     const target = markerMap.find(item => item.title === title);
     if (target) {
-      target.marker.setImage(activeMarkerImage);
+      const color = CATEGORY_COLOR[String(target.type)] ?? '#64748b';
+      const emoji = CATEGORY_EMOJI[String(target.type)] ?? '📍';
+      target.marker.setImage(createActiveMarkerImage(color, emoji));
       target.marker.setZIndex(10);
       selectedMarker = target.marker;
     }
@@ -300,34 +386,27 @@
   function getFiltered() {
     let list = [...PLACES];
     const q = document.getElementById('searchInput').value.toLowerCase();
-
     if (activeCategory !== 'All') {
       list = list.filter(p => typeName(p.type) === activeCategory);
     }
-
     if (q) {
       list = list.filter(p =>
               p.title?.toLowerCase().includes(q) ||
               p.addr?.toLowerCase().includes(q)
       );
     }
-
     if (activeSort === 'recommended') {
       list.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
     } else {
       list.sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
     }
-
     return list;
   }
 
   function setCategory(c) {
     activeCategory = c;
     document.querySelectorAll('.chip').forEach(ch =>
-            ch.classList.toggle(
-                    'active',
-                    ch.textContent.trim() === c || (c === 'All' && ch.textContent.trim() === 'All')
-            )
+            ch.classList.toggle('active', ch.dataset.cat === c)
     );
     render();
   }
@@ -335,8 +414,7 @@
   function setSort(s) {
     activeSort = s;
     document.querySelectorAll('.sort-btn').forEach(b =>
-            b.classList.toggle(
-                    'active',
+            b.classList.toggle('active',
                     (s === 'recommended' && b.textContent.includes('Recommended')) ||
                     (s === 'distance' && b.textContent.includes('Distance'))
             )
@@ -348,15 +426,16 @@
     const list = getFiltered();
     window._currentList = list;
     document.getElementById('countDisplay').textContent = list.length;
-
+    if (activePinId != null && list[activePinId]) {
+      requestAnimationFrame(() => highlightMarkerByTitle(list[activePinId].title));
+    }
     document.getElementById('placeList').innerHTML = list.map((p, i) => `
-      <div class="place-card${activePinId == i ? ' active' : ''}"
-           id="card-${i}" onclick="selectPlace(${i})">
+      <div class="place-card${activePinId == i ? ' active' : ''}" id="card-${i}" onclick="selectPlace(${i})">
         <div class="thumb" style="background-image:url('${p.image ?? ''}')">
-          <div class="rank">${i + 1}</div>
+          <div class="rank" style="background:${getCatColor(p.type)}">${i + 1}</div>
         </div>
         <div class="card-info">
-          <div class="card-cat">${typeName(p.type)}</div>
+          <div class="card-cat" style="color:${getCatColor(p.type)}">${typeName(p.type)}</div>
           <div class="card-name">${p.title ?? '-'}</div>
           <div class="card-meta">
             <span class="stars-s">★</span>${p.rating ?? '-'}
@@ -369,96 +448,49 @@
   }
 
   function selectPlace(idx) {
-    activePinId = Number(idx);
-    render();
-
     const list = window._currentList || PLACES;
     const p = list[idx];
-
-    if (p) {
-      highlightMarkerByTitle(p.title);
-    }
-
-    if (p && p.lat && p.lng && map) {
-      map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
-    }
-
+    if (!p) return;
+    activePinId = Number(idx);
+    highlightMarkerByTitle(p.title);
+    render();
+    if (p.lat && p.lng && map) map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
     setTimeout(() => {
       const card = document.getElementById('card-' + idx);
-      if (card) {
-        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        document.querySelectorAll('.place-card').forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-      }
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 60);
-
-    if (p) showPopup(p);
+    showPopup(p);
   }
 
   function showPopup(p) {
     if (!p || !map) return;
     currentPopupPlace = p;
-
+    const color = getCatColor(p.type);
     const content = `
-      <div style="
-        background:#fff;
-        border-radius:12px;
-        box-shadow:0 8px 32px rgba(0,0,0,.18);
-        width:240px;
-        overflow:hidden;
-        border:1px solid #dbeafe;
-        position:relative;
-      ">
-        <div style="
-          height:110px;
-          background-image:url('${p.image ?? ''}');
-          background-size:cover;
-          background-position:center;
-          background-color:#f0f7ff;
-          position:relative;
-        ">
-          <button onclick="closePopup()"
-            style="
-              position:absolute;top:6px;right:8px;
-              background:rgba(0,0,0,.4);color:#fff;border:none;
-              border-radius:50%;width:22px;height:22px;cursor:pointer;
-            ">×</button>
+      <div style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.22);width:240px;overflow:hidden;border:1.5px solid ${color}40;position:relative;">
+        <div style="height:110px;background-image:url('${p.image ?? ''}');background-size:cover;background-position:center;background-color:#f0f7ff;position:relative;">
+          <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.3) 100%);"></div>
+          <button onclick="closePopup()" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>
         </div>
         <div style="padding:12px">
-          <div style="font-size:14px;font-weight:700;margin-bottom:3px;">${p.title ?? '-'}</div>
-          <div style="font-size:12px;color:#64748b;margin-bottom:8px;">
-            ★ ${p.rating ?? '-'} · ${distStr(p.distance)} away · ${typeName(p.type)}
-          </div>
-          <a href="#"
-             onclick="openDetailFromPopup(event)"
-             style="
-               display:block;width:100%;padding:8px;background:#3b9eff;color:#fff;
-               border:none;border-radius:8px;font-size:13px;font-weight:600;
-               text-align:center;text-decoration:none;
-             ">
-            View Details →
-          </a>
+          <div style="font-size:11px;font-weight:700;color:${color};margin-bottom:3px;">${typeName(p.type)}</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:3px;color:#0f172a">${p.title ?? '-'}</div>
+          <div style="font-size:12px;color:#64748b;margin-bottom:8px;">★ ${p.rating ?? '-'} · ${distStr(p.distance)} away</div>
+          <a href="#" onclick="openDetailFromPopup(event)" style="display:block;width:100%;padding:8px;background:${color};color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;text-align:center;text-decoration:none;cursor:pointer;">View Details →</a>
         </div>
-      </div>
-    `;
-
-    if (popupOverlay) {
-      popupOverlay.setMap(null);
-    }
-
+      </div>`;
+    if (popupOverlay) popupOverlay.setMap(null);
     popupOverlay = new kakao.maps.CustomOverlay({
       map: map,
       position: new kakao.maps.LatLng(p.lat, p.lng),
       content: content,
-      yAnchor: 1.45
+      yAnchor: 1.45,
+      zIndex: 10
     });
   }
 
   function closePopup() {
-    if (popupOverlay) {
-      popupOverlay.setMap(null);
-      popupOverlay = null;
-    }
+    if (popupOverlay) { popupOverlay.setMap(null); popupOverlay = null; }
     currentPopupPlace = null;
     activePinId = null;
     render();
@@ -466,37 +498,28 @@
 
   function openDetail(p) {
     if (!p) return;
-
-    const hiddenPopup = document.getElementById('mapPopup');
-    if (hiddenPopup) {
-      hiddenPopup.classList.remove('show');
-    }
+    const color = getCatColor(p.type);
 
     document.getElementById('dpTitle').textContent = p.title ?? '-';
     document.getElementById('dpImg').style.backgroundImage = `url('${p.image ?? ''}')`;
     document.getElementById('dpName').textContent = p.title ?? '-';
     document.getElementById('dpSub').textContent = p.addr ?? '';
     document.getElementById('dpBadges').innerHTML =
-            `<span class="dp-badge db-blue">${typeName(p.type)}</span>
+            `<span class="dp-badge" style="background:${color}22;color:${color}">${typeName(p.type)}</span>
        <span class="dp-badge db-gold">🏆 ${p.score?.toFixed(1) ?? '-'}점</span>`;
-
     document.getElementById('dpStars').innerHTML =
             `<span class="s">★★★★★</span>
        <span class="sc">${p.rating ?? '-'}</span>
        <span class="sm">/ 5.0 &nbsp;·&nbsp; ${p.user_ratings_total?.toLocaleString() ?? '-'} reviews</span>`;
-
     document.getElementById('dpInfoRow').innerHTML = `
       <div class="dp-info"><div class="dp-info-label">Address</div><div class="dp-info-val">${p.addr ?? '-'}</div></div>
       <div class="dp-info"><div class="dp-info-label">Distance</div><div class="dp-info-val">${distStr(p.distance)} away</div></div>
       <div class="dp-info"><div class="dp-info-label">Score</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
-      <div class="dp-info"><div class="dp-info-label">Category</div><div class="dp-info-val">${typeName(p.type)}</div></div>
-    `;
-
+      <div class="dp-info"><div class="dp-info-label">Category</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
     document.getElementById('dpDesc').textContent = '';
 
     const reviews = p.reviews ?? [];
     const avg = p.rating ?? 0;
-
     document.getElementById('dpRevSummary').innerHTML = `
       <div>
         <div class="rev-score">${avg}</div>
@@ -506,30 +529,51 @@
         ${[5,4,3,2,1].map(s => {
       const cnt = reviews.filter(r => Math.round(r.rating ?? 0) === s).length;
       const pct = reviews.length ? Math.round(cnt / reviews.length * 100) : 0;
-      return `<div class="rev-row"><span>${s}</span>
-            <div class="rev-track"><div class="rev-fill" style="width:${pct}%"></div></div>
-            <span>${pct}%</span></div>`;
+      return `<div class="rev-row"><span>${s}</span><div class="rev-track"><div class="rev-fill" style="width:${pct}%"></div></div><span>${pct}%</span></div>`;
     }).join('')}
-      </div></div>
-    `;
-
+      </div></div>`;
     document.getElementById('dpReviews').innerHTML = reviews.slice(0, 5).map(r => `
       <div class="review-item">
         <div class="ri-top">
-          <div>
-            <div class="ri-name">${r.author_name ?? '익명'}</div>
-            <div class="ri-date">${r.relative_time_description ?? ''}</div>
-          </div>
+          <div><div class="ri-name">${r.author_name ?? '익명'}</div><div class="ri-date">${r.relative_time_description ?? ''}</div></div>
           <div class="ri-stars">${'★'.repeat(Math.round(r.rating ?? 0))}</div>
         </div>
         <div class="ri-text">${r.text ?? ''}</div>
-      </div>
-    `).join('');
+      </div>`).join('');
+
 
     document.getElementById('itineraryBtn').onclick = function() {
       if (p.lat && p.lng) {
-        location.href = `/tour/itinerary?lat=${p.lat}&lon=${p.lng}&title=${encodeURIComponent(p.title ?? '')}`;
+        location.href = `/en/foodmap/mylocation/${p.lat}/${p.lng}`;
       }
+    };
+
+    document.getElementById('itineraryBtn1').onclick = function() {
+      if (p.lat && p.lng) {
+        location.href = `/en/cafe/mylocation/${p.lat}/${p.lng}`;
+      }
+    };
+
+    // ✅ 중복 없이 한 번만 선언
+    document.getElementById('itineraryBtn2').onclick = function() {
+      if (!(p.lat && p.lng)) { alert("관광지 좌표가 없습니다."); return; }
+      const endTitle = encodeURIComponent(p.title ?? '');
+      navigator.geolocation.getCurrentPosition(
+              function(pos) {
+                const uLat = pos.coords.latitude;
+                const uLon = pos.coords.longitude;
+                location.href = `/${lang.toLowerCase()}/transport/search?startLat=${uLat}&startLng=${uLon}&end=${endTitle}`;
+              },
+              function() {
+                const sLat = /*[[${userlat}]]*/ null;
+                const sLon = /*[[${userlon}]]*/ null;
+                if (sLat && sLon) {
+                  location.href = `/${lang.toLowerCase()}/transport/search?startLat=${sLat}&startLng=${sLon}&end=${endTitle}`;
+                } else {
+                  location.href = `/${lang.toLowerCase()}/transport/search?end=${endTitle}`;
+                }
+              }
+      );
     };
 
     document.getElementById('detailPanel').classList.add('open');
@@ -541,14 +585,12 @@
 
   function openDetailFromPopup(e) {
     e.preventDefault();
-    if (currentPopupPlace) {
-      openDetail(currentPopupPlace);
-    }
+    if (currentPopupPlace) openDetail(currentPopupPlace);
   }
 
   document.getElementById('mapArea').addEventListener('click', function(e) {
-    if (!e.target.closest('.map-popup') &&
-            !e.target.closest('.detail-panel') &&
+    if (_markerJustClicked) { _markerJustClicked = false; return; }
+    if (!e.target.closest('.detail-panel') &&
             !e.target.closest('.place-card') &&
             !e.target.closest('.loc-btn') &&
             !e.target.closest('.map-controls')) {
@@ -557,70 +599,93 @@
   });
 
   function getLocation() {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-              pos => location.href = `/tour/mylocation/${pos.coords.latitude}/${pos.coords.longitude}`,
-              ()  => location.href = '/tour/mylocation/37.5665/126.9780'
-      );
-    } else {
-      location.href = '/tour/mylocation/37.5665/126.9780';
-    }
+    const options = { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 };
+    navigator.geolocation.getCurrentPosition(
+            pos => { location.href = `/tour/mylocation/${pos.coords.latitude}/${pos.coords.longitude}?lang=${lang}`; },
+            err => { location.href = `/tour/mylocation/37.5665/126.9780?lang=${lang}`; },
+            options
+    );
   }
 
   let hideTimer;
 
+  function onSearchFocus() {
+    const val = document.getElementById('searchInput').value;
+    if (val.trim().length > 0) showSuggest(val);
+    else showRecent();
+  }
+  function onSearchBlur() {
+    setTimeout(() => {
+      document.getElementById('suggestDropdown').classList.remove('show');
+      document.getElementById('recentDropdown').classList.remove('show');
+    }, 300);
+  }
+  function onSearchInput(val) {
+    if (val.trim().length === 0) {
+      document.getElementById('suggestDropdown').classList.remove('show');
+      showRecent();
+      return;
+    }
+    document.getElementById('recentDropdown').classList.remove('show');
+    showSuggest(val);
+  }
+  function showSuggest(val) {
+    const q = val.toLowerCase();
+    const matched = PLACES.filter(p =>
+            p.title && p.title.toLowerCase().includes(q)
+    ).slice(0, 8);
+    const box = document.getElementById('suggestDropdown');
+    if (matched.length === 0) { box.classList.remove('show'); return; }
+    box.innerHTML = matched.map((p, i) => `
+      <div class="suggest-item" data-idx="${i}">
+        <span class="si-icon">🔍</span>
+        <span>${highlight(p.title, q)}</span>
+        <span class="si-cat">${typeName(p.type)}</span>
+      </div>`).join('');
+    const items = box.querySelectorAll('.suggest-item');
+    matched.forEach((p, i) => {
+      items[i].dataset.title = p.title;
+      items[i].addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        doSearch(this.dataset.title);
+      });
+    });
+    box.classList.add('show');
+  }
+  function highlight(text, q) {
+    const idx = text.toLowerCase().indexOf(q);
+    if (idx < 0) return text;
+    return text.slice(0, idx)
+            + '<strong style="color:var(--blue)">' + text.slice(idx, idx + q.length) + '</strong>'
+            + text.slice(idx + q.length);
+  }
   function showRecent() {
     clearTimeout(hideTimer);
     document.getElementById('recentDropdown').classList.add('show');
   }
-
-  function hideRecent() {
-    hideTimer = setTimeout(() =>
-            document.getElementById('recentDropdown').classList.remove('show'), 200);
-  }
-
   function doSearch(kw) {
     document.getElementById('searchInput').value = kw;
     document.getElementById('searchForm').submit();
   }
-
   function csrfPost(url, body) {
     const token  = document.querySelector('meta[name="_csrf"]')?.content ?? '';
     const header = document.querySelector('meta[name="_csrf_header"]')?.content ?? 'X-CSRF-TOKEN';
-
     return fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        [header]: token
-      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', [header]: token },
       body: body
     });
   }
-
   function deleteKeyword(kw, event) {
     event.stopPropagation();
     csrfPost('/tour/search/history/delete', 'keyword=' + encodeURIComponent(kw))
             .then(() => location.reload());
   }
-
   function clearAllKeywords() {
-    csrfPost('/tour/search/history/clear', '')
-            .then(() => location.reload());
+    csrfPost('/tour/search/history/clear', '').then(() => location.reload());
   }
 
   render();
-
-  if (needsLocationRefresh && location.pathname === '/tour/all' && !sessionStorage.getItem('tourLocationRequested')) {
-    sessionStorage.setItem('tourLocationRequested', '1');
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-              pos => location.replace(`/tour/mylocation/${pos.coords.latitude}/${pos.coords.longitude}`),
-              () => {}
-      );
-    }
-  }
 </script>
 
 <script th:src="'//dapi.kakao.com/v2/maps/sdk.js?appkey=' + ${kakaoKey} + '&autoload=false'"></script>
@@ -630,55 +695,43 @@
       center: new kakao.maps.LatLng(centerLat, centerLon),
       level: 5
     });
-
-    activeMarkerImage = new kakao.maps.MarkerImage(
-            "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
-            new kakao.maps.Size(36, 52)
-    );
-
     const myLocationImage = new kakao.maps.MarkerImage(
-            "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png",
-            new kakao.maps.Size(40, 42)
+            'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
+            new kakao.maps.Size(36, 48)
     );
-
     markerMap = [];
-
     if (userLat && userLon) {
       new kakao.maps.Marker({
         map: map,
         position: new kakao.maps.LatLng(userLat, userLon),
         title: '내 위치',
-        image : myLocationImage
+        image: myLocationImage
       });
     }
-
     PLACES.forEach(p => {
       if (!p.lat || !p.lng) return;
-
+      const color = CATEGORY_COLOR[String(p.type)] ?? '#64748b';
+      const emoji = CATEGORY_EMOJI[String(p.type)] ?? '📍';
       const marker = new kakao.maps.Marker({
         map: map,
         position: new kakao.maps.LatLng(p.lat, p.lng),
-        title: p.title ?? ''
+        title: p.title ?? '',
+        image: createMarkerImage(color, emoji),
+        zIndex: 1
       });
-
-      markerMap.push({
-        title: p.title,
-        marker: marker
-      });
-
+      markerMap.push({ title: p.title, type: p.type, marker: marker });
       kakao.maps.event.addListener(marker, 'click', () => {
+        _markerJustClicked = true;
+        setTimeout(() => { _markerJustClicked = false; }, 300);
         const list = window._currentList || PLACES;
-        const listIdx = list.findIndex(x => x.title === p.title);
-
-        if (listIdx >= 0) {
-          selectPlace(listIdx);
-        } else {
+        let listIdx = list.findIndex(x => x.title === p.title);
+        if (listIdx < 0) {
           highlightMarkerByTitle(p.title);
-          if (p.lat && p.lng) {
-            map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
-          }
+          map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
           showPopup(p);
+          return;
         }
+        selectPlace(listIdx);
       });
     });
   });
