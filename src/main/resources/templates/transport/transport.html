@@ -7,9 +7,9 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>교통 경로 검색 — KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/common/variables.css}">
-    <link rel="stylesheet" th:href="@{/css/common/reset.css}">
-    <link rel="stylesheet" th:href="@{/css/common/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/transport/t_common/variable.css}">
+    <link rel="stylesheet" th:href="@{/css/transport/t_common/reset.css}">
+    <link rel="stylesheet" th:href="@{/css/transport/t_common/layout.css}">
     <link rel="stylesheet" th:href="@{/css/transport/transportSearch.css}">
     <style>
         /*공통 CSS와 다른 부분만 오버라이드 */
@@ -79,7 +79,7 @@
 
     <div class="search-card">
         <!-- 폼 액션 /ko로 수정 -->
-        <form th:action="${lang == 'en'} ? @{/en/transport/search} : @{/transport/search}" method="get" id="searchForm">
+        <form th:action="@{/ko/transport/search}" method="get" id="searchForm">
             <div class="input-group">
                 <div class="input-row">
                     <div class="input-icon">🚩</div>
@@ -123,10 +123,7 @@
     </div>
 
     <div th:if="${routes != null and !#lists.isEmpty(routes)}">
-        <a class="re-search"
-           th:href="${lang == 'en'} ? @{/en/transport/search} : @{/transport/search}">
-            ← 다시 검색하기
-        </a>
+        <a class="re-search" th:href="@{/ko/transport/search}">← 다시 검색하기</a>
 
         <div class="result-header">
             <b th:text="${start}"></b> → <b th:text="${end}"></b> ·
@@ -348,6 +345,13 @@
     setupAutocomplete('startInput', 'startAcList');
     setupAutocomplete('endInput', 'endAcList');
 
+    // URL 파라미터로 출발지/도착지 자동 입력 (?end=장소명)
+    (function() {
+        const p = new URLSearchParams(location.search);
+        if (p.get('end'))   document.getElementById('endInput').value   = p.get('end');
+        if (p.get('start')) document.getElementById('startInput').value = p.get('start');
+    })();
+
     function goDetail(el) {
         const routeId = el.getAttribute('data-route-id');
 
@@ -457,6 +461,14 @@
         // 현재위치 좌표는 도착지로 이동하면 의미 없으므로 초기화
         startLat.value = '';
         startLng.value = '';
+    }
+
+    //04.09 버그로 인해 수정
+    function getCsrfToken() {
+        const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+        if (token && header) return { token, header };
+        return null;
     }
 </script>
 
