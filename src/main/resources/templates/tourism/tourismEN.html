@@ -35,6 +35,12 @@
     .search-wrap .si{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0;line-height:1}
     .recent-dropdown{position:absolute;top:calc(100% + 4px);left:16px;right:16px;background:#fff;border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);z-index:300;display:none}
     .recent-dropdown.show{display:block}
+    .suggest-dropdown{position:absolute;top:calc(100% + 4px);left:16px;right:16px;background:#fff;border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);z-index:301;display:none;max-height:220px;overflow-y:auto}
+    .suggest-dropdown.show{display:block}
+    .suggest-item{padding:9px 14px;cursor:pointer;font-size:13px;color:var(--dark);display:flex;align-items:center;gap:8px;transition:background .15s}
+    .suggest-item:hover{background:var(--light)}
+    .suggest-item .si-icon{color:var(--blue);font-size:12px}
+    .suggest-item .si-cat{font-size:11px;color:var(--gray);margin-left:auto}
     .recent-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px 6px;border-bottom:1px solid var(--border)}
     .recent-header span{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px}
     .recent-header button{background:none;border:none;font-size:11px;color:var(--blue);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600}
@@ -174,14 +180,17 @@
 
     <!-- 검색창 + 최근 검색어 -->
     <div class="search-bar">
-      <form action="/tour/searchEN" method="get" id="searchForm">
+      <form action="/tour/search/" method="get" id="searchForm">
         <div class="search-wrap">
+          <input type="hidden" name="lang" value="en"> <!-- ✅ lang 파라미터 추가 -->
           <input type="text" placeholder="Search in Seoul..." name="keyword" id="searchInput"
                  th:value="${keyword}" autocomplete="off"
-                 onfocus="showRecent()" onblur="hideRecent()">
+                 onfocus="onSearchFocus()" onblur="onSearchBlur()" oninput="onSearchInput(this.value)">
           <button class="si" type="submit">🔍</button>
         </div>
       </form>
+      <!-- suggest -->
+      <div class="suggest-dropdown" id="suggestDropdown"></div>
 
       <div class="recent-dropdown" id="recentDropdown">
         <div th:if="${recentKeywords != null and !#lists.isEmpty(recentKeywords)}">
@@ -265,6 +274,7 @@
       </div>
       <div class="dp-action">
         <button class="dp-action-btn" id="itineraryBtn">❤️ Save to Itinerary</button>
+        <button class="dp-action-btn" id="transportBtn" style="background:#16a34a;margin-top:8px">🚇 Get Directions</button>
       </div>
     </div>
   </div>
@@ -276,6 +286,10 @@
   const PLACES    = /*[[${list}]]*/ [];
   const centerLat = /*[[${centerLat}]]*/ 37.5665;
   const centerLon = /*[[${centerLon}]]*/ 126.9780;
+</script>
+
+<script>
+  const LANG = /*[[${lang}]]*/ 'en';
 </script>
 
 <script>
@@ -629,8 +643,29 @@
     document.getElementById('itineraryBtn').style.background = color;
     document.getElementById('itineraryBtn').onclick = function() {
       if (p.lat && p.lng) {
-        location.href = `/tour/itinerary?lat=${p.lat}&lon=${p.lng}&title=${encodeURIComponent(p.title ?? '')}`;
+        location.href = `/tour/itinerary?lat=${p.lat}&lon=${p.lng}&title=${encodeURIComponent(p.title ?? '')}&lang=${LANG}`;
       }
+    };
+
+    document.getElementById('transportBtn').onclick = function() {
+      if (!(p.lat && p.lng)) { alert('No coordinates for this place.'); return; }
+      const endTitle = encodeURIComponent(p.google_name ?? '');
+      navigator.geolocation.getCurrentPosition(
+              function(pos) {
+                const uLat = pos.coords.latitude;
+                const uLon = pos.coords.longitude;
+                location.href = `/${LANG.toLowerCase()}/transport/search?startLat=${uLat}&startLng=${uLon}&end=${endTitle}`;
+              },
+              function() {
+                const sLat = /*[[${userlat}]]*/ null;
+                const sLon = /*[[${userlon}]]*/ null;
+                if (sLat && sLon) {
+                  location.href = `/${LANG.toLowerCase()}/transport/search?startLat=${sLat}&startLng=${sLon}&end=${endTitle}`; // ✅
+                } else {
+                  location.href = `/${LANG.toLowerCase()}/transport/search?end=${endTitle}`; // ✅
+                }
+              }
+      );
     };
 
     document.getElementById('detailPanel').classList.add('open');
@@ -666,16 +701,68 @@
     const options = { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 };
     navigator.geolocation.getCurrentPosition(
             pos => {
-              location.href = `/tour/mylocationEN/${pos.coords.latitude}/${pos.coords.longitude}`;
+              location.href = `/tour/mylocation/${pos.coords.latitude}/${pos.coords.longitude}?lang=${LANG}`;
             },
             err => {
-              location.href = '/tour/mylocationEN/37.5665/126.9780';
+              location.href = '/tour/mylocation/37.5665/126.9780?lang=${LANG}';
             },
             options
     );
   }
 
   let hideTimer;
+  function onSearchFocus() {
+    const val = document.getElementById('searchInput').value;
+    if (val.trim().length > 0) showSuggest(val);
+    else showRecent();
+  }
+  function onSearchBlur() {
+    setTimeout(() => {
+      document.getElementById('suggestDropdown').classList.remove('show');
+      document.getElementById('recentDropdown').classList.remove('show');
+    }, 300);
+  }
+  function onSearchInput(val) {
+    if (val.trim().length === 0) {
+      document.getElementById('suggestDropdown').classList.remove('show');
+      showRecent(); return;
+    }
+    document.getElementById('recentDropdown').classList.remove('show');
+    showSuggest(val);
+  }
+  function showSuggest(val) {
+    const q = val.toLowerCase();
+    const matched = PLACES.filter(p =>
+            p.google_name && p.google_name.toLowerCase().includes(q)  // ✅ title → google_name
+    ).slice(0, 8);
+    const box = document.getElementById('suggestDropdown');
+    if (matched.length === 0) { box.classList.remove('show'); return; }
+
+    box.innerHTML = matched.map((p, i) => `
+    <div class="suggest-item" data-idx="${i}">
+      <span class="si-icon">🔍</span>
+      <span>${highlight(p.google_name, q)}</span>  <!-- ✅ title → google_name -->
+      <span class="si-cat">${typeName(p.type)}</span>
+    </div>`).join('');
+
+    const items = box.querySelectorAll('.suggest-item');
+    matched.forEach((p, i) => {
+      items[i].dataset.title = p.google_name;  // ✅ title → google_name
+      items[i].addEventListener('mousedown', function(e) {
+        e.preventDefault(); // ✅ blur 막아서 doSearch 확실히 실행
+        doSearch(this.dataset.title);
+      });
+    });
+
+    box.classList.add('show');
+  }
+  function highlight(text, q) {
+    const idx = text.toLowerCase().indexOf(q);
+    if (idx < 0) return text;
+    return text.slice(0, idx)
+      + '<strong style="color:var(--blue)">' + text.slice(idx, idx + q.length) + '</strong>'
+      + text.slice(idx + q.length);
+  }
   function showRecent() {
     clearTimeout(hideTimer);
     document.getElementById('recentDropdown').classList.add('show');

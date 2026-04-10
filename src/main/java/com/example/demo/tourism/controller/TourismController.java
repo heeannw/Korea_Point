@@ -238,10 +238,19 @@ public class TourismController {
 
 
     @RequestMapping("tour/gotransport")
-    public String goTransport(@RequestParam("userlat") Double userlat,@RequestParam("userlon") Double userlon,
-                              @RequestParam("title") String title,@RequestParam("lat") Double pleceLat,@RequestParam("lon") Double pleceLon){
-
-        return null;
+    public String goTransport(@RequestParam("userlat") Double userlat,
+                              @RequestParam("userlon") Double userlon,
+                              @RequestParam("title") String title,
+                              @RequestParam("lat") Double placeLat,
+                              @RequestParam("lon") Double placeLon,
+                              @RequestParam(value = "lang", defaultValue = "KR") String lang) {
+        // ✅ startLat/startLng 분리해서 전송 (TransportRouteController 파라미터 형식)
+        String encoded = java.net.URLEncoder.encode(title, java.nio.charset.StandardCharsets.UTF_8);
+        String base = "en".equalsIgnoreCase(lang) ? "/en/transport/search" : "/ko/transport/search";
+        return "redirect:" + base
+                + "?startLat=" + userlat
+                + "&startLng=" + userlon
+                + "&end=" + encoded;
     }
 
 
