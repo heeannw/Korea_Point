@@ -119,7 +119,7 @@ public class TourismController {
         session.setAttribute("userlon", lon);
 
         List<TourPlaceDto> nearbyList = tourismService.analyzeLocation(lat, lon, lang);
-
+        System.out.println("lang :" + lang);
         model.addAttribute("spotname", "내위치");
         model.addAttribute("lang", lang);
         model.addAttribute("list", nearbyList);

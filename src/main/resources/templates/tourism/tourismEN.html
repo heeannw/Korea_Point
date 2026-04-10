@@ -194,7 +194,7 @@
           <input type="text" placeholder="Search in Seoul..." name="keyword" id="searchInput"
                  th:value="${keyword}" autocomplete="off"
                  onfocus="onSearchFocus()" onblur="onSearchBlur()" oninput="onSearchInput(this.value)">
-          <input name="lang" value="KO" type="hidden">
+          <input name="lang" value="EN" type="hidden">
           <button class="si" type="submit">🔍</button>
           <div class="suggest-dropdown" id="suggestDropdown"></div>
           <div class="recent-dropdown" id="recentDropdown">
@@ -292,7 +292,7 @@
 </script>
 
 <script>
-  let lang = /*[[${lang}]]*/ 'KO';
+  let lang = /*[[${lang}]]*/ 'en'
   let activeCategory = 'All';
   let activeSort = 'recommended';
   let activePinId = null;
@@ -302,7 +302,7 @@
   let markerMap = [];
   let selectedMarker = null;
   let _markerJustClicked = false;
-  let spotName = [[${spotname}]]
+  let spotName = /*[[${spotname}]]*/ 'my location';
 
   const CATEGORY_COLOR = {
     '12': '#ef4444', '14': '#f59e0b', '15': '#ec4899',
