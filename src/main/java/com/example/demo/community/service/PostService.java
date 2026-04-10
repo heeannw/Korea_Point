@@ -14,8 +14,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.servlet.http.HttpSession;
+
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -58,15 +62,25 @@ public class PostService {
                 .toList();
     }
 
-    // 게시글 상세 조회 + 조회수 +1
+    // 게시글 상세 조회 + 조회수 +1 (같은 세션에서 이미 본 글은 증가 안 함)
     @Transactional
-    public PostDto getPostDetail(Long postId) {
-        postRepository.findByIdAndDeletedAtIsNull(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
-        postRepository.incrementViewCount(postId);
-        // +1 반영된 값을 화면에 보여주기 위해 다시 조회
+    public PostDto getPostDetail(Long postId, HttpSession session) {
         Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+
+        @SuppressWarnings("unchecked")
+        Set<Long> viewed = (Set<Long>) session.getAttribute("viewedPosts");
+        if (viewed == null) {
+            viewed = new HashSet<>();
+            session.setAttribute("viewedPosts", viewed);
+        }
+
+        if (!viewed.contains(postId)) {
+            postRepository.incrementViewCount(postId);
+            post.setViewCount(post.getViewCount() + 1);
+            viewed.add(postId);
+        }
+
         return toDto(post);
     }
 
