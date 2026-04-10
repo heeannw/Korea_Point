@@ -4,7 +4,6 @@ import com.example.demo.community.dto.PostDto;
 import com.example.demo.community.entity.Category;
 import com.example.demo.community.entity.Post;
 import com.example.demo.community.repository.CategoryRepository;
-import com.example.demo.community.repository.CommunityRepository;
 import com.example.demo.community.repository.PostRepository;
 import com.example.demo.user.entity.User;
 import com.example.demo.user.repository.UserRepository;
