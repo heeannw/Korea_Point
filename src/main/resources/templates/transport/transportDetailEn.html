@@ -155,6 +155,22 @@
     return '🚇';
   }
 
+  function translateArrival(msg) {
+    if (!msg) return "";
+
+    msg = msg.replace(/(\d+)분 후 도착/g, "Arriving in $1 min");
+    msg = msg.replace(/전역/g, "1 stop away");
+    msg = msg.replace(/(\d+)번째 전/g, "$1 stops away");
+
+    msg = msg.replace("곧 도착", "Arriving soon");
+    msg = msg.replace("도착", "Arrived");
+    msg = msg.replace("출발", "Departed");
+    msg = msg.replace("진입", "Approaching");
+
+    return msg;
+  }
+
+
   // Kakao keyword search → return coordinates
   const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
 
@@ -389,6 +405,110 @@
                 const color  = typeColor(step.type, step.color);
                 const icon   = typeIcon(step.type);
                 const isLast = idx === steps.length - 1;
+
+                // 잠실새내 -> 이수 하드코딩
+                if (
+                        step.type === "subway" &&
+                        step.line.includes("2호선") &&
+                        step.fromStation.includes("잠실새내") &&
+                        step.toStation.includes("사당")
+                ) {
+                  step.path = [
+                    { lat: 37.476358, lng: 126.983819 },
+                    { lat: 37.477148, lng: 126.986405 },
+                    { lat: 37.479052, lng: 126.990046 },
+                    { lat: 37.481704, lng: 126.998747 },
+                    { lat: 37.481984, lng: 127.000642 },
+                    { lat: 37.482009, lng: 127.000644 },
+                    { lat: 37.482684, lng: 127.002391 },
+                    { lat: 37.483302, lng: 127.003114 },
+                    { lat: 37.484504, lng: 127.003818 },
+                    { lat: 37.490457, lng: 127.004919 },
+                    { lat: 37.491227, lng: 127.005774 },
+                    { lat: 37.509991, lng: 127.067116 },
+                    { lat: 37.511743, lng: 127.078356 },
+                    { lat: 37.511783, lng: 127.079954 },
+                    { lat: 37.511651, lng: 127.085644 }
+                  ];
+                }
+
+                // 모란 -> 안국 하드코딩
+                // 수인분당선
+                if (
+                        step.type === "subway" &&
+                        step.line.includes("수인") &&
+                        step.fromStation.includes("모란") &&
+                        step.toStation.includes("왕십리")
+                ) {
+                  step.path = step.path = [
+                    { lat: 37.433677, lng: 127.128851 },
+                    { lat: 37.458379, lng: 127.125694 },
+                    { lat: 37.472942, lng: 127.126593 },
+                    { lat: 37.474400, lng: 127.126286 },
+                    { lat: 37.475858, lng: 127.124296 },
+                    { lat: 37.478045, lng: 127.113630 },
+
+                    { lat: 37.490600, lng: 127.097823 },
+                    { lat: 37.494141, lng: 127.095248 },
+                    { lat: 37.496320, lng: 127.089755 },
+
+                    { lat: 37.491553, lng: 127.073018 },
+                    { lat: 37.489868, lng: 127.069950 },
+                    { lat: 37.489204, lng: 127.066130 },
+
+                    { lat: 37.487178, lng: 127.061281 },
+                    { lat: 37.487024, lng: 127.059693 },
+                    { lat: 37.488710, lng: 127.056217 },
+
+                    { lat: 37.506313, lng: 127.047999 },
+                    { lat: 37.508883, lng: 127.044630 },
+                    { lat: 37.523253, lng: 127.039182 },
+
+                    { lat: 37.538044, lng: 127.043600 },
+                    { lat: 37.544510, lng: 127.044759 },
+                    { lat: 37.551167, lng: 127.043866 },
+                    { lat: 37.551552, lng: 127.043588 },
+                    { lat: 37.553616, lng: 127.040717 },
+                    { lat: 37.554435, lng: 127.040105 },
+                    { lat: 37.561225, lng: 127.038800 }
+                  ];
+                }
+
+                // 2호선
+                if (
+                        step.type === "subway" &&
+                        step.line.includes("2호선") &&
+                        step.fromStation.includes("왕십리") &&
+                        step.toStation.includes("을지로입구")
+                ) {
+                  step.path = [
+                    { lat: 37.561228, lng: 127.037254 },
+                    { lat: 37.561270, lng: 127.035606 },
+                    { lat: 37.564998, lng: 127.026830 },
+                    { lat: 37.565613, lng: 127.021308 },
+                    { lat: 37.565669, lng: 127.019452 },
+                    { lat: 37.565673, lng: 127.008922 },
+                    { lat: 37.566878, lng: 127.002717 },
+                    { lat: 37.566621, lng: 126.997733 },
+                    { lat: 37.566288, lng: 126.991051 },
+                    { lat: 37.566035, lng: 126.982241 }
+                  ];
+                }
+
+                // 버스
+                if (
+                        step.type === "bus" &&
+                        step.line.includes("151") &&
+                        step.fromStation.includes("우리은행종로지점") &&
+                        step.toStation.includes("안국역6번출구")
+                ) {
+                  step.path = [
+                    { lat: 37.567729, lng: 126.982962 },
+                    { lat: 37.572507, lng: 126.983192 },
+                    { lat: 37.575584, lng: 126.982931 },
+                    { lat: 37.57575,  lng: 126.984121 }
+                  ];
+                }
 
                 if (step.path && step.path.length > 0) {
                   // Subway/Bus solid line
@@ -734,9 +854,17 @@
 
                   // Clean line name
                   function cleanLineName(name) {
+                    if (!name) return "";
+
+                    if (Array.isArray(name)) {
+                      name = name[0];
+                    }
+
                     return name
-                            .replace(/\[(.*?)\]/g, '$1')  // Remove brackets, keep content
-                            .replace(/\(.*?\)/g, '')      // Remove ()
+                            .replace(/\[(.*?)\]/g, '$1')
+                            .replace(/\(.*?\)/g, '')
+                            .replace(/방면/g, '')
+                            .replace(/\s+/g, ' ')
                             .trim();
                   }
 
@@ -747,24 +875,22 @@
                     const sec = parseInt(item.barvlDt);
                     let msg = '';
 
+
                     if (sec <= 60 && sec > 0)        msg = '🚨 Arriving soon';
                     else if (!isNaN(sec) && sec > 0) msg = `Arrives in ${Math.floor(sec / 60)} min`;
-                    else msg = (item.arvlMsg2 || '').replace(/\[/g, '').replace(/\]/g, '');
+                    else {
+                      let raw = (item.arvlMsg2 || '').replace(/\[/g, '').replace(/\]/g, '');
+                      msg = translateArrival(raw);
+                    }
+
+                    const lineText = cleanLineName(item.trainLineNm);
 
                     return `
-                                <div class="arrival-card">
-                                    <div class="arr-line">${
-                            cleanLineName(
-                                    (Array.isArray(item.trainLineNm)
-                                                    ? item.trainLineNm[0]
-                                                    : item.trainLineNm
-                                    ).split('방면')[1] || (Array.isArray(item.trainLineNm)
-                                            ? item.trainLineNm[0]
-                                            : item.trainLineNm)
-                            )
-                    }</div>
-                                    <div class="arr-msg">${msg}</div>
-                                </div>`;
+                      <div class="arrival-card">
+                          <div class="arr-line">${lineText}</div>
+                          <div class="arr-msg">${msg}</div>
+                      </div>
+                            `;
                   }).join('');
                 });
 
