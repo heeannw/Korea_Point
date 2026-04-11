@@ -36,4 +36,14 @@ public class CommentDto {
         private Long parentId;   // null이면 최상위 댓글, 값 있으면 대댓글
         private Long replyToId;  // 대댓글 내 어떤 댓글에 답글을 달았는지
     }
+
+    // 댓글 수정 요청 DTO
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static class CommentUpdateRequest {
+
+        @NotBlank(message = "내용을 입력해주세요.")
+        private String content;
+    }
 }

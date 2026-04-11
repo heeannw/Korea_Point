@@ -27,6 +27,16 @@ public class CommentController {
         return ResponseEntity.ok(Map.of("commentId", commentId));
     }
 
+    // 댓글 수정
+    @PatchMapping("/{commentId}")
+    public ResponseEntity<Void> updateComment(
+            @PathVariable Long commentId,
+            @Valid @RequestBody CommentDto.CommentUpdateRequest req) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        commentService.updateComment(commentId, userId, req.getContent());
+        return ResponseEntity.ok().build();
+    }
+
     // 댓글 삭제
     @DeleteMapping("/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
