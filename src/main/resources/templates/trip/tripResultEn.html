@@ -451,8 +451,8 @@
     const newResolved = dayCache[dayIdx];
     renderMarkers(newResolved);
     currentResolved = newResolved;
+    if (newResolved.filter(i => i.lat && i.lng).length > 1) drawRouteSegmented(newResolved);
     const coords = newResolved.filter(i => i.lat && i.lng).map(i => ({ lat: i.lat, lng: i.lng }));
-    if (coords.length > 1) drawRoute(coords);
     if (coords.length) fitBounds(coords);
   }
 

@@ -310,11 +310,18 @@
 
     function drawRoute(coords) {
         if (coords.length < 2) return;
-        const path = coords.map(c => new kakao.maps.LatLng(c.lat, c.lng));
-        const outline = new kakao.maps.Polyline({ path, strokeWeight:8, strokeColor:'#ffffff', strokeOpacity:.9, strokeStyle:'solid' });
-        const line    = new kakao.maps.Polyline({ path, strokeWeight:4, strokeColor:'#3b9eff', strokeOpacity:.85, strokeStyle:'solid' });
-        outline.setMap(map); line.setMap(map);
-        activeLines.push(outline, line);
+        // 카테고리별로 구간을 나눠 색상 적용
+        for (let i = 0; i < coords.length - 1; i++) {
+            const segPath = [
+                new kakao.maps.LatLng(coords[i].lat, coords[i].lng),
+                new kakao.maps.LatLng(coords[i+1].lat, coords[i+1].lng)
+            ];
+            const color = (CAT[coords[i].category] || CAT.tourism).color;
+            const outline = new kakao.maps.Polyline({ path: segPath, strokeWeight:8, strokeColor:'#ffffff', strokeOpacity:.9,  strokeStyle:'solid' });
+            const line    = new kakao.maps.Polyline({ path: segPath, strokeWeight:4, strokeColor:color,     strokeOpacity:.85, strokeStyle:'solid' });
+            outline.setMap(map); line.setMap(map);
+            activeLines.push(outline, line);
+        }
     }
 
     async function drawDay(day) {
@@ -341,7 +348,7 @@
         currentResolved = resolved;
 
         renderMarkers(resolved);
-        const coords = resolved.filter(i => i.lat && i.lng).map(i => ({ lat: i.lat, lng: i.lng }));
+        const coords = resolved.filter(i => i.lat && i.lng).map(i => ({ lat: i.lat, lng: i.lng, category: i.slot.category }));
         if (coords.length > 1) drawRoute(coords);
         if (coords.length) fitBounds(coords);
 
@@ -474,7 +481,7 @@
         const newResolved = dayCache[dayIdx];
         renderMarkers(newResolved);
         currentResolved = newResolved;
-        const coords = newResolved.filter(i => i.lat && i.lng).map(i => ({ lat: i.lat, lng: i.lng }));
+        const coords = newResolved.filter(i => i.lat && i.lng).map(i => ({ lat: i.lat, lng: i.lng, category: i.slot.category }));
         if (coords.length > 1) drawRoute(coords);
         if (coords.length) fitBounds(coords);
     }
