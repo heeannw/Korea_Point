@@ -29,11 +29,6 @@ public class TransportDetailController {
     @Autowired
     private RouteRepository routeRepository;
 
-    @GetMapping("/home")
-    public String home() {
-        return "home/home";
-    }
-
     @GetMapping("/transport/detail")
     public String transportDetailRedirect(@RequestParam(required = false) String routeId) {
         return "redirect:/ko/transport/detail?routeId=" + (routeId != null ? routeId : "");

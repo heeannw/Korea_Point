@@ -1,0 +1,48 @@
+/* ============================================================
+   foodmap.css  —  음식점 지도 테마 (map-common.css 보다 먼저 로드)
+   위치: resources/static/css/tourism/foodmap.css
+
+   HTML <head> 로드 순서 (순서 중요!):
+     <link rel="stylesheet" th:href="@{/css/tourism/foodmap.css}">
+     <link rel="stylesheet" th:href="@{/css/tourism/map-common.css}">
+   ============================================================ */
+
+/* ── 음식점 테마 변수 ── */
+:root {
+  --accent:     #f472b6;
+  --accent-dk:  #db2777;
+  --accent-lt:  #fdf2f8;
+  --border-col: #fce7f3;
+  --light-bg:   #fdf2f8;
+  --sh:         0 2px 16px rgba(244,114,182,.12);
+  --dark:       #0f172a;
+  --mid:        #334155;
+  --gray:       #64748b;
+  --gold:       #f59e0b;
+  --green:      #16a34a;
+  --r:          12px;
+  --logo-color: #db2777;  /* foodmap: 핑크 */
+}
+
+/* ── 음식점 전용 카드 active ── */
+.place-card.active .card-name { color: var(--accent-dk); }
+
+/* ── 음식점 전용 badge ── */
+.db-rest { background: var(--accent-lt); color: var(--accent-dk); }
+
+/* ── 카테고리별 chip 색상 (KO) ── */
+.chip[data-cat="한식"]:hover,.chip[data-cat="한식"].active{background:#ef4444;border-color:#ef4444;color:#fff}
+.chip[data-cat="중식"]:hover,.chip[data-cat="중식"].active{background:#f97316;border-color:#f97316;color:#fff}
+.chip[data-cat="일식"]:hover,.chip[data-cat="일식"].active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+.chip[data-cat="양식"]:hover,.chip[data-cat="양식"].active{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
+.chip[data-cat="고기_해산물"]:hover,.chip[data-cat="고기_해산물"].active{background:#f59e0b;border-color:#f59e0b;color:#fff}
+.chip[data-cat="바"]:hover,.chip[data-cat="바"].active{background:#6366f1;border-color:#6366f1;color:#fff}
+.chip[data-cat="기타"]:hover,.chip[data-cat="기타"].active{background:#64748b;border-color:#64748b;color:#fff}
+
+/* ── 카테고리별 chip 색상 (EN) ── */
+.chip[data-cat="Korean"]:hover,.chip[data-cat="Korean"].active{background:#ef4444;border-color:#ef4444;color:#fff}
+.chip[data-cat="Chinese"]:hover,.chip[data-cat="Chinese"].active{background:#f97316;border-color:#f97316;color:#fff}
+.chip[data-cat="Japanese"]:hover,.chip[data-cat="Japanese"].active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+.chip[data-cat="Western"]:hover,.chip[data-cat="Western"].active{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
+.chip[data-cat="Meat/Seafood"]:hover,.chip[data-cat="Meat/Seafood"].active{background:#f59e0b;border-color:#f59e0b;color:#fff}
+.chip[data-cat="Other"]:hover,.chip[data-cat="Other"].active{background:#64748b;border-color:#64748b;color:#fff}

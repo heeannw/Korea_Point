@@ -11,169 +11,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 
-  <style>
-    :root {
-      --accent:#f472b6; --accent-dk:#db2777; --accent-lt:#fdf2f8;
-      --border-col:#fce7f3; --light-bg:#fdf2f8; --sh:0 2px 16px rgba(244,114,182,.12);
-      --dark:#0f172a; --mid:#334155; --gray:#64748b;
-      --white:#fff; --gold:#f59e0b; --green:#16a34a; --r:12px;
-    }
-    *{margin:0;padding:0;box-sizing:border-box}
-    html,body{height:100%;overflow:hidden}
-    body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);display:flex;flex-direction:column}
-
-    header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border-col);background:var(--white);flex-shrink:0;z-index:100}
-    .logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--accent-dk);text-decoration:none}
-    .logo span{color:var(--dark)}
-    .header-right{display:flex;gap:8px;align-items:center}
-    .h-btn{padding:7px 16px;border-radius:50px;border:1.5px solid var(--border-col);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--dark);text-decoration:none;display:inline-flex;align-items:center;transition:all .2s}
-    .h-btn:hover,.h-btn.active{border-color:var(--accent);color:var(--accent)}
-    .h-btn-fill{background:var(--accent);color:#fff;border-color:var(--accent)}
-    .h-btn-fill:hover{background:var(--accent-dk);color:#fff}
-
-    .app-body{flex:1;display:flex;overflow:hidden}
-    .sidebar{width:380px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border-col);background:var(--white)}
-
-    .search-bar{padding:14px 16px 0;flex-shrink:0;position:relative}
-    .search-wrap{position:relative}
-    .search-wrap input{width:100%;padding:10px 42px 10px 16px;border:1.5px solid var(--border-col);border-radius:50px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--light-bg);transition:border .2s;color:var(--dark)}
-    .search-wrap input:focus{border-color:var(--accent);background:#fff}
-    .search-wrap .si{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0}
-
-    .suggest-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--border-col);border-radius:var(--r);box-shadow:var(--sh);z-index:300;display:none;max-height:280px;overflow-y:auto}
-    .suggest-dropdown.show{display:block}
-    .suggest-section-title{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;padding:10px 14px 4px;display:flex;justify-content:space-between;align-items:center}
-    .suggest-section-title button{background:none;border:none;font-size:11px;color:var(--accent);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600}
-    .suggest-item{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;cursor:pointer;transition:background .15s}
-    .suggest-item:hover{background:var(--light-bg)}
-    .suggest-item-kw{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dark);flex:1}
-    .suggest-item-kw .icon{color:var(--gray)}
-    .suggest-del{background:none;border:none;color:var(--gray);cursor:pointer;font-size:14px;padding:2px 6px}
-    .suggest-del:hover{color:var(--dark)}
-    .suggest-empty{padding:14px;text-align:center;font-size:13px;color:var(--gray)}
-    .suggest-divider{border:none;border-top:1px solid var(--border-col);margin:4px 0}
-
-    .filter-wrap{padding:10px 0 0;display:flex;align-items:center;flex-shrink:0}
-    .scroll-btn{flex-shrink:0;width:28px;height:28px;border:1.5px solid var(--border-col);border-radius:50%;background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--gray);transition:all .2s;box-shadow:0 1px 6px rgba(0,0,0,.06)}
-    .scroll-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--light-bg)}
-    .scroll-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
-    .scroll-btn.left{margin-left:8px}
-    .scroll-btn.right{margin-right:8px}
-    .filter-row{flex:1;display:flex;gap:6px;overflow-x:auto;padding:0 6px;scrollbar-width:none;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
-    .filter-row::-webkit-scrollbar{display:none}
-    .chip{padding:5px 14px;border-radius:50px;border:1.5px solid var(--border-col);background:var(--white);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s}
-    .chip:hover,.chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-    /* 카테고리별 색상 — KO 키 */
-    .chip[data-cat="한식"]:hover,.chip[data-cat="한식"].active{background:#ef4444;border-color:#ef4444;color:#fff}
-    .chip[data-cat="중식"]:hover,.chip[data-cat="중식"].active{background:#f97316;border-color:#f97316;color:#fff}
-    .chip[data-cat="일식"]:hover,.chip[data-cat="일식"].active{background:#3b82f6;border-color:#3b82f6;color:#fff}
-    .chip[data-cat="양식"]:hover,.chip[data-cat="양식"].active{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
-    .chip[data-cat="고기_해산물"]:hover,.chip[data-cat="고기_해산물"].active{background:#f59e0b;border-color:#f59e0b;color:#fff}
-    .chip[data-cat="바"]:hover,.chip[data-cat="바"].active{background:#6366f1;border-color:#6366f1;color:#fff}
-    .chip[data-cat="기타"]:hover,.chip[data-cat="기타"].active{background:#64748b;border-color:#64748b;color:#fff}
-    /* 카테고리별 색상 — EN 키 */
-    .chip[data-cat="Korean"]:hover,.chip[data-cat="Korean"].active{background:#ef4444;border-color:#ef4444;color:#fff}
-    .chip[data-cat="Chinese"]:hover,.chip[data-cat="Chinese"].active{background:#f97316;border-color:#f97316;color:#fff}
-    .chip[data-cat="Japanese"]:hover,.chip[data-cat="Japanese"].active{background:#3b82f6;border-color:#3b82f6;color:#fff}
-    .chip[data-cat="Western"]:hover,.chip[data-cat="Western"].active{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
-    .chip[data-cat="Meat/Seafood"]:hover,.chip[data-cat="Meat/Seafood"].active{background:#f59e0b;border-color:#f59e0b;color:#fff}
-    .chip[data-cat="Other"]:hover,.chip[data-cat="Other"].active{background:#64748b;border-color:#64748b;color:#fff}
-
-    .sort-row{padding:10px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-    .result-count{font-size:13px;color:var(--gray)}
-    .result-count strong{color:var(--dark)}
-    .sort-btns{display:flex;gap:4px}
-    .sort-btn{padding:4px 12px;border-radius:50px;border:1.5px solid var(--border-col);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s}
-    .sort-btn.active{background:var(--accent-lt);color:var(--accent);border-color:var(--accent)}
-
-    .place-list{flex:1;overflow-y:auto;padding:0 12px 12px;position:relative}
-    .place-list::-webkit-scrollbar{width:4px}
-    .place-list::-webkit-scrollbar-track{background:transparent}
-    .place-list::-webkit-scrollbar-thumb{background:var(--border-col);border-radius:2px}
-    .vs-spacer{position:absolute;top:0;left:0;width:1px;pointer-events:none}
-    .vs-window{position:absolute;left:12px;right:12px}
-
-    .place-card{display:flex;gap:12px;padding:12px;border-radius:var(--r);cursor:pointer;transition:background .15s,box-shadow .15s;margin-bottom:4px;border:1.5px solid transparent}
-    .place-card:hover{background:var(--light-bg)}
-    .place-card.active{border:1.5px solid var(--accent);background:var(--accent-lt)}
-    .place-card.active .card-name{color:var(--accent-dk)}
-    .place-card .thumb{width:72px;height:72px;border-radius:10px;flex-shrink:0;position:relative;background-color:var(--light-bg);display:flex;align-items:center;justify-content:center;font-size:28px}
-    .place-card .rank{position:absolute;top:-6px;left:-6px;width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--accent)}
-    .card-info{flex:1;min-width:0}
-    .card-name{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .card-cat{font-size:11px;font-weight:600;margin-bottom:4px}
-    .card-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray)}
-    .stars-s{color:var(--gold);font-size:11px}
-    .card-dist{font-size:11px;color:var(--gray);background:var(--light-bg);padding:2px 8px;border-radius:50px;white-space:nowrap}
-
-    .list-loading{display:none;align-items:center;justify-content:center;padding:40px 0;gap:10px;font-size:13px;color:var(--gray)}
-    .list-loading.show{display:flex}
-    .spinner{width:18px;height:18px;border:2.5px solid var(--border-col);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    .map-area{flex:1;position:relative;overflow:hidden}
-    #kakaoMap{position:absolute;inset:0;z-index:1}
-    .map-controls{position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:30}
-    .mc{width:36px;height:36px;background:#fff;border:1px solid var(--border-col);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;box-shadow:var(--sh);transition:background .2s}
-    .mc:hover{background:var(--light-bg)}
-    .loc-btn{position:absolute;bottom:24px;right:16px;background:#fff;border:1px solid var(--border-col);border-radius:50px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--sh);color:var(--dark);font-family:'DM Sans',sans-serif;z-index:30;transition:all .2s}
-    .loc-btn:hover{border-color:var(--accent);color:var(--accent)}
-
-    .detail-panel{position:absolute;inset:0;background:#fff;z-index:50;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none}
-    .detail-panel.open{transform:translateX(0);pointer-events:auto}
-    .dp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border-col);position:sticky;top:0;background:#fff;z-index:5}
-    .dp-back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px;line-height:1}
-    .dp-title{font-size:16px;font-weight:700;flex:1}
-    .dp-img{width:100%;height:160px;background-color:var(--light-bg);display:flex;align-items:center;justify-content:center;font-size:56px}
-    .dp-body{padding:16px}
-    .dp-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-    .dp-badge{padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700}
-    .db-rest{background:var(--accent-lt);color:var(--accent-dk)}
-    .db-gold{background:#fef3c7;color:#92400e}
-    .db-green{background:#f0fdf4;color:#166534}
-    .dp-name{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;margin-bottom:2px}
-    .dp-sub{font-size:14px;color:var(--gray);margin-bottom:12px}
-    .dp-stars{display:flex;align-items:center;gap:6px;margin-bottom:14px}
-    .dp-stars .s{color:var(--gold);font-size:16px}
-    .dp-stars .sc{font-size:18px;font-weight:700}
-    .dp-stars .sm{font-size:13px;color:var(--gray)}
-    .dp-info-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-    .dp-info{background:var(--light-bg);border-radius:10px;padding:12px 14px}
-    .dp-info-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
-    .dp-info-val{font-size:13px;font-weight:500;line-height:1.4}
-    .dp-section-title{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--dark)}
-    .rev-summary{display:flex;align-items:center;gap:16px;background:var(--light-bg);border-radius:10px;padding:14px 16px;margin-bottom:12px}
-    .rev-score{font-size:42px;font-weight:900;font-family:'Playfair Display',serif;line-height:1}
-    .rev-right{flex:1}
-    .rev-bars{display:flex;flex-direction:column;gap:5px}
-    .rev-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gray)}
-    .rev-track{flex:1;height:6px;background:var(--border-col);border-radius:3px;overflow:hidden}
-    .rev-fill{height:100%;background:var(--gold);border-radius:3px}
-    .review-item{padding:12px 0;border-bottom:1px solid var(--border-col)}
-    .review-item:last-child{border-bottom:none}
-    .ri-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
-    .ri-name{font-size:13px;font-weight:600}
-    .ri-stars{font-size:12px;color:var(--gold)}
-    .ri-text{font-size:13px;color:var(--mid);line-height:1.6}
-    .review-skeleton{padding:16px 0}
-    .sk-line{height:12px;background:linear-gradient(90deg,var(--border-col) 25%,var(--light-bg) 50%,var(--border-col) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:6px;margin-bottom:8px}
-    .sk-line.short{width:40%}
-    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-    .dp-action{position:sticky;bottom:0;padding:12px 16px;background:#fff;border-top:1px solid var(--border-col);display:flex;gap:8px}
-    .dp-action-btn{flex:1;padding:12px;border:none;border-radius:50px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
-    .dp-btn-transport{background:var(--accent);color:#fff}
-    .dp-btn-transport:hover{background:var(--accent-dk)}
-    .dp-btn-tour{background:#2563eb;color:#fff;border:none}
-    .dp-btn-tour:hover{background:#1e40af}
-    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--gray);gap:8px;text-align:center;padding:20px}
-    .empty-state .ei{font-size:40px}
-    .empty-state p{font-size:14px;line-height:1.6}
-  </style>
+  <!-- ✅ CSS 분리: 테마 변수(foodmap.css) → 공통 스타일(map-common.css) 순서로 로드 -->
+  <link rel="stylesheet" th:href="@{/css/tourism/foodmap.css}">
+  <link rel="stylesheet" th:href="@{/css/tourism/map-common.css}">
 </head>
 <body>
 
 <header>
-  <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
+  <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
   <div class="header-right">
     <!-- 언어 버튼: th:if로 분기 (th:onclick SpEL 이스케이프 오류 방지) -->
     <th:block th:if="${lang == 'en'}">
@@ -315,6 +160,54 @@
   const PLACES        = /*[[${list}]]*/    [];
   const INIT_CATEGORY = /*[[${category}]]*/ 'ALL';
   const LANG          = /*[[${lang}]]*/    'ko';  // 'ko' 또는 'en'
+  // ── 파파고 번역 캐시 & 함수 ────────────────────────────
+  // localStorage 영구 캐시: 한 번 번역한 이름은 다음 방문 시 즉시 표시
+  const _LS_KEY = 'tCache_food_en';
+  const _tCache = LANG === 'en'
+          ? (() => { try { return JSON.parse(localStorage.getItem(_LS_KEY) || '{}'); } catch { return {}; } })()
+          : {};
+
+  function _saveCache() {
+    try { localStorage.setItem(_LS_KEY, JSON.stringify(_tCache)); } catch {}
+  }
+
+  // 단건 번역 (상세 패널 이름·리뷰 등 개별 텍스트용)
+  async function tr(text) {
+    if (!text || LANG !== 'en') return text;
+    if (_tCache[text] !== undefined) return _tCache[text];
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ text, source: 'ko', target: 'en' })
+      });
+      const data = await res.json();
+      _tCache[text] = data.translatedText || text;
+      _saveCache();
+    } catch { _tCache[text] = text; }
+    return _tCache[text];
+  }
+
+  // 배치 번역: N건을 \n 으로 묶어 API 1번만 호출 → 30번→1번으로 단축
+  async function trAll(arr) {
+    if (!arr.length || LANG !== 'en') return arr;
+    const uncached = [...new Set(arr.filter(t => t && _tCache[t] === undefined))];
+    if (uncached.length) {
+      try {
+        const res = await fetch('/api/translate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ text: uncached.join('\n'), source: 'ko', target: 'en' })
+        });
+        const data = await res.json();
+        const translated = (data.translatedText || '').split('\n');
+        uncached.forEach((t, i) => { _tCache[t] = translated[i]?.trim() || t; });
+        _saveCache();
+      } catch { uncached.forEach(t => { _tCache[t] = t; }); }
+    }
+    return arr.map(t => _tCache[t] || t);
+  }
+
 
   // 언어별 UI 텍스트
   const T = {
@@ -593,7 +486,7 @@
             </div>
             <div class="card-info">
               <div class="card-cat" style="color:${catColor(p.category)}">${p.category ?? T.defaultCat} · AI ${((p.finalScore ?? 0) * 100).toFixed(0)}${T.aiPt}</div>
-              <div class="card-name">${p.name ?? '-'}</div>
+              <div class="card-name">${_tCache[p.name] || p.name || '-'}</div>
               <div class="card-meta">
                 <span class="stars-s">★</span>${(p.avgStar ?? 0).toFixed(1)}
                 (${LANG === 'en' ? (p.reviewCount ?? 0) + ' reviews' : '리뷰 ' + (p.reviewCount ?? 0) + '개'})
@@ -606,6 +499,14 @@
 
     container.onscroll = paintVisible;
     container.scrollTop = 0;
+
+    // ✅ EN이면 현재 목록 이름 미리 번역 후 재렌더
+    if (LANG === 'en') {
+      trAll(list.map(p => p.name ?? '')).then(translated => {
+        list.forEach((p, i) => { _tCache[p.name ?? ''] = translated[i]; });
+        paintVisible();
+      });
+    }
     paintVisible();
   }
 
@@ -675,9 +576,13 @@
     const color = catColor(p.category);
     const stars = Math.round(p.avgStar ?? 0);
 
-    document.getElementById('dpTitle').textContent = p.name ?? '-';
-    document.getElementById('dpName').textContent  = p.name ?? '-';
-    document.getElementById('dpSub').textContent   = p.googleName ?? '';
+    // ✅ EN이면 가게 이름 번역
+    const dispName = LANG === 'en' ? await tr(p.name ?? '') : (p.name ?? '');
+    const dispSub  = LANG === 'en' ? await tr(p.googleName ?? '') : (p.googleName ?? '');
+
+    document.getElementById('dpTitle').textContent = dispName;
+    document.getElementById('dpName').textContent  = dispName;
+    document.getElementById('dpSub').textContent   = dispSub;
     document.getElementById('dpImg').innerHTML     = `<span style="font-size:56px">${catEmoji(p.category)}</span>`;
 
     document.getElementById('dpBadges').innerHTML =
@@ -743,14 +648,26 @@
             }).join('')}
        </div></div>`;
 
-    document.getElementById('dpReviews').innerHTML = reviews.length > 0
-            ? reviews.slice(0, 5).map(r => `
+    // ✅ EN이면 리뷰 번역
+    if (reviews.length > 0 && LANG === 'en') {
+      trAll(reviews.slice(0, 5).map(r => r.content ?? '')).then(tContents => {
+        document.getElementById('dpReviews').innerHTML = reviews.slice(0, 5).map((r, i) => `
+          <div class="review-item">
+            <div class="ri-top"><div><div class="ri-name">${T.reviewerLabel}</div></div>
+              <div class="ri-stars">${'★'.repeat(Math.round(r.rating ?? 0))}</div></div>
+            <div class="ri-text">${tContents[i] || r.content || ''}</div>
+          </div>`).join('');
+      });
+    } else {
+      document.getElementById('dpReviews').innerHTML = reviews.length > 0
+              ? reviews.slice(0, 5).map(r => `
           <div class="review-item">
             <div class="ri-top"><div><div class="ri-name">${T.reviewerLabel}</div></div>
               <div class="ri-stars">${'★'.repeat(Math.round(r.rating ?? 0))}</div></div>
             <div class="ri-text">${r.content ?? ''}</div>
           </div>`).join('')
-            : `<p style="color:var(--gray);font-size:13px;padding:12px 0">${T.noReviews}</p>`;
+              : `<p style="color:var(--gray);font-size:13px;padding:12px 0">${T.noReviews}</p>`;
+    }
   }
 
   function closeDetail() {
@@ -762,20 +679,24 @@
   function openTransportMap() {
     const p = window._detailPlace || currentPopupPlace;
     if (!p) return;
-    const endTitle = encodeURIComponent(p.name);
+    const endTitle  = encodeURIComponent(p.name);
+    // ✅ BUG3 FIX: 이름만 넘기면 카카오 지오코딩이 동명 장소로 오작동
+    //   → 음식점의 실제 좌표(endLat, endLng)도 함께 전달
+    const endCoords = `&endLat=${p.lat}&endLng=${p.lng}`;
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-              pos => location.href = `${TRANSPORT_PREFIX}/transport/search?startLat=${pos.coords.latitude}&startLng=${pos.coords.longitude}&end=${endTitle}`,
-              ()   => location.href = `${TRANSPORT_PREFIX}/transport/search?startLat=${userLat}&startLng=${userLon}&end=${endTitle}`
+              pos => location.href = `${TRANSPORT_PREFIX}/transport/search?startLat=${pos.coords.latitude}&startLng=${pos.coords.longitude}&end=${endTitle}${endCoords}`,
+              ()   => location.href = `${TRANSPORT_PREFIX}/transport/search?startLat=${userLat}&startLng=${userLon}&end=${endTitle}${endCoords}`
       );
     } else {
-      location.href = `${TRANSPORT_PREFIX}/transport/search?startLat=${userLat}&startLng=${userLon}&end=${endTitle}`;
+      location.href = `${TRANSPORT_PREFIX}/transport/search?startLat=${userLat}&startLng=${userLon}&end=${endTitle}${endCoords}`;
     }
   }
   function openTourMap() {
     const p = window._detailPlace || currentPopupPlace;
     if (!p) return;
-    location.href = `/tour/all?lang=${TOUR_LANG}&lat=${p.lat}&lon=${p.lng}`;
+    // ✅ BUG2 FIX: radius=2 파라미터 추가 → 선택 음식점 기준 2km 이내 관광지만 표시
+    location.href = `/tour/all?lang=${TOUR_LANG}&lat=${p.lat}&lon=${p.lng}&radius=2`;
   }
   function openCafeMap() {
     const p = window._detailPlace || currentPopupPlace;
