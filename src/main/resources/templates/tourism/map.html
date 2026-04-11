@@ -617,8 +617,7 @@
   function openTourMap() {
     const p = window._detailPlace;
     if (!p) return;
-    // ✅ BUG2 FIX: radius=2 파라미터 추가 → 선택 카페 기준 2km 이내 관광지만 표시
-    location.href = `/tour/all?lang=${TOUR_LANG}&lat=${p.lat}&lon=${p.lng}&radius=2`;
+    location.href = `/tour/mylocation/${p.lat}/${p.lng}?lang=${TOUR_LANG}`;
   }
 
   function openFoodMap() {
