@@ -160,6 +160,7 @@
   const PLACES        = /*[[${list}]]*/    [];
   const INIT_CATEGORY = /*[[${category}]]*/ 'ALL';
   const LANG          = /*[[${lang}]]*/    'ko';  // 'ko' 또는 'en'
+  const FOOD_IMAGE_MAP = /*[[${foodImageMap}]]*/ {};  // ✅ Unsplash 카테고리별 이미지 URL
   // ── 파파고 번역 캐시 & 함수 ────────────────────────────
   // localStorage 영구 캐시: 한 번 번역한 이름은 다음 방문 시 즉시 표시
   const _LS_KEY = 'tCache_food_en';
@@ -493,7 +494,11 @@
                onclick="selectPlace('${escJS(p.name)}')">
             <div class="thumb">
               <div class="rank" style="background:${catColor(p.category)}">${i + 1}</div>
-              ${catEmoji(p.category)}
+              ${FOOD_IMAGE_MAP[p.category]
+                ? `<img src="${FOOD_IMAGE_MAP[p.category]}" alt="${p.category}"
+                        style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;"
+                        onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:28px;display:flex;align-items:center;justify-content:center;width:100%;height:100%\\'>${catEmoji(p.category)}</span>')">`
+                : `<span style="font-size:28px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${catEmoji(p.category)}</span>`}
             </div>
             <div class="card-info">
               <div class="card-cat" style="color:${catColor(p.category)}">${(LANG==='en' ? (p.categoryEn ?? p.category) : p.category) ?? T.defaultCat} · AI ${((p.finalScore ?? 0) * 100).toFixed(0)}${T.aiPt}</div>
@@ -560,8 +565,12 @@
       <div style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);
                   width:240px;overflow:hidden;border:1px solid #fce7f3;">
         <div style="height:90px;background:#fdf2f8;display:flex;align-items:center;
-                    justify-content:center;font-size:36px;position:relative;">
-          ${emoji}
+                    justify-content:center;font-size:36px;position:relative;overflow:hidden;">
+          ${FOOD_IMAGE_MAP[p.category]
+            ? `<img src="${FOOD_IMAGE_MAP[p.category]}" alt="${p.category}"
+                    style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"
+                    onerror="this.style.display='none'">`
+            : emoji}
           <button onmousedown="closePopup()"
             style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.4);
                    color:#fff;border:none;border-radius:50%;width:22px;height:22px;
@@ -609,7 +618,14 @@
     document.getElementById('dpTitle').textContent = dispName;
     document.getElementById('dpName').textContent  = dispName;
     document.getElementById('dpSub').textContent   = dispSub;
-    document.getElementById('dpImg').innerHTML     = `<span style="font-size:56px">${catEmoji(p.category)}</span>`;
+    document.getElementById('dpImg').innerHTML = (() => {
+      const _imgUrl = FOOD_IMAGE_MAP[p.category];
+      return _imgUrl
+              ? `<img src="${_imgUrl}" alt="${p.category}"
+                style="width:100%;height:100%;object-fit:cover;border-radius:12px 12px 0 0;"
+                onerror="this.outerHTML='<span style=\\'font-size:56px;display:flex;align-items:center;justify-content:center;width:100%;height:100%\\'>${catEmoji(p.category)}</span>'">`
+              : `<span style="font-size:56px">${catEmoji(p.category)}</span>`;
+    })();
 
     document.getElementById('dpBadges').innerHTML =
             `<span class="dp-badge" style="background:${color}22;color:${color}">${LANG==='en' ? (p.categoryEn ?? p.category ?? T.defaultCat) : (p.category ?? T.defaultCat)}</span>
