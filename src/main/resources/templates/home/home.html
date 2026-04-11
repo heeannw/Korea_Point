@@ -1138,31 +1138,28 @@
 
         <div class="post-list">
             <a class="post-item"
-               th:each="post, iter : ${posts}"
-               th:href="@{/community/post/{id}(id=${post.id})}"
+               th:each="post, iter : ${trendingPosts}"
+               th:href="@{/community/post/{id}(id=${post.postId})}"
                href="/community/post/1">
                 <span class="post-num" th:text="${iter.count < 10 ? '0' + iter.count : iter.count}">01</span>
-                <span class="post-tag cat-review"
-                      th:if="${post.categoryClass == 'cat-review'}"
-                      th:text="${post.category}">Review</span>
-                <span class="post-tag cat-food"
-                      th:if="${post.categoryClass == 'cat-food'}"
-                      th:text="${post.category}">Food</span>
-                <span class="post-tag cat-tip"
-                      th:if="${post.categoryClass == 'cat-tip'}"
-                      th:text="${post.category}">Tip</span>
+                <span th:class="${'post-tag ' +
+                        (post.categoryName == '맛집' ? 'cat-food' :
+                        (post.categoryName == '교통' ? 'cat-tip' :
+                        (post.categoryName == '관광' ? 'cat-review' :
+                        (post.categoryName == '자유' ? 'cat-review' : 'cat-tip'))))}"
+                      th:text="${post.categoryName}">Category</span>
                 <div class="post-main">
                     <div class="post-title" th:text="${post.title}">Sample post title</div>
                     <div class="post-meta">
                         <span>by</span>
-                        <span th:text="${post.author}">Author</span>
+                        <span th:text="${post.authorName}">Author</span>
                         <span>·</span>
-                        <span th:text="${post.timeAgo}">2 hours ago</span>
+                        <span th:text="${#temporals.format(post.createdAt, 'MM.dd HH:mm')}">시간</span>
                     </div>
                 </div>
                 <div class="post-comments">
                     <span>Comments</span>
-                    <span th:text="${post.comments}">12</span>
+                    <span th:text="${post.commentCount}">12</span>
                 </div>
             </a>
         </div>
