@@ -1,6 +1,8 @@
 package com.example.demo.home.controller;
 
+import com.example.demo.home.service.HomeService;
 import com.example.demo.user.util.SecurityUtil;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,10 +10,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import java.util.List;
 import java.util.Map;
 
-// @Controller: 이 클래스가 Spring MVC의 컨트롤러임을 선언
-// Spring이 이 클래스를 자동으로 감지하여 요청 처리기로 등록한다
 @Controller
+@RequiredArgsConstructor
 public class HomeController {
+
+    private final HomeService homeService;
+
 
     // @GetMapping: 브라우저에서 GET 방식으로 "/" 또는 "/en" 에 접속했을 때 이 메서드 실행
     // Model model: 뷰(HTML)에 넘길 데이터를 담는 그릇
@@ -39,6 +43,7 @@ public class HomeController {
     }
 
     private void populateModel(Model model) {
+
 
         // ── 히어로 섹션 텍스트 (영어) ──────────────────────────────────────────
         // Thymeleaf에서 ${heroTitle} 로 꺼내 쓸 수 있음
@@ -84,28 +89,7 @@ public class HomeController {
         // post() 헬퍼 메서드를 호출하여 각 게시글 Map 을 생성
         // 총 5개의 게시글 데이터를 리스트로 묶어서 "posts" 이름으로 Model에 추가
         // Thymeleaf에서 th:each 로 반복하며 각 post.title, post.author 등을 꺼내 씀
-        model.addAttribute("posts", List.of(
-                post(1L, "Review", "후기", "cat-review",
-                        "Gyeongbokgung was absolutely stunning in hanbok!",
-                        "한복 입고 본 경복궁이 정말 아름다웠어요!",
-                        "TravellerMike", "2 hours ago", "2시간 전", "12"),
-                post(2L, "Food", "음식", "cat-food",
-                        "Best Korean BBQ spots near Hongdae area",
-                        "홍대 근처에서 가기 좋은 한식 바비큐 맛집",
-                        "FoodieJulia", "5 hours ago", "5시간 전", "28"),
-                post(3L, "Tip", "팁", "cat-tip",
-                        "How to use Seoul Metro as a foreigner",
-                        "외국인도 쉽게 쓰는 서울 지하철 이용법",
-                        "SeoulExpert", "Yesterday", "어제", "45"),
-                post(4L, "Review", "후기", "cat-review",
-                        "Cherry blossom season at Yeouido is worth the crowd!",
-                        "여의도 벚꽃 시즌, 사람 많아도 갈 가치가 있어요!",
-                        "SakuraWatcher", "Yesterday", "어제", "9"),
-                post(5L, "Food", "음식", "cat-food",
-                        "Must-try street food in Myeongdong 2025",
-                        "2025 명동에서 꼭 먹어봐야 할 길거리 음식",
-                        "StreetFoodLover", "2 days ago", "2일 전", "33")
-        ));
+        model.addAttribute("trendingPosts", homeService.getTrendingPosts());
     }
 
     // ── attraction 헬퍼 메서드 ──────────────────────────────────────────────────
