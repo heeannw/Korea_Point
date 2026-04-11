@@ -60,6 +60,7 @@ public class CommunityController {
         model.addAttribute("comments", commentService.getCommentsByPost(id));
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
+        model.addAttribute("currentUserId", SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserId() : null);
         return "community/post-detail";
     }
 
