@@ -74,7 +74,7 @@ public class TransportRouteService {
     // 텍스트 입력 → 경로 조회
     // -----------------------------------------------
     public List<TransportRouteDto> getTransportRoutes(String start, String end) throws Exception {
-        // ✅ 역 이름만 추출 (예: "수원시청역 수인분당선" → "수원시청역")
+        // 역 이름만 추출 (예: "수원시청역 수인분당선" → "수원시청역")
         String cleanStart = start.split("\\s+")[0];
         String cleanEnd   = end.split("\\s+")[0];
 
@@ -91,7 +91,7 @@ public class TransportRouteService {
                 start, end
         );
 
-        // ✅ 출발지 좌표 저장 → detail 페이지 지도에서 사용
+        // 출발지 좌표 저장 → detail 페이지 지도에서 사용
         final double startLng = startCoords[0];
         final double startLat = startCoords[1];
         result.forEach(dto -> {
@@ -122,6 +122,33 @@ public class TransportRouteService {
         result.forEach(dto -> {
             dto.setStartLat(lat);
             dto.setStartLng(lng);
+        });
+
+        return result;
+    }
+
+    // -----------------------------------------------
+    // BUG3 FIX: 출발지·도착지 모두 좌표 직접 사용 (지오코딩 없음)
+    //   음식점·카페처럼 정확한 좌표를 이미 알고 있을 때 사용.
+    //   기존 getTransportRoutesByCoords()는 end 이름으로 카카오 지오코딩을 해서
+    //   동명 장소가 있으면 엉뚱한 곳으로 경로가 안내되는 문제가 있었음.
+    //   이 메서드는 그 지오코딩 단계를 완전히 건너뜀.
+    // -----------------------------------------------
+    public List<TransportRouteDto> getTransportRoutesByCoordsToCoords(
+            double startLat, double startLng,
+            double endLat,   double endLng,
+            String endName) throws Exception {
+
+        // searchAndClassify 는 (X=경도, Y=위도) 순서로 받음 (카카오/ODsay 공통 규칙)
+        List<TransportRouteDto> result = searchAndClassify(
+                startLng, startLat,   // 출발 X(경도), Y(위도)
+                endLng,   endLat,     // 도착 X(경도), Y(위도)
+                "현재위치", endName
+        );
+
+        result.forEach(dto -> {
+            dto.setStartLat(startLat);
+            dto.setStartLng(startLng);
         });
 
         return result;
@@ -162,6 +189,15 @@ public class TransportRouteService {
         for (int i = 0; i < Math.min(paths.size(), 5); i++) {
             JsonNode path = paths.get(i);
             JsonNode info = path.get("info");
+
+            // info 또는 필수 필드가 없는 경로는 스킵
+            if (info == null || info.get("totalTime") == null
+                    || info.get("busTransitCount") == null
+                    || info.get("subwayTransitCount") == null
+                    || info.get("totalWalk") == null) {
+                System.out.println("경로 " + i + ": info 필드 누락 → 스킵");
+                continue;
+            }
 
             float time     = info.get("totalTime").asInt();
             float transfer = info.get("busTransitCount").asInt()
@@ -274,8 +310,10 @@ public class TransportRouteService {
     // -----------------------------------------------
     private List<TransportStepDto> parseTransportSteps(JsonNode subPaths) {
         List<TransportStepDto> steps = new ArrayList<>();
+        if (subPaths == null) return steps;
 
         for (JsonNode sp : subPaths) {
+            if (sp.get("trafficType") == null || sp.get("sectionTime") == null) continue;
             int trafficType = sp.get("trafficType").asInt();
             int sectionTime = sp.get("sectionTime").asInt();
             JsonNode stations = sp.has("passStopList")
@@ -284,6 +322,7 @@ public class TransportRouteService {
             List<Map<String, Double>> pathCoords = new ArrayList<>();
             if (stations != null) {
                 for (JsonNode s : stations) {
+                    if (s.get("y") == null || s.get("x") == null) continue;
                     Map<String, Double> point = new HashMap<>();
                     point.put("lat", s.get("y").asDouble());
                     point.put("lng", s.get("x").asDouble());
@@ -292,7 +331,10 @@ public class TransportRouteService {
             }
 
             if (trafficType == 1) {
-                JsonNode lane     = sp.get("lane").get(0);
+                JsonNode laneArr  = sp.get("lane");
+                if (laneArr == null || laneArr.isEmpty()) continue;
+                JsonNode lane     = laneArr.get(0);
+                if (lane.get("subwayCode") == null || lane.get("name") == null) continue;
                 int    subwayCode = lane.get("subwayCode").asInt();
                 String color      = SUBWAY_COLORS.getOrDefault(subwayCode, "#888888");
                 String lineName   = lane.get("name").asText();
@@ -310,7 +352,10 @@ public class TransportRouteService {
                 steps.add(step);
 
             } else if (trafficType == 2) {
-                JsonNode lane  = sp.get("lane").get(0);
+                JsonNode laneArr = sp.get("lane");
+                if (laneArr == null || laneArr.isEmpty()) continue;
+                JsonNode lane  = laneArr.get(0);
+                if (lane.get("busNo") == null) continue;
                 int    busType = lane.has("type") ? lane.get("type").asInt() : 1;
                 String color   = BUS_COLORS.getOrDefault(busType, "#3A7BD5");
                 String busNo   = lane.get("busNo").asText();

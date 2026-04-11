@@ -1,0 +1,174 @@
+/* ============================================================
+   map-common.css
+   foodmap.html + map.html(카페) 공통 스타일
+   위치: resources/static/css/tourism/map-common.css
+
+   ⚠️ 이 파일에는 CSS 변수(--accent 등)가 없습니다.
+      페이지별 변수는 foodmap.css / cafemap.css 에서 각각 :root 에 선언.
+      반드시 map-common.css 보다 먼저 로드하세요.
+
+   HTML <head> 로드 순서:
+     <link rel="stylesheet" th:href="@{/css/tourism/foodmap.css}">  (또는 cafemap.css)
+     <link rel="stylesheet" th:href="@{/css/tourism/map-common.css}">
+   ============================================================ */
+
+/* ── Reset ── */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:#fff;color:var(--dark);display:flex;flex-direction:column}
+
+/* ── Header ── */
+header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border-col);background:#fff;flex-shrink:0;z-index:100}
+.logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--logo-color);text-decoration:none}
+.logo span{color:var(--dark)}
+.header-right{display:flex;gap:8px;align-items:center}
+.h-btn{padding:7px 16px;border-radius:50px;border:1.5px solid var(--border-col);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--dark);text-decoration:none;display:inline-flex;align-items:center;transition:all .2s}
+.h-btn:hover,.h-btn.active{border-color:var(--accent);color:var(--accent)}
+.h-btn-fill{background:var(--accent);color:#fff;border-color:var(--accent)}
+.h-btn-fill:hover{background:var(--accent-dk);color:#fff}
+
+/* ── Layout ── */
+.app-body{flex:1;display:flex;overflow:hidden}
+.sidebar{width:380px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border-col);background:#fff}
+
+/* ── 검색창 ── */
+.search-bar{padding:14px 16px 0;flex-shrink:0;position:relative}
+.search-wrap{position:relative}
+.search-wrap input{width:100%;padding:10px 42px 10px 16px;border:1.5px solid var(--border-col);border-radius:50px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--light-bg);transition:border .2s;color:var(--dark)}
+.search-wrap input:focus{border-color:var(--accent);background:#fff}
+.search-wrap .si{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--gray);font-size:15px;cursor:pointer;padding:0}
+
+/* ── 자동완성 드롭다운 ── */
+.suggest-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--border-col);border-radius:var(--r);box-shadow:var(--sh);z-index:300;display:none;max-height:280px;overflow-y:auto}
+.suggest-dropdown.show{display:block}
+.suggest-section-title{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;padding:10px 14px 4px;display:flex;justify-content:space-between;align-items:center}
+.suggest-section-title button{background:none;border:none;font-size:11px;color:var(--accent);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600}
+.suggest-item{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;cursor:pointer;transition:background .15s}
+.suggest-item:hover{background:var(--light-bg)}
+.suggest-item-kw{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dark);flex:1}
+.suggest-item-kw .icon{color:var(--gray);font-size:13px}
+.suggest-del{background:none;border:none;color:var(--gray);cursor:pointer;font-size:14px;padding:2px 6px}
+.suggest-del:hover{color:var(--dark)}
+.suggest-empty{padding:14px;text-align:center;font-size:13px;color:var(--gray)}
+.suggest-divider{border:none;border-top:1px solid var(--border-col);margin:4px 0}
+
+/* ── 카테고리 필터 + 스크롤 버튼 ── */
+.filter-wrap{padding:10px 0 0;display:flex;align-items:center;flex-shrink:0}
+.scroll-btn{flex-shrink:0;width:28px;height:28px;border:1.5px solid var(--border-col);border-radius:50%;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--gray);transition:all .2s;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.scroll-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--light-bg)}
+.scroll-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
+.scroll-btn.left{margin-left:8px}
+.scroll-btn.right{margin-right:8px}
+.filter-row{flex:1;display:flex;gap:6px;overflow-x:auto;padding:0 6px;scrollbar-width:none;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.filter-row::-webkit-scrollbar{display:none}
+.chip{padding:5px 14px;border-radius:50px;border:1.5px solid var(--border-col);background:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s}
+.chip:hover,.chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ── 정렬 바 ── */
+.sort-row{padding:10px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.result-count{font-size:13px;color:var(--gray)}
+.result-count strong{color:var(--dark)}
+.sort-btns{display:flex;gap:4px}
+.sort-btn{padding:4px 12px;border-radius:50px;border:1.5px solid var(--border-col);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s}
+.sort-btn.active{background:var(--light-bg);color:var(--accent);border-color:var(--accent)}
+
+/* ── 카드 리스트 ── */
+.place-list{flex:1;overflow-y:auto;padding:0 12px 12px;position:relative}
+.place-list::-webkit-scrollbar{width:4px}
+.place-list::-webkit-scrollbar-track{background:transparent}
+.place-list::-webkit-scrollbar-thumb{background:var(--border-col);border-radius:2px}
+/* 가상 스크롤 (foodmap용) */
+.vs-spacer{position:absolute;top:0;left:0;width:1px;pointer-events:none}
+.vs-window{position:absolute;left:12px;right:12px}
+
+/* ── 플레이스 카드 ── */
+.place-card{display:flex;gap:12px;padding:12px;border-radius:var(--r);cursor:pointer;transition:background .15s,box-shadow .15s;margin-bottom:4px;border:1.5px solid transparent}
+.place-card:hover{background:var(--light-bg)}
+.place-card.active{border:1.5px solid var(--accent);background:var(--light-bg)}
+.place-card .thumb{width:72px;height:72px;border-radius:10px;flex-shrink:0;position:relative;background-color:var(--light-bg);display:flex;align-items:center;justify-content:center;font-size:28px}
+.place-card .rank{position:absolute;top:-6px;left:-6px;width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--accent)}
+.card-info{flex:1;min-width:0}
+.card-name{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-cat{font-size:11px;font-weight:600;margin-bottom:4px;color:var(--accent)}
+.card-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray)}
+.stars-s{color:var(--gold);font-size:11px}
+.card-dist{font-size:11px;color:var(--gray);background:var(--light-bg);padding:2px 8px;border-radius:50px;white-space:nowrap}
+
+/* ── 로딩 스피너 (foodmap용) ── */
+.list-loading{display:none;align-items:center;justify-content:center;padding:40px 0;gap:10px;font-size:13px;color:var(--gray)}
+.list-loading.show{display:flex}
+.spinner{width:18px;height:18px;border:2.5px solid var(--border-col);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── 지도 영역 ── */
+.map-area{flex:1;position:relative;overflow:hidden}
+#kakaoMap{position:absolute;inset:0;z-index:1}
+.map-controls{position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:30}
+.mc{width:36px;height:36px;background:#fff;border:1px solid var(--border-col);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;box-shadow:var(--sh);transition:background .2s}
+.mc:hover{background:var(--light-bg)}
+.loc-btn{position:absolute;bottom:24px;right:16px;background:#fff;border:1px solid var(--border-col);border-radius:50px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--sh);color:var(--dark);font-family:'DM Sans',sans-serif;z-index:30;transition:all .2s}
+.loc-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── 상세 패널 ── */
+.detail-panel{position:absolute;inset:0;background:#fff;z-index:50;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none}
+.detail-panel.open{transform:translateX(0);pointer-events:auto}
+.dp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border-col);position:sticky;top:0;background:#fff;z-index:5}
+.dp-back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px;line-height:1}
+.dp-title{font-size:16px;font-weight:700;flex:1}
+.dp-img {
+    width: 100%;
+    aspect-ratio: 16 / 9;  /* ← 이걸로 교체 */
+    height: auto;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+.dp-body{padding:16px}
+.dp-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.dp-badge{padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700}
+.db-gold{background:#fef3c7;color:#92400e}
+.db-green{background:#f0fdf4;color:#166534}
+.dp-name{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;margin-bottom:2px}
+.dp-sub{font-size:14px;color:var(--gray);margin-bottom:12px}
+.dp-stars{display:flex;align-items:center;gap:6px;margin-bottom:14px}
+.dp-stars .s{color:var(--gold);font-size:16px}
+.dp-stars .sc{font-size:18px;font-weight:700}
+.dp-stars .sm{font-size:13px;color:var(--gray)}
+.dp-info-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.dp-info{background:var(--light-bg);border-radius:10px;padding:12px 14px}
+.dp-info-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.dp-info-val{font-size:13px;font-weight:500;line-height:1.4}
+.dp-section-title{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--dark)}
+
+/* ── 리뷰 ── */
+.rev-summary{display:flex;align-items:center;gap:16px;background:var(--light-bg);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.rev-score{font-size:42px;font-weight:900;font-family:'Playfair Display',serif;line-height:1}
+.rev-right{flex:1}
+.rev-bars{display:flex;flex-direction:column;gap:5px}
+.rev-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gray)}
+.rev-track{flex:1;height:6px;background:var(--border-col);border-radius:3px;overflow:hidden}
+.rev-fill{height:100%;background:var(--gold);border-radius:3px}
+.review-item{padding:12px 0;border-bottom:1px solid var(--border-col)}
+.review-item:last-child{border-bottom:none}
+.ri-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.ri-name{font-size:13px;font-weight:600}
+.ri-stars{font-size:12px;color:var(--gold)}
+.ri-text{font-size:13px;color:var(--mid);line-height:1.6}
+/* 스켈레톤 로딩 (foodmap용) */
+.review-skeleton{padding:16px 0}
+.sk-line{height:12px;background:linear-gradient(90deg,var(--border-col) 25%,var(--light-bg) 50%,var(--border-col) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:6px;margin-bottom:8px}
+.sk-line.short{width:40%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── 하단 액션 버튼 ── */
+.dp-action{position:sticky;bottom:0;padding:12px 16px;background:#fff;border-top:1px solid var(--border-col);display:flex;gap:8px}
+.dp-action-btn{flex:1;padding:12px;border:none;border-radius:50px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
+.dp-btn-transport{background:var(--accent);color:#fff}
+.dp-btn-transport:hover{background:var(--accent-dk)}
+.dp-btn-tour{background:#2563eb;color:#fff;border:none}
+.dp-btn-tour:hover{background:#1e40af}
+
+/* ── 빈 상태 ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--gray);gap:8px;text-align:center;padding:20px}
+.empty-state .ei{font-size:40px}
+.empty-state p{font-size:14px;line-height:1.6}

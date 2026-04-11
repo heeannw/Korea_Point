@@ -21,6 +21,10 @@ public class CafeDto {
     private Integer reviewCount;
     private Double reviewMean;
 
+    // ── 영어 번역 (cafe_scores_EN.json) ─────────────────────
+    private String nameEn;        // 영어 이름
+    private String categoryEn;    // 영어 카테고리
+
     // ── 런타임 계산 ──────────────────────────────────────────
     private Double distance;      // 현위치 기준 거리(km)
     private List<ReviewItem> reviews;
