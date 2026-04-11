@@ -67,9 +67,9 @@ public class HomeController {
                 attraction("1", "Gyeongbokgung Palace", "경복궁", "Jongno-gu, Seoul", "서울 종로구", "4.9", "2.3k",
                         "https://upload.wikimedia.org/wikipedia/commons/4/46/%EA%B2%BD%EB%B3%B5%EA%B6%81_%ED%9D%A5%EB%A1%80%EB%AC%B8_%EC%A0%84%EC%B2%B4_%EC%A0%84%EA%B2%BD%28%EA%B6%81%EB%8A%A5%EC%9C%A0%EC%A0%81%EB%B3%B8%EB%B6%80%29-min.jpg"),
                 attraction("2", "Bukchon Hanok Village", "북촌한옥마을", "Jongno-gu, Seoul", "서울 종로구", "4.8", "1.8k",
-                        "https://upload.wikimedia.org/wikipedia/commons/d/da/Bukchon_Hanok_Village%2C_Seoul_%289%29_%2839304631270%29.jpg"),
+                        "https://upload.wikimedia.org/wikipedia/commons/a/a5/Bukchon-ro_11-gil_street_with_hanok_houses_and_wooden_gate_in_Bukchon_Hanok_Village_Seoul.jpg"),
                 attraction("3", "Namsan Seoul Tower", "남산서울타워", "Yongsan-gu, Seoul", "서울 용산구", "4.7", "3.1k",
-                        "https://images.pexels.com/photos/16575975/pexels-photo-16575975.jpeg?cs=srgb&dl=pexels-kharlitos-16575975.jpg&fm=jpg")
+                        "https://images.pexels.com/photos/2848492/pexels-photo-2848492.jpeg?cs=srgb&dl=pexels-pixabay-2848492.jpg&fm=jpg")
         ));
 
         // ── 커뮤니티 게시글 리스트 ────────────────────────────────────────────

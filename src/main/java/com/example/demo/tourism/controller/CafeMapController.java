@@ -2,6 +2,7 @@ package com.example.demo.tourism.controller;
 
 import com.example.demo.tourism.dto.CafeDto;
 import com.example.demo.tourism.service.CafeService;
+import com.example.demo.tourism.service.UnsplashImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -16,18 +17,9 @@ import java.util.List;
  * CafeMapController
  *
  * [수정 내용]
- * map.html / mapEn.html 두 파일을 map.html 하나로 통합하였습니다.
- * 컨트롤러에서 lang ("ko" | "en") 을 Model에 담아 전달하면,
- * 뷰(map.html) 내부에서 Thymeleaf 조건식과 JS T{} 객체로 언어를 분기합니다.
- * mapEn.html 파일은 더 이상 사용하지 않습니다.
- *
- *   /cafe/all                   → 전체 카페 (KO)
- *   /cafe/search?keyword=X      → 키워드 검색 2km 추천 (KO)
- *   /cafe/mylocation/{lat}/{lng} → 현위치 기준 2km 추천 (KO)
- *
- *   /en/cafe/all                   → 전체 카페 (EN)
- *   /en/cafe/search?keyword=X      → 키워드 검색 2km 추천 (EN)
- *   /en/cafe/mylocation/{lat}/{lng} → 현위치 기준 2km 추천 (EN)
+ * - UnsplashImageService 주입: 카페 이미지(커피 사진) URL을 모델에 추가
+ *   → model에 "cafeImageUrl" (String) 하나만 담음
+ *   → 카페는 단일 카테고리이므로 "카페" 키 1장만 사용
  */
 @Controller
 @RequiredArgsConstructor
@@ -37,6 +29,7 @@ public class CafeMapController {
     private String kakaokey;
 
     private final CafeService cafeService;
+    private final UnsplashImageService unsplashImageService;   // ✅ 추가
 
     // ─────────────────────────────────────────────────────────────────────────
     // KO 버전
@@ -75,7 +68,7 @@ public class CafeMapController {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // EN 버전 — 같은 뷰(tourism/map)를 사용하고 lang="en" 만 다르게 전달
+    // EN 버전
     // ─────────────────────────────────────────────────────────────────────────
 
     @GetMapping("/en/cafe/all")
@@ -122,6 +115,10 @@ public class CafeMapController {
         model.addAttribute("userlat", lat);
         model.addAttribute("userlon", lng);
         model.addAttribute("keyword", keyword);
-        model.addAttribute("lang", lang);   // "ko" 또는 "en" → 뷰에서 분기 사용
+        model.addAttribute("lang", lang);
+
+        // ✅ Unsplash 카페 이미지 리스트 (썸네일 10장 + 고화질 10장)
+        model.addAttribute("cafeThumbList",   unsplashImageService.getThumbList("카페"));
+        model.addAttribute("cafeRegularList", unsplashImageService.getRegularList("카페"));
     }
 }

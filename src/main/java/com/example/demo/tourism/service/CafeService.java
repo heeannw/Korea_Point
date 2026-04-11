@@ -66,6 +66,7 @@ public class CafeService {
             loadCafeScores();   // 1. 장소 점수 데이터 로드
             loadReviews();      // 2. 리뷰 데이터 로드 및 매핑
             filterCafesOnly();  // 3. 명백한 비카페만 제외 (EXCLUDE only)
+            loadEnNames();      // 4. ✅ 영어 이름 매핑 (파파고 호출 대체)
             System.out.println("✅ CafeService 초기화 완료: 전체 " + allCafes.size()
                     + "개 → 카페 " + cafeOnly.size() + "개 필터링");
         } catch (Exception e) {
@@ -98,6 +99,30 @@ public class CafeService {
 
             reviewMap.computeIfAbsent(name, k -> new ArrayList<>()).add(item);
         }
+    }
+
+    private void loadEnNames() throws IOException {
+        InputStream is = getClass().getClassLoader()
+                .getResourceAsStream("model/tourism/cafe/cafe_scores_EN.json");
+        if (is == null) { System.out.println("⚠️ cafe_scores_EN.json 없음"); return; }
+
+        List<Map<String, Object>> enList = mapper.readValue(is, new TypeReference<>() {});
+        Map<String, String> nameEnMap     = new HashMap<>();
+        Map<String, String> categoryEnMap = new HashMap<>();
+        for (Map<String, Object> m : enList) {
+            String name = str(m, "name");
+            String en   = str(m, "nameEn");
+            String cat  = str(m, "categoryEn");
+            if (name != null && en  != null) nameEnMap.put(name, en);
+            if (name != null && cat != null) categoryEnMap.put(name, cat);
+        }
+        for (CafeDto cafe : cafeOnly) {
+            if (cafe.getName() != null) {
+                cafe.setNameEn(nameEnMap.get(cafe.getName()));
+                cafe.setCategoryEn(categoryEnMap.get(cafe.getName()));
+            }
+        }
+        System.out.println("✅ 카페 영어 이름 매핑 완료: " + nameEnMap.size() + "개");
     }
 
     // ── [2] 카페 필터링 ───────────────────────────────────────────────────────
@@ -215,6 +240,8 @@ public class CafeService {
         copy.setFinalScore(src.getFinalScore());
         copy.setReviewCount(src.getReviewCount());
         copy.setReviewMean(src.getReviewMean());
+        copy.setNameEn(src.getNameEn());         // ✅ 영어 이름
+        copy.setCategoryEn(src.getCategoryEn()); // ✅ 영어 카테고리
         return copy;
     }
 

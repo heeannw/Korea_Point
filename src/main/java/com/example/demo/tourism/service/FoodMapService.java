@@ -46,6 +46,7 @@ public class FoodMapService {
         try {
             loadRestaurantJson();
             loadReviewJson();
+            loadEnNames();      // ✅ 영어 이름 매핑 (파파고 호출 대체)
             System.out.println("✅ FoodMapService 초기화 완료: 음식점 "
                     + restaurantsInMemory.size() + "개 / 리뷰 등록 업소 "
                     + reviewMap.size() + "개");
@@ -96,6 +97,30 @@ public class FoodMapService {
 
             reviewMap.computeIfAbsent(name, k -> new ArrayList<>()).add(item);
         }
+    }
+
+    private void loadEnNames() throws IOException {
+        InputStream is = getClass().getClassLoader()
+                .getResourceAsStream("model/tourism/food/food_scores_EN.json");
+        if (is == null) { System.out.println("⚠️ food_scores_EN.json 없음"); return; }
+
+        List<Map<String, Object>> enList = mapper.readValue(is, new TypeReference<>() {});
+        Map<String, String> nameEnMap     = new HashMap<>();
+        Map<String, String> categoryEnMap = new HashMap<>();
+        for (Map<String, Object> m : enList) {
+            String name = str(m, "name");
+            String en   = str(m, "nameEn");
+            String cat  = str(m, "categoryEn");
+            if (name != null && en  != null) nameEnMap.put(name, en);
+            if (name != null && cat != null) categoryEnMap.put(name, cat);
+        }
+        for (FoodPlaceDto r : restaurantsInMemory) {
+            if (r.getName() != null) {
+                r.setNameEn(nameEnMap.get(r.getName()));
+                r.setCategoryEn(categoryEnMap.get(r.getName()));
+            }
+        }
+        System.out.println("✅ 음식점 영어 이름 매핑 완료: " + nameEnMap.size() + "개");
     }
 
     // ── 전체 목록 반환 (반경 제한 없음, 리뷰 미포함) ──────────────────────────
@@ -203,6 +228,8 @@ public class FoodMapService {
         copy.setFinalScore(src.getFinalScore());
         copy.setReviewCount(src.getReviewCount());
         copy.setReviewMean(src.getReviewMean());
+        copy.setNameEn(src.getNameEn());         // ✅ 영어 이름
+        copy.setCategoryEn(src.getCategoryEn()); // ✅ 영어 카테고리
         return copy;
     }
 

@@ -45,4 +45,7 @@ public class TripRecommendRequest {
     private List<String> mustVisit;
     private List<String> categories;
     private String styleDescription;
+
+    /** 언어 설정 — "ko" / "en" (기본값 "ko") */
+    private String lang;
 }
