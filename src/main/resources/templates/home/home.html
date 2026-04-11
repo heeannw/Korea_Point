@@ -521,7 +521,7 @@
         }
 
         .popular-card.namsan-card .popular-image {
-            background-position: center 25%;
+            background-position: center 22%;
         }
 
         .popular-body {
@@ -865,7 +865,7 @@
             }
 
             .popular-card.namsan-card .popular-image {
-                background-position: center 25%;
+                background-position: center 22%;
             }
         }
 
@@ -971,7 +971,7 @@
     <div class="header-right">
         <a class="h-btn active" th:href="@{/}" href="/">EN</a>
         <a class="h-btn" th:href="@{/ko}" href="/ko">KR</a>
-        <button type="button" class="h-btn h-btn-fill">Login</button>
+        <a th:href="@{/login}" class="h-btn h-btn-fill">Login</a>
     </div>
 </header>
 
@@ -1030,7 +1030,7 @@
             <span class="category-icon">☕</span>
             <span>Cafe</span>
         </a>
-        <a class="category-item" th:href="@{/tour/all}" href="/tour/all">
+        <a class="category-item" th:href="@{/tour/location(lang=EN)}" href="/tour/location?lang=en">
             <span class="category-icon">📷</span>
             <span>Tour</span>
         </a>
@@ -1064,7 +1064,7 @@
         <a class="popular-card featured"
            th:if="${!#lists.isEmpty(attractions)}"
            th:with="attraction=${attractions[0]}, tourKeyword=${attraction.title == 'Namsan Seoul Tower' ? 'N Seoul Tower' : attraction.title}"
-           th:href="@{/tour/search/(keyword=${tourKeyword})}"
+           th:href="@{/tour/search/(keyword=${tourKeyword},lang='en')}"
            href="/tour/search/?keyword=Gyeongbokgung%20Palace">
             <div class="popular-media">
                 <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 1</div>
@@ -1088,7 +1088,7 @@
            th:if="${!iter.first}"
            th:classappend="${attraction.title == 'Namsan Seoul Tower'} ? ' namsan-card'"
            th:with="tourKeyword=${attraction.title == 'Namsan Seoul Tower' ? 'N Seoul Tower' : attraction.title}"
-           th:href="@{/tour/search/(keyword=${tourKeyword})}"
+           th:href="@{/tour/search/(keyword=${tourKeyword},lang='en')}"
            href="/tour/search/?keyword=Bukchon%20Hanok%20Village">
             <div class="popular-media">
                 <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 2</div>
@@ -1214,36 +1214,109 @@
 <script>
     // Slider state shared by arrows, dots, and autoplay.
     let current = 0;
+    let currentPosition = 0;
+    let isTransitioning = false;
     const track = document.getElementById("sliderTrack");
     const dots = document.querySelectorAll(".hero-dot");
     const counterEl = document.getElementById("counterNum");
     const totalEl = document.getElementById("counterTotal");
     const total = dots.length;
+    const trackTransition = "transform 0.9s cubic-bezier(0.77, 0, 0.175, 1)";
     let autoPlay = null;
 
     if (totalEl) {
         totalEl.textContent = String(total).padStart(2, "0");
     }
 
-    // Jump directly to a specific slide and refresh the active UI state.
-    function goSlide(index) {
-        if (total === 0) return;
+    function updateUi(index) {
         current = index;
-        track.style.transform = `translateX(-${current * 100}%)`;
         dots.forEach((dot, dotIndex) => dot.classList.toggle("active", dotIndex === current));
         if (counterEl) {
             counterEl.textContent = String(current + 1).padStart(2, "0");
         }
-        if (total > 1) {
-            clearInterval(autoPlay);
-            autoPlay = setInterval(() => moveSlide(1), 5000);
+    }
+
+    function resetAutoPlay() {
+        if (total <= 1) return;
+        clearInterval(autoPlay);
+        autoPlay = setInterval(() => moveSlide(1), 5000);
+    }
+
+    function setTrackPosition(position, animate = true) {
+        if (!track) return;
+        track.style.transition = animate ? trackTransition : "none";
+        track.style.transform = `translateX(-${position * 100}%)`;
+
+        if (!animate) {
+            void track.offsetWidth;
+            track.style.transition = trackTransition;
         }
+    }
+
+    if (track && total > 1) {
+        const originalSlides = Array.from(track.children);
+        const firstClone = originalSlides[0].cloneNode(true);
+        const lastClone = originalSlides[originalSlides.length - 1].cloneNode(true);
+
+        firstClone.setAttribute("aria-hidden", "true");
+        lastClone.setAttribute("aria-hidden", "true");
+
+        track.insertBefore(lastClone, originalSlides[0]);
+        track.appendChild(firstClone);
+
+        currentPosition = 1;
+        setTrackPosition(currentPosition, false);
+
+        track.addEventListener("transitionend", (event) => {
+            if (event.target !== track || event.propertyName !== "transform") return;
+
+            if (currentPosition === total + 1) {
+                currentPosition = 1;
+                setTrackPosition(currentPosition, false);
+            } else if (currentPosition === 0) {
+                currentPosition = total;
+                setTrackPosition(currentPosition, false);
+            }
+
+            updateUi((currentPosition - 1 + total) % total);
+            isTransitioning = false;
+        });
+    } else if (track) {
+        setTrackPosition(0, false);
+    }
+
+    updateUi(0);
+
+    // Jump directly to a specific slide while keeping the loop direction natural.
+    function goSlide(index) {
+        if (total === 0 || !track || isTransitioning) return;
+        resetAutoPlay();
+
+        if (total === 1) {
+            updateUi(0);
+            return;
+        }
+
+        currentPosition = index + 1;
+        isTransitioning = true;
+        updateUi(index);
+        setTrackPosition(currentPosition);
     }
 
     // Move one step backward or forward from arrows/autoplay.
     function moveSlide(direction) {
-        if (total === 0) return;
-        goSlide((current + direction + total) % total);
+        if (total === 0 || !track || isTransitioning) return;
+        resetAutoPlay();
+
+        if (total === 1) {
+            updateUi(0);
+            return;
+        }
+
+        currentPosition += direction;
+        isTransitioning = true;
+        updateUi((currentPosition - 1 + total) % total);
+        setTrackPosition(currentPosition);
     }
 
     // Only autoplay when there is more than one slide to rotate.
