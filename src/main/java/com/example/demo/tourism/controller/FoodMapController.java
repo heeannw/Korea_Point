@@ -146,9 +146,8 @@ public class FoodMapController {
         model.addAttribute("category", category);
         model.addAttribute("lang", lang);
 
-        // ✅ Unsplash 카테고리별 이미지 맵 (캐시에서 즉시 반환, API 재호출 없음)
-        // JS에서: FOOD_IMAGE_MAP["한식"], FOOD_IMAGE_MAP["중식"] ...
-        Map<String, String> imageMap = unsplashImageService.getAllImageUrls();
-        model.addAttribute("foodImageMap", imageMap);
+        // ✅ Unsplash 카테고리별 이미지 리스트 맵 (썸네일 + 고화질, 각 10장)
+        model.addAttribute("foodThumbMap",   unsplashImageService.getAllThumbLists());
+        model.addAttribute("foodRegularMap", unsplashImageService.getAllRegularLists());
     }
 }

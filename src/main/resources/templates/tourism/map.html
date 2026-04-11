@@ -135,7 +135,11 @@
   const userLon       = /*[[${userlon}]]*/ 126.9780;
   const PLACES        = /*[[${list}]]*/    [];
   const LANG          = /*[[${lang}]]*/    'ko';  // 'ko' 또는 'en'
-  const CAFE_IMAGE_URL = /*[[${cafeImageUrl}]]*/ '';  // ✅ Unsplash 커피 이미지 URL
+  const CAFE_THUMB_LIST   = /*[[${cafeThumbList}]]*/   [];  // ✅ 카드용 썸네일 리스트 (10장)
+  const CAFE_REGULAR_LIST = /*[[${cafeRegularList}]]*/ [];  // ✅ 상세패널용 고화질 리스트 (10장)
+  // 인덱스 기반으로 이미지 선택 (% 로 순환)
+  const getCafeThumb   = idx => CAFE_THUMB_LIST.length   ? CAFE_THUMB_LIST[idx   % CAFE_THUMB_LIST.length]   : '';
+  const getCafeRegular = idx => CAFE_REGULAR_LIST.length ? CAFE_REGULAR_LIST[idx % CAFE_REGULAR_LIST.length] : getCafeThumb(idx);
   // ── 파파고 번역 캐시 & 함수 ────────────────────────────
   // localStorage 영구 캐시: 한 번 번역한 이름은 다음 방문 시 즉시 표시
   const _LS_KEY = 'tCache_cafe_en';
@@ -400,8 +404,8 @@
              onclick="selectPlace('${escJS(p.name)}')">
           <div class="thumb">
             <div class="rank">${i + 1}</div>
-            ${CAFE_IMAGE_URL
-              ? `<img src="${CAFE_IMAGE_URL}" alt="cafe"
+            ${getCafeThumb(i)
+              ? `<img src="${getCafeThumb(i)}" alt="cafe"
                       style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;"
                       onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:28px;display:flex;align-items:center;justify-content:center;width:100%;height:100%\\'>☕</span>')">`
               : '<span style="font-size:28px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">☕</span>'}
@@ -468,8 +472,8 @@
                   width:240px;overflow:hidden;border:1px solid #e8d5c4;">
         <div style="height:90px;background:#fdf6f0;display:flex;align-items:center;
                     justify-content:center;font-size:36px;position:relative;overflow:hidden;">
-          ${CAFE_IMAGE_URL
-            ? `<img src="${CAFE_IMAGE_URL}" alt="cafe"
+          ${getCafeThumb(PLACES.indexOf(p))
+            ? `<img src="${getCafeThumb(PLACES.indexOf(p))}" alt="cafe"
                     style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"
                     onerror="this.style.display='none'">`
             : '☕'}
@@ -579,12 +583,14 @@
     }
 
     window._detailPlace = p;
-    // ✅ Unsplash 카페 이미지 → 상세 패널
+    // ✅ Unsplash 고화질 이미지 → 상세 패널 (regular 사이즈, 화질 개선)
+    const _placeIdx   = PLACES.indexOf(p);
+    const _regularUrl = getCafeRegular(_placeIdx >= 0 ? _placeIdx : 0);
     const dpImgEl = document.getElementById('dpImg');
-    if (CAFE_IMAGE_URL) {
-      dpImgEl.innerHTML = `<img src="${CAFE_IMAGE_URL}" alt="cafe"
-        style="width:100%;height:100%;object-fit:cover;border-radius:12px 12px 0 0;"
-        onerror="this.outerHTML='<span style=\\'font-size:56px;display:flex;align-items:center;justify-content:center;width:100%;height:100%\\'>☕</span>'">`;
+    if (_regularUrl) {
+      dpImgEl.innerHTML = `<img src="${_regularUrl}" alt="cafe"
+        style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;"
+        onerror="this.outerHTML='<span style=\\\'font-size:56px;display:flex;align-items:center;justify-content:center;width:100%;height:100%\\\'>&#x2615;</span>'">` ;
     } else {
       dpImgEl.textContent = '☕';
     }

@@ -117,7 +117,8 @@ public class CafeMapController {
         model.addAttribute("keyword", keyword);
         model.addAttribute("lang", lang);
 
-        // ✅ Unsplash 카페 이미지 URL (캐시에서 즉시 반환, API 재호출 없음)
-        model.addAttribute("cafeImageUrl", unsplashImageService.getImageUrl("카페"));
+        // ✅ Unsplash 카페 이미지 리스트 (썸네일 10장 + 고화질 10장)
+        model.addAttribute("cafeThumbList",   unsplashImageService.getThumbList("카페"));
+        model.addAttribute("cafeRegularList", unsplashImageService.getRegularList("카페"));
     }
 }
