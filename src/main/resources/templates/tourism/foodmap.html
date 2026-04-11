@@ -77,16 +77,16 @@
           <div class="chip" data-cat="바"                  onclick="switchCategory('바')">🍺 바</div>
           <div class="chip" data-cat="기타"                onclick="switchCategory('기타')">🍴 기타</div>
         </th:block>
-        <!-- EN 카테고리 -->
+        <!-- EN 카테고리 — data-cat·switchCategory는 서버 DB값(한국어)과 일치시켜야 필터 작동 -->
         <th:block th:if="${lang == 'en'}">
           <div class="chip active" data-cat="ALL"          onclick="switchCategory('ALL')">🍽️ All</div>
-          <div class="chip" data-cat="Korean"              onclick="switchCategory('Korean')">🍚 Korean</div>
-          <div class="chip" data-cat="Chinese"             onclick="switchCategory('Chinese')">🥟 Chinese</div>
-          <div class="chip" data-cat="Japanese"            onclick="switchCategory('Japanese')">🍣 Japanese</div>
-          <div class="chip" data-cat="Western"             onclick="switchCategory('Western')">🍝 Western</div>
-          <div class="chip" data-cat="Meat/Seafood"        onclick="switchCategory('Meat/Seafood')">🥩 Meat·Seafood</div>
+          <div class="chip" data-cat="한식"                onclick="switchCategory('한식')">🍚 Korean</div>
+          <div class="chip" data-cat="중식"                onclick="switchCategory('중식')">🥟 Chinese</div>
+          <div class="chip" data-cat="일식"                onclick="switchCategory('일식')">🍣 Japanese</div>
+          <div class="chip" data-cat="양식"                onclick="switchCategory('양식')">🍝 Western</div>
+          <div class="chip" data-cat="고기_해산물"         onclick="switchCategory('고기_해산물')">🥩 Meat·Seafood</div>
           <div class="chip" data-cat="바"                  onclick="switchCategory('바')">🍺 Bar</div>
-          <div class="chip" data-cat="Other"               onclick="switchCategory('Other')">🍴 Other</div>
+          <div class="chip" data-cat="기타"                onclick="switchCategory('기타')">🍴 Other</div>
         </th:block>
       </div>
       <button class="scroll-btn right" id="scrollRight" onclick="scrollFilter(1)">›</button>
@@ -252,16 +252,13 @@
   const TRANSPORT_PREFIX = LANG === 'en' ? '/en' : '/ko';
   const TOUR_LANG        = LANG === 'en' ? 'EN'  : 'KR';
 
-  // 카테고리 색상/이모지 — KO·EN 키 모두 포함
+  // 카테고리 색상/이모지 — data-cat이 한국어로 통일되었으므로 KO 키만 사용
   const CAT_COLOR = {
     '한식':'#ef4444','중식':'#f97316','일식':'#3b82f6',
-    '양식':'#8b5cf6','고기_해산물':'#f59e0b','바':'#6366f1','기타':'#64748b',
-    'Korean':'#ef4444','Chinese':'#f97316','Japanese':'#3b82f6',
-    'Western':'#8b5cf6','Meat/Seafood':'#f59e0b','Other':'#64748b'
+    '양식':'#8b5cf6','고기_해산물':'#f59e0b','바':'#6366f1','기타':'#64748b'
   };
   const CAT_EMOJI = {
-    '한식':'🍚','중식':'🥟','일식':'🍣','양식':'🍝','고기_해산물':'🥩','바':'🍺','기타':'🍴',
-    'Korean':'🍚','Chinese':'🥟','Japanese':'🍣','Western':'🍝','Meat/Seafood':'🥩','Other':'🍴'
+    '한식':'🍚','중식':'🥟','일식':'🍣','양식':'🍝','고기_해산물':'🥩','바':'🍺','기타':'🍴'
   };
 </script>
 
