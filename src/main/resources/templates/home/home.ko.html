@@ -93,6 +93,10 @@
             flex-wrap: wrap;
         }
 
+        .header-right form {
+            margin: 0;
+        }
+
         .h-btn {
             display: inline-flex;
             align-items: center;
@@ -947,7 +951,16 @@
     <div class="header-right">
         <a class="h-btn" th:href="@{/}" href="/">EN</a>
         <a class="h-btn active" th:href="@{/ko}" href="/ko">KR</a>
-        <button type="button" class="h-btn h-btn-fill">로그인</button>
+        <th:block th:if="${isLoggedIn}">
+            <span class="h-btn" th:text="${currentUserName}">사용자</span>
+            <form th:action="@{/logout}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit" class="h-btn h-btn-fill">로그아웃</button>
+            </form>
+        </th:block>
+        <th:block th:unless="${isLoggedIn}">
+            <a th:href="@{/login}" href="/login" class="h-btn h-btn-fill">로그인</a>
+        </th:block>
     </div>
 </header>
 
@@ -1004,7 +1017,7 @@
             <span class="category-icon">🍴</span>
             <span>음식</span>
         </a>
-        <a class="category-item" th:href="@{/foodmap/all(category='CAFE')}" href="/foodmap/all?category=CAFE">
+        <a class="category-item" th:href="@{/cafe/all(category='CAFE')}" href="/cafe/all?category=CAFE">
             <span class="category-icon">☕</span>
             <span>카페</span>
         </a>
@@ -1020,10 +1033,10 @@
             <span class="category-icon">💬</span>
             <span>커뮤니티</span>
         </a>
-        <div class="category-item" aria-label="나만의 여행">
+        <a class="category-item" th:href="@{/ko/trip}" href="/ko/trip" aria-label="나만의 여행">
             <span class="category-icon">🧳</span>
             <span>나만의 여행</span>
-        </div>
+        </a>
     </div>
 </section>
 

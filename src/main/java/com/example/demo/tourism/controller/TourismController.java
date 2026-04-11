@@ -20,27 +20,29 @@ public class TourismController {
     @Value("${TOURISM_KAKAO_API_KEY}")
     private String kakaoKey;
 
-    private static final int MAX_RECENT_KEYWORDS = 10; // 최근 검색어 최대 개수
+    private static final int MAX_RECENT_KEYWORDS = 10;
 
     // ─────────────────────────────────────────────────────────
     // 메인 탐색 페이지
     // ─────────────────────────────────────────────────────────
     @RequestMapping("/tour/all")
     public String tourAllKO(Model model, HttpSession session,
-                            @RequestParam(value = "lat", required = false) double lat,
-                            @RequestParam(value = "lon", required = false) double lon,
+                            @RequestParam(value = "lat", required = false) Double lat,
+                            @RequestParam(value = "lon", required = false) Double lon,
                             @RequestParam(value = "lang") String lang
     ) {
-
         List<TourPlaceDto> displayList = tourismService.allList(lang);
-        displayList = displayList.stream().limit(50).toList();
-        session.setAttribute("userlat",lat);
-        session.setAttribute("userlon",lon);
+        displayList = displayList.stream().limit(100).toList();
+        session.setAttribute("userlat", lat);
+        session.setAttribute("userlon", lon);
 
-        List<TourPlaceDto> dlist = tourismService.allDistence(lat,lon,displayList);
+        List<TourPlaceDto> dlist = tourismService.allDistence(lat, lon, displayList);
 
+        String spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
+
+        model.addAttribute("spotname", spotname);
         model.addAttribute("centerLat", 37.5665);
-        model.addAttribute("centerLon", 126.9780 );
+        model.addAttribute("centerLon", 126.9780);
         model.addAttribute("userlat", lat);
         model.addAttribute("userlon", lon);
         model.addAttribute("lang", lang);
@@ -51,46 +53,46 @@ public class TourismController {
         return "en".equalsIgnoreCase(lang) ? "tourism/tourismEN" : "tourism/tourismKo";
     }
 
-
-
     // ─────────────────────────────────────────────────────────
     // 키워드 검색 + 내 위치까지 거리 표시
     // ─────────────────────────────────────────────────────────
     @RequestMapping("/tour/search/")
     public String tourSearch(
             @RequestParam(required = false) String keyword,
-            Model model, @RequestParam("lang") String lang,
-            @RequestParam(value = "spotname",defaultValue = "my location") String spotname,
+            Model model,
+            @RequestParam("lang") String lang,
+            @RequestParam(value = "spotname", required = false) String spotname,
             HttpSession session) {
+
+        // spotname이 없으면 lang에 따라 기본값 설정
+        if (spotname == null || spotname.isBlank()) {
+            spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
+        }
 
         Double userlat = (Double) session.getAttribute("userlat");
         Double userlon = (Double) session.getAttribute("userlon");
-
+        System.out.println("keyword : !!!!!!!!!!!!!!>>>>" + keyword);
         List<TourPlaceDto> list;
 
         if (keyword != null && !keyword.isBlank()) {
-            // 검색어 저장
-
             saveKeyword(session, keyword.trim());
-
-            // 내 위치 좌표 함께 전달 → 거리 계산
-            list = tourismService.searchKeyword(keyword.trim(), userlat, userlon,lang);
+            list = tourismService.searchKeyword(keyword.trim(), userlat, userlon, lang);
 
             if (list.isEmpty()) {
-                // 검색 결과 없으면 현재위치 기반 추천으로 fallback
                 double fallbackLat = userlat != null ? userlat : 37.5665;
                 double fallbackLon = userlon != null ? userlon : 126.9780;
-                list = tourismService.analyzeLocation(fallbackLat, fallbackLon,lang);
+                list = tourismService.analyzeLocation(fallbackLat, fallbackLon, lang);
                 model.addAttribute("searchFallback", true);
             }
         } else {
             double fallbackLat = userlat != null ? userlat : 37.5665;
             double fallbackLon = userlon != null ? userlon : 126.9780;
-            list = tourismService.analyzeLocation(fallbackLat, fallbackLon,lang);
+            list = tourismService.analyzeLocation(fallbackLat, fallbackLon, lang);
         }
 
         setMapCenter(model, list, userlat, userlon);
 
+        model.addAttribute("spotname", spotname);
         model.addAttribute("lang", lang);
         model.addAttribute("userlat", userlat);
         model.addAttribute("userlon", userlon);
@@ -101,7 +103,6 @@ public class TourismController {
 
         return "en".equalsIgnoreCase(lang) ? "tourism/tourismEN" : "tourism/tourismKo";
     }
-
 
     // ─────────────────────────────────────────────────────────
     // 내 위치 기반 추천
@@ -114,13 +115,14 @@ public class TourismController {
             Model model,
             HttpSession session) {
 
-        // 세션에 위치 저장
         session.setAttribute("userlat", lat);
         session.setAttribute("userlon", lon);
 
         List<TourPlaceDto> nearbyList = tourismService.analyzeLocation(lat, lon, lang);
-        System.out.println("lang :" + lang);
-        model.addAttribute("spotname", "내위치");
+
+        String spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
+
+        model.addAttribute("spotname", spotname);
         model.addAttribute("lang", lang);
         model.addAttribute("list", nearbyList);
         model.addAttribute("centerLat", lat);
@@ -146,8 +148,7 @@ public class TourismController {
             Model model,
             HttpSession session) {
 
-        // 해당 장소 근처 음식점/카페
-        List<TourPlaceDto> foodPlaces = tourismService.getNearbyFoodPlaces(lat, lon, radius,lang);
+        List<TourPlaceDto> foodPlaces = tourismService.getNearbyFoodPlaces(lat, lon, radius, lang);
 
         model.addAttribute("placeLat", lat);
         model.addAttribute("placeLon", lon);
@@ -193,15 +194,13 @@ public class TourismController {
     // ─────────────────────────────────────────────────────────
     // 헬퍼
     // ─────────────────────────────────────────────────────────
-
-    // 검색어 세션 저장 (중복 제거, 최신순, 최대 10개)
     @SuppressWarnings("unchecked")
     private void saveKeyword(HttpSession session, String keyword) {
         List<String> keywords = (List<String>) session.getAttribute("recentKeywords");
         if (keywords == null) keywords = new ArrayList<>();
 
-        keywords.remove(keyword);           // 중복 제거
-        keywords.add(0, keyword);           // 맨 앞에 추가 (최신순)
+        keywords.remove(keyword);
+        keywords.add(0, keyword);
         if (keywords.size() > MAX_RECENT_KEYWORDS)
             keywords = keywords.subList(0, MAX_RECENT_KEYWORDS);
 
@@ -214,7 +213,6 @@ public class TourismController {
         return keywords != null ? keywords : List.of();
     }
 
-    // 지도 중심 좌표 계산
     private void setMapCenter(Model model, List<TourPlaceDto> list,
                               Double userLat, Double userLon) {
         if (list.isEmpty()) {
@@ -222,7 +220,6 @@ public class TourismController {
             model.addAttribute("centerLon", userLon != null ? userLon : 126.9780);
             return;
         }
-        // 상위 5개 평균으로 중심 계산 (전체 평균보다 관심 지역에 집중)
         int count = Math.min(5, list.size());
         double latSum = 0, lonSum = 0;
         for (int i = 0; i < count; i++) {
@@ -234,10 +231,9 @@ public class TourismController {
     }
 
     @RequestMapping("/tour/location")
-    public String locationOK(){
+    public String locationOK() {
         return "tourism/tourLocation";
     }
-
 
     @RequestMapping("tour/gotransport")
     public String goTransport(@RequestParam("userlat") Double userlat,
@@ -246,7 +242,6 @@ public class TourismController {
                               @RequestParam("lat") Double placeLat,
                               @RequestParam("lon") Double placeLon,
                               @RequestParam(value = "lang", defaultValue = "KR") String lang) {
-        // ✅ startLat/startLng 분리해서 전송 (TransportRouteController 파라미터 형식)
         String encoded = java.net.URLEncoder.encode(title, java.nio.charset.StandardCharsets.UTF_8);
         String base = "en".equalsIgnoreCase(lang) ? "/en/transport/search" : "/ko/transport/search";
         return "redirect:" + base
@@ -254,6 +249,4 @@ public class TourismController {
                 + "&startLng=" + userlon
                 + "&end=" + encoded;
     }
-
-
 }
