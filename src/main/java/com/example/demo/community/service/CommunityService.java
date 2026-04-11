@@ -4,6 +4,7 @@ import com.example.demo.community.dto.CategoryDto;
 import com.example.demo.community.dto.CommunityDto;
 import com.example.demo.community.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,20 +21,17 @@ public class CommunityService {
 
     // 커뮤니티 메인 페이지 데이터 (게시글 목록 + 카테고리 목록 + 인기글)
     @Transactional(readOnly = true)
-    public CommunityDto getCommunityPageData(Long categoryId, String keyword) {
+    public CommunityDto getCommunityPageData(Long categoryId, String keyword, Pageable pageable) {
         boolean hasCategory = categoryId != null;
         boolean hasKeyword = keyword != null && !keyword.isBlank();
 
-        List<PostDto> posts;
-        if (hasCategory && hasKeyword) {
-            posts = postService.searchPostsByCategory(categoryId, keyword); // 카테고리 + 검색어 동시
-        } else if (hasCategory) {
-            posts = postService.getPostsByCategory(categoryId);             // 카테고리만
-        } else if (hasKeyword) {
-            posts = postService.searchPosts(keyword);                       // 검색어만
-        } else {
-            posts = postService.getPosts();                                 // 전체
-        }
+        var posts = hasCategory && hasKeyword
+                ? postService.searchPostsByCategory(categoryId, keyword, pageable)  // 카테고리 + 검색어 동시
+                : hasCategory
+                ? postService.getPostsByCategory(categoryId, pageable)              // 카테고리만
+                : hasKeyword
+                ? postService.searchPosts(keyword, pageable)                        // 검색어만
+                : postService.getPosts(pageable);                                   // 전체
 
         return CommunityDto.builder()
                 .posts(posts)

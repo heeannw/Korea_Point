@@ -32,7 +32,7 @@ public class TripPlan {
     @Column(length = 500) private String preferredAreas;
     @Column(length = 500) private String mustVisit;
     @Column(length = 300) private String categories;
-    @Column(columnDefinition = "TEXT") private String styleDescription;
+    @Column(length = 1000) private String styleDescription;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
