@@ -65,6 +65,17 @@ public class CommentService {
         return comment.getId();
     }
 
+    // 댓글 수정
+    @Transactional
+    public void updateComment(Long commentId, Long userId, String content) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
+        comment.setContent(content);
+    }
+
     // 댓글 소프트 딜리트
     @Transactional
     public void deleteComment(Long commentId, Long userId) {

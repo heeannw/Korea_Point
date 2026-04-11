@@ -166,12 +166,23 @@
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2 mb-1">
                                     <span class="text-[13px] text-gray-800" style="font-weight:600;"
-                                          th:text="${comment.authorName}">Author</span>
+                                          th:text="'@' + ${comment.authorName}">Author</span>
                                     <span class="text-[11px] text-gray-400 time-ago"
                                           th:attr="data-time=${#temporals.format(comment.createdAt, 'yyyy-MM-dd') + 'T' + #temporals.format(comment.createdAt, 'HH:mm:ss')}">Date</span>
                                 </div>
                                 <p class="text-[14px] text-gray-700 leading-relaxed"
                                    th:text="${comment.content}">Comment content</p>
+                                <div class="edit-form hidden mt-1">
+                                    <textarea th:attr="data-comment-id=${comment.id}"
+                                              class="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#2563EB] resize-none"
+                                              rows="2"></textarea>
+                                    <div class="flex gap-2 mt-1">
+                                        <button type="button" onclick="saveEdit(this)"
+                                                class="px-3 py-1 bg-[#2563EB] text-white text-[12px] rounded-md hover:bg-[#1d4ed8] cursor-pointer">저장</button>
+                                        <button type="button" onclick="cancelEdit(this)"
+                                                class="px-3 py-1 text-[12px] text-gray-500 hover:text-gray-700 cursor-pointer">취소</button>
+                                    </div>
+                                </div>
                                 <div class="flex items-center gap-3 mt-1.5">
                                     <button type="button"
                                             th:attr="data-parent-id=${comment.id}, data-author-name=${comment.authorName}"
@@ -179,13 +190,27 @@
                                             class="text-[12px] text-blue-500 hover:text-blue-700 cursor-pointer">
                                         Reply
                                     </button>
-                                    <button th:if="${currentUserId != null and currentUserId == comment.userId}"
-                                            type="button"
-                                            th:attr="data-comment-id=${comment.id}"
-                                            onclick="deleteComment(this)"
-                                            class="text-[12px] text-red-400 hover:text-red-600 cursor-pointer">
-                                        Delete
-                                    </button>
+                                </div>
+                            </div>
+                            <!-- ⋮ 메뉴 — 댓글 행 맨 오른쪽 -->
+                            <div th:if="${currentUserId != null}" class="relative comment-menu-container shrink-0">
+                                <button type="button" onclick="toggleMenu(this)"
+                                        class="p-1 rounded hover:bg-gray-100 cursor-pointer text-gray-400">
+                                    <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                                </button>
+                                <div class="comment-menu hidden absolute right-0 top-6 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[80px] py-1">
+                                    <th:block th:if="${currentUserId == comment.userId}">
+                                        <button type="button" th:attr="data-comment-id=${comment.id}"
+                                                onclick="editComment(this)"
+                                                class="w-full text-left px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50 cursor-pointer">수정</button>
+                                        <button type="button" th:attr="data-comment-id=${comment.id}"
+                                                onclick="deleteComment(this)"
+                                                class="w-full text-left px-3 py-1.5 text-[13px] text-red-500 hover:bg-gray-50 cursor-pointer">삭제</button>
+                                    </th:block>
+                                    <th:block th:if="${currentUserId != comment.userId}">
+                                        <button type="button" onclick="reportComment(this)"
+                                                class="w-full text-left px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50 cursor-pointer">신고</button>
+                                    </th:block>
                                 </div>
                             </div>
                         </div>
@@ -202,7 +227,7 @@
                             </button>
 
                             <!-- 대댓글 목록 + 하단 숨기기 버튼 (기본 숨김) -->
-                            <div class="reply-list hidden mt-3 flex flex-col gap-4">
+                            <div class="reply-list hidden mt-3 flex flex-col gap-4 border-l-2 border-gray-200 ml-4 pl-4">
                                 <div th:each="reply : ${comment.children}"
                                      class="flex items-start gap-3"
                                      th:style="'padding-left: ' + ${(reply.depth - 1) * 44} + 'px'">
@@ -216,7 +241,7 @@
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 mb-1">
                                             <span class="text-[12px] text-gray-800" style="font-weight:600;"
-                                                  th:text="${reply.mentionPart != null ? reply.mentionPart : reply.authorName}">Author</span>
+                                                  th:text="'@' + ${reply.authorName}">Author</span>
                                             <span class="text-[11px] text-gray-400 time-ago"
                                                   th:attr="data-time=${#temporals.format(reply.createdAt, 'yyyy-MM-dd') + 'T' + #temporals.format(reply.createdAt, 'HH:mm:ss')}">Date</span>
                                         </div>
@@ -224,6 +249,17 @@
                                            th:if="${!reply.deleted}" th:text="${reply.content}">Reply content</p>
                                         <p class="text-[13px] text-gray-400 italic"
                                            th:if="${reply.deleted}">삭제된 댓글입니다.</p>
+                                        <div th:if="${!reply.deleted}" class="edit-form hidden mt-1">
+                                            <textarea th:attr="data-comment-id=${reply.id}"
+                                                      class="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#2563EB] resize-none"
+                                                      rows="2"></textarea>
+                                            <div class="flex gap-2 mt-1">
+                                                <button type="button" onclick="saveEdit(this)"
+                                                        class="px-3 py-1 bg-[#2563EB] text-white text-[12px] rounded-md hover:bg-[#1d4ed8] cursor-pointer">저장</button>
+                                                <button type="button" onclick="cancelEdit(this)"
+                                                        class="px-3 py-1 text-[12px] text-gray-500 hover:text-gray-700 cursor-pointer">취소</button>
+                                            </div>
+                                        </div>
                                         <div th:if="${!reply.deleted}" class="flex items-center gap-3 mt-1">
                                             <button type="button"
                                                     th:attr="data-top-comment-id=${comment.id}, data-reply-to-id=${reply.id}, data-author-name=${reply.authorName}"
@@ -231,13 +267,27 @@
                                                     class="text-[12px] text-blue-500 hover:text-blue-700 cursor-pointer">
                                                 Reply
                                             </button>
-                                            <button th:if="${currentUserId != null and currentUserId == reply.userId}"
-                                                    type="button"
-                                                    th:attr="data-comment-id=${reply.id}"
-                                                    onclick="deleteComment(this)"
-                                                    class="text-[12px] text-red-400 hover:text-red-600 cursor-pointer">
-                                                Delete
-                                            </button>
+                                        </div>
+                                    </div>
+                                    <!-- ⋮ 메뉴 — 대댓글 행 맨 오른쪽 -->
+                                    <div th:if="${currentUserId != null}" class="relative comment-menu-container shrink-0">
+                                        <button type="button" onclick="toggleMenu(this)"
+                                                class="p-1 rounded hover:bg-gray-100 cursor-pointer text-gray-400">
+                                            <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                                        </button>
+                                        <div class="comment-menu hidden absolute right-0 top-6 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[80px] py-1">
+                                            <th:block th:if="${currentUserId == reply.userId}">
+                                                <button type="button" th:attr="data-comment-id=${reply.id}"
+                                                        onclick="editComment(this)"
+                                                        class="w-full text-left px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50 cursor-pointer">수정</button>
+                                                <button type="button" th:attr="data-comment-id=${reply.id}"
+                                                        onclick="deleteComment(this)"
+                                                        class="w-full text-left px-3 py-1.5 text-[13px] text-red-500 hover:bg-gray-50 cursor-pointer">삭제</button>
+                                            </th:block>
+                                            <th:block th:if="${currentUserId != reply.userId}">
+                                                <button type="button" onclick="reportComment(this)"
+                                                        class="w-full text-left px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50 cursor-pointer">신고</button>
+                                            </th:block>
                                         </div>
                                     </div>
                                 </div>
@@ -255,16 +305,20 @@
 
                         <!-- 대댓글 입력 폼 (토글 아래, 기본 숨김) -->
                         <div class="reply-form hidden ml-11 mt-3">
-                            <div class="flex gap-2 items-center">
-                                <span class="reply-mention hidden text-[13px] text-[#2563EB] shrink-0"
-                                      style="font-weight:600;"></span>
-                                <input type="text" placeholder="답글 달기..."
-                                       class="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-blue-100"/>
+                            <input type="text" placeholder="답글 달기..."
+                                   class="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-blue-100"/>
+                            <div class="flex justify-end gap-2 mt-2">
+                                <button type="button"
+                                        onclick="cancelReply(this)"
+                                        class="px-4 py-1.5 text-[13px] text-gray-500 hover:bg-gray-100 rounded-full cursor-pointer">
+                                    취소
+                                </button>
                                 <button type="button"
                                         th:attr="data-post-id=${post.postId}, data-parent-id=${comment.id}"
                                         onclick="submitComment(this)"
-                                        class="px-4 py-2 bg-[#2563EB] text-white text-[13px] rounded-lg hover:bg-[#1d4ed8] transition-colors cursor-pointer">
-                                    Submit
+                                        class="px-4 py-1.5 bg-[#2563EB] text-white text-[13px] rounded-full hover:bg-[#1d4ed8] transition-colors cursor-pointer"
+                                        style="font-weight:500;">
+                                    답글
                                 </button>
                             </div>
                         </div>
@@ -275,15 +329,20 @@
             <!-- 댓글 작성 폼 -->
             <div class="mt-6 pt-5 border-t border-gray-100">
                 <h3 class="text-[14px] text-gray-700 mb-3" style="font-weight:600;">Leave a Comment</h3>
-                <div class="flex gap-2">
-                    <input type="text" id="commentInput" placeholder="Write a comment..."
-                           class="flex-1 px-4 py-2.5 text-[14px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100"/>
+                <input type="text" id="commentInput" placeholder="Write a comment..."
+                       class="w-full px-4 py-2.5 text-[14px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100"/>
+                <div class="flex justify-end gap-2 mt-2">
+                    <button type="button"
+                            onclick="cancelTopComment()"
+                            class="px-4 py-1.5 text-[13px] text-gray-500 hover:bg-gray-100 rounded-full cursor-pointer">
+                        취소
+                    </button>
                     <button type="button"
                             th:attr="data-post-id=${post.postId}"
                             onclick="submitTopComment(this)"
-                            class="px-5 py-2.5 bg-[#2563EB] text-white text-[14px] rounded-lg hover:bg-[#1d4ed8] transition-colors cursor-pointer"
+                            class="px-4 py-1.5 bg-[#2563EB] text-white text-[13px] rounded-full hover:bg-[#1d4ed8] transition-colors cursor-pointer"
                             style="font-weight:500;">
-                        Submit
+                        댓글
                     </button>
                 </div>
             </div>
@@ -300,6 +359,7 @@
 
 <script>
     lucide.createIcons();
+    const CURRENT_USER_NAME = /*[[${currentUserName}]]*/ '';
 
     // 대댓글 입력 폼 — 클릭한 댓글 바로 아래로 이동
     function showReplyForm(btn) {
@@ -317,14 +377,6 @@
         commentRow.insertAdjacentElement('afterend', form);
 
         form.dataset.replyToId = '';
-        const authorName = btn.getAttribute('data-author-name');
-        const mention = form.querySelector('.reply-mention');
-        if (authorName) {
-            mention.textContent = '@' + authorName;
-            mention.classList.remove('hidden');
-        } else {
-            mention.classList.add('hidden');
-        }
         const input = form.querySelector('input');
         input.value = '';
         form.classList.remove('hidden');
@@ -343,10 +395,10 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: content, parentId: null })
         })
-        .then(res => {
-            if (res.ok) { location.reload(); }
-            else { alert('로그인이 필요합니다.'); }
-        });
+            .then(res => {
+                if (res.ok) { location.reload(); }
+                else { alert('로그인이 필요합니다.'); }
+            });
     }
 
     // 답글 목록 펼치기 (상단 버튼)
@@ -388,12 +440,79 @@
 
         form.classList.remove('hidden');
         form.dataset.replyToId = replyToId || '';
-        const mention = form.querySelector('.reply-mention');
-        mention.textContent = '@' + authorName;
-        mention.classList.remove('hidden');
         const input = form.querySelector('input');
         input.value = '';
         input.focus();
+    }
+
+    // ⋮ 메뉴 토글
+    function toggleMenu(btn) {
+        const menu = btn.nextElementSibling;
+        const isHidden = menu.classList.contains('hidden');
+        document.querySelectorAll('.comment-menu').forEach(m => m.classList.add('hidden'));
+        if (isHidden) menu.classList.remove('hidden');
+    }
+    // 외부 클릭 시 메뉴 닫기
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.comment-menu-container')) {
+            document.querySelectorAll('.comment-menu').forEach(m => m.classList.add('hidden'));
+        }
+    });
+
+    // 수정 모드 시작
+    function editComment(btn) {
+        document.querySelectorAll('.comment-menu').forEach(m => m.classList.add('hidden'));
+        // ⋮ 버튼이 flex-1 밖 sibling 위치이므로 공통 부모(flex row)에서 flex-1 탐색
+        const row = btn.closest('.flex.items-start.gap-3');
+        const block = row.querySelector('.flex-1.min-w-0');
+        const contentP = block.querySelector('p');
+        const editForm = block.querySelector('.edit-form');
+        editForm.querySelector('textarea').value = contentP.textContent.trim();
+        contentP.classList.add('hidden');
+        editForm.classList.remove('hidden');
+        editForm.querySelector('textarea').focus();
+    }
+
+    // 수정 저장
+    function saveEdit(btn) {
+        const editForm = btn.closest('.edit-form');
+        const textarea = editForm.querySelector('textarea');
+        const commentId = textarea.getAttribute('data-comment-id');
+        const content = textarea.value.trim();
+        if (!content) return;
+        fetch('/api/comments/' + commentId, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content })
+        }).then(res => {
+            if (res.ok) { location.reload(); }
+            else { alert('수정에 실패했습니다.'); }
+        });
+    }
+
+    // 수정 취소
+    function cancelEdit(btn) {
+        const editForm = btn.closest('.edit-form');
+        editForm.classList.add('hidden');
+        editForm.previousElementSibling.classList.remove('hidden');
+    }
+
+    // 신고
+    function reportComment(btn) {
+        document.querySelectorAll('.comment-menu').forEach(m => m.classList.add('hidden'));
+        alert('신고가 접수되었습니다. 검토 후 조치하겠습니다.');
+    }
+
+    // 최상위 댓글 취소
+    function cancelTopComment() {
+        document.getElementById('commentInput').value = '';
+    }
+
+    // 대댓글 취소
+    function cancelReply(btn) {
+        const form = btn.closest('.reply-form');
+        form.querySelector('input').value = '';
+        form.classList.add('hidden');
     }
 
     // 댓글/대댓글 삭제
@@ -402,10 +521,10 @@
         const commentId = btn.getAttribute('data-comment-id');
 
         fetch('/api/comments/' + commentId, { method: 'DELETE' })
-        .then(res => {
-            if (res.ok) { location.reload(); }
-            else { alert('삭제에 실패했습니다.'); }
-        });
+            .then(res => {
+                if (res.ok) { location.reload(); }
+                else { alert('삭제에 실패했습니다.'); }
+            });
     }
 
     // 유튜브 스타일 상대 시간
@@ -428,11 +547,8 @@
         const postId = btn.getAttribute('data-post-id');
         const parentId = btn.getAttribute('data-parent-id');
         const form = btn.closest('.reply-form');
-        const mention = form.querySelector('.reply-mention');
         const input = form.querySelector('input');
-        const mentionText = mention && !mention.classList.contains('hidden') ? mention.textContent.trim() : '';
-        const inputText = input.value.trim();
-        const content = mentionText ? mentionText + ' ' + inputText : inputText;
+        const content = input.value.trim();
         if (!content) return;
 
         const replyToId = form.dataset.replyToId ? Number(form.dataset.replyToId) : null;
@@ -441,10 +557,10 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: content, parentId: Number(parentId), replyToId: replyToId })
         })
-        .then(res => {
-            if (res.ok) { location.reload(); }
-            else { alert('로그인이 필요합니다.'); }
-        });
+            .then(res => {
+                if (res.ok) { location.reload(); }
+                else { alert('로그인이 필요합니다.'); }
+            });
     }
 </script>
 </body>
