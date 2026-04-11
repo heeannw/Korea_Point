@@ -173,7 +173,7 @@
 
   // 단건 번역 (상세 패널 이름·리뷰 등 개별 텍스트용)
   async function tr(text) {
-    if (!text || LANG !== 'en') return text;
+    if (!text || !text.trim() || LANG !== 'en') return text;
     if (_tCache[text] !== undefined) return _tCache[text];
     try {
       const res = await fetch('/api/translate', {
@@ -188,22 +188,33 @@
     return _tCache[text];
   }
 
-  // 배치 번역: N건을 \n 으로 묶어 API 1번만 호출 → 30번→1번으로 단축
+  // 청크 단위 배치 번역: 10개씩 묶어서 API 호출 (파파고 글자수 제한 회피)
+  async function _trChunk(arr) {
+    const valid = arr.filter(t => t && t.trim());
+    if (!valid.length) return;
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ text: valid.join('\n'), source: 'ko', target: 'en' })
+      });
+      const data = await res.json();
+      const translated = (data.translatedText || '').split('\n');
+      valid.forEach((t, i) => { _tCache[t] = translated[i]?.trim() || t; });
+      _saveCache();
+    } catch { valid.forEach(t => { _tCache[t] = t; }); }
+  }
+
+  // 가시 영역 N개만 번역 (스크롤/카테고리 전환 시 호출)
   async function trAll(arr) {
     if (!arr.length || LANG !== 'en') return arr;
-    const uncached = [...new Set(arr.filter(t => t && _tCache[t] === undefined))];
+    const uncached = [...new Set(arr.filter(t => t && t.trim() && _tCache[t] === undefined))];
     if (uncached.length) {
-      try {
-        const res = await fetch('/api/translate', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ text: uncached.join('\n'), source: 'ko', target: 'en' })
-        });
-        const data = await res.json();
-        const translated = (data.translatedText || '').split('\n');
-        uncached.forEach((t, i) => { _tCache[t] = translated[i]?.trim() || t; });
-        _saveCache();
-      } catch { uncached.forEach(t => { _tCache[t] = t; }); }
+      // 10개씩 청크로 나눠 순차 호출 → 파파고 글자수 제한 회피
+      const CHUNK = 10;
+      for (let i = 0; i < uncached.length; i += CHUNK) {
+        await _trChunk(uncached.slice(i, i + CHUNK));
+      }
     }
     return arr.map(t => _tCache[t] || t);
   }
@@ -485,8 +496,8 @@
               ${catEmoji(p.category)}
             </div>
             <div class="card-info">
-              <div class="card-cat" style="color:${catColor(p.category)}">${p.category ?? T.defaultCat} · AI ${((p.finalScore ?? 0) * 100).toFixed(0)}${T.aiPt}</div>
-              <div class="card-name">${_tCache[p.name] || p.name || '-'}</div>
+              <div class="card-cat" style="color:${catColor(p.category)}">${(LANG==='en' ? (p.categoryEn ?? p.category) : p.category) ?? T.defaultCat} · AI ${((p.finalScore ?? 0) * 100).toFixed(0)}${T.aiPt}</div>
+              <div class="card-name">${LANG==='en' ? (p.nameEn || _tCache[p.name] || p.name || '-') : (p.name || '-')}</div>
               <div class="card-meta">
                 <span class="stars-s">★</span>${(p.avgStar ?? 0).toFixed(1)}
                 (${LANG === 'en' ? (p.reviewCount ?? 0) + ' reviews' : '리뷰 ' + (p.reviewCount ?? 0) + '개'})
@@ -497,17 +508,32 @@
       }).join('');
     }
 
-    container.onscroll = paintVisible;
+    container.onscroll = () => {
+      paintVisible();
+      // 스크롤 시 새로 보이는 항목 번역
+      if (LANG === 'en') {
+        const scrollTop = container.scrollTop;
+        const viewH     = container.clientHeight;
+        const si = Math.max(0, Math.floor(scrollTop / ITEM_H) - OVERSCAN);
+        const ei = Math.min(list.length - 1, Math.ceil((scrollTop + viewH) / ITEM_H) + OVERSCAN);
+        const visibleNames = list.slice(si, ei + 1).map(p => p.name ?? '').filter(n => n && !_tCache[n]);
+        if (visibleNames.length) {
+          trAll(visibleNames).then(() => paintVisible());
+        }
+      }
+    };
     container.scrollTop = 0;
 
-    // ✅ EN이면 현재 목록 이름 미리 번역 후 재렌더
     if (LANG === 'en') {
-      trAll(list.map(p => p.name ?? '')).then(translated => {
-        list.forEach((p, i) => { _tCache[p.name ?? ''] = translated[i]; });
-        paintVisible();
-      });
+      // ✅ nameEn이 이미 있으면 파파고 호출 없이 즉시 렌더
+      const needTranslate = list.slice(0, 10).filter(p => !p.nameEn && p.name && !_tCache[p.name]).map(p => p.name);
+      if (needTranslate.length) {
+        trAll(needTranslate).then(() => paintVisible());
+      }
+      paintVisible();
+    } else {
+      paintVisible();
     }
-    paintVisible();
   }
 
   /* ── 선택 / 팝업 ── */
@@ -542,8 +568,8 @@
                    cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
         </div>
         <div style="padding:12px;">
-          <div style="font-size:11px;font-weight:700;color:${color};margin-bottom:2px;">${p.category ?? T.defaultCat}</div>
-          <div style="font-size:14px;font-weight:700;margin-bottom:3px;">${p.name ?? '-'}</div>
+          <div style="font-size:11px;font-weight:700;color:${color};margin-bottom:2px;">${LANG==='en' ? (p.categoryEn ?? p.category ?? T.defaultCat) : (p.category ?? T.defaultCat)}</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:3px;">${LANG==='en' ? (p.nameEn || p.name || '-') : (p.name ?? '-')}</div>
           <div style="font-size:12px;color:#64748b;margin-bottom:8px;">
             ★ ${(p.avgStar ?? 0).toFixed(1)} · ${distStr(p.distance)} · AI ${((p.finalScore??0)*100).toFixed(0)}${T.aiPt}
           </div>
@@ -576,9 +602,9 @@
     const color = catColor(p.category);
     const stars = Math.round(p.avgStar ?? 0);
 
-    // ✅ EN이면 가게 이름 번역
-    const dispName = LANG === 'en' ? await tr(p.name ?? '') : (p.name ?? '');
-    const dispSub  = LANG === 'en' ? await tr(p.googleName ?? '') : (p.googleName ?? '');
+    // ✅ nameEn이 있으면 파파고 호출 없이 즉시 사용
+    const dispName = LANG === 'en' ? (p.nameEn || await tr(p.name ?? '')) : (p.name ?? '');
+    const dispSub  = LANG === 'en' ? (p.googleName ?? '') : (p.googleName ?? '');
 
     document.getElementById('dpTitle').textContent = dispName;
     document.getElementById('dpName').textContent  = dispName;
@@ -586,7 +612,7 @@
     document.getElementById('dpImg').innerHTML     = `<span style="font-size:56px">${catEmoji(p.category)}</span>`;
 
     document.getElementById('dpBadges').innerHTML =
-            `<span class="dp-badge" style="background:${color}22;color:${color}">${p.category ?? T.defaultCat}</span>
+            `<span class="dp-badge" style="background:${color}22;color:${color}">${LANG==='en' ? (p.categoryEn ?? p.category ?? T.defaultCat) : (p.category ?? T.defaultCat)}</span>
        <span class="dp-badge db-gold">🏆 ${((p.finalScore ?? 0) * 100).toFixed(0)}${T.aiPt}</span>
        ${(p.reviewCount ?? 0) >= 10 ? `<span class="dp-badge db-green">${T.popularBadge}</span>` : ''}`;
 
@@ -603,7 +629,7 @@
        <div class="dp-info"><div class="dp-info-label">${T.labelAiScore}</div>
          <div class="dp-info-val">🏆 ${((p.finalScore ?? 0) * 100).toFixed(1)} / 100</div></div>
        <div class="dp-info"><div class="dp-info-label">${T.labelCategory}</div>
-         <div class="dp-info-val" style="color:${color};font-weight:700">${p.category ?? T.defaultCat}</div></div>`;
+         <div class="dp-info-val" style="color:${color};font-weight:700">${LANG==='en' ? (p.categoryEn ?? p.category ?? T.defaultCat) : (p.category ?? T.defaultCat)}</div></div>`;
 
     document.getElementById('dpRevSummary').innerHTML =
             `<div class="review-skeleton" style="flex:1">
@@ -718,14 +744,27 @@
 
   /* ── 언어 전환 ── */
   function switchLang(toLang) {
-    const path   = location.pathname;
-    const search = location.search;
+    // ✅ 언어 설정 localStorage에 저장 → 다른 페이지 갔다와도 유지
+    localStorage.setItem('site_lang', toLang);
+    const path = location.pathname;
     if (toLang === 'en') {
-      location.href = path.replace('/foodmap/', '/en/foodmap/') + search;
+      location.href = path.replace('/foodmap/', '/en/foodmap/');
     } else {
-      location.href = path.replace('/en/foodmap/', '/foodmap/') + search;
+      location.href = path.replace('/en/foodmap/', '/foodmap/');
     }
   }
+
+  // ✅ 페이지 진입 시 저장된 언어와 현재 언어가 다르면 자동 전환
+  // (다른 페이지 갔다 돌아왔을 때 언어 유지)
+  (function autoLang() {
+    const saved = localStorage.getItem('site_lang');
+    if (!saved) { localStorage.setItem('site_lang', LANG); return; }
+    if (saved === 'en' && LANG !== 'en' && !location.pathname.startsWith('/en/')) {
+      location.href = location.pathname.replace('/foodmap/', '/en/foodmap/');
+    } else if (saved === 'ko' && LANG === 'en') {
+      location.href = location.pathname.replace('/en/foodmap/', '/foodmap/');
+    }
+  })();
 
   /* ── 유틸 ── */
   function distStr(d) {
@@ -752,6 +791,9 @@
   }
 
   document.getElementById('mapArea').addEventListener('click', function(e) {
+    // ✅ BUG FIX: CustomOverlay는 별도 DOM이라 closest('.detail-panel') 체크가 안 됨
+    // popupOverlay가 살아있을 때 mapArea 클릭은 무시 (CustomOverlay 내부 클릭 보호)
+    if (popupOverlay) return;
     if (!e.target.closest('.detail-panel')) closePopup();
   });
 
@@ -760,6 +802,12 @@
   render();
   setTimeout(updateScrollBtns, 100);
 
+  // ✅ ?continue 파라미터가 붙으면 제거 (무한 리다이렉트 방지)
+  if (location.search.includes('continue')) {
+    history.replaceState(null, '', location.pathname);
+  }
+
+  // PLACES가 없고 mylocation 페이지도 아닐 때만 현위치로 이동
   if (PLACES.length === 0 && !location.pathname.includes('/foodmap/mylocation')) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
