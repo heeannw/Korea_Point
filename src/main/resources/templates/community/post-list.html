@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            theme: { extend: { boxShadow: { soft: "0 1px 3px rgba(0,0,0,0.04)" } } }
+            theme: {extend: {boxShadow: {soft: "0 1px 3px rgba(0,0,0,0.04)"}}}
         }
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -19,7 +19,7 @@
 <link rel="stylesheet" th:href="@{/css/common/reset.css}">
 <link rel="stylesheet" th:href="@{/css/common/layout.css}">
 <header>
-    <a class="logo" th:href="@{/home}">Korea<span>Point</span></a>
+    <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
     <div class="header-right">
         <a th:href="@{/en/transport/detail(routeId=${route?.routeId})}" class="h-btn">EN</a>
         <a th:href="@{/ko/transport/detail(routeId=${route?.routeId})}" class="h-btn active">KR</a>
@@ -40,34 +40,38 @@
     <div class="max-w-[1200px] mx-auto px-6 py-8">
         <div class="mb-8">
             <h1 class="text-[28px] text-gray-900 mb-2" style="font-weight:700;">Community</h1>
-            <p class="text-[15px] text-gray-500">Ask questions, share tips, and connect with fellow travelers in Korea.</p>
+            <p class="text-[15px] text-gray-500">Ask questions, share tips, and connect with fellow travelers in
+                Korea.</p>
         </div>
 
         <div class="flex gap-8">
             <!-- 메인 콘텐츠 -->
             <div class="flex-1 min-w-0">
 
-                <!-- 검색 (현재 카테고리를 hidden으로 같이 전송) -->
+                <!-- 검색 (현재 카테고리, 정렬을 hidden으로 같이 전송) -->
                 <form th:action="@{/community/post-list}" method="get" class="mb-5">
-                    <input type="hidden" name="categoryId" th:if="${selectedCategory != null}" th:value="${selectedCategory}"/>
+                    <input type="hidden" name="categoryId" th:if="${selectedCategory != null}"
+                           th:value="${selectedCategory}"/>
+                    <input type="hidden" name="sort" th:value="${sort}"/>
                     <div class="relative">
-                        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                        <i data-lucide="search"
+                           class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
                         <input type="text" name="keyword" th:value="${keyword}"
                                placeholder="Search posts..."
                                class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[14px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 transition-all"/>
                     </div>
                 </form>
 
-                <!-- 카테고리 필터 (현재 검색어를 링크에 포함) -->
+                <!-- 카테고리 필터 (현재 검색어, 정렬을 링크에 포함) -->
                 <div class="flex items-center gap-2 mb-5">
-                    <a th:href="@{/community/post-list}"
+                    <a th:href="@{/community/post-list(keyword=${keyword}, sort=${sort})}"
                        th:classappend="${selectedCategory == null} ? 'bg-[#2563EB] text-white border-[#2563EB]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'"
                        class="px-3.5 py-2 rounded-lg text-[13px] border transition-all no-underline"
                        style="font-weight:500;">
                         <span class="mr-1.5">📋</span>All
                     </a>
                     <a th:each="cat : ${data.categories}"
-                       th:href="@{/community/post-list(categoryId=${cat.categoryId})}"
+                       th:href="@{/community/post-list(categoryId=${cat.categoryId}, keyword=${keyword}, sort=${sort})}"
                        th:classappend="${selectedCategory != null and selectedCategory == cat.categoryId} ? 'bg-[#2563EB] text-white border-[#2563EB]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'"
                        class="px-3.5 py-2 rounded-lg text-[13px] border transition-all no-underline"
                        style="font-weight:500;">
@@ -76,18 +80,34 @@
                     </a>
                 </div>
 
-                <!-- 정렬 탭 -->
-                <div class="flex items-center gap-1 mb-4">
-                    <span class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] text-[#2563EB] bg-blue-50" style="font-weight:500;">
-                        <i data-lucide="clock-3" class="w-3.5 h-3.5"></i> Latest
-                    </span>
+                <!-- 정렬 탭 + 글 작성 버튼 -->
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-1">
+                        <a th:href="@{/community/post-list(categoryId=${selectedCategory}, keyword=${keyword}, sort='latest')}"
+                           th:classappend="${sort == 'latest'} ? 'text-[#2563EB] bg-blue-50' : 'text-gray-500 hover:bg-gray-100'"
+                           class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] no-underline transition-colors"
+                           style="font-weight:500;">
+                            <i data-lucide="clock-3" class="w-3.5 h-3.5"></i> Latest
+                        </a>
+                        <a th:href="@{/community/post-list(categoryId=${selectedCategory}, keyword=${keyword}, sort='popular')}"
+                           th:classappend="${sort == 'popular'} ? 'text-[#2563EB] bg-blue-50' : 'text-gray-500 hover:bg-gray-100'"
+                           class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] no-underline transition-colors"
+                           style="font-weight:500;">
+                            <i data-lucide="flame" class="w-3.5 h-3.5"></i> Popular
+                        </a>
+                    </div>
+                    <a th:if="${isLoggedIn}" th:href="@{/community/post/write}"
+                       class="flex items-center gap-1.5 px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] no-underline hover:bg-blue-700 transition-colors"
+                       style="font-weight:500;">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i> 글 작성
+                    </a>
                 </div>
 
                 <!-- 게시글 목록 -->
                 <div class="flex flex-col gap-3">
 
                     <!-- 게시글 없을 때 -->
-                    <div th:if="${#lists.isEmpty(data.posts)}"
+                    <div th:if="${data.posts.isEmpty()}"
                          class="bg-white rounded-xl border border-gray-200/80 p-10 text-center text-gray-400 text-[14px]">
                         등록된 게시글이 없습니다.
                     </div>
@@ -110,7 +130,8 @@
                         <p class="text-[13px] text-gray-500 leading-relaxed mb-3 line-clamp-2"
                            th:text="${post.contentPreview}">Preview...</p>
                         <div class="flex items-center gap-4">
-                            <span class="text-[12px] text-gray-500" style="font-weight:500;" th:text="${post.authorName}">Author</span>
+                            <span class="text-[12px] text-gray-500" style="font-weight:500;"
+                                  th:text="${post.authorName}">Author</span>
                             <div class="flex items-center gap-3 ml-auto">
                                 <span class="flex items-center gap-1 text-[12px] text-gray-400">
                                     <i data-lucide="eye" class="w-3.5 h-3.5"></i>
@@ -123,6 +144,43 @@
                             </div>
                         </div>
                     </a>
+                </div>
+
+                <!-- 페이지네이션 -->
+                <div th:if="${data.posts.totalPages > 1}" class="flex justify-center mt-6 mb-2">
+                    <nav>
+                        <ul class="flex gap-1.5 list-none p-0 m-0">
+                            <!-- 이전 페이지 -->
+                            <li th:with="prevUrl=@{/community/post-list(
+                                page=${data.posts.number - 1},
+                                categoryId=${selectedCategory},
+                                keyword=${keyword},
+                                sort=${sort}
+                            )}">
+                                <a th:href="${data.posts.first} ? '#' : ${prevUrl}"
+                                   th:classappend="${data.posts.first} ? 'pointer-events-none text-gray-300' : 'text-gray-600 hover:bg-gray-100'"
+                                   class="flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 text-sm transition-colors no-underline">&laquo;</a>
+                            </li>
+                            <!-- 페이지 번호 (최대 10개) -->
+                            <li th:each="i : ${#numbers.sequence(startPage, endPage)}">
+                                <a th:href="@{/community/post-list(page=${i}, categoryId=${selectedCategory}, keyword=${keyword}, sort=${sort})}"
+                                   th:text="${i + 1}"
+                                   th:classappend="${i == data.posts.number} ? 'bg-[#2563EB] text-white border-[#2563EB]' : 'text-gray-600 hover:bg-gray-100'"
+                                   class="flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 text-sm transition-colors no-underline">1</a>
+                            </li>
+                            <!-- 다음 페이지 -->
+                            <li th:with="nextUrl=@{/community/post-list(
+                                page=${data.posts.number + 1},
+                                categoryId=${selectedCategory},
+                                keyword=${keyword},
+                                sort=${sort}
+                            )}">
+                                <a th:href="${data.posts.last} ? '#' : ${nextUrl}"
+                                   th:classappend="${data.posts.last} ? 'pointer-events-none text-gray-300' : 'text-gray-600 hover:bg-gray-100'"
+                                   class="flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 text-sm transition-colors no-underline">&raquo;</a>
+                            </li>
+                        </ul>
+                    </nav>
                 </div>
 
             </div>
@@ -157,15 +215,6 @@
                     </div>
                 </div>
 
-                <!-- 커뮤니티 가입 -->
-                <div class="bg-white rounded-xl border border-gray-200/80 p-5 shadow-soft">
-                    <h3 class="text-[14px] text-gray-900 mb-2" style="font-weight:600;">Join the Community</h3>
-                    <p class="text-[13px] text-gray-500 mb-4 leading-relaxed">Sign in to share your experiences and connect with other travelers.</p>
-                    <a th:href="@{/oauth2/authorization/google}"
-                       class="flex items-center justify-center gap-2 w-full py-2.5 border border-gray-200 rounded-lg text-[13px] text-gray-700 no-underline hover:bg-gray-50 transition-colors"
-                       style="font-weight:500;">Continue with Google</a>
-                </div>
-
                 <!-- Quick Tips -->
                 <div class="bg-gradient-to-b from-blue-50 to-white rounded-xl border border-blue-100/80 p-5 shadow-soft">
                     <div class="flex items-center gap-2 mb-4">
@@ -173,10 +222,19 @@
                         <h3 class="text-[14px] text-gray-900" style="font-weight:600;">Quick Tips</h3>
                     </div>
                     <ul class="flex flex-col gap-2.5 list-none p-0 m-0">
-                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span class="text-[#2563EB] mt-0.5">•</span>Download Naver Map — Google Maps is limited in Korea</li>
-                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span class="text-[#2563EB] mt-0.5">•</span>Most convenience stores have free Wi-Fi</li>
-                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span class="text-[#2563EB] mt-0.5">•</span>Tap water is safe to drink in Seoul</li>
-                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span class="text-[#2563EB] mt-0.5">•</span>T-money card works on buses, subway, and taxis</li>
+                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span
+                                class="text-[#2563EB] mt-0.5">•</span>Download Naver Map — Google Maps is limited in
+                            Korea
+                        </li>
+                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span
+                                class="text-[#2563EB] mt-0.5">•</span>Most convenience stores have free Wi-Fi
+                        </li>
+                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span
+                                class="text-[#2563EB] mt-0.5">•</span>Tap water is safe to drink in Seoul
+                        </li>
+                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span
+                                class="text-[#2563EB] mt-0.5">•</span>T-money card works on buses, subway, and taxis
+                        </li>
                     </ul>
                 </div>
 
@@ -187,7 +245,9 @@
 
 <footer class="border-t border-gray-200/80 bg-gray-50 mt-16">
     <div class="max-w-[1200px] mx-auto px-6 py-10">
-        <div class="mt-8 pt-6 border-t border-gray-200 text-[12px] text-gray-400">&copy; 2026 KoreaConnect. All rights reserved.</div>
+        <div class="mt-8 pt-6 border-t border-gray-200 text-[12px] text-gray-400">&copy; 2026 KoreaConnect. All rights
+            reserved.
+        </div>
     </div>
 </footer>
 
