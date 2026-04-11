@@ -180,8 +180,8 @@
 <header>
   <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
   <div class="header-right">
-    <button class="h-btn active">EN</button>
-    <button class="h-btn">KR</button>
+    <button class="h-btn active" onclick="switchLang('EN')">EN</button>
+    <button class="h-btn" onclick="switchLang('KO')">KR</button>
     <button class="h-btn h-btn-fill">Login</button>
   </div>
 </header>
@@ -421,6 +421,12 @@
             )
     );
     render();
+  }
+
+  function switchLang(newLang) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('lang', newLang);
+    window.location.href = url.toString();
   }
 
   function render() {

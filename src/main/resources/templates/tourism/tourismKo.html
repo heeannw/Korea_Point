@@ -176,16 +176,14 @@
   </style>
 </head>
 <body>
-
 <header>
   <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
-  <div class="header-right">
-    <button class="h-btn active">EN</button>
-    <button class="h-btn">KR</button>
-    <button class="h-btn h-btn-fill">Login</button>
-  </div>
+<div class="header-right">
+  <button class="h-btn active" onclick="switchLang('EN')">EN</button>
+  <button class="h-btn" onclick="switchLang('KO')">KR</button>
+  <button class="h-btn h-btn-fill">Login</button>
+</div>
 </header>
-
 <div class="app-body">
   <div class="sidebar">
     <div class="search-bar">
@@ -289,6 +287,7 @@
   const PLACES    = /*[[${list}]]*/ [];
   const centerLat = /*[[${centerLat}]]*/ 37.5665;
   const centerLon = /*[[${centerLon}]]*/ 126.9780;
+  let spotName = /*[[${spotname}]]*/ '내위치';
 </script>
 
 <script>
@@ -609,6 +608,12 @@
 
   let hideTimer;
 
+  function switchLang(newLang) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('lang', newLang);
+    window.location.href = url.toString();
+  }
+
   function onSearchFocus() {
     const val = document.getElementById('searchInput').value;
     if (val.trim().length > 0) showSuggest(val);
@@ -704,7 +709,7 @@
       new kakao.maps.Marker({
         map: map,
         position: new kakao.maps.LatLng(userLat, userLon),
-        title: '내 위치',
+        title: spotName,
         image: myLocationImage
       });
     }
