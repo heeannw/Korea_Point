@@ -102,14 +102,7 @@
     .dp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:5}
     .dp-back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px;line-height:1}
     .dp-title{font-size:16px;font-weight:700;flex:1}
-    .dp-img {
-      width: 100%;
-      aspect-ratio: 16 / 9;  /* ← 이걸로 교체 */
-      height: auto;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-    }
+    .dp-img{width:100%;height:180px;object-fit:cover;background-size:cover;background-position:center;background-color:var(--light)}
     .dp-body{padding:16px}
     .dp-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
     .dp-badge{padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700}
@@ -530,7 +523,21 @@
       <div class="dp-info"><div class="dp-info-label">Distance</div><div class="dp-info-val">${distStr(p.distance)} away</div></div>
       <div class="dp-info"><div class="dp-info-label">Score</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
       <div class="dp-info"><div class="dp-info-label">Category</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
-    document.getElementById('dpDesc').textContent = '';
+    const _keyword = (p.title && p.title.length < 20) ? p.title : p.google_name;
+    const _visitUrl = `https://english.visitkorea.or.kr/totalSearch/search.do?kwd=${encodeURIComponent(p.google_name)}&linkSrchFlag=Y`;
+    document.getElementById('dpDesc').innerHTML =
+            `<p style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;">
+         Get more details from Korea Tourism Organization.
+       </p>
+       <a href="${_visitUrl}" target="_blank" rel="noopener"
+          style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;
+                 border-radius:50px;border:1.5px solid var(--blue);color:var(--blue);
+                 font-size:13px;font-weight:700;text-decoration:none;background:#fff;
+                 transition:all .2s;margin-bottom:8px;"
+          onmouseover="this.style.background='var(--blue)';this.style.color='#fff'"
+          onmouseout="this.style.background='#fff';this.style.color='var(--blue)'">
+         🏛️ Official Tourism Info
+       </a>`;
 
     const reviews = p.reviews ?? [];
     const avg = p.rating ?? 0;
@@ -711,7 +718,7 @@
     });
     const myLocationImage = new kakao.maps.MarkerImage(
             'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
-            new kakao.maps.Size(36, 46)
+            new kakao.maps.Size(24, 35)
     );
     markerMap = [];
     if (userLat && userLon) {

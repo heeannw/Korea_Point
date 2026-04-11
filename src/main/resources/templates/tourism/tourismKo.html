@@ -102,14 +102,7 @@
     .dp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:5}
     .dp-back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px;line-height:1}
     .dp-title{font-size:16px;font-weight:700;flex:1}
-    .dp-img {
-      width: 100%;
-      aspect-ratio: 16 / 9;  /* ← 이걸로 교체 */
-      height: auto;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-    }
+    .dp-img{width:100%;height:180px;object-fit:cover;background-size:cover;background-position:center;background-color:var(--light)}
     .dp-body{padding:16px}
     .dp-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
     .dp-badge{padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700}
@@ -185,11 +178,11 @@
 <body>
 <header>
   <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
-<div class="header-right">
-  <button class="h-btn active" onclick="switchLang('EN')">EN</button>
-  <button class="h-btn" onclick="switchLang('KO')">KR</button>
-  <button class="h-btn h-btn-fill">Login</button>
-</div>
+  <div class="header-right">
+    <button class="h-btn active" onclick="switchLang('EN')">EN</button>
+    <button class="h-btn" onclick="switchLang('KO')">KR</button>
+    <button class="h-btn h-btn-fill">Login</button>
+  </div>
 </header>
 <div class="app-body">
   <div class="sidebar">
@@ -522,7 +515,21 @@
       <div class="dp-info"><div class="dp-info-label">Distance</div><div class="dp-info-val">${distStr(p.distance)} away</div></div>
       <div class="dp-info"><div class="dp-info-label">Score</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
       <div class="dp-info"><div class="dp-info-label">Category</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
-    document.getElementById('dpDesc').textContent = '';
+    const _keyword = (p.title && p.title.length < 20) ? p.title : p.google_name;
+    const _visitUrl = `https://korean.visitkorea.or.kr/search/search_list.do?keyword=${encodeURIComponent(_keyword)}`;
+    document.getElementById('dpDesc').innerHTML =
+            `<p style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;">
+         더 자세한 정보는 한국관광공사에서 확인하세요.
+       </p>
+       <a href="${_visitUrl}" target="_blank" rel="noopener"
+          style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;
+                 border-radius:50px;border:1.5px solid var(--blue);color:var(--blue);
+                 font-size:13px;font-weight:700;text-decoration:none;background:#fff;
+                 transition:all .2s;margin-bottom:8px;"
+          onmouseover="this.style.background='var(--blue)';this.style.color='#fff'"
+          onmouseout="this.style.background='#fff';this.style.color='var(--blue)'">
+         🏛️ 관광지 상세보기
+       </a>`;
 
     const reviews = p.reviews ?? [];
     const avg = p.rating ?? 0;
