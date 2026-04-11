@@ -1,5 +1,6 @@
 package com.example.demo.home.controller;
 
+import com.example.demo.user.util.SecurityUtil;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ public class HomeController {
     // Model model: 뷰(HTML)에 넘길 데이터를 담는 그릇
     @GetMapping({"/", "/en"})
     public String homeEn(Model model) {
+        session(model);
         populateModel(model);       // 공통 데이터 세팅 메서드 호출
         return "home/home";         // templates/home/home.html 을 찾아서 렌더링
     }
@@ -23,6 +25,7 @@ public class HomeController {
     // @GetMapping: "/ko" 또는 "/kr" 접속 시 이 메서드 실행 (한국어 버전)
     @GetMapping({"/ko", "/kr"})
     public String homeKo(Model model) {
+        session(model);
         populateModel(model);       // 공통 데이터 세팅 메서드 호출 (영어와 동일한 데이터)
         return "home/home.ko";      // templates/home/home.ko.html 을 찾아서 렌더링
     }
@@ -30,6 +33,11 @@ public class HomeController {
     // homeEn, homeKo 두 메서드가 공통으로 사용하는 데이터 세팅 메서드
     // private: 이 클래스 내부에서만 사용하는 메서드
     // void: 반환값 없음 (Model 객체에 직접 데이터를 추가하는 방식이라 반환 불필요)
+    private void session(Model model) {
+        model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
+        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
+    }
+
     private void populateModel(Model model) {
 
         // ── 히어로 섹션 텍스트 (영어) ──────────────────────────────────────────
