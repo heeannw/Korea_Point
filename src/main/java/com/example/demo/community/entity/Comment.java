@@ -41,14 +41,19 @@ public class Comment {
     @JoinColumn(name = "parent_id")
     private Comment parent;
 
-    // 대댓글 목록
+    // 대댓글 목록 (작성 시간 오름차순)
     @OneToMany(mappedBy = "parent")
+    @OrderBy("createdAt ASC")
     @Builder.Default
     private List<Comment> children = new ArrayList<>();
 
     // 내용 (소프트 딜리트 시 "삭제된 댓글입니다" 표시용으로 nullable)
     @Column(columnDefinition = "CLOB")
     private String content;
+
+    // 대댓글 내에서 어떤 댓글에 직접 답글을 달았는지 (들여쓰기 계산용, NULL이면 최상위 그룹의 직접 댓글)
+    @Column(name = "reply_to_id")
+    private Long replyToId;
 
     // 소프트 딜리트 (NULL이면 정상, 값 있으면 삭제 — 대댓글 고아 방지)
     private LocalDateTime deletedAt;
