@@ -160,7 +160,11 @@
   const PLACES        = /*[[${list}]]*/    [];
   const INIT_CATEGORY = /*[[${category}]]*/ 'ALL';
   const LANG          = /*[[${lang}]]*/    'ko';  // 'ko' 또는 'en'
-  const FOOD_IMAGE_MAP = /*[[${foodImageMap}]]*/ {};  // ✅ Unsplash 카테고리별 이미지 URL
+  const FOOD_THUMB_MAP   = /*[[${foodThumbMap}]]*/   {};  // ✅ 카드용 썸네일 리스트 (10장)
+  const FOOD_REGULAR_MAP = /*[[${foodRegularMap}]]*/ {};  // ✅ 상세패널용 고화질 리스트 (10장)
+  // 인덱스 기반으로 이미지 선택 (% 로 순환)
+  const getFoodThumb   = (cat, idx) => { const l = FOOD_THUMB_MAP[cat];   return l?.length ? l[idx % l.length]   : ''; };
+  const getFoodRegular = (cat, idx) => { const l = FOOD_REGULAR_MAP[cat]; return l?.length ? l[idx % l.length]   : getFoodThumb(cat, idx); };
   // ── 파파고 번역 캐시 & 함수 ────────────────────────────
   // localStorage 영구 캐시: 한 번 번역한 이름은 다음 방문 시 즉시 표시
   const _LS_KEY = 'tCache_food_en';
@@ -494,8 +498,8 @@
                onclick="selectPlace('${escJS(p.name)}')">
             <div class="thumb">
               <div class="rank" style="background:${catColor(p.category)}">${i + 1}</div>
-              ${FOOD_IMAGE_MAP[p.category]
-                ? `<img src="${FOOD_IMAGE_MAP[p.category]}" alt="${p.category}"
+              ${getFoodThumb(p.category, i)
+                ? `<img src="${getFoodThumb(p.category, i)}" alt="${p.category}"
                         style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;"
                         onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:28px;display:flex;align-items:center;justify-content:center;width:100%;height:100%\\'>${catEmoji(p.category)}</span>')">`
                 : `<span style="font-size:28px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${catEmoji(p.category)}</span>`}
@@ -566,8 +570,8 @@
                   width:240px;overflow:hidden;border:1px solid #fce7f3;">
         <div style="height:90px;background:#fdf2f8;display:flex;align-items:center;
                     justify-content:center;font-size:36px;position:relative;overflow:hidden;">
-          ${FOOD_IMAGE_MAP[p.category]
-            ? `<img src="${FOOD_IMAGE_MAP[p.category]}" alt="${p.category}"
+          ${getFoodThumb(p.category, 0)
+            ? `<img src="${getFoodThumb(p.category, 0)}" alt="${p.category}"
                     style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"
                     onerror="this.style.display='none'">`
             : emoji}
@@ -619,7 +623,8 @@
     document.getElementById('dpName').textContent  = dispName;
     document.getElementById('dpSub').textContent   = dispSub;
     document.getElementById('dpImg').innerHTML = (() => {
-      const _imgUrl = FOOD_IMAGE_MAP[p.category];
+      const _placeIdx = PLACES.indexOf(p);
+      const _imgUrl   = getFoodRegular(p.category, _placeIdx >= 0 ? _placeIdx : 0);
       return _imgUrl
               ? `<img src="${_imgUrl}" alt="${p.category}"
                 style="width:100%;height:100%;object-fit:cover;border-radius:12px 12px 0 0;"
