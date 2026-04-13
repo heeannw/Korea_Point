@@ -92,15 +92,6 @@ public class PostService {
         Category category = categoryRepository.findById(req.getCategoryId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
 
-        // 홍보 카테고리는 500P 차감 (부족 시 예외)
-        if ("홍보".equals(category.getName())) {
-            if (user.getPoint() < 500) {
-                throw new IllegalStateException(
-                        "포인트가 부족합니다. (필요: 500P, 보유: " + user.getPoint() + "P)");
-            }
-            userRepository.updatePoint(userId, -500);
-        }
-
         Post post = Post.builder()
                 .user(user)
                 .category(category)
@@ -110,9 +101,17 @@ public class PostService {
 
         Post saved = postRepository.save(post);
 
-        // 번역 (API 키 없으면 null 반환하여 원문 표시)
-        saved.setTitleEn(translationService.translateToEnglish(req.getTitle()));
-        saved.setContentEn(translationService.translateToEnglish(req.getContent()));
+        // 홍보 카테고리는 500P 차감 (부족 시 예외) — save 성공 후 차감
+        if ("홍보".equals(category.getName())) {
+            if (user.getPoint() < 500) {
+                throw new IllegalStateException(
+                        "포인트가 부족합니다. (필요: 500P, 보유: " + user.getPoint() + "P)");
+            }
+            userRepository.updatePoint(userId, -500);
+        }
+
+        // 번역 비동기 처리 — API 응답 대기 없이 즉시 리다이렉트
+        translationService.translatePostAsync(saved.getId(), req.getTitle(), req.getContent());
 
         return saved.getId();
     }

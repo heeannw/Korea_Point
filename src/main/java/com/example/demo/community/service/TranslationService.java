@@ -1,10 +1,15 @@
 package com.example.demo.community.service;
 
+import com.example.demo.community.repository.CommentRepository;
+import com.example.demo.community.repository.PostRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -13,7 +18,11 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class TranslationService {
+
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
 
     @Value("${translation.api.key:}")
     private String apiKey;
@@ -65,5 +74,25 @@ public class TranslationService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    // 게시글 번역 비동기 처리 — 저장 완료 후 백그라운드에서 실행
+    @Async
+    @Transactional
+    public void translatePostAsync(Long postId, String title, String content) {
+        String titleEn = translateToEnglish(title);
+        String contentEn = translateToEnglish(content);
+        postRepository.findById(postId).ifPresent(p -> {
+            p.setTitleEn(titleEn);
+            p.setContentEn(contentEn);
+        });
+    }
+
+    // 댓글 번역 비동기 처리 — 저장 완료 후 백그라운드에서 실행
+    @Async
+    @Transactional
+    public void translateCommentAsync(Long commentId, String content) {
+        String contentEn = translateToEnglish(content);
+        commentRepository.findById(commentId).ifPresent(c -> c.setContentEn(contentEn));
     }
 }

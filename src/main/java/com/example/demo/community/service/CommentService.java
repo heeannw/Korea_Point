@@ -60,8 +60,8 @@ public class CommentService {
                 .content(req.getContent())
                 .build();
 
-        commentRepository.save(comment);
-        comment.setContentEn(translationService.translateToEnglish(req.getContent()));
+        Comment saved = commentRepository.save(comment);
+        translationService.translateCommentAsync(saved.getId(), req.getContent());
         postRepository.updateCommentCount(postId, 1);
 
         return comment.getId();
@@ -76,6 +76,7 @@ public class CommentService {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
         comment.setContent(content);
+        translationService.translateCommentAsync(commentId, content);
     }
 
     // 댓글 소프트 딜리트
@@ -107,12 +108,17 @@ public class CommentService {
 
     // replyToId 기준으로 하위 대댓글을 재귀적으로 소프트 딜리트, 삭제된 수 반환
     private int cascadeSoftDeleteByReplyToId(Long deletedId, List<Comment> pool) {
+        return cascadeSoftDeleteByReplyToId(deletedId, pool, 0);
+    }
+
+    private int cascadeSoftDeleteByReplyToId(Long deletedId, List<Comment> pool, int depth) {
+        if (depth > 100) return 0;
         int count = 0;
         for (Comment c : pool) {
             if (c.getDeletedAt() == null && deletedId.equals(c.getReplyToId())) {
                 c.setDeletedAt(LocalDateTime.now());
                 count++;
-                count += cascadeSoftDeleteByReplyToId(c.getId(), pool);
+                count += cascadeSoftDeleteByReplyToId(c.getId(), pool, depth + 1);
             }
         }
         return count;
