@@ -37,7 +37,9 @@ public class TourismController {
         session.setAttribute("userlat", lat);
         session.setAttribute("userlon", lon);
 
-        List<TourPlaceDto> dlist = tourismService.allDistence(lat, lon, displayList);
+        List<TourPlaceDto> dlist = (lat != null && lon != null)
+                ? tourismService.allDistence(lat, lon, displayList)
+                : displayList;
 
         String spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
 
