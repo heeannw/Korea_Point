@@ -23,11 +23,11 @@ public class DataInitializer implements ApplicationRunner {
         if (categoryRepository.count() > 0) return;
 
         categoryRepository.saveAll(List.of(
-                Category.builder().name("맛집").emoji("🍜").sortOrder(1).build(),
-                Category.builder().name("교통").emoji("🚇").sortOrder(2).build(),
-                Category.builder().name("관광").emoji("🛡️").sortOrder(3).build(),
-                Category.builder().name("자유").emoji("💬").sortOrder(4).build(),
-                Category.builder().name("홍보").emoji("💬").sortOrder(5).build()
+                Category.builder().name("맛집").nameEn("Food").emoji("🍜").sortOrder(1).build(),
+                Category.builder().name("교통").nameEn("Transport").emoji("🚇").sortOrder(2).build(),
+                Category.builder().name("관광").nameEn("Tourism").emoji("🛡️").sortOrder(3).build(),
+                Category.builder().name("자유").nameEn("General").emoji("💬").sortOrder(4).build(),
+                Category.builder().name("홍보").nameEn("Notice").emoji("📢").sortOrder(5).build()
         ));
     }
 }

@@ -20,6 +20,9 @@ public class Category {
     @Column(nullable = false, unique = true)
     private String name;
 
+    // 영문 카테고리명
+    private String nameEn;
+
     // 화면에 표시할 이모지 (예: 🍜 🚇 🛡️ 💬)
     private String emoji;
 

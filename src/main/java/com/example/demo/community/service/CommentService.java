@@ -26,6 +26,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final TranslationService translationService;
 
     // 게시글의 댓글 + 대댓글 트리 조회
     @Transactional(readOnly = true)
@@ -60,6 +61,7 @@ public class CommentService {
                 .build();
 
         commentRepository.save(comment);
+        comment.setContentEn(translationService.translateToEnglish(req.getContent()));
         postRepository.updateCommentCount(postId, 1);
 
         return comment.getId();
@@ -158,6 +160,7 @@ public class CommentService {
                 .userId(comment.getUser().getId())
                 .parentId(parentId)
                 .content(content)
+                .contentEn(deleted ? null : comment.getContentEn())
                 .authorName(authorName)
                 .authorProfileImage(authorProfileImage)
                 .deleted(deleted)
@@ -182,6 +185,12 @@ public class CommentService {
                 content = rawContent.substring(spaceIdx + 1);
             }
         }
+        String rawContentEn = deleted ? null : c.getContentEn();
+        String contentEn = rawContentEn;
+        if (rawContentEn != null && rawContentEn.startsWith("@")) {
+            int spaceIdxEn = rawContentEn.indexOf(' ');
+            if (spaceIdxEn > 0) contentEn = rawContentEn.substring(spaceIdxEn + 1);
+        }
         String authorName = deleted ? null : c.getUser().getName();
         String authorProfileImage = deleted ? null : c.getUser().getProfileImage();
 
@@ -193,6 +202,7 @@ public class CommentService {
                 .depth(Math.min(depth, 4))
                 .mentionPart(mentionPart)
                 .content(content)
+                .contentEn(contentEn)
                 .authorName(authorName)
                 .authorProfileImage(authorProfileImage)
                 .deleted(deleted)

@@ -21,8 +21,10 @@
 <header>
     <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
     <div class="header-right">
-        <a th:href="@{/en/transport/detail(routeId=${route?.routeId})}" class="h-btn">EN</a>
-        <a th:href="@{/ko/transport/detail(routeId=${route?.routeId})}" class="h-btn active">KR</a>
+        <a th:href="@{/community/post-list(lang='en', categoryId=${selectedCategory}, keyword=${keyword}, sort=${sort})}"
+           class="h-btn" th:classappend="${#locale.language == 'en'} ? ' active' : ''">EN</a>
+        <a th:href="@{/community/post-list(lang='ko', categoryId=${selectedCategory}, keyword=${keyword}, sort=${sort})}"
+           class="h-btn" th:classappend="${#locale.language != 'en'} ? ' active' : ''">KR</a>
 
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}"></span>
@@ -39,9 +41,8 @@
 <main class="flex-1">
     <div class="max-w-[1200px] mx-auto px-6 py-8">
         <div class="mb-8">
-            <h1 class="text-[28px] text-gray-900 mb-2" style="font-weight:700;">Community</h1>
-            <p class="text-[15px] text-gray-500">Ask questions, share tips, and connect with fellow travelers in
-                Korea.</p>
+            <h1 class="text-[28px] text-gray-900 mb-2" style="font-weight:700;" th:text="#{community.title}">Community</h1>
+            <p class="text-[15px] text-gray-500" th:text="#{community.subtitle}">Ask questions, share tips, and connect with fellow travelers in Korea.</p>
         </div>
 
         <div class="flex gap-8">
@@ -57,7 +58,7 @@
                         <i data-lucide="search"
                            class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
                         <input type="text" name="keyword" th:value="${keyword}"
-                               placeholder="Search posts..."
+                               th:placeholder="#{community.search.placeholder}"
                                class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[14px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 transition-all"/>
                     </div>
                 </form>
@@ -68,7 +69,7 @@
                        th:classappend="${selectedCategory == null} ? 'bg-[#2563EB] text-white border-[#2563EB]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'"
                        class="px-3.5 py-2 rounded-lg text-[13px] border transition-all no-underline"
                        style="font-weight:500;">
-                        <span class="mr-1.5">📋</span>All
+                        <span class="mr-1.5">📋</span><span th:text="#{community.all}">All</span>
                     </a>
                     <a th:each="cat : ${data.categories}"
                        th:href="@{/community/post-list(categoryId=${cat.categoryId}, keyword=${keyword}, sort=${sort})}"
@@ -76,7 +77,7 @@
                        class="px-3.5 py-2 rounded-lg text-[13px] border transition-all no-underline"
                        style="font-weight:500;">
                         <span class="mr-1.5" th:text="${cat.icon}"></span>
-                        <span th:text="${cat.name}">Category</span>
+                        <span th:text="${#locale.language == 'en' and cat.nameEn != null ? cat.nameEn : cat.name}">Category</span>
                     </a>
                 </div>
 
@@ -87,19 +88,19 @@
                            th:classappend="${sort == 'latest'} ? 'text-[#2563EB] bg-blue-50' : 'text-gray-500 hover:bg-gray-100'"
                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] no-underline transition-colors"
                            style="font-weight:500;">
-                            <i data-lucide="clock-3" class="w-3.5 h-3.5"></i> Latest
+                            <i data-lucide="clock-3" class="w-3.5 h-3.5"></i> <span th:text="#{community.sort.latest}">Latest</span>
                         </a>
                         <a th:href="@{/community/post-list(categoryId=${selectedCategory}, keyword=${keyword}, sort='popular')}"
                            th:classappend="${sort == 'popular'} ? 'text-[#2563EB] bg-blue-50' : 'text-gray-500 hover:bg-gray-100'"
                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] no-underline transition-colors"
                            style="font-weight:500;">
-                            <i data-lucide="flame" class="w-3.5 h-3.5"></i> Popular
+                            <i data-lucide="flame" class="w-3.5 h-3.5"></i> <span th:text="#{community.sort.popular}">Popular</span>
                         </a>
                     </div>
                     <a th:if="${isLoggedIn}" th:href="@{/community/post/write}"
                        class="flex items-center gap-1.5 px-4 py-2 bg-[#2563EB] text-white rounded-lg text-[13px] no-underline hover:bg-blue-700 transition-colors"
                        style="font-weight:500;">
-                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i> 글 작성
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i> <span th:text="#{community.btn.write}">Write Post</span>
                     </a>
                 </div>
 
@@ -108,8 +109,9 @@
 
                     <!-- 게시글 없을 때 -->
                     <div th:if="${data.posts.isEmpty()}"
-                         class="bg-white rounded-xl border border-gray-200/80 p-10 text-center text-gray-400 text-[14px]">
-                        등록된 게시글이 없습니다.
+                         class="bg-white rounded-xl border border-gray-200/80 p-10 text-center text-gray-400 text-[14px]"
+                         th:text="#{community.empty}">
+                        No posts found.
                     </div>
 
                     <!-- 게시글 카드 -->
@@ -126,9 +128,10 @@
                                   th:text="${#temporals.format(post.createdAt, 'MMM dd, yyyy')}">Date</span>
                         </div>
                         <h3 class="text-[16px] text-gray-900 group-hover:text-[#2563EB] transition-colors mb-1.5"
-                            style="font-weight:600;" th:text="${post.title}">Title</h3>
+                            style="font-weight:600;"
+                            th:text="${#locale.language == 'en' and post.titleEn != null ? post.titleEn : post.title}">Title</h3>
                         <p class="text-[13px] text-gray-500 leading-relaxed mb-3 line-clamp-2"
-                           th:text="${post.contentPreview}">Preview...</p>
+                           th:text="${#locale.language == 'en' and post.contentEnPreview != null ? post.contentEnPreview : post.contentPreview}">Preview...</p>
                         <div class="flex items-center gap-4">
                             <span class="text-[12px] text-gray-500" style="font-weight:500;"
                                   th:text="${post.authorName}">Author</span>
@@ -192,7 +195,7 @@
                 <div class="bg-white rounded-xl border border-gray-200/80 p-5 shadow-soft">
                     <div class="flex items-center gap-2 mb-4">
                         <i data-lucide="trending-up" class="w-4 h-4 text-[#2563EB]"></i>
-                        <h3 class="text-[14px] text-gray-900" style="font-weight:600;">Trending Posts</h3>
+                        <h3 class="text-[14px] text-gray-900" style="font-weight:600;" th:text="#{community.sidebar.trending}">Trending Posts</h3>
                     </div>
                     <div class="flex flex-col gap-3">
                         <a th:each="post, iter : ${data.trendingPosts}"
@@ -202,7 +205,8 @@
                                   th:text="${iter.count < 10 ? '0' + iter.count : '' + iter.count}">01</span>
                             <div class="flex-1 min-w-0">
                                 <p class="text-[13px] text-gray-700 group-hover:text-[#2563EB] transition-colors truncate leading-snug"
-                                   style="font-weight:500;" th:text="${post.title}">Title</p>
+                                   style="font-weight:500;"
+                                   th:text="${#locale.language == 'en' and post.titleEn != null ? post.titleEn : post.title}">Title</p>
                                 <div class="flex items-center gap-1 mt-1">
                                     <i data-lucide="eye" class="w-3 h-3 text-gray-400"></i>
                                     <span class="text-[11px] text-gray-400" th:text="${post.viewCount}">0</span>
@@ -211,7 +215,7 @@
                         </a>
                         <!-- 인기글 없을 때 -->
                         <p th:if="${#lists.isEmpty(data.trendingPosts)}"
-                           class="text-[13px] text-gray-400">아직 게시글이 없습니다.</p>
+                           class="text-[13px] text-gray-400" th:text="#{community.empty}">No posts found.</p>
                     </div>
                 </div>
 
@@ -219,21 +223,24 @@
                 <div class="bg-gradient-to-b from-blue-50 to-white rounded-xl border border-blue-100/80 p-5 shadow-soft">
                     <div class="flex items-center gap-2 mb-4">
                         <i data-lucide="lightbulb" class="w-4 h-4 text-amber-500"></i>
-                        <h3 class="text-[14px] text-gray-900" style="font-weight:600;">Quick Tips</h3>
+                        <h3 class="text-[14px] text-gray-900" style="font-weight:600;" th:text="#{community.sidebar.tips.title}">Quick Tips</h3>
                     </div>
                     <ul class="flex flex-col gap-2.5 list-none p-0 m-0">
-                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span
-                                class="text-[#2563EB] mt-0.5">•</span>Download Naver Map — Google Maps is limited in
-                            Korea
+                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed">
+                            <span class="text-[#2563EB] mt-0.5">•</span>
+                            <span th:text="#{community.sidebar.tips.1}">Download Naver Map — Google Maps is limited in Korea</span>
                         </li>
-                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span
-                                class="text-[#2563EB] mt-0.5">•</span>Most convenience stores have free Wi-Fi
+                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed">
+                            <span class="text-[#2563EB] mt-0.5">•</span>
+                            <span th:text="#{community.sidebar.tips.2}">Most convenience stores have free Wi-Fi</span>
                         </li>
-                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span
-                                class="text-[#2563EB] mt-0.5">•</span>Tap water is safe to drink in Seoul
+                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed">
+                            <span class="text-[#2563EB] mt-0.5">•</span>
+                            <span th:text="#{community.sidebar.tips.3}">Tap water is safe to drink in Seoul</span>
                         </li>
-                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed"><span
-                                class="text-[#2563EB] mt-0.5">•</span>T-money card works on buses, subway, and taxis
+                        <li class="flex gap-2 text-[13px] text-gray-600 leading-relaxed">
+                            <span class="text-[#2563EB] mt-0.5">•</span>
+                            <span th:text="#{community.sidebar.tips.4}">T-money card works on buses, subway, and taxis</span>
                         </li>
                     </ul>
                 </div>

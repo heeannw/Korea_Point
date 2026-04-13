@@ -18,6 +18,7 @@ public class CommentDto {
     private int depth;               // 들여쓰기 단계 (1부터 시작, 최대 4)
     private String mentionPart;      // content 앞의 @이름 부분 (파란 태그로 표시용), null이면 없음
     private String content;         // 소프트 딜리트 시 null → 화면에서 "삭제된 댓글입니다" 처리
+    private String contentEn;       // 영문 번역 내용 (nullable — null이면 content 원문 표시)
     private String authorName;
     private String authorProfileImage;
     private boolean deleted;

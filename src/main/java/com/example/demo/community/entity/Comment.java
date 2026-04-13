@@ -51,6 +51,10 @@ public class Comment {
     @Column(columnDefinition = "CLOB")
     private String content;
 
+    // 영문 번역 내용 (작성 시 자동 생성, nullable)
+    @Column(columnDefinition = "CLOB")
+    private String contentEn;
+
     // 대댓글 내에서 어떤 댓글에 직접 답글을 달았는지 (들여쓰기 계산용, NULL이면 최상위 그룹의 직접 댓글)
     @Column(name = "reply_to_id")
     private Long replyToId;
