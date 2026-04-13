@@ -3,6 +3,7 @@ package com.example.demo.tourism.controller;
 import com.example.demo.tourism.dto.CafeDto;
 import com.example.demo.tourism.service.CafeService;
 import com.example.demo.tourism.service.UnsplashImageService;
+import com.example.demo.user.util.SecurityUtil;               // ✅ 추가
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -13,14 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-/**
- * CafeMapController
- *
- * [수정 내용]
- * - UnsplashImageService 주입: 카페 이미지(커피 사진) URL을 모델에 추가
- *   → model에 "cafeImageUrl" (String) 하나만 담음
- *   → 카페는 단일 카테고리이므로 "카페" 키 1장만 사용
- */
 @Controller
 @RequiredArgsConstructor
 public class CafeMapController {
@@ -29,7 +22,7 @@ public class CafeMapController {
     private String kakaokey;
 
     private final CafeService cafeService;
-    private final UnsplashImageService unsplashImageService;   // ✅ 추가
+    private final UnsplashImageService unsplashImageService;
 
     // ─────────────────────────────────────────────────────────────────────────
     // KO 버전
@@ -116,9 +109,9 @@ public class CafeMapController {
         model.addAttribute("userlon", lng);
         model.addAttribute("keyword", keyword);
         model.addAttribute("lang", lang);
-
-        // ✅ Unsplash 카페 이미지 리스트 (썸네일 10장 + 고화질 10장)
         model.addAttribute("cafeThumbList",   unsplashImageService.getThumbList("카페"));
         model.addAttribute("cafeRegularList", unsplashImageService.getRegularList("카페"));
+        model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());               // ✅ 추가
+        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
     }
 }

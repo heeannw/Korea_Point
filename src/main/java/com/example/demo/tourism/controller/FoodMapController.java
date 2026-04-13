@@ -3,6 +3,7 @@ package com.example.demo.tourism.controller;
 import com.example.demo.tourism.dto.FoodPlaceDto;
 import com.example.demo.tourism.service.FoodMapService;
 import com.example.demo.tourism.service.UnsplashImageService;
+import com.example.demo.user.util.SecurityUtil;               // ✅ 추가
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -14,15 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * FoodMapController
- *
- * [수정 내용]
- * - UnsplashImageService 주입: 카테고리별 이미지 URL 맵을 모델에 추가
- *   → model에 "foodImageMap" (Map<String, String>) 추가
- *   → JS에서 FOOD_IMAGE_MAP["한식"] 형태로 접근
- *   → 카테고리: 한식 / 중식 / 일식 / 양식 / 고기_해산물 / 바 / 기타
- */
 @Controller
 @RequiredArgsConstructor
 public class FoodMapController {
@@ -31,7 +23,7 @@ public class FoodMapController {
     private String kakaoKey;
 
     private final FoodMapService foodMapService;
-    private final UnsplashImageService unsplashImageService;   // ✅ 추가
+    private final UnsplashImageService unsplashImageService;
 
     // ── KO 전체 ──────────────────────────────────────────────────────────────
     @GetMapping("/foodmap/all")
@@ -145,9 +137,9 @@ public class FoodMapController {
         model.addAttribute("keyword", keyword);
         model.addAttribute("category", category);
         model.addAttribute("lang", lang);
-
-        // ✅ Unsplash 카테고리별 이미지 리스트 맵 (썸네일 + 고화질, 각 10장)
         model.addAttribute("foodThumbMap",   unsplashImageService.getAllThumbLists());
         model.addAttribute("foodRegularMap", unsplashImageService.getAllRegularLists());
+        model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());               // ✅ 추가
+        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
     }
 }

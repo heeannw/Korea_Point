@@ -2,6 +2,7 @@ package com.example.demo.tourism.controller;
 
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.example.demo.tourism.service.TourismService;
+import com.example.demo.user.util.SecurityUtil;                // ✅ 추가
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,6 +50,8 @@ public class TourismController {
         model.addAttribute("list", dlist);
         model.addAttribute("kakaoKey", kakaoKey);
         model.addAttribute("recentKeywords", getRecentKeywords(session));
+        model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());               // ✅ 추가
+        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
 
         return "en".equalsIgnoreCase(lang) ? "tourism/tourismEN" : "tourism/tourismKo";
     }
@@ -64,7 +67,6 @@ public class TourismController {
             @RequestParam(value = "spotname", required = false) String spotname,
             HttpSession session) {
 
-        // spotname이 없으면 lang에 따라 기본값 설정
         if (spotname == null || spotname.isBlank()) {
             spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
         }
@@ -100,6 +102,8 @@ public class TourismController {
         model.addAttribute("keyword", keyword);
         model.addAttribute("kakaoKey", kakaoKey);
         model.addAttribute("recentKeywords", getRecentKeywords(session));
+        model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());               // ✅ 추가
+        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
 
         return "en".equalsIgnoreCase(lang) ? "tourism/tourismEN" : "tourism/tourismKo";
     }
@@ -131,6 +135,8 @@ public class TourismController {
         model.addAttribute("userlon", lon);
         model.addAttribute("kakaoKey", kakaoKey);
         model.addAttribute("recentKeywords", getRecentKeywords(session));
+        model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());               // ✅ 추가
+        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
 
         return "en".equalsIgnoreCase(lang) ? "tourism/tourismEN" : "tourism/tourismKo";
     }
@@ -183,7 +189,6 @@ public class TourismController {
         return Map.of("success", true, "keywords", keywords != null ? keywords : List.of());
     }
 
-    // 전체 검색어 삭제
     @PostMapping("/tour/search/history/clear")
     @ResponseBody
     public Map<String, Object> clearKeywords(HttpSession session) {
