@@ -48,6 +48,7 @@ public class CommunityService {
                 .map(c -> CategoryDto.builder()
                         .categoryId(c.getId())
                         .name(c.getName())
+                        .nameEn(c.getNameEn())
                         .icon(c.getEmoji())
                         .build())
                 .toList();

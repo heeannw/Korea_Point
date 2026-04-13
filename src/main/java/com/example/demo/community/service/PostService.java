@@ -27,6 +27,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final TranslationService translationService;
 
     // 전체 게시글 목록 (페이징)
     @Transactional(readOnly = true)
@@ -91,6 +92,15 @@ public class PostService {
         Category category = categoryRepository.findById(req.getCategoryId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
 
+        // 홍보 카테고리는 500P 차감 (부족 시 예외)
+        if ("홍보".equals(category.getName())) {
+            if (user.getPoint() < 500) {
+                throw new IllegalStateException(
+                        "포인트가 부족합니다. (필요: 500P, 보유: " + user.getPoint() + "P)");
+            }
+            userRepository.updatePoint(userId, -500);
+        }
+
         Post post = Post.builder()
                 .user(user)
                 .category(category)
@@ -98,7 +108,13 @@ public class PostService {
                 .content(req.getContent())
                 .build();
 
-        return postRepository.save(post).getId();
+        Post saved = postRepository.save(post);
+
+        // 번역 (API 키 없으면 null 반환하여 원문 표시)
+        saved.setTitleEn(translationService.translateToEnglish(req.getTitle()));
+        saved.setContentEn(translationService.translateToEnglish(req.getContent()));
+
+        return saved.getId();
     }
 
     // 게시글 소프트 딜리트
@@ -119,10 +135,14 @@ public class PostService {
                 .userId(post.getUser().getId())
                 .categoryId(post.getCategory() != null ? post.getCategory().getId() : null)
                 .categoryName(post.getCategory() != null ? post.getCategory().getName() : null)
+                .categoryNameEn(post.getCategory() != null ? post.getCategory().getNameEn() : null)
                 .categoryEmoji(post.getCategory() != null ? post.getCategory().getEmoji() : null)
                 .title(post.getTitle())
                 .content(post.getContent())
                 .contentPreview(buildPreview(post.getContent()))
+                .titleEn(post.getTitleEn())
+                .contentEn(post.getContentEn())
+                .contentEnPreview(post.getContentEn() != null ? buildPreview(post.getContentEn()) : null)
                 .authorName(post.getUser().getName())
                 .authorProfileImage(post.getUser().getProfileImage())
                 .viewCount(post.getViewCount())

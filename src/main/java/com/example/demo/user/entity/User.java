@@ -45,6 +45,11 @@ public class User {
     @Builder.Default
     private String role = "USER";
 
+    // 보유 포인트 (가입 시 1000P 지급, 홍보 게시글 작성 시 차감)
+    @Column(nullable = false)
+    @Builder.Default
+    private int point = 1000;
+
     // 생성일
     private LocalDateTime createdAt;
 

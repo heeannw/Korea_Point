@@ -4,6 +4,7 @@ import com.example.demo.community.dto.PostDto;
 import com.example.demo.community.service.CommunityService;
 import com.example.demo.community.service.CommentService;
 import com.example.demo.community.service.PostService;
+import com.example.demo.user.service.UserService;
 import com.example.demo.user.util.SecurityUtil;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/community")
@@ -22,6 +24,7 @@ public class CommunityController {
     private final CommunityService communityService;
     private final PostService postService;
     private final CommentService commentService;
+    private final UserService userService;
 
     // 게시글 목록 (카테고리 필터, 검색어, 페이지, 정렬 지원)
     @GetMapping("/post-list")
@@ -68,15 +71,25 @@ public class CommunityController {
     @GetMapping("/post/write")
     public String writeForm(Model model) {
         model.addAttribute("categories", communityService.getAllCategories());
+        model.addAttribute("currentUserPoint",
+                userService.findById(SecurityUtil.getCurrentUserId()).getPoint());
+        model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
+        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         return "community/post-write";
     }
 
     // 게시글 저장
     @PostMapping("/post/write")
-    public String createPost(@Valid @ModelAttribute PostDto.PostCreateRequest req) {
+    public String createPost(@Valid @ModelAttribute PostDto.PostCreateRequest req,
+                             RedirectAttributes redirectAttributes) {
         Long userId = SecurityUtil.getCurrentUserId();
-        Long postId = postService.createPost(req, userId);
-        return "redirect:/community/post/" + postId;
+        try {
+            Long postId = postService.createPost(req, userId);
+            return "redirect:/community/post/" + postId;
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("pointError", e.getMessage());
+            return "redirect:/community/post/write";
+        }
     }
 
     // 게시글 삭제

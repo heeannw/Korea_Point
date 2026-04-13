@@ -26,6 +26,10 @@ public class PostDto {
     private int commentCount;
     private LocalDateTime createdAt;
     private String contentPreview; // HTML 태그 제거 + 120자 요약 (목록용)
+    private String categoryNameEn;   // 영문 카테고리명 (nullable)
+    private String titleEn;          // 영문 번역 제목 (nullable)
+    private String contentEn;        // 영문 번역 내용 (nullable)
+    private String contentEnPreview; // 영문 번역 미리보기 — HTML 태그 제거 + 120자 (nullable)
 
     // 게시글 작성 요청 DTO
     @Getter

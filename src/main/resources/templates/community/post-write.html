@@ -40,14 +40,27 @@
 <body class="min-h-screen bg-[#FAFAFA] flex flex-col">
 
 <!-- Header -->
-<header class="sticky top-0 z-50 bg-white border-b border-gray-200/80">
-    <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
-        <a th:href="@{/}" class="flex items-center gap-2 no-underline">
-            <div class="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center">
-                <i data-lucide="globe" class="w-5 h-5 text-white"></i>
-            </div>
-            <span class="text-[18px] text-gray-900 tracking-[-0.3px]" style="font-weight:600;">KoreaConnect</span>
-        </a>
+<link rel="stylesheet" th:href="@{/css/common/variables.css}">
+<link rel="stylesheet" th:href="@{/css/common/reset.css}">
+<link rel="stylesheet" th:href="@{/css/common/layout.css}">
+<header>
+    <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
+    <div class="header-right">
+        <a th:href="@{/community/post/write(lang='en')}"
+           class="h-btn" th:classappend="${#locale.language == 'en'} ? ' active' : ''">EN</a>
+        <a th:href="@{/community/post/write(lang='ko')}"
+           class="h-btn" th:classappend="${#locale.language != 'en'} ? ' active' : ''">KR</a>
+
+        <th:block th:if="${isLoggedIn}">
+            <span class="h-btn" th:text="${currentUserName}"></span>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="h-btn h-btn-fill">Logout</button>
+            </form>
+        </th:block>
+
+        <th:block th:unless="${isLoggedIn}">
+            <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
+        </th:block>
     </div>
 </header>
 
@@ -57,11 +70,11 @@
         <!-- 뒤로가기 -->
         <a th:href="@{/community/post-list}"
            class="inline-flex items-center gap-1.5 text-[13px] text-gray-500 no-underline hover:text-gray-800 transition-colors mb-6">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Community
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> <span th:text="#{community.detail.back}">Back to Community</span>
         </a>
 
         <div class="bg-white rounded-xl border border-gray-200/80 p-8 shadow-soft">
-            <h1 class="text-[22px] text-gray-900 mb-6" style="font-weight:700;">Write a Post</h1>
+            <h1 class="text-[22px] text-gray-900 mb-6" style="font-weight:700;" th:text="#{community.write.title}">Write a Post</h1>
 
             <!--
                 th:action을 사용하면 thymeleaf-extras-springsecurity6가
@@ -69,29 +82,54 @@
             -->
             <form id="postForm" th:action="@{/community/post/write}" method="post" class="flex flex-col gap-5">
 
+                <!-- 포인트 잔액 -->
+                <div class="flex items-center justify-between px-4 py-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <span class="text-[13px] text-gray-600">보유 포인트</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-[14px] text-[#2563EB]" style="font-weight:700;"
+                              th:text="${currentUserPoint} + 'P'">1000P</span>
+                        <span class="text-[12px] text-gray-400">충전</span>
+                        <span class="px-2.5 py-1 bg-gray-100 text-gray-400 text-[12px] rounded-md cursor-not-allowed"
+                              title="서비스 준비 중">준비 중</span>
+                    </div>
+                </div>
+
+                <!-- 포인트 부족 에러 -->
+                <div th:if="${pointError}" class="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-red-600">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span th:text="${pointError}">포인트가 부족합니다.</span>
+                </div>
+
                 <!-- 카테고리 선택 -->
                 <div>
-                    <label class="block text-[13px] text-gray-600 mb-1.5" style="font-weight:600;">Category</label>
-                    <select name="categoryId" required
+                    <label class="block text-[13px] text-gray-600 mb-1.5" style="font-weight:600;" th:text="#{community.write.label.category}">Category</label>
+                    <select name="categoryId" id="categorySelect" required
                             class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-[14px] text-gray-700 bg-white focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 cursor-pointer">
-                        <option value="" disabled selected>Select a category</option>
+                        <option value="" disabled selected th:text="#{community.write.placeholder.category}">Select a category</option>
                         <option th:each="cat : ${categories}"
                                 th:value="${cat.categoryId}"
+                                th:attr="data-name=${cat.name}"
                                 th:text="${cat.icon + ' ' + cat.name}">Category</option>
                     </select>
+                    <!-- 홍보 카테고리 선택 시 포인트 차감 안내 -->
+                    <p id="promoNotice" class="hidden mt-2 text-[12px] text-amber-600">
+                        📢 홍보 게시글 작성 시 <strong>500P</strong>가 차감됩니다.
+                    </p>
                 </div>
 
                 <!-- 제목 -->
                 <div>
-                    <label class="block text-[13px] text-gray-600 mb-1.5" style="font-weight:600;">Title</label>
+                    <label class="block text-[13px] text-gray-600 mb-1.5" style="font-weight:600;" th:text="#{community.write.label.title}">Title</label>
                     <input type="text" name="title" required maxlength="200"
-                           placeholder="Enter a clear and descriptive title"
+                           th:placeholder="#{community.write.placeholder.title}"
                            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-[14px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100"/>
                 </div>
 
                 <!-- 내용 — Quill 에디터 -->
                 <div>
-                    <label class="block text-[13px] text-gray-600 mb-1.5" style="font-weight:600;">Content</label>
+                    <label class="block text-[13px] text-gray-600 mb-1.5" style="font-weight:600;" th:text="#{community.write.label.content}">Content</label>
                     <!-- Quill이 이 div를 에디터로 교체함 -->
                     <div id="quillEditor"></div>
                     <!--
@@ -108,10 +146,10 @@
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <a th:href="@{/community/post-list}"
                        class="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-lg text-[14px] no-underline hover:bg-gray-50 transition-colors"
-                       style="font-weight:500;">Cancel</a>
+                       style="font-weight:500;" th:text="#{community.write.btn.cancel}">Cancel</a>
                     <button type="submit"
                             class="px-6 py-2.5 bg-[#2563EB] text-white rounded-lg text-[14px] hover:bg-[#1d4ed8] transition-colors cursor-pointer"
-                            style="font-weight:500;">
+                            style="font-weight:500;" th:text="#{community.write.btn.submit}">
                         Publish Post
                     </button>
                 </div>
@@ -129,6 +167,17 @@
 
 <script>
     lucide.createIcons();
+
+    // 홍보 카테고리 선택 시 포인트 차감 안내 표시
+    document.getElementById('categorySelect').addEventListener('change', function () {
+        const selected = this.options[this.selectedIndex];
+        const notice = document.getElementById('promoNotice');
+        if (selected.dataset.name === '홍보') {
+            notice.classList.remove('hidden');
+        } else {
+            notice.classList.add('hidden');
+        }
+    });
 
     // Quill 에디터 초기화
     const quill = new Quill('#quillEditor', {
