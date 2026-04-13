@@ -132,11 +132,12 @@
             <div class="post-content text-[15px] text-gray-700 leading-relaxed"
                  th:utext="${#locale.language == 'en' and post.contentEn != null ? post.contentEn : post.content}">본문 내용</div>
 
-            <!-- 삭제 버튼 (임시: 항상 표시 — OAuth2 연동 후 본인만 표시하도록 변경) -->
-            <div class="flex justify-end mt-8 pt-5 border-t border-gray-100">
-                <form th:action="@{/community/post/{id}/delete(id=${post.postId})}" method="post"
-                      onsubmit="return confirm('정말 삭제하시겠습니까?')">
-                    <button type="submit"
+            <!-- 삭제 버튼 (본인 게시글에만 표시) -->
+            <div th:if="${currentUserId != null and currentUserId == post.userId}"
+                 class="flex justify-end mt-8 pt-5 border-t border-gray-100">
+                <form id="deletePostForm" th:action="@{/community/post/{id}/delete(id=${post.postId})}" method="post">
+                    <button type="button"
+                            onclick="showDeletePostConfirm()"
                             class="px-4 py-2 text-[13px] text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
                             th:text="#{community.detail.btn.delete}">
                         Delete Post
@@ -204,7 +205,8 @@
                                     <button type="button"
                                             th:attr="data-parent-id=${comment.id}, data-author-name=${comment.authorName}"
                                             onclick="showReplyForm(this)"
-                                            class="text-[12px] text-blue-500 hover:text-blue-700 cursor-pointer">
+                                            class="text-[12px] text-blue-500 hover:text-blue-700 cursor-pointer"
+                                            th:text="#{community.comment.btn.reply}">
                                         Reply
                                     </button>
                                 </div>
@@ -284,7 +286,8 @@
                                             <button type="button"
                                                     th:attr="data-top-comment-id=${comment.id}, data-reply-to-id=${reply.id}, data-author-name=${reply.authorName}"
                                                     onclick="showReplyToReply(this)"
-                                                    class="text-[12px] text-blue-500 hover:text-blue-700 cursor-pointer">
+                                                    class="text-[12px] text-blue-500 hover:text-blue-700 cursor-pointer"
+                                                    th:text="#{community.comment.btn.reply}">
                                                 Reply
                                             </button>
                                         </div>
@@ -463,7 +466,7 @@
         })
             .then(res => {
                 if (res.ok) { location.reload(); }
-                else { alert('로그인이 필요합니다.'); }
+                else { showAlert('로그인이 필요합니다.'); }
             });
     }
 
@@ -552,7 +555,7 @@
             body: JSON.stringify({ content: content })
         }).then(res => {
             if (res.ok) { location.reload(); }
-            else { alert('수정에 실패했습니다.'); }
+            else { showAlert('수정에 실패했습니다.'); }
         });
     }
 
@@ -563,10 +566,14 @@
         editForm.previousElementSibling.classList.remove('hidden');
     }
 
-    // 신고
+    // 신고 모달 열기
     function reportComment(btn) {
         document.querySelectorAll('.comment-menu').forEach(m => m.classList.add('hidden'));
-        alert('신고가 접수되었습니다. 검토 후 조치하겠습니다.');
+        document.getElementById('reportModal').classList.remove('hidden');
+        document.querySelectorAll('#reportModal input[type=radio]').forEach(r => r.checked = false);
+        document.getElementById('reportSubmitBtn').disabled = true;
+        document.getElementById('reportSubmitBtn').classList.add('opacity-40', 'cursor-not-allowed');
+        document.getElementById('reportSubmitBtn').classList.remove('cursor-pointer', 'hover:bg-gray-700');
     }
 
     // 최상위 댓글 취소
@@ -581,16 +588,23 @@
         form.classList.add('hidden');
     }
 
+    // 게시글 삭제 확인 모달
+    function showDeletePostConfirm() {
+        showConfirm('게시글을 삭제하시겠습니까?', () => {
+            document.getElementById('deletePostForm').submit();
+        });
+    }
+
     // 댓글/대댓글 삭제
     function deleteComment(btn) {
-        if (!confirm('댓글을 삭제하시겠습니까?')) return;
         const commentId = btn.getAttribute('data-comment-id');
-
-        fetch('/api/comments/' + commentId, { method: 'DELETE' })
-            .then(res => {
-                if (res.ok) { location.reload(); }
-                else { alert('삭제에 실패했습니다.'); }
-            });
+        showConfirm('댓글을 삭제하시겠습니까?', () => {
+            fetch('/api/comments/' + commentId, { method: 'DELETE' })
+                .then(res => {
+                    if (res.ok) { location.reload(); }
+                    else { showAlert('삭제에 실패했습니다.'); }
+                });
+        });
     }
 
     // 유튜브 스타일 상대 시간
@@ -625,9 +639,133 @@
         })
             .then(res => {
                 if (res.ok) { location.reload(); }
-                else { alert('로그인이 필요합니다.'); }
+                else { showAlert('로그인이 필요합니다.'); }
             });
     }
+
+    // ── 커스텀 모달 유틸 ──────────────────────────────────
+
+    // 단순 알림 모달
+    function showAlert(message) {
+        document.getElementById('alertMessage').textContent = message;
+        document.getElementById('alertModal').classList.remove('hidden');
+    }
+
+    // 확인/취소 모달
+    let _confirmCallback = null;
+    function showConfirm(message, onConfirm) {
+        document.getElementById('confirmMessage').textContent = message;
+        _confirmCallback = onConfirm;
+        document.getElementById('confirmModal').classList.remove('hidden');
+    }
+    function confirmOk() {
+        document.getElementById('confirmModal').classList.add('hidden');
+        if (_confirmCallback) { _confirmCallback(); _confirmCallback = null; }
+    }
+    function confirmCancel() {
+        document.getElementById('confirmModal').classList.add('hidden');
+        _confirmCallback = null;
+    }
+
+    // 신고 모달 라디오 활성화
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('#reportModal input[type=radio]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                const btn = document.getElementById('reportSubmitBtn');
+                btn.disabled = false;
+                btn.classList.remove('opacity-40', 'cursor-not-allowed');
+                btn.classList.add('cursor-pointer', 'hover:bg-gray-700');
+            });
+        });
+    });
+
+    function closeReportModal() {
+        document.getElementById('reportModal').classList.add('hidden');
+    }
+    function submitReport() {
+        document.getElementById('reportModal').classList.add('hidden');
+        showAlert('신고가 접수되었습니다.\n검토 후 조치하겠습니다.');
+    }
 </script>
+
+<!-- ── 커스텀 모달들 ─────────────────────────────────── -->
+
+<!-- 단순 알림 모달 -->
+<div id="alertModal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/40" onclick="document.getElementById('alertModal').classList.add('hidden')"></div>
+    <div class="relative bg-white rounded-2xl shadow-xl w-[320px] p-6 flex flex-col gap-4">
+        <p id="alertMessage" class="text-[15px] text-gray-800 leading-relaxed whitespace-pre-line"></p>
+        <div class="flex justify-end">
+            <button onclick="document.getElementById('alertModal').classList.add('hidden')"
+                    class="px-5 py-2 bg-[#2563EB] text-white text-[14px] rounded-xl hover:bg-[#1d4ed8] cursor-pointer">확인</button>
+        </div>
+    </div>
+</div>
+
+<!-- 확인/취소 모달 -->
+<div id="confirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/40" onclick="confirmCancel()"></div>
+    <div class="relative bg-white rounded-2xl shadow-xl w-[320px] p-6 flex flex-col gap-4">
+        <p id="confirmMessage" class="text-[15px] text-gray-800 leading-relaxed"></p>
+        <div class="flex justify-end gap-2">
+            <button onclick="confirmCancel()"
+                    class="px-4 py-2 text-[14px] text-gray-500 bg-gray-100 rounded-xl hover:bg-gray-200 cursor-pointer">취소</button>
+            <button onclick="confirmOk()"
+                    class="px-4 py-2 text-[14px] text-white bg-red-500 rounded-xl hover:bg-red-600 cursor-pointer">확인</button>
+        </div>
+    </div>
+</div>
+
+<!-- 신고 모달 (YouTube 스타일) -->
+<div id="reportModal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/40" onclick="closeReportModal()"></div>
+    <div class="relative bg-white rounded-2xl shadow-xl w-[360px] max-h-[90vh] flex flex-col overflow-hidden">
+        <!-- 헤더 -->
+        <div class="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
+            <span class="text-[17px] text-gray-900" style="font-weight:700;">신고</span>
+            <button onclick="closeReportModal()" class="p-1 rounded-full hover:bg-gray-100 cursor-pointer text-gray-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <!-- 본문 -->
+        <div class="overflow-y-auto px-6 py-4 flex flex-col gap-1">
+            <p class="text-[15px] text-gray-900 mb-1" style="font-weight:600;">어떤 문제인가요?</p>
+            <p class="text-[13px] text-gray-500 mb-4">KoreaPoint에서 모든 커뮤니티 가이드에 대해 확인하므로 완벽히 들어맞지 않아도 괜찮습니다.</p>
+            <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
+                <input type="radio" name="reportReason" class="w-4 h-4 accent-gray-800"/>
+                <span class="text-[14px] text-gray-800">성적인 콘텐츠</span>
+            </label>
+            <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
+                <input type="radio" name="reportReason" class="w-4 h-4 accent-gray-800"/>
+                <span class="text-[14px] text-gray-800">폭력적 또는 혐오스러운 콘텐츠</span>
+            </label>
+            <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
+                <input type="radio" name="reportReason" class="w-4 h-4 accent-gray-800"/>
+                <span class="text-[14px] text-gray-800">증오 또는 악의적인 콘텐츠</span>
+            </label>
+            <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
+                <input type="radio" name="reportReason" class="w-4 h-4 accent-gray-800"/>
+                <span class="text-[14px] text-gray-800">괴롭힘 또는 폭력</span>
+            </label>
+            <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
+                <input type="radio" name="reportReason" class="w-4 h-4 accent-gray-800"/>
+                <span class="text-[14px] text-gray-800">유해하거나 위험한 행위</span>
+            </label>
+            <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
+                <input type="radio" name="reportReason" class="w-4 h-4 accent-gray-800"/>
+                <span class="text-[14px] text-gray-800">자살, 자해 또는 섭식 장애</span>
+            </label>
+        </div>
+        <!-- 하단 버튼 -->
+        <div class="px-6 py-4 border-t border-gray-100">
+            <button id="reportSubmitBtn" onclick="submitReport()" disabled
+                    class="w-full py-3 text-[14px] text-white bg-gray-800 rounded-xl opacity-40 cursor-not-allowed"
+                    style="font-weight:600;">신고</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

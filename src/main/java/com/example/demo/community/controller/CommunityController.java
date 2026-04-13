@@ -89,6 +89,9 @@ public class CommunityController {
         } catch (IllegalStateException e) {
             redirectAttributes.addFlashAttribute("pointError", e.getMessage());
             return "redirect:/community/post/write";
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("pointError", e.getMessage());
+            return "redirect:/community/post/write";
         }
     }
 

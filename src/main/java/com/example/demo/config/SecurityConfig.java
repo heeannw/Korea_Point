@@ -43,7 +43,7 @@ public class SecurityConfig {
             )
             // H2 콘솔 접근을 위한 설정
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**", "/api/**")
+                .ignoringRequestMatchers("/h2-console/**", "/api/comments/**")
             )
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin()) // H2 콘솔 iframe 허용

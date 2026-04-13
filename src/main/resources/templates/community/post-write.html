@@ -35,6 +35,28 @@
         .ql-toolbar:focus-within {
             border-color: #2563EB;
         }
+        /* Footer */
+        :root { --primary-dark: #1a7de0; }
+        footer { background: #ffffff; padding: 32px 80px 28px; border-top: 1px solid #dbe5f2; }
+        .footer-inner { max-width: 1440px; margin: 0 auto; }
+        .footer-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding-bottom: 18px; border-bottom: 1px solid #e8eef6; margin-bottom: 16px; }
+        .footer-logo { font-family: "Playfair Display", serif; font-size: 24px; font-weight: 900; letter-spacing: -0.02em; color: var(--primary-dark); }
+        .footer-logo span { color: var(--dark); }
+        .footer-tagline { margin-top: 6px; font-size: 12px; color: #7f8ca2; font-weight: 400; }
+        .footer-info { margin-bottom: 14px; font-size: 12px; line-height: 1.8; color: #8c96a8; }
+        .footer-policy-links { display: flex; flex-wrap: wrap; gap: 8px 0; margin-bottom: 14px; }
+        .footer-policy-links a { position: relative; padding: 0 12px; color: #778397; text-decoration: underline; text-underline-offset: 2px; font-size: 12px; line-height: 1.5; transition: color 0.2s ease; }
+        .footer-policy-links a:first-child { padding-left: 0; }
+        .footer-policy-links a::after { content: ""; position: absolute; top: 50%; right: 0; width: 1px; height: 11px; background: #d9e0ea; transform: translateY(-50%); }
+        .footer-policy-links a:last-child::after { display: none; }
+        .footer-policy-links a:hover { color: var(--primary-dark); }
+        .footer-social { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        .footer-social-link { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 999px; border: 1px solid #d7deea; color: #8a96aa; background: #ffffff; text-decoration: none; transition: all 0.2s ease; }
+        .footer-social-link svg { width: 16px; height: 16px; }
+        .footer-social-link.blog-link { width: auto; height: auto; border: none; border-radius: 0; padding: 0 2px; font-size: 14px; font-weight: 700; letter-spacing: 0.01em; }
+        .footer-social-link:hover { color: var(--primary-dark); border-color: #bcd5f6; background: #f7fbff; }
+        .footer-social-link.blog-link:hover { background: transparent; }
+        .footer-copy { font-size: 11px; letter-spacing: 0.04em; color: #a0aabc; }
     </style>
 </head>
 <body class="min-h-screen bg-[#FAFAFA] flex flex-col">
@@ -159,9 +181,53 @@
     </div>
 </main>
 
-<footer class="border-t border-gray-200/80 bg-gray-50 mt-16">
-    <div class="max-w-[1200px] mx-auto px-6 py-8 text-[12px] text-gray-400">
-        &copy; 2026 KoreaConnect. All rights reserved.
+<footer>
+    <div class="footer-inner">
+        <div class="footer-top">
+            <div>
+                <div class="footer-logo">Korea<span>Point</span></div>
+                <div class="footer-tagline">Your gateway to discovering Korea</div>
+            </div>
+        </div>
+        <div class="footer-info">
+            <p>KoreaPoint Travel Guide Platform · Email: help@koreapoint.com · Customer Center: 1644-0000</p>
+        </div>
+        <div class="footer-policy-links" aria-label="Footer policies">
+            <a href="#" onclick="return false;">About Us</a>
+            <a href="#" onclick="return false;">Partnerships</a>
+            <a href="#" onclick="return false;">Careers</a>
+            <a href="#" onclick="return false;">Privacy Policy</a>
+            <a href="#" onclick="return false;">Youth Protection Policy</a>
+            <a href="#" onclick="return false;">Terms of Service</a>
+            <a href="#" onclick="return false;">Location Terms</a>
+            <a href="#" onclick="return false;">Ticket Terms</a>
+            <a href="#" onclick="return false;">Business Info</a>
+            <a href="#" onclick="return false;">E-Finance Terms</a>
+            <a href="#" onclick="return false;">User Notice</a>
+            <a href="#" onclick="return false;">Dispute Resolution</a>
+        </div>
+        <div class="footer-social" aria-label="Social channels">
+            <a class="footer-social-link" href="#" onclick="return false;" aria-label="Instagram">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect>
+                    <circle cx="12" cy="12" r="4.2"></circle>
+                    <circle cx="17.3" cy="6.7" r="1"></circle>
+                </svg>
+            </a>
+            <a class="footer-social-link" href="#" onclick="return false;" aria-label="YouTube">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21.2 7.2a2.8 2.8 0 0 0-2-2C17.4 4.7 12 4.7 12 4.7s-5.4 0-7.2.5a2.8 2.8 0 0 0-2 2C2.3 9 2.3 12 2.3 12s0 3 .5 4.8a2.8 2.8 0 0 0 2 2c1.8.5 7.2.5 7.2.5s5.4 0 7.2-.5a2.8 2.8 0 0 0 2-2c.5-1.8.5-4.8.5-4.8s0-3-.5-4.8Z"></path>
+                    <path d="m10.2 15.5 4.8-3.5-4.8-3.5v7Z" fill="#ffffff"></path>
+                </svg>
+            </a>
+            <a class="footer-social-link" href="#" onclick="return false;" aria-label="Facebook">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13.4 20.5v-7h2.4l.4-2.8h-2.8V8.9c0-.8.2-1.4 1.4-1.4h1.5V5a18 18 0 0 0-2.2-.1c-2.2 0-3.8 1.4-3.8 3.9v1.9H7.9v2.8h2.4v7h3.1Z"></path>
+                </svg>
+            </a>
+            <a class="footer-social-link blog-link" href="#" onclick="return false;" aria-label="Blog">blog</a>
+        </div>
+        <div class="footer-copy">Copyright 2025 KoreaPoint. All rights reserved.</div>
     </div>
 </footer>
 
