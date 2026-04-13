@@ -106,13 +106,13 @@
 
                 <!-- 포인트 잔액 -->
                 <div class="flex items-center justify-between px-4 py-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <span class="text-[13px] text-gray-600">보유 포인트</span>
+                    <span class="text-[13px] text-gray-600" th:text="#{community.write.point.label}">Points Balance</span>
                     <div class="flex items-center gap-3">
                         <span class="text-[14px] text-[#2563EB]" style="font-weight:700;"
                               th:text="${currentUserPoint} + 'P'">1000P</span>
-                        <span class="text-[12px] text-gray-400">충전</span>
+                        <span class="text-[12px] text-gray-400" th:text="#{community.write.point.recharge}">Recharge</span>
                         <span class="px-2.5 py-1 bg-gray-100 text-gray-400 text-[12px] rounded-md cursor-not-allowed"
-                              title="서비스 준비 중">준비 중</span>
+                              th:text="#{community.write.point.coming}">Coming Soon</span>
                     </div>
                 </div>
 
@@ -136,8 +136,9 @@
                                 th:text="${cat.icon + ' ' + (#locale.language == 'en' and cat.nameEn != null ? cat.nameEn : cat.name)}">Category</option>
                     </select>
                     <!-- 홍보 카테고리 선택 시 포인트 차감 안내 -->
-                    <p id="promoNotice" class="hidden mt-2 text-[12px] text-amber-600">
-                        📢 홍보 게시글 작성 시 <strong>500P</strong>가 차감됩니다.
+                    <p id="promoNotice" class="hidden mt-2 text-[12px] text-amber-600"
+                       th:text="#{community.write.point.promo}">
+                        📢 500P will be deducted for promotional posts.
                     </p>
                 </div>
 
