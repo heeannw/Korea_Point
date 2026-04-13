@@ -133,7 +133,7 @@
                         <option th:each="cat : ${categories}"
                                 th:value="${cat.categoryId}"
                                 th:attr="data-name=${cat.name}"
-                                th:text="${cat.icon + ' ' + cat.name}">Category</option>
+                                th:text="${cat.icon + ' ' + (#locale.language == 'en' and cat.nameEn != null ? cat.nameEn : cat.name)}">Category</option>
                     </select>
                     <!-- 홍보 카테고리 선택 시 포인트 차감 안내 -->
                     <p id="promoNotice" class="hidden mt-2 text-[12px] text-amber-600">
