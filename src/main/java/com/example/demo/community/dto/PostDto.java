@@ -30,6 +30,9 @@ public class PostDto {
     private String titleEn;          // 영문 번역 제목 (nullable)
     private String contentEn;        // 영문 번역 내용 (nullable)
     private String contentEnPreview; // 영문 번역 미리보기 — HTML 태그 제거 + 120자 (nullable)
+    private String titleKo;          // 한국어 번역 제목 (영어 작성 시, nullable)
+    private String contentKo;        // 한국어 번역 내용 (영어 작성 시, nullable)
+    private String contentKoPreview; // 한국어 번역 미리보기 (nullable)
 
     // 게시글 작성 요청 DTO
     @Getter

@@ -99,7 +99,7 @@
 
             <!-- 제목 -->
             <h1 class="text-[24px] text-gray-900 mb-4 leading-snug" style="font-weight:700;"
-                th:text="${#locale.language == 'en' and post.titleEn != null ? post.titleEn : post.title}">Title</h1>
+                th:text="${#locale.language == 'en' and post.titleEn != null ? post.titleEn : (#locale.language != 'en' and post.titleKo != null ? post.titleKo : post.title)}">Title</h1>
 
             <!-- 작성자 정보 -->
             <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
@@ -130,7 +130,7 @@
 
             <!-- 본문 (에디터 HTML) -->
             <div class="post-content text-[15px] text-gray-700 leading-relaxed"
-                 th:utext="${#locale.language == 'en' and post.contentEn != null ? post.contentEn : post.content}">본문 내용</div>
+                 th:utext="${#locale.language == 'en' and post.contentEn != null ? post.contentEn : (#locale.language != 'en' and post.contentKo != null ? post.contentKo : post.content)}">본문 내용</div>
 
             <!-- 삭제 버튼 (본인 게시글에만 표시) -->
             <div th:if="${currentUserId != null and currentUserId == post.userId}"
@@ -187,7 +187,7 @@
                                           th:attr="data-time=${#temporals.format(comment.createdAt, 'yyyy-MM-dd') + 'T' + #temporals.format(comment.createdAt, 'HH:mm:ss')}">Date</span>
                                 </div>
                                 <p class="text-[14px] text-gray-700 leading-relaxed"
-                                   th:text="${#locale.language == 'en' and comment.contentEn != null ? comment.contentEn : comment.content}">Comment content</p>
+                                   th:text="${#locale.language == 'en' and comment.contentEn != null ? comment.contentEn : (#locale.language != 'en' and comment.contentKo != null ? comment.contentKo : comment.content)}">Comment content</p>
                                 <div class="edit-form hidden mt-1">
                                     <textarea th:attr="data-comment-id=${comment.id}"
                                               class="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-[#2563EB] resize-none"
@@ -268,7 +268,7 @@
                                         </div>
                                         <p class="text-[13px] text-gray-700 leading-relaxed"
                                            th:if="${!reply.deleted}"
-                                           th:text="${#locale.language == 'en' and reply.contentEn != null ? reply.contentEn : reply.content}">Reply content</p>
+                                           th:text="${#locale.language == 'en' and reply.contentEn != null ? reply.contentEn : (#locale.language != 'en' and reply.contentKo != null ? reply.contentKo : reply.content)}">Reply content</p>
                                         <p class="text-[13px] text-gray-400 italic"
                                            th:if="${reply.deleted}">삭제된 댓글입니다.</p>
                                         <div th:if="${!reply.deleted}" class="edit-form hidden mt-1">
