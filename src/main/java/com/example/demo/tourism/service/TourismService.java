@@ -100,7 +100,7 @@ public class TourismService {
 
     private void loadCandidatesEN() throws Exception {
         InputStream is = getClass().getClassLoader()
-                .getResourceAsStream("tourdata/tourism/seoul_recommend_candidates_translated_EN.json");
+                .getResourceAsStream("tourdata/tourism/seoul_recommend_candidates.json");
         cachedCandidatesEN = mapper.readValue(is, new TypeReference<>() {});
     }
 

@@ -30,12 +30,13 @@ public class TourismController {
     public String tourAllKO(Model model, HttpSession session,
                             @RequestParam(value = "lat", required = false) Double lat,
                             @RequestParam(value = "lon", required = false) Double lon,
-                            @RequestParam(value = "lang") String lang
-    ) {
+                            @RequestParam(value = "lang") String lang) {
+        lang = lang.toLowerCase();
         List<TourPlaceDto> displayList = tourismService.allList(lang);
         displayList = displayList.stream().limit(100).toList();
         session.setAttribute("userlat", lat);
         session.setAttribute("userlon", lon);
+
 
         List<TourPlaceDto> dlist = (lat != null && lon != null)
                 ? tourismService.allDistence(lat, lon, displayList)
@@ -43,9 +44,15 @@ public class TourismController {
 
         String spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
 
+        if(lat == null){
+            model.addAttribute("centerLat", 37.5665);
+            model.addAttribute("centerLon", 126.9780);
+        } else{
+            model.addAttribute("centerLat", lat);
+            model.addAttribute("centerLon", lon);
+        }
+
         model.addAttribute("spotname", spotname);
-        model.addAttribute("centerLat", 37.5665);
-        model.addAttribute("centerLon", 126.9780);
         model.addAttribute("userlat", lat);
         model.addAttribute("userlon", lon);
         model.addAttribute("lang", lang);
@@ -69,6 +76,8 @@ public class TourismController {
             @RequestParam(value = "spotname", required = false) String spotname,
             HttpSession session) {
 
+
+        lang = lang.toLowerCase();
         if (spotname == null || spotname.isBlank()) {
             spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
         }
@@ -120,7 +129,7 @@ public class TourismController {
             @RequestParam("lang") String lang,
             Model model,
             HttpSession session) {
-
+        lang = lang.toLowerCase();
         session.setAttribute("userlat", lat);
         session.setAttribute("userlon", lon);
 
