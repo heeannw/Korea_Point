@@ -1,78 +1,58 @@
 package com.example.demo.transport.service;
 
-import ai.onnxruntime.*;
+import com.example.demo.transport.dto.FastApiCongestionRequest;
+import com.example.demo.transport.dto.FastApiCongestionResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.nio.FloatBuffer;
-import java.util.Collections;
-import java.io.InputStream;
-
+import java.util.List;
 
 @Service
 public class CongestionMlService {
 
-    private OrtEnvironment env;
-    private OrtSession session;
+    @Value("${fastapi.base-url:http://127.0.0.1:8000}")
+    private String fastapiBaseUrl;
 
-    public CongestionMlService() throws Exception {
-        env = OrtEnvironment.getEnvironment();
+    private final RestTemplate restTemplate = new RestTemplate();
 
-        System.out.println("🔥 ONNX 로딩 시작");
-
-        InputStream is = getClass()
-                .getClassLoader()
-                .getResourceAsStream("model/transport/transport_congestion_model.onnx");
-
-        if (is == null) {
-            throw new RuntimeException("❌ ONNX 파일 못찾음 (경로 확인)");
-        }
-
-        System.out.println("🔥 파일 찾음");
-
-        byte[] modelBytes = is.readAllBytes();
-
-        System.out.println("🔥 바이트 로드 완료");
-
-        session = env.createSession(modelBytes, new OrtSession.SessionOptions());
-
-        System.out.println("🔥 ONNX 세션 생성 완료");
-    }
-
-    public int predict(int hour, int day, int line, int stationNum) {
+    public int predict(int hour, int day, String station, int line, int stationCode, String direction) {
         try {
-            float[] inputData = new float[]{ hour, day, line, stationNum };
+            String url = fastapiBaseUrl + "/predict";
 
-            OnnxTensor inputTensor = OnnxTensor.createTensor(
-                    env,
-                    FloatBuffer.wrap(inputData),
-                    new long[]{1, 4}
+            FastApiCongestionRequest request = new FastApiCongestionRequest(
+                    hour,
+                    day,
+                    station,
+                    line,
+                    stationCode,
+                    direction
             );
 
-            OrtSession.Result result = session.run(
-                    Collections.singletonMap("float_input", inputTensor)
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+            HttpEntity<FastApiCongestionRequest> entity = new HttpEntity<>(request, headers);
+            ResponseEntity<FastApiCongestionResponse> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    FastApiCongestionResponse.class
             );
 
-            Object value = result.get(0).getValue();
-
-            // long[] 타입 대응
-            if (value instanceof long[]) {
-                return (int) ((long[]) value)[0];
+            if (response.getBody() != null) {
+                return response.getBody().getPrediction();
             }
-            // float[][] 타입 대응
-            if (value instanceof float[][]) {
-                return (int) ((float[][]) value)[0][0];
-            }
-            // long[][] 타입 대응
-            if (value instanceof long[][]) {
-                return (int) ((long[][]) value)[0][0];
-            }
-
-            return 1; // fallback
-
         } catch (Exception e) {
             e.printStackTrace();
-            return 1;
         }
-    }
 
+        return 1;
+    }
 }
