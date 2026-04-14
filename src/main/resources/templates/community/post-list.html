@@ -152,9 +152,9 @@
                         </div>
                         <h3 class="text-[16px] text-gray-900 group-hover:text-[#2563EB] transition-colors mb-1.5"
                             style="font-weight:600;"
-                            th:text="${#locale.language == 'en' and post.titleEn != null ? post.titleEn : post.title}">Title</h3>
+                            th:text="${#locale.language == 'en' and post.titleEn != null ? post.titleEn : (#locale.language != 'en' and post.titleKo != null ? post.titleKo : post.title)}">Title</h3>
                         <p class="text-[13px] text-gray-500 leading-relaxed mb-3 line-clamp-2"
-                           th:text="${#locale.language == 'en' and post.contentEnPreview != null ? post.contentEnPreview : post.contentPreview}">Preview...</p>
+                           th:text="${#locale.language == 'en' and post.contentEnPreview != null ? post.contentEnPreview : (#locale.language != 'en' and post.contentKoPreview != null ? post.contentKoPreview : post.contentPreview)}">Preview...</p>
                         <div class="flex items-center gap-4">
                             <span class="text-[12px] text-gray-500" style="font-weight:500;"
                                   th:text="${post.authorName}">Author</span>

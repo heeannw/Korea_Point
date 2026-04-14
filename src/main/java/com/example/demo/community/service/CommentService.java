@@ -167,6 +167,7 @@ public class CommentService {
                 .parentId(parentId)
                 .content(content)
                 .contentEn(deleted ? null : comment.getContentEn())
+                .contentKo(deleted ? null : comment.getContentKo())
                 .authorName(authorName)
                 .authorProfileImage(authorProfileImage)
                 .deleted(deleted)
@@ -197,6 +198,12 @@ public class CommentService {
             int spaceIdxEn = rawContentEn.indexOf(' ');
             if (spaceIdxEn > 0) contentEn = rawContentEn.substring(spaceIdxEn + 1);
         }
+        String rawContentKo = deleted ? null : c.getContentKo();
+        String contentKo = rawContentKo;
+        if (rawContentKo != null && rawContentKo.startsWith("@")) {
+            int spaceIdxKo = rawContentKo.indexOf(' ');
+            if (spaceIdxKo > 0) contentKo = rawContentKo.substring(spaceIdxKo + 1);
+        }
         String authorName = deleted ? null : c.getUser().getName();
         String authorProfileImage = deleted ? null : c.getUser().getProfileImage();
 
@@ -209,6 +216,7 @@ public class CommentService {
                 .mentionPart(mentionPart)
                 .content(content)
                 .contentEn(contentEn)
+                .contentKo(contentKo)
                 .authorName(authorName)
                 .authorProfileImage(authorProfileImage)
                 .deleted(deleted)

@@ -51,6 +51,14 @@ public class Post {
     @Lob
     private String contentEn;
 
+    // 한국어 번역 제목 (영어로 작성 시 자동 생성, nullable)
+    @Column(length = 200)
+    private String titleKo;
+
+    // 한국어 번역 내용 (영어로 작성 시 자동 생성, nullable)
+    @Lob
+    private String contentKo;
+
     // 조회수
     @Column(nullable = false)
     @Builder.Default
