@@ -182,9 +182,16 @@
     if (!text || !text.trim() || LANG !== 'en') return text;
     if (_tCache[text] !== undefined) return _tCache[text];
     try {
+      // ✅ 수정 코드 — CSRF 토큰 추가
+      const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+      const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
       const res = await fetch('/api/translate', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          [csrfHeader]: csrfToken
+        },
         body: JSON.stringify({ text, source: 'ko', target: 'en' })
       });
       const data = await res.json();
@@ -199,9 +206,16 @@
     const valid = arr.filter(t => t && t.trim());
     if (!valid.length) return;
     try {
+      // ✅ 수정 코드 — CSRF 토큰 추가
+      const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+      const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
       const res = await fetch('/api/translate', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          [csrfHeader]: csrfToken
+        },
         body: JSON.stringify({ text: valid.join('\n'), source: 'ko', target: 'en' })
       });
       const data = await res.json();
