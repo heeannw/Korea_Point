@@ -19,16 +19,18 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                // 게시글 작성·삭제, 댓글 API만 로그인 필요
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                // 寃뚯떆湲 ?묒꽦쨌??젣, ?볤? API留?濡쒓렇???꾩슂
                 .requestMatchers("/community/**").authenticated()
                 .requestMatchers("/api/comments/**").authenticated()
+                .requestMatchers("/api/reports/**").authenticated()
                 .requestMatchers("/tour/**").authenticated()
                 .requestMatchers("/transport/**").authenticated()
                 .requestMatchers("/foodmap/**").authenticated()
                 .requestMatchers("/cafe/**").authenticated()
                 .requestMatchers("/en/**").authenticated()
                 .requestMatchers("/ko/**").authenticated()
-                // 그 외 모든 요청은 허용 (다른 도메인에 영향 없음)
+                // 洹???紐⑤뱺 ?붿껌? ?덉슜 (?ㅻⅨ ?꾨찓?몄뿉 ?곹뼢 ?놁쓬)
                 .anyRequest().permitAll()
             )
             .oauth2Login(oauth2 -> oauth2
@@ -41,12 +43,12 @@ public class SecurityConfig {
             .logout(logout -> logout
                 .logoutSuccessUrl("/")
             )
-            // H2 콘솔 접근을 위한 설정
+            // H2 肄섏넄 ?묎렐???꾪븳 ?ㅼ젙
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**", "/api/comments/**")
+                .ignoringRequestMatchers("/h2-console/**", "/api/comments/**", "/api/reports/**")
             )
             .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin()) // H2 콘솔 iframe 허용
+                .frameOptions(frame -> frame.sameOrigin()) // H2 肄섏넄 iframe ?덉슜
             );
 
         return http.build();

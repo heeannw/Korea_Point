@@ -63,6 +63,7 @@
 
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}"></span>
+            <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
                 <button type="submit" class="h-btn h-btn-fill">Logout</button>
             </form>
@@ -131,6 +132,16 @@
             <!-- 본문 (에디터 HTML) -->
             <div class="post-content text-[15px] text-gray-700 leading-relaxed"
                  th:utext="${#locale.language == 'en' and post.contentEn != null ? post.contentEn : (#locale.language != 'en' and post.contentKo != null ? post.contentKo : post.content)}">본문 내용</div>
+
+            <div th:if="${currentUserId != null and currentUserId != post.userId}"
+                 class="flex justify-end mt-8 pt-5 border-t border-gray-100">
+                <button type="button"
+                        th:attr="data-post-id=${post.postId}"
+                        onclick="reportPost(this)"
+                        class="px-4 py-2 text-[13px] text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                    신고하기
+                </button>
+            </div>
 
             <!-- 삭제 버튼 (본인 게시글에만 표시) -->
             <div th:if="${currentUserId != null and currentUserId == post.userId}"
@@ -228,7 +239,7 @@
                                                 class="w-full text-left px-3 py-1.5 text-[13px] text-red-500 hover:bg-gray-50 cursor-pointer">삭제</button>
                                     </th:block>
                                     <th:block th:if="${currentUserId != comment.userId}">
-                                        <button type="button" onclick="reportComment(this)"
+                                        <button type="button" th:attr="data-comment-id=${comment.id}" onclick="reportComment(this)"
                                                 class="w-full text-left px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50 cursor-pointer"
                                                 th:text="#{community.comment.report}">Report</button>
                                     </th:block>
@@ -309,7 +320,7 @@
                                                         class="w-full text-left px-3 py-1.5 text-[13px] text-red-500 hover:bg-gray-50 cursor-pointer">삭제</button>
                                             </th:block>
                                             <th:block th:if="${currentUserId != reply.userId}">
-                                                <button type="button" onclick="reportComment(this)"
+                                                <button type="button" th:attr="data-comment-id=${reply.id}" onclick="reportComment(this)"
                                                         class="w-full text-left px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-50 cursor-pointer"
                                                         th:text="#{community.comment.report}">Report</button>
                                             </th:block>
@@ -734,27 +745,27 @@
             <p class="text-[15px] text-gray-900 mb-1" style="font-weight:600;">어떤 문제인가요?</p>
             <p class="text-[13px] text-gray-500 mb-4">KoreaPoint에서 모든 커뮤니티 가이드에 대해 확인하므로 완벽히 들어맞지 않아도 괜찮습니다.</p>
             <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
-                <input type="radio" name="reportReason" class="w-4 h-4 accent-gray-800"/>
+                <input type="radio" name="reportReason" value="SPAM" class="w-4 h-4 accent-gray-800"/>
                 <span class="text-[14px] text-gray-800">성적인 콘텐츠</span>
             </label>
             <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
-                <input type="radio" name="reportReason" class="w-4 h-4 accent-gray-800"/>
+                <input type="radio" name="reportReason" value="ABUSE" class="w-4 h-4 accent-gray-800"/>
                 <span class="text-[14px] text-gray-800">폭력적 또는 혐오스러운 콘텐츠</span>
             </label>
             <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
-                <input type="radio" name="reportReason" class="w-4 h-4 accent-gray-800"/>
+                <input type="radio" name="reportReason" value="HATE" class="w-4 h-4 accent-gray-800"/>
                 <span class="text-[14px] text-gray-800">증오 또는 악의적인 콘텐츠</span>
             </label>
             <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
-                <input type="radio" name="reportReason" class="w-4 h-4 accent-gray-800"/>
+                <input type="radio" name="reportReason" value="HARASSMENT" class="w-4 h-4 accent-gray-800"/>
                 <span class="text-[14px] text-gray-800">괴롭힘 또는 폭력</span>
             </label>
             <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
-                <input type="radio" name="reportReason" class="w-4 h-4 accent-gray-800"/>
+                <input type="radio" name="reportReason" value="HARMFUL" class="w-4 h-4 accent-gray-800"/>
                 <span class="text-[14px] text-gray-800">유해하거나 위험한 행위</span>
             </label>
             <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
-                <input type="radio" name="reportReason" class="w-4 h-4 accent-gray-800"/>
+                <input type="radio" name="reportReason" value="MISINFORMATION" class="w-4 h-4 accent-gray-800"/>
                 <span class="text-[14px] text-gray-800">자살, 자해 또는 섭식 장애</span>
             </label>
         </div>
@@ -767,5 +778,6 @@
     </div>
 </div>
 
+<script th:src="@{/js/community/post-detail-actions.js}"></script>
 </body>
 </html>

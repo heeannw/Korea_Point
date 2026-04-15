@@ -953,6 +953,7 @@
         <a class="h-btn active" th:href="@{/ko}" href="/ko">KR</a>
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}">사용자</span>
+            <a th:if="${isAdmin}" th:href="@{/admin}" href="/admin" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <button type="submit" class="h-btn h-btn-fill">로그아웃</button>

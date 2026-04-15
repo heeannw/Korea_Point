@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' | KoreaPoint Admin'">관리자 페이지 | KoreaPoint Admin</title>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Sora:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
+</head>
+<body th:attr="data-page=${activePage}">
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <a class="brand-link" th:href="@{/admin}">
+            <div class="brand-mark">Korea<span>Point</span></div>
+            <div class="brand-copy">운영 데이터를 빠르게 확인하고 커뮤니티 상태를 한 화면에서 관리하는 관리자 콘솔입니다.</div>
+        </a>
+
+        <nav class="admin-nav" aria-label="관리자 메뉴">
+            <a class="nav-link" th:classappend="${activePage == 'dashboard'} ? ' active'" th:href="@{/admin}">
+                <strong>대시보드</strong>
+                <span>운영 지표 요약</span>
+            </a>
+            <a class="nav-link" th:classappend="${activePage == 'users'} ? ' active'" th:href="@{/admin/users}">
+                <strong>사용자 관리</strong>
+                <span>권한, 상태, 포인트 조정</span>
+            </a>
+            <a class="nav-link" th:classappend="${activePage == 'posts'} ? ' active'" th:href="@{/admin/posts}">
+                <strong>게시글 관리</strong>
+                <span>숨김, 복구, 영구 삭제</span>
+            </a>
+            <a class="nav-link" th:classappend="${activePage == 'comments'} ? ' active'" th:href="@{/admin/comments}">
+                <strong>댓글 관리</strong>
+                <span>트리 규칙 기반 운영</span>
+            </a>
+            <a class="nav-link" th:classappend="${activePage == 'reports'} ? ' active'" th:href="@{/admin/reports}">
+                <strong>신고 관리</strong>
+                <span>게시글과 댓글 신고 처리</span>
+            </a>
+            <a class="nav-link" th:classappend="${activePage == 'logs'} ? ' active'" th:href="@{/admin/logs}">
+                <strong>작업 로그</strong>
+                <span>관리자 조치 이력 조회</span>
+            </a>
+        </nav>
+
+        <div class="admin-note">
+            <strong>운영 메모</strong>
+            <p>모든 관리자 조치는 사유 코드와 메모를 함께 남깁니다. 숨김, 복구, 권한 변경, 포인트 조정, 신고 처리 이력이 동일한 로그 화면에서 조회됩니다.</p>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        <header class="admin-topbar">
+            <div>
+                <p class="topbar-eyebrow">Operations Console</p>
+                <h1 class="topbar-title" th:text="${pageTitle}">관리자 대시보드</h1>
+                <p class="topbar-copy">KoreaPoint 운영 데이터를 확인하고 필요한 변경은 확인 모달을 통해 안전하게 적용합니다.</p>
+            </div>
+            <div class="topbar-actions">
+                <a class="action-link" th:href="@{/}" href="/">서비스 보기</a>
+                <form th:action="@{/logout}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <button type="submit" class="ghost-button">로그아웃</button>
+                </form>
+            </div>
+        </header>
+
+        <div id="alertBanner" class="alert-banner" role="status" aria-live="polite"></div>
+
+        <section id="dashboardPanel" class="page-panel">
+            <div class="section-head">
+                <div>
+                    <h2>운영 요약</h2>
+                    <p>핵심 운영 수치와 최근 활동을 빠르게 확인합니다.</p>
+                </div>
+                <button type="button" class="primary-button" id="refreshDashboardButton">새로고침</button>
+            </div>
+
+            <div class="summary-grid">
+                <article class="summary-card">
+                    <div class="summary-label">전체 사용자</div>
+                    <div class="summary-value" id="summaryUsers">-</div>
+                </article>
+                <article class="summary-card">
+                    <div class="summary-label">관리자 계정</div>
+                    <div class="summary-value" id="summaryAdmins">-</div>
+                </article>
+                <article class="summary-card">
+                    <div class="summary-label">활성 게시글</div>
+                    <div class="summary-value" id="summaryPosts">-</div>
+                </article>
+                <article class="summary-card">
+                    <div class="summary-label">활성 댓글</div>
+                    <div class="summary-value" id="summaryComments">-</div>
+                </article>
+                <article class="summary-card">
+                    <div class="summary-label">정지 사용자</div>
+                    <div class="summary-value" id="summarySuspended">-</div>
+                </article>
+                <article class="summary-card">
+                    <div class="summary-label">열린 신고</div>
+                    <div class="summary-value" id="summaryReports">-</div>
+                </article>
+                <article class="summary-card">
+                    <div class="summary-label">최근 7일 숨김</div>
+                    <div class="summary-value" id="summaryHide7d">-</div>
+                </article>
+                <article class="summary-card">
+                    <div class="summary-label">최근 7일 복구</div>
+                    <div class="summary-value" id="summaryRestore7d">-</div>
+                </article>
+            </div>
+
+            <div class="dashboard-grid four">
+                <article class="dashboard-card">
+                    <h3>최근 가입 사용자</h3>
+                    <div id="dashboardUsers" class="activity-list"></div>
+                </article>
+                <article class="dashboard-card">
+                    <h3>최근 게시글</h3>
+                    <div id="dashboardPosts" class="activity-list"></div>
+                </article>
+                <article class="dashboard-card">
+                    <h3>최근 댓글</h3>
+                    <div id="dashboardComments" class="activity-list"></div>
+                </article>
+                <article class="dashboard-card">
+                    <div class="section-inline">
+                        <h3>최근 신고</h3>
+                        <a class="text-link" th:href="@{/admin/reports}">전체 보기</a>
+                    </div>
+                    <div id="dashboardReports" class="activity-list"></div>
+                </article>
+                <article class="dashboard-card">
+                    <div class="section-inline">
+                        <h3>최근 작업 로그</h3>
+                        <a class="text-link" th:href="@{/admin/logs}">전체 보기</a>
+                    </div>
+                    <div id="dashboardLogs" class="activity-list"></div>
+                </article>
+            </div>
+        </section>
+
+        <section id="usersPanel" class="page-panel">
+            <div class="section-head">
+                <div>
+                    <h2>사용자 관리</h2>
+                    <p>검색과 필터를 기준으로 권한, 상태, 포인트를 운영합니다.</p>
+                </div>
+            </div>
+
+            <form id="usersFilterForm" class="filters">
+                <label>검색 <input id="usersKeyword" type="text" placeholder="이름 또는 이메일"></label>
+                <label>권한
+                    <select id="usersRole">
+                        <option value="">전체</option>
+                        <option value="ADMIN">관리자 (ADMIN)</option>
+                        <option value="USER">일반 (USER)</option>
+                    </select>
+                </label>
+                <label>계정 상태
+                    <select id="usersAccountStatus">
+                        <option value="">전체</option>
+                        <option value="ACTIVE">활성</option>
+                        <option value="SUSPENDED">정지</option>
+                    </select>
+                </label>
+                <button type="submit" class="primary-button">조회</button>
+            </form>
+
+            <div class="data-shell">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>사용자</th>
+                            <th>권한</th>
+                            <th>상태</th>
+                            <th>포인트</th>
+                            <th>가입일</th>
+                            <th>조치</th>
+                        </tr>
+                        </thead>
+                        <tbody id="usersTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="usersPagination" class="pagination"></div>
+            </div>
+        </section>
+
+        <section id="postsPanel" class="page-panel">
+            <div class="section-head">
+                <div>
+                    <h2>게시글 관리</h2>
+                    <p>카테고리와 상태를 기준으로 게시글을 조회하고 숨김, 복구, 영구 삭제를 처리합니다.</p>
+                </div>
+            </div>
+
+            <form id="postsFilterForm" class="filters four">
+                <label>검색 <input id="postsKeyword" type="text" placeholder="제목으로 검색"></label>
+                <label>카테고리
+                    <select id="postsCategory">
+                        <option value="">전체</option>
+                    </select>
+                </label>
+                <label>상태
+                    <select id="postsStatus">
+                        <option value="active">활성</option>
+                        <option value="deleted">숨김</option>
+                        <option value="all">전체</option>
+                    </select>
+                </label>
+                <label>영구 삭제
+                    <select id="postsPurgeReady">
+                        <option value="">전체</option>
+                        <option value="true">가능만 보기</option>
+                    </select>
+                </label>
+                <button type="submit" class="primary-button">조회</button>
+            </form>
+
+            <div class="data-shell">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>게시글</th>
+                            <th>카테고리</th>
+                            <th>상태</th>
+                            <th>조회/댓글</th>
+                            <th>조치</th>
+                        </tr>
+                        </thead>
+                        <tbody id="postsTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="postsPagination" class="pagination"></div>
+            </div>
+        </section>
+
+        <section id="commentsPanel" class="page-panel">
+            <div class="section-head">
+                <div>
+                    <h2>댓글 관리</h2>
+                    <p>댓글 트리 규칙에 맞춰 숨김, 복구, 영구 삭제를 운영합니다.</p>
+                </div>
+            </div>
+
+            <form id="commentsFilterForm" class="filters">
+                <label>검색 <input id="commentsKeyword" type="text" placeholder="댓글 내용으로 검색"></label>
+                <label>상태
+                    <select id="commentsStatus">
+                        <option value="active">활성</option>
+                        <option value="deleted">숨김</option>
+                        <option value="all">전체</option>
+                    </select>
+                </label>
+                <label>영구 삭제
+                    <select id="commentsPurgeReady">
+                        <option value="">전체</option>
+                        <option value="true">가능만 보기</option>
+                    </select>
+                </label>
+                <button type="submit" class="primary-button">조회</button>
+            </form>
+
+            <div class="data-shell">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>댓글</th>
+                            <th>원본 게시글</th>
+                            <th>상태</th>
+                            <th>조치</th>
+                        </tr>
+                        </thead>
+                        <tbody id="commentsTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="commentsPagination" class="pagination"></div>
+            </div>
+        </section>
+
+        <section id="logsPanel" class="page-panel">
+            <div class="section-head">
+                <div>
+                    <h2>작업 로그</h2>
+                    <p>조치 사유와 변경 전후 스냅샷을 기준으로 관리자 작업 이력을 조회합니다.</p>
+                </div>
+            </div>
+
+            <form id="logsFilterForm" class="filters">
+                <label>대상 유형
+                    <select id="logsTargetType">
+                        <option value="">전체</option>
+                    </select>
+                </label>
+                <label>조치 유형
+                    <select id="logsActionType">
+                        <option value="">전체</option>
+                    </select>
+                </label>
+                <label>사유 코드
+                    <select id="logsReasonCode">
+                        <option value="">전체</option>
+                    </select>
+                </label>
+                <button type="submit" class="primary-button">조회</button>
+            </form>
+
+            <div class="data-shell">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>일시</th>
+                            <th>관리자</th>
+                            <th>대상</th>
+                            <th>조치</th>
+                            <th>사유</th>
+                            <th>스냅샷</th>
+                        </tr>
+                        </thead>
+                        <tbody id="logsTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="logsPagination" class="pagination"></div>
+            </div>
+        </section>
+
+        <section id="reportsPanel" class="page-panel">
+            <div class="section-head">
+                <div>
+                    <h2>신고 관리</h2>
+                    <p>게시글과 댓글 신고를 조회하고 검토, 해결, 반려 상태로 처리합니다.</p>
+                </div>
+            </div>
+
+            <form id="reportsFilterForm" class="filters">
+                <label>신고 대상
+                    <select id="reportsTargetType">
+                        <option value="">전체</option>
+                    </select>
+                </label>
+                <label>처리 상태
+                    <select id="reportsStatus">
+                        <option value="">전체</option>
+                    </select>
+                </label>
+                <label>신고 사유
+                    <select id="reportsReasonCode">
+                        <option value="">전체</option>
+                    </select>
+                </label>
+                <button type="submit" class="primary-button">조회</button>
+            </form>
+
+            <div class="data-shell">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>접수일</th>
+                            <th>신고자</th>
+                            <th>대상</th>
+                            <th>사유</th>
+                            <th>상태</th>
+                            <th>조치</th>
+                        </tr>
+                        </thead>
+                        <tbody id="reportsTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="reportsPagination" class="pagination"></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div id="actionModal" class="modal-shell" hidden>
+    <div class="modal-backdrop" data-modal-close></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="actionModalTitle">
+        <div class="modal-head">
+            <div>
+                <p class="modal-eyebrow">관리자 조치 확인</p>
+                <h2 id="actionModalTitle">조치 확인</h2>
+            </div>
+            <button type="button" class="modal-close" id="modalCloseButton" aria-label="닫기">&times;</button>
+        </div>
+
+        <p id="actionModalSummary" class="modal-summary"></p>
+        <div id="modalGeneralError" class="modal-general-error" hidden></div>
+
+        <form id="actionModalForm" class="modal-form">
+            <div id="modalExtraFields"></div>
+            <label>
+                사유 코드
+                <select id="modalReasonCode">
+                    <option value="">선택해 주세요</option>
+                </select>
+                <span id="modalReasonCodeError" class="field-error"></span>
+            </label>
+            <label>
+                상세 메모
+                <textarea id="modalReasonDetail" rows="4" placeholder="필요 시 조치 사유를 추가로 남겨 주세요. OTHER 선택 시 필수입니다."></textarea>
+                <span id="modalReasonDetailError" class="field-error"></span>
+            </label>
+
+            <div class="modal-actions">
+                <button type="button" class="ghost-button" id="modalCancelButton">취소</button>
+                <button type="submit" class="primary-button" id="modalConfirmButton">실행</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script th:src="@{/js/admin/admin.js}"></script>
+<script th:src="@{/js/admin/admin-v2.js}"></script>
+</body>
+</html>

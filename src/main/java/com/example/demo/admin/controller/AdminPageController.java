@@ -1,0 +1,52 @@
+package com.example.demo.admin.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+@Controller
+@RequestMapping("/admin")
+public class AdminPageController {
+
+    @GetMapping
+    public String dashboard(Model model) {
+        return adminPage(model, "dashboard", "관리자 대시보드");
+    }
+
+    @GetMapping("/users")
+    public String users(Model model) {
+        return adminPage(model, "users", "사용자 관리");
+    }
+
+    @GetMapping("/posts")
+    public String posts(Model model) {
+        return adminPage(model, "posts", "게시글 관리");
+    }
+
+    @GetMapping("/comments")
+    public String comments(Model model) {
+        return adminPage(model, "comments", "댓글 관리");
+    }
+
+    @GetMapping("/categories")
+    public String categories() {
+        return "redirect:/admin";
+    }
+
+    @GetMapping("/reports")
+    public String reports(Model model) {
+        return adminPage(model, "reports", "신고 관리");
+    }
+
+    @GetMapping("/logs")
+    public String logs(Model model) {
+        return adminPage(model, "logs", "작업 로그");
+    }
+
+    private String adminPage(Model model, String activePage, String pageTitle) {
+        model.addAttribute("activePage", activePage);
+        model.addAttribute("pageTitle", pageTitle);
+        return "admin/index";
+    }
+}

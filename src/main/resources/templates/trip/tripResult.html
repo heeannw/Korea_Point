@@ -19,6 +19,7 @@
         <a href="/ko/trip/result" class="h-btn active">KR</a>
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}"></span>
+            <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
                 <button type="submit" class="h-btn h-btn-fill">Logout</button>
             </form>

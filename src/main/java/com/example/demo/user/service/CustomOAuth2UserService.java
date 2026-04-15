@@ -35,6 +35,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         User user = userService.processOAuth2User(provider, providerId, email, name, profileImage);
 
         // DB userId를 SecurityContext에 함께 보관하기 위해 CustomOAuth2User로 래핑
-        return new CustomOAuth2User(oAuth2User, user.getId());
+        return new CustomOAuth2User(oAuth2User, user.getId(), user.getRole());
     }
 }
