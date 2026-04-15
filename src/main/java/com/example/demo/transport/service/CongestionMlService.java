@@ -21,7 +21,7 @@ public class CongestionMlService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public int predict(int hour, int day, String station, int line, int stationCode, String direction) {
+    public int predict(int hour, int day, String station, int line) {
         try {
             String url = fastapiBaseUrl + "/predict";
 
@@ -29,9 +29,7 @@ public class CongestionMlService {
                     hour,
                     day,
                     station,
-                    line,
-                    stationCode,
-                    direction
+                    line
             );
 
             HttpHeaders headers = new HttpHeaders();

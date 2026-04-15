@@ -1,7 +1,5 @@
 package com.example.demo.transport.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.demo.transport.dto.TransportRouteDto;
 import com.example.demo.transport.entity.Route;
 import com.example.demo.transport.repository.RouteRepository;
@@ -26,7 +24,6 @@ import java.net.URLEncoder;
 @Controller
 public class TransportDetailController {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String SEOUL_API_KEY = "746f74584172696e37395277457a71";
 
     @Autowired
@@ -64,30 +61,31 @@ public class TransportDetailController {
 
         int hour = java.time.LocalTime.now().getHour();
         int day = (java.time.LocalDate.now().getDayOfWeek().getValue() >= 6) ? 0 : 1;
+        // 일부만 보여주는게 아니라 바꾼 핵심 부분만 정확히 찍어줌
+
         int line = 2;
-        String station = "\uAC15\uB0A8";
-        int stationCode = 0;
-        String direction = "\uB0B4\uC120";
+        String station = "강남";
 
         if (route != null && route.getSteps() != null) {
             for (var step : route.getSteps()) {
                 if ("subway".equals(step.getType()) && step.getLine() != null) {
+
                     if (step.getFromStation() != null && !step.getFromStation().isBlank()) {
                         station = step.getFromStation();
                     }
 
                     String lineName = step.getLine();
-                    String cleanLine = lineName.replaceAll("[^\\uAC00-\\uD7A30-9]", "");
+                    String cleanLine = lineName.replaceAll("[^가-힣0-9]", "");
                     String onlyNumber = cleanLine.replaceAll("[^0-9]", "");
 
                     if (!onlyNumber.isEmpty()) {
                         line = Integer.parseInt(onlyNumber);
                     } else {
-                        if (cleanLine.contains("\uACBD\uC758\uC911\uC559")) line = 10;
-                        else if (cleanLine.contains("\uBD84\uB2F9")) line = 11;
-                        else if (cleanLine.contains("\uACF5\uD56D")) line = 12;
-                        else if (cleanLine.contains("\uC2E0\uBD84\uB2F9")) line = 14;
-                        else if (cleanLine.contains("\uC6B0\uC774\uC2E0\uC124")) line = 15;
+                        if (cleanLine.contains("경의중앙")) line = 10;
+                        else if (cleanLine.contains("분당")) line = 11;
+                        else if (cleanLine.contains("공항")) line = 12;
+                        else if (cleanLine.contains("신분당")) line = 14;
+                        else if (cleanLine.contains("우이신설")) line = 15;
                         else line = 0;
                     }
 
@@ -101,19 +99,17 @@ public class TransportDetailController {
         }
 
         if (line == 0) {
-            model.addAttribute("congestionText", "en".equals(lang) ? "Moderate" : "\uBCF4\uD1B5");
+            model.addAttribute("congestionText", "en".equals(lang) ? "Moderate" : "보통");
             model.addAttribute(
                     "congestionMsg",
                     "en".equals(lang)
                             ? "No data available for this line"
-                            : "\uD63C\uC7A1\uB3C4 \uB370\uC774\uD130\uAC00 \uBD80\uC871\uD55C \uB178\uC120\uC785\uB2C8\uB2E4"
+                            : "혼잡도 데이터가 부족한 노선입니다"
             );
             return viewName;
         }
 
-        stationCode = resolveStationCode(station, line, stationCode);
-        direction = resolveDirection(station, line, direction);
-        int congestion = congestionMlService.predict(hour, day, station, line, stationCode, direction);
+        int congestion = congestionMlService.predict(hour, day, station, line);
 
         String congestionText;
         if ("en".equals(lang)) {
@@ -125,10 +121,10 @@ public class TransportDetailController {
             }
         } else {
             switch (congestion) {
-                case 0: congestionText = "\uC5EC\uC720"; break;
-                case 1: congestionText = "\uBCF4\uD1B5"; break;
-                case 2: congestionText = "\uD63C\uC7A1"; break;
-                default: congestionText = "\uBCF4\uD1B5"; break;
+                case 0: congestionText = "여유"; break;
+                case 1: congestionText = "보통"; break;
+                case 2: congestionText = "혼잡"; break;
+                default: congestionText = "보통"; break;
             }
         }
         model.addAttribute("congestionText", congestionText);
@@ -152,16 +148,16 @@ public class TransportDetailController {
         } else {
             switch (congestion) {
                 case 0:
-                    congestionMsg = "\uD604\uC7AC \uC2DC\uAC04\uB300\uB294 \uBE44\uAD50\uC801 \uCFFC\uC801\uD558\uAC8C \uC774\uB3D9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.";
+                    congestionMsg = "현재 시간대는 비교적 쾌적하게 이동할 수 있습니다.";
                     break;
                 case 1:
-                    congestionMsg = "\uC774\uC6A9\uAC1D\uC774 \uC810\uC810 \uB298\uC5B4\uB098\uB294 \uC2DC\uAC04\uB300\uC785\uB2C8\uB2E4.";
+                    congestionMsg = "이용객이 점점 늘어나는 시간대입니다.";
                     break;
                 case 2:
-                    congestionMsg = "\uD63C\uC7A1\uD55C \uC2DC\uAC04\uB300\uC785\uB2C8\uB2E4. \uB2E4\uB978 \uACBD\uB85C\uB3C4 \uACE0\uB824\uD574\uBCF4\uC138\uC694.";
+                    congestionMsg = "혼잡한 시간대입니다. 다른 경로도 고려해보세요.";
                     break;
                 default:
-                    congestionMsg = "\uD3C9\uADE0\uC801\uC778 \uD63C\uC7A1\uB3C4\uC785\uB2C8\uB2E4.";
+                    congestionMsg = "평균적인 혼잡도입니다.";
                     break;
             }
         }
@@ -184,7 +180,7 @@ public class TransportDetailController {
         }
 
         station = station.replaceAll("\\s+", "").trim();
-        if (station.endsWith("\uC5ED")) {
+        if (station.endsWith("역")) {
             station = station.substring(0, station.length() - 1);
         }
 
@@ -212,119 +208,6 @@ public class TransportDetailController {
         rd.close();
         conn.disconnect();
         return sb.toString();
-    }
-
-    private int resolveStationCode(String station, int line, int fallbackStationCode) {
-        try {
-            StringBuilder urlBuilder = new StringBuilder("http://openapi.seoul.go.kr:8088");
-            urlBuilder.append("/").append(SEOUL_API_KEY);
-            urlBuilder.append("/json/SearchInfoBySubwayNameService/1/10/");
-            urlBuilder.append(URLEncoder.encode(station, "UTF-8"));
-
-            URL url = new URL(urlBuilder.toString());
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-
-            BufferedReader rd = (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300)
-                    ? new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"))
-                    : new BufferedReader(new InputStreamReader(conn.getErrorStream(), "UTF-8"));
-
-            StringBuilder sb = new StringBuilder();
-            String lineText;
-            while ((lineText = rd.readLine()) != null) sb.append(lineText);
-            rd.close();
-            conn.disconnect();
-
-            JsonNode root = OBJECT_MAPPER.readTree(sb.toString());
-            JsonNode rows = root.path("SearchInfoBySubwayNameService").path("row");
-
-            if (!rows.isArray() || rows.isEmpty()) {
-                return fallbackStationCode;
-            }
-
-            for (JsonNode row : rows) {
-                String lineNum = row.path("LINE_NUM").asText("");
-                if (!lineNameMatches(lineNum, line)) {
-                    continue;
-                }
-
-                int stationCode = row.path("STATION_CD").asInt(0);
-                if (stationCode != 0) {
-                    return stationCode;
-                }
-            }
-
-            JsonNode first = rows.get(0);
-            return first != null ? first.path("STATION_CD").asInt(fallbackStationCode) : fallbackStationCode;
-        } catch (Exception e) {
-            System.out.println("station code lookup failed: " + e.getMessage());
-            return fallbackStationCode;
-        }
-    }
-
-    private String resolveDirection(String station, int line, String fallbackDirection) {
-        try {
-            String response = callApi(station);
-            JsonNode root = OBJECT_MAPPER.readTree(response);
-            JsonNode arrivals = root.path("realtimeArrivalList");
-
-            if (!arrivals.isArray() || arrivals.isEmpty()) {
-                return fallbackDirection;
-            }
-
-            String targetSubwayId = mapLineToSubwayId(line);
-
-            for (JsonNode arrival : arrivals) {
-                if (targetSubwayId != null && !targetSubwayId.equals(arrival.path("subwayId").asText())) {
-                    continue;
-                }
-
-                String updnLine = arrival.path("updnLine").asText("").trim();
-                if (!updnLine.isEmpty()) {
-                    return updnLine;
-                }
-            }
-
-            for (JsonNode arrival : arrivals) {
-                String updnLine = arrival.path("updnLine").asText("").trim();
-                if (!updnLine.isEmpty()) {
-                    return updnLine;
-                }
-            }
-        } catch (Exception e) {
-            System.out.println("direction lookup failed: " + e.getMessage());
-        }
-
-        return fallbackDirection;
-    }
-
-    private String mapLineToSubwayId(int line) {
-        return switch (line) {
-            case 1 -> "1001";
-            case 2 -> "1002";
-            case 3 -> "1003";
-            case 4 -> "1004";
-            case 5 -> "1005";
-            case 6 -> "1006";
-            case 7 -> "1007";
-            case 8 -> "1008";
-            case 9 -> "1009";
-            default -> null;
-        };
-    }
-
-    private boolean lineNameMatches(String lineName, int line) {
-        String normalized = lineName == null ? "" : lineName.replaceAll("\\s+", "");
-
-        return switch (line) {
-            case 1, 2, 3, 4, 5, 6, 7, 8, 9 -> normalized.contains(line + "\uD638\uC120");
-            case 10 -> normalized.contains("\uACBD\uC758\uC911\uC559");
-            case 11 -> normalized.contains("\uC218\uC778\uBD84\uB2F9") || normalized.contains("\uBD84\uB2F9");
-            case 12 -> normalized.contains("\uACF5\uD56D");
-            case 14 -> normalized.contains("\uC2E0\uBD84\uB2F9");
-            case 15 -> normalized.contains("\uC6B0\uC774\uC2E0\uC124");
-            default -> false;
-        };
     }
 
     @ResponseBody
