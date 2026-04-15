@@ -100,7 +100,7 @@ public class TourismService {
 
     private void loadCandidatesEN() throws Exception {
         InputStream is = getClass().getClassLoader()
-                .getResourceAsStream("tourdata/tourism/seoul_recommend_candidates.json");
+                .getResourceAsStream("tourdata/tourism/seoul_recommend_candidates_translated_EN.json");
         cachedCandidatesEN = mapper.readValue(is, new TypeReference<>() {});
     }
 
@@ -118,7 +118,7 @@ public class TourismService {
 
             // ✅ 원본 수정 방지 - 복사본 사용
             TourPlaceDto copy = copy(p);
-            double s = score(copy.getTitle(), copy.getType(),
+            double s = score(copy.getTitle(), copy.getGoogle_name(), copy.getType(),
                     copy.getRating() != null ? copy.getRating() : 0.0,
                     copy.getUser_ratings_total(), copy.getReviews());
             copy.setScore((float) s);
@@ -198,7 +198,7 @@ public class TourismService {
             if (!isFoodPlace && !isMarket) continue;
 
             TourPlaceDto copy = copy(p);
-            double s = score(copy.getTitle(), copy.getType(),
+            double s = score(copy.getTitle(), copy.getGoogle_name(), copy.getType(),
                     copy.getRating() != null ? copy.getRating() : 0.0,
                     copy.getUser_ratings_total(), copy.getReviews());
             copy.setScore((float) s);
@@ -213,11 +213,17 @@ public class TourismService {
     // ─────────────────────────────────────────────────────────
     // 점수 계산 (0~100)
     // ─────────────────────────────────────────────────────────
-    public double score(String title, String typeCode, double rating,
+    public double score(String title, String googleName, String typeCode, double rating,
                         int userRatingsTotal, List<TourReviewDto> reviews) {
         if (reviews == null) reviews = List.of();
 
-        double[] feat = extractFeatures(title, rating, userRatingsTotal, reviews);
+        // title로 룩업 안 되면 google_name으로 fallback (EN 대응)
+        String lookupTitle = title;
+        if (lookupWithPartial(foreignCoverage, title) == 0.0 && googleName != null) {
+            lookupTitle = googleName;
+        }
+
+        double[] feat = extractFeatures(lookupTitle, rating, userRatingsTotal, reviews);
         double bay    = bayesianRating(feat[0], userRatingsTotal);
         float bonus   = CATEGORY_BONUS.getOrDefault(typeCode, 0.0f);
 
@@ -319,8 +325,9 @@ public class TourismService {
         for (TourPlaceDto p : getCandidates(lang)) {
             TourPlaceDto copy = copy(p);
 
-            double s = score(copy.getTitle(),copy.getType(),copy.getRating() != null ? copy.getRating() : 0.0,
-                    copy.getUser_ratings_total(),copy.getReviews());
+            double s = score(copy.getTitle(), copy.getGoogle_name(), copy.getType(),
+                    copy.getRating() != null ? copy.getRating() : 0.0,
+                    copy.getUser_ratings_total(), copy.getReviews());
 
             copy.setScore((float) s);
             alist.add(copy);
