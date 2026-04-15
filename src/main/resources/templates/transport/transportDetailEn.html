@@ -293,47 +293,55 @@
 
   // Show current location marker
   let myLocation = null;
+  let liveMarker = null;
+  let liveOverlay = null;
 
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => { // Browser gets my location via GPS
+    navigator.geolocation.watchPosition(pos => {
+
       const myLat = pos.coords.latitude;
       const myLng = pos.coords.longitude;
 
-      myLocation = {lat:myLat, lng:myLng};
+      myLocation = { lat: myLat, lng: myLng };
 
-      // Star marker image
+      const latLng = new kakao.maps.LatLng(myLat, myLng);
+
       const myMarkerImg = new kakao.maps.MarkerImage(
               'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
               new kakao.maps.Size(24, 35)
       );
 
-      new kakao.maps.Marker({
-        map: map,
-        position: new kakao.maps.LatLng(myLat, myLng),
-        title: 'My Location',
-        image: myMarkerImg
-      });
+      if (!liveMarker) {
+        liveMarker = new kakao.maps.Marker({
+          map: map,
+          position: latLng,
+          image: myMarkerImg
+        });
+      } else {
+        liveMarker.setPosition(latLng);
+      }
 
-      // My location label
-      new kakao.maps.CustomOverlay({
-        map: map,
-        position: new kakao.maps.LatLng(myLat, myLng),
-        content: `<div style="
-                background:#3b9eff;color:white;
-                padding:3px 10px;border-radius:50px;
-                font-size:11px;font-weight:700;
-                white-space:nowrap;
-                box-shadow:0 2px 6px rgba(0,0,0,0.25);
-                margin-bottom:6px;
-                font-family:'DM Sans',sans-serif;">
-                📍 My Location
-            </div>`,
-        yAnchor: 2.5
-      }).setMap(map);
+      if (!liveOverlay) {
+        liveOverlay = new kakao.maps.CustomOverlay({
+          map: map,
+          position: latLng,
+          content: `<div style="
+            background:#3b9eff;color:white;
+            padding:3px 10px;border-radius:50px;
+            font-size:11px;font-weight:700;
+            white-space:nowrap;
+            box-shadow:0 2px 6px rgba(0,0,0,0.25);
+            margin-bottom:6px;
+            font-family:'DM Sans',sans-serif;">
+            📍 My Location
+        </div>`,
+          yAnchor: 2.5
+        });
+      } else {
+        liveOverlay.setPosition(latLng);
+      }
 
-    }, () => {
-      // Ignore if location permission denied
-    });
+    }, () => {});
   }
 
   //========== main ==========
@@ -372,7 +380,7 @@
                 };
 
                 // Priority 2: Current location (GPS)
-              } else if (startLabel === '현재위치') {
+              } else if (startLabel === 'My Location') {
 
                 if (!myLocation) {
                   await new Promise(resolve => {
@@ -391,6 +399,10 @@
               } else if (startLabel) {
 
                 originPt = await kakaoSearch(startLabel);
+              }
+
+              if (!originPt && myLocation) {
+                originPt = myLocation;
               }
 
               // Destination coordinates (Kakao search)
@@ -670,6 +682,7 @@
                 allCoords.push(destPt);
               }
 
+
               // Transfer station markers
               // Collect subway steps separately for transfer handling
               const subwaySteps = [];
@@ -745,22 +758,25 @@
                 }
 
                 const locationWatcher = setInterval(() => {
-                  navigator.geolocation.getCurrentPosition(pos => {
-                    const dist = getDistance(
-                            pos.coords.latitude, pos.coords.longitude,
-                            destPt.lat, destPt.lng
-                    );
-                    if (dist < 200 && !alertShown) {
-                      alertShown = true;
-                      alertOverlay.setMap(map);
-                      map.setCenter(new kakao.maps.LatLng(destPt.lat, destPt.lng));
-                      map.setLevel(3);
-                      setTimeout(() => alertOverlay.setMap(null), 30000);
-                    } else if (dist >= 200) {
-                      alertShown = false;
-                      alertOverlay.setMap(null);
-                    }
-                  });
+
+                  if (!myLocation) return;
+
+                  const dist = getDistance(
+                          myLocation.lat, myLocation.lng,
+                          destPt.lat, destPt.lng
+                  );
+
+                  if (dist < 200 && !alertShown) {
+                    alertShown = true;
+                    alertOverlay.setMap(map);
+                    map.setCenter(new kakao.maps.LatLng(destPt.lat, destPt.lng));
+                    map.setLevel(3);
+                    setTimeout(() => alertOverlay.setMap(null), 30000);
+                  } else if (dist >= 200) {
+                    alertShown = false;
+                    alertOverlay.setMap(null);
+                  }
+
                 }, 5000);
 
                 window.addEventListener('beforeunload', () => clearInterval(locationWatcher));
