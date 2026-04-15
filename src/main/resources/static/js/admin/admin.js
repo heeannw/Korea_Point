@@ -18,6 +18,9 @@ const REASON_LABELS = {
     ROLE_POLICY: "권한 정책",
     POINT_ADJUSTMENT: "포인트 조정",
     CATEGORY_POLICY: "카테고리 정책",
+    SUSPENSION_POLICY: "정지 정책",
+    REPORT_POLICY: "신고 처리 정책",
+    PURGE_POLICY: "영구 삭제 정책",
     OTHER: "기타"
 };
 
@@ -25,19 +28,29 @@ const TARGET_TYPE_LABELS = {
     USER: "사용자",
     POST: "게시글",
     COMMENT: "댓글",
-    CATEGORY: "카테고리"
+    CATEGORY: "카테고리",
+    REPORT: "신고"
 };
 
 const ACTION_TYPE_LABELS = {
     POST_HIDE: "게시글 숨김",
     POST_RESTORE: "게시글 복구",
+    POST_PURGE: "게시글 영구 삭제",
     COMMENT_HIDE: "댓글 숨김",
     COMMENT_RESTORE: "댓글 복구",
+    COMMENT_PURGE: "댓글 영구 삭제",
     USER_ROLE_CHANGE: "사용자 권한 변경",
     USER_POINT_ADJUST: "사용자 포인트 조정",
+    USER_SUSPEND: "사용자 정지",
+    USER_ACTIVATE: "사용자 활성화",
     CATEGORY_CREATE: "카테고리 생성",
     CATEGORY_UPDATE: "카테고리 수정",
-    CATEGORY_REORDER: "카테고리 순서 변경"
+    CATEGORY_REORDER: "카테고리 순서 변경",
+    CATEGORY_ACTIVATE: "카테고리 활성화",
+    CATEGORY_DEACTIVATE: "카테고리 비활성화",
+    REPORT_REVIEWING: "신고 검토 중",
+    REPORT_RESOLVE: "신고 해결",
+    REPORT_REJECT: "신고 반려"
 };
 
 const ACCOUNT_STATUS_LABELS = {

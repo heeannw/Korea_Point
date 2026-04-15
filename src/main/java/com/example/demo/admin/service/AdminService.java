@@ -245,7 +245,7 @@ public class AdminService {
                 .id(postId)
                 .status("purged")
                 .deletedAt(post.getDeletedAt())
-                .purgeEligible(true)
+                .purgeEligible(false)
                 .latestLogId(actionLog.getId())
                 .build();
     }
@@ -371,7 +371,7 @@ public class AdminService {
                 .id(commentId)
                 .status("purged")
                 .deletedAt(root.getDeletedAt())
-                .purgeEligible(true)
+                .purgeEligible(false)
                 .latestLogId(actionLog.getId())
                 .build();
     }
@@ -659,7 +659,7 @@ public class AdminService {
         return reports.stream().map(report -> AdminDto.ReportItem.builder()
                 .id(report.getId())
                 .reporterUserId(report.getReporterUserId())
-                .reporterUserName(userNames.getOrDefault(report.getReporterUserId(), "?????#" + report.getReporterUserId()))
+                .reporterUserName(userNames.getOrDefault(report.getReporterUserId(), "알 수 없음 #" + report.getReporterUserId()))
                 .targetType(report.getTargetType())
                 .targetId(report.getTargetId())
                 .targetSummary(targetSummaries.getOrDefault(reportKey(report.getTargetType(), report.getTargetId()),
@@ -729,8 +729,8 @@ public class AdminService {
                 .id(post.getId())
                 .categoryId(post.getCategory() != null ? post.getCategory().getId() : null)
                 .categoryName(post.getCategory() != null ? post.getCategory().getName() : null)
-                .authorId(post.getUser().getId())
-                .authorName(post.getUser().getName())
+                .authorId(post.getUser() != null ? post.getUser().getId() : null)
+                .authorName(post.getUser() != null ? post.getUser().getName() : "(삭제된 사용자)")
                 .title(post.getTitle())
                 .viewCount(post.getViewCount())
                 .commentCount(post.getCommentCount())
@@ -753,10 +753,10 @@ public class AdminService {
     private AdminDto.CommentItem toCommentItem(Comment comment) {
         return AdminDto.CommentItem.builder()
                 .id(comment.getId())
-                .postId(comment.getPost().getId())
-                .postTitle(comment.getPost().getTitle())
-                .authorId(comment.getUser().getId())
-                .authorName(comment.getUser().getName())
+                .postId(comment.getPost() != null ? comment.getPost().getId() : null)
+                .postTitle(comment.getPost() != null ? comment.getPost().getTitle() : "(삭제된 게시글)")
+                .authorId(comment.getUser() != null ? comment.getUser().getId() : null)
+                .authorName(comment.getUser() != null ? comment.getUser().getName() : "(삭제된 사용자)")
                 .contentPreview(buildPreview(comment.getContent()))
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
                 .replyToId(comment.getReplyToId())
@@ -824,8 +824,8 @@ public class AdminService {
         Map<String, Object> snapshot = new LinkedHashMap<>();
         snapshot.put("id", post.getId());
         snapshot.put("title", post.getTitle());
-        snapshot.put("authorId", post.getUser().getId());
-        snapshot.put("authorName", post.getUser().getName());
+        snapshot.put("authorId", post.getUser() != null ? post.getUser().getId() : null);
+        snapshot.put("authorName", post.getUser() != null ? post.getUser().getName() : "(삭제된 사용자)");
         snapshot.put("categoryName", post.getCategory() != null ? post.getCategory().getName() : null);
         snapshot.put("commentCount", post.getCommentCount());
         snapshot.put("status", post.getDeletedAt() == null ? "active" : "deleted");
@@ -837,10 +837,10 @@ public class AdminService {
     private Map<String, Object> snapshotComment(Comment comment) {
         Map<String, Object> snapshot = new LinkedHashMap<>();
         snapshot.put("id", comment.getId());
-        snapshot.put("postId", comment.getPost().getId());
-        snapshot.put("postTitle", comment.getPost().getTitle());
-        snapshot.put("authorId", comment.getUser().getId());
-        snapshot.put("authorName", comment.getUser().getName());
+        snapshot.put("postId", comment.getPost() != null ? comment.getPost().getId() : null);
+        snapshot.put("postTitle", comment.getPost() != null ? comment.getPost().getTitle() : "(삭제된 게시글)");
+        snapshot.put("authorId", comment.getUser() != null ? comment.getUser().getId() : null);
+        snapshot.put("authorName", comment.getUser() != null ? comment.getUser().getName() : "(삭제된 사용자)");
         snapshot.put("contentPreview", buildPreview(comment.getContent()));
         snapshot.put("parentId", comment.getParent() != null ? comment.getParent().getId() : null);
         snapshot.put("replyToId", comment.getReplyToId());
@@ -973,7 +973,7 @@ public class AdminService {
     }
 
     private String defaultReportTargetSummary(ReportTargetType targetType, Long targetId) {
-        String label = targetType == ReportTargetType.POST ? "?롪퍓???룸Ь?" : "?癰?";
+        String label = targetType == ReportTargetType.POST ? "게시글" : "댓글";
         return label + " #" + targetId;
     }
 
