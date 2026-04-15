@@ -180,8 +180,14 @@
 <header>
   <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
   <div class="header-right">
-    <button class="h-btn active" onclick="switchLang('EN')">EN</button>
-    <button class="h-btn" onclick="switchLang('KO')">KR</button>
+    <th:block th:if="${lang == 'en'}">
+      <button class="h-btn"        onclick="switchLang('ko')">KR</button>
+      <button class="h-btn active">EN</button>
+    </th:block>
+    <th:block th:unless="${lang == 'en'}">
+      <button class="h-btn active">KR</button>
+      <button class="h-btn"        onclick="switchLang('en')">EN</button>
+    </th:block>
 
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}"></span>
