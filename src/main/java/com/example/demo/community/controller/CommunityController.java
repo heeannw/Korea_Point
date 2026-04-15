@@ -1,8 +1,8 @@
 package com.example.demo.community.controller;
 
 import com.example.demo.community.dto.PostDto;
-import com.example.demo.community.service.CommunityService;
 import com.example.demo.community.service.CommentService;
+import com.example.demo.community.service.CommunityService;
 import com.example.demo.community.service.PostService;
 import com.example.demo.user.service.UserService;
 import com.example.demo.user.util.SecurityUtil;
@@ -13,7 +13,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -26,7 +31,6 @@ public class CommunityController {
     private final CommentService commentService;
     private final UserService userService;
 
-    // 게시글 목록 (카테고리 필터, 검색어, 페이지, 정렬 지원)
     @GetMapping("/post-list")
     public String getPosts(@RequestParam(required = false) Long categoryId,
                            @RequestParam(required = false) String keyword,
@@ -39,11 +43,11 @@ public class CommunityController {
         var pageable = PageRequest.of(page, 10, sortOrder);
         var data = communityService.getCommunityPageData(categoryId, keyword, pageable);
 
-        int totalPages  = data.getPosts().getTotalPages();
+        int totalPages = data.getPosts().getTotalPages();
         int currentPage = data.getPosts().getNumber();
-        int startPage   = Math.max(0, currentPage - 4);
-        int endPage     = Math.min(startPage + 9, totalPages - 1);
-        startPage       = Math.max(0, endPage - 9);  // endPage가 잘린 경우 startPage 재조정
+        int startPage = Math.max(0, currentPage - 4);
+        int endPage = Math.min(startPage + 9, totalPages - 1);
+        startPage = Math.max(0, endPage - 9);
 
         model.addAttribute("data", data);
         model.addAttribute("startPage", startPage);
@@ -53,10 +57,10 @@ public class CommunityController {
         model.addAttribute("sort", sort);
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
+        model.addAttribute("communitySuspended", isCommunitySuspended());
         return "community/post-list";
     }
 
-    // 게시글 상세
     @GetMapping("/post/{id}")
     public String getPostDetail(@PathVariable Long id, Model model, HttpSession session) {
         model.addAttribute("post", postService.getPostDetail(id, session));
@@ -64,21 +68,24 @@ public class CommunityController {
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         model.addAttribute("currentUserId", SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserId() : null);
+        model.addAttribute("communitySuspended", isCommunitySuspended());
         return "community/post-detail";
     }
 
-    // 게시글 작성 폼
     @GetMapping("/post/write")
-    public String writeForm(Model model) {
+    public String writeForm(Model model, RedirectAttributes redirectAttributes) {
+        if (isCommunitySuspended()) {
+            redirectAttributes.addFlashAttribute("communityError", "커뮤니티 기능이 정지된 계정입니다.");
+            return "redirect:/community/post-list";
+        }
+
         model.addAttribute("categories", communityService.getAllCategories());
-        model.addAttribute("currentUserPoint",
-                userService.findById(SecurityUtil.getCurrentUserId()).getPoint());
+        model.addAttribute("currentUserPoint", userService.findById(SecurityUtil.getCurrentUserId()).getPoint());
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         return "community/post-write";
     }
 
-    // 게시글 저장
     @PostMapping("/post/write")
     public String createPost(@Valid @ModelAttribute PostDto.PostCreateRequest req,
                              RedirectAttributes redirectAttributes) {
@@ -86,20 +93,20 @@ public class CommunityController {
         try {
             Long postId = postService.createPost(req, userId);
             return "redirect:/community/post/" + postId;
-        } catch (IllegalStateException e) {
-            redirectAttributes.addFlashAttribute("pointError", e.getMessage());
-            return "redirect:/community/post/write";
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("pointError", e.getMessage());
+        } catch (IllegalStateException | IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("pointError", exception.getMessage());
             return "redirect:/community/post/write";
         }
     }
 
-    // 게시글 삭제
     @PostMapping("/post/{id}/delete")
     public String deletePost(@PathVariable Long id) {
         Long userId = SecurityUtil.getCurrentUserId();
         postService.deletePost(id, userId);
         return "redirect:/community/post-list";
+    }
+
+    private boolean isCommunitySuspended() {
+        return SecurityUtil.isLoggedIn() && userService.isCommunitySuspended(SecurityUtil.getCurrentUserId());
     }
 }

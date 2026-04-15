@@ -182,11 +182,12 @@
     <button class="h-btn active" onclick="switchLang('EN')">EN</button>
     <button class="h-btn" onclick="switchLang('KO')">KR</button>
 
-    <th:block th:if="${isLoggedIn}">
-      <span class="h-btn" th:text="${currentUserName}"></span>
-      <form th:action="@{/logout}" method="post">
-        <button type="submit" class="h-btn h-btn-fill">Logout</button>
-      </form>
+        <th:block th:if="${isLoggedIn}">
+            <span class="h-btn" th:text="${currentUserName}"></span>
+            <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="h-btn h-btn-fill">Logout</button>
+            </form>
     </th:block>
     <th:block th:unless="${isLoggedIn}">
       <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>

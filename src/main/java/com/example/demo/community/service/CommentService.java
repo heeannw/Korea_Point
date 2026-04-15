@@ -5,6 +5,7 @@ import com.example.demo.community.entity.Comment;
 import com.example.demo.community.entity.Post;
 import com.example.demo.community.repository.CommentRepository;
 import com.example.demo.community.repository.PostRepository;
+import com.example.demo.user.entity.AccountStatus;
 import com.example.demo.user.entity.User;
 import com.example.demo.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,23 +29,21 @@ public class CommentService {
     private final UserRepository userRepository;
     private final TranslationService translationService;
 
-    // 게시글의 댓글 + 대댓글 트리 조회
     @Transactional(readOnly = true)
     public List<CommentDto> getCommentsByPost(Long postId) {
-        return commentRepository
-                .findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByCreatedAtAsc(postId)
+        return commentRepository.findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByCreatedAtAsc(postId)
                 .stream()
                 .map(this::toDto)
                 .toList();
     }
 
-    // 댓글 또는 대댓글 작성
     @Transactional
     public Long addComment(Long postId, Long userId, CommentDto.CommentCreateRequest req) {
         Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        validateCommunityAccess(user);
 
         Comment parent = null;
         if (req.getParentId() != null) {
@@ -63,11 +62,9 @@ public class CommentService {
         Comment saved = commentRepository.save(comment);
         translationService.translateCommentAsync(saved.getId(), req.getContent());
         postRepository.updateCommentCount(postId, 1);
-
         return comment.getId();
     }
 
-    // 댓글 수정
     @Transactional
     public void updateComment(Long commentId, Long userId, String content) {
         Comment comment = commentRepository.findById(commentId)
@@ -75,11 +72,11 @@ public class CommentService {
         if (!comment.getUser().getId().equals(userId)) {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
+        validateCommunityAccess(comment.getUser());
         comment.setContent(content);
         translationService.translateCommentAsync(commentId, content);
     }
 
-    // 댓글 소프트 딜리트
     @Transactional
     public void deleteComment(Long commentId, Long userId) {
         Comment comment = commentRepository.findById(commentId)
@@ -87,69 +84,67 @@ public class CommentService {
         if (!comment.getUser().getId().equals(userId)) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
+        validateCommunityAccess(comment.getUser());
+
         comment.setDeletedAt(LocalDateTime.now());
 
         if (comment.getParent() == null) {
-            // 최상위 댓글: 살아있는 대댓글도 모두 소프트 딜리트
             long childCount = comment.getChildren().stream()
-                    .filter(c -> c.getDeletedAt() == null)
+                    .filter(child -> child.getDeletedAt() == null)
                     .count();
             comment.getChildren().stream()
-                    .filter(c -> c.getDeletedAt() == null)
-                    .forEach(c -> c.setDeletedAt(LocalDateTime.now()));
-            postRepository.updateCommentCount(comment.getPost().getId(), -(int)(1 + childCount));
-        } else {
-            // 대댓글: replyToId 체인을 따라 하위 대댓글도 cascade 소프트 딜리트
-            List<Comment> siblings = comment.getParent().getChildren();
-            int cascadeCount = cascadeSoftDeleteByReplyToId(commentId, siblings);
-            postRepository.updateCommentCount(comment.getPost().getId(), -(1 + cascadeCount));
+                    .filter(child -> child.getDeletedAt() == null)
+                    .forEach(child -> child.setDeletedAt(LocalDateTime.now()));
+            postRepository.updateCommentCount(comment.getPost().getId(), -(int) (1 + childCount));
+            return;
         }
+
+        List<Comment> siblings = comment.getParent().getChildren();
+        int cascadeCount = cascadeSoftDeleteByReplyToId(commentId, siblings);
+        postRepository.updateCommentCount(comment.getPost().getId(), -(1 + cascadeCount));
     }
 
-    // replyToId 기준으로 하위 대댓글을 재귀적으로 소프트 딜리트, 삭제된 수 반환
     private int cascadeSoftDeleteByReplyToId(Long deletedId, List<Comment> pool) {
         return cascadeSoftDeleteByReplyToId(deletedId, pool, 0);
     }
 
     private int cascadeSoftDeleteByReplyToId(Long deletedId, List<Comment> pool, int depth) {
-        if (depth > 100) return 0;
+        if (depth > 100) {
+            return 0;
+        }
         int count = 0;
-        for (Comment c : pool) {
-            if (c.getDeletedAt() == null && deletedId.equals(c.getReplyToId())) {
-                c.setDeletedAt(LocalDateTime.now());
+        for (Comment comment : pool) {
+            if (comment.getDeletedAt() == null && deletedId.equals(comment.getReplyToId())) {
+                comment.setDeletedAt(LocalDateTime.now());
                 count++;
-                count += cascadeSoftDeleteByReplyToId(c.getId(), pool, depth + 1);
+                count += cascadeSoftDeleteByReplyToId(comment.getId(), pool, depth + 1);
             }
         }
         return count;
     }
 
-    // Comment → CommentDto 변환 (대댓글 DFS 정렬 포함)
     private CommentDto toDto(Comment comment) {
         List<Comment> childList = comment.getChildren().stream()
-                .filter(c -> c.getDeletedAt() == null)
+                .filter(child -> child.getDeletedAt() == null)
                 .collect(Collectors.toList());
 
-        // id → Comment 맵
         Map<Long, Comment> idMap = childList.stream()
-                .collect(Collectors.toMap(Comment::getId, c -> c));
+                .collect(Collectors.toMap(Comment::getId, value -> value));
 
-        // adjacency: replyToId → 그 댓글에 달린 대댓글들 (시간순)
         Map<Long, List<Comment>> adjacency = new HashMap<>();
         List<Comment> roots = new ArrayList<>();
 
-        for (Comment c : childList) {
-            Long rId = c.getReplyToId();
-            if (rId == null || !idMap.containsKey(rId)) {
-                roots.add(c);
+        for (Comment child : childList) {
+            Long replyToId = child.getReplyToId();
+            if (replyToId == null || !idMap.containsKey(replyToId)) {
+                roots.add(child);
             } else {
-                adjacency.computeIfAbsent(rId, k -> new ArrayList<>()).add(c);
+                adjacency.computeIfAbsent(replyToId, key -> new ArrayList<>()).add(child);
             }
         }
         roots.sort(Comparator.comparing(Comment::getCreatedAt));
         adjacency.values().forEach(list -> list.sort(Comparator.comparing(Comment::getCreatedAt)));
 
-        // DFS 순서로 평탄화 — 각 답글 바로 뒤에 그 답글의 하위 답글이 위치
         List<CommentDto> orderedChildren = new ArrayList<>();
         for (Comment root : roots) {
             dfsAddReply(root, orderedChildren, adjacency, 1);
@@ -176,57 +171,64 @@ public class CommentService {
                 .build();
     }
 
-    // DFS — 대댓글 하나를 result에 추가하고, 그 답글들도 재귀적으로 추가
-    private void dfsAddReply(Comment c, List<CommentDto> result,
-                              Map<Long, List<Comment>> adjacency, int depth) {
-        boolean deleted = c.isDeleted();
-        Long parentId = c.getParent() != null ? c.getParent().getId() : null;
+    private void dfsAddReply(Comment comment, List<CommentDto> result, Map<Long, List<Comment>> adjacency, int depth) {
+        boolean deleted = comment.isDeleted();
+        Long parentId = comment.getParent() != null ? comment.getParent().getId() : null;
 
-        String rawContent = deleted ? null : c.getContent();
+        String rawContent = deleted ? null : comment.getContent();
         String mentionPart = null;
         String content = rawContent;
         if (rawContent != null && rawContent.startsWith("@")) {
-            int spaceIdx = rawContent.indexOf(' ');
-            if (spaceIdx > 0) {
-                mentionPart = rawContent.substring(0, spaceIdx);
-                content = rawContent.substring(spaceIdx + 1);
+            int spaceIndex = rawContent.indexOf(' ');
+            if (spaceIndex > 0) {
+                mentionPart = rawContent.substring(0, spaceIndex);
+                content = rawContent.substring(spaceIndex + 1);
             }
         }
-        String rawContentEn = deleted ? null : c.getContentEn();
+
+        String rawContentEn = deleted ? null : comment.getContentEn();
         String contentEn = rawContentEn;
         if (rawContentEn != null && rawContentEn.startsWith("@")) {
-            int spaceIdxEn = rawContentEn.indexOf(' ');
-            if (spaceIdxEn > 0) contentEn = rawContentEn.substring(spaceIdxEn + 1);
+            int spaceIndex = rawContentEn.indexOf(' ');
+            if (spaceIndex > 0) {
+                contentEn = rawContentEn.substring(spaceIndex + 1);
+            }
         }
-        String rawContentKo = deleted ? null : c.getContentKo();
+
+        String rawContentKo = deleted ? null : comment.getContentKo();
         String contentKo = rawContentKo;
         if (rawContentKo != null && rawContentKo.startsWith("@")) {
-            int spaceIdxKo = rawContentKo.indexOf(' ');
-            if (spaceIdxKo > 0) contentKo = rawContentKo.substring(spaceIdxKo + 1);
+            int spaceIndex = rawContentKo.indexOf(' ');
+            if (spaceIndex > 0) {
+                contentKo = rawContentKo.substring(spaceIndex + 1);
+            }
         }
-        String authorName = deleted ? null : c.getUser().getName();
-        String authorProfileImage = deleted ? null : c.getUser().getProfileImage();
 
         result.add(CommentDto.builder()
-                .id(c.getId())
-                .userId(c.getUser().getId())
+                .id(comment.getId())
+                .userId(comment.getUser().getId())
                 .parentId(parentId)
-                .replyToId(c.getReplyToId())
+                .replyToId(comment.getReplyToId())
                 .depth(Math.min(depth, 4))
                 .mentionPart(mentionPart)
                 .content(content)
                 .contentEn(contentEn)
                 .contentKo(contentKo)
-                .authorName(authorName)
-                .authorProfileImage(authorProfileImage)
+                .authorName(deleted ? null : comment.getUser().getName())
+                .authorProfileImage(deleted ? null : comment.getUser().getProfileImage())
                 .deleted(deleted)
-                .createdAt(c.getCreatedAt())
+                .createdAt(comment.getCreatedAt())
                 .children(List.of())
                 .build());
 
-        List<Comment> subtree = adjacency.getOrDefault(c.getId(), List.of());
-        for (Comment child : subtree) {
+        for (Comment child : adjacency.getOrDefault(comment.getId(), List.of())) {
             dfsAddReply(child, result, adjacency, depth + 1);
+        }
+    }
+
+    private void validateCommunityAccess(User user) {
+        if (user.getAccountStatus() == AccountStatus.SUSPENDED) {
+            throw new IllegalStateException("커뮤니티 기능이 정지된 계정입니다.");
         }
     }
 }
