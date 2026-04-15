@@ -180,24 +180,9 @@
 <header>
   <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
   <div class="header-right">
-    <!-- 언어 버튼: th:if로 분기 (th:onclick SpEL 이스케이프 오류 방지) -->
-    <th:block th:if="${lang == 'en'}">
-      <button class="h-btn"        onclick="switchLang('KO')">KR</button>
-      <button class="h-btn active">EN</button>
-    </th:block>
-    <th:block th:unless="${lang == 'en'}">
-      <button class="h-btn active">KR</button>
-      <button class="h-btn"        onclick="switchLang('EN')">EN</button>
-    </th:block>
-    <th:block th:if="${isLoggedIn}">
-      <span class="h-btn" th:text="${currentUserName}"></span>
-      <form th:action="@{/logout}" method="post">
-        <button type="submit" class="h-btn h-btn-fill">Logout</button>
-      </form>
-    </th:block>
-    <th:block th:unless="${isLoggedIn}">
-      <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
-    </th:block>
+    <button class="h-btn active" onclick="switchLang('EN')">EN</button>
+    <button class="h-btn" onclick="switchLang('KO')">KR</button>
+    <button class="h-btn h-btn-fill">Login</button>
   </div>
 </header>
 
@@ -216,7 +201,7 @@
             <div th:if="${recentKeywords != null and !#lists.isEmpty(recentKeywords)}">
               <div class="recent-header">
                 <span>Recent</span>
-                <button type="button" onclick="clearAllKeywords()">Clear all</button>
+                <button type="button" onmousedown="clearAllKeywords()">Clear all</button>
               </div>
               <div th:each="kw : ${recentKeywords}">
                 <div class="recent-item">
@@ -224,7 +209,7 @@
                     <span>🕐</span><span th:text="${kw}"></span>
                   </div>
                   <button class="recent-del" type="button"
-                          th:data-kw="${kw}" onclick="deleteKeyword(this.dataset.kw, event)">✕</button>
+                          th:data-kw="${kw}" onmousedown="deleteKeyword(this.dataset.kw, event)">✕</button>
                 </div>
               </div>
             </div>
@@ -538,21 +523,7 @@
       <div class="dp-info"><div class="dp-info-label">Distance</div><div class="dp-info-val">${distStr(p.distance)} away</div></div>
       <div class="dp-info"><div class="dp-info-label">Score</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
       <div class="dp-info"><div class="dp-info-label">Category</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
-    const _keyword = (p.title && p.title.length < 20) ? p.title : p.google_name;
-    const _visitUrl = `https://english.visitkorea.or.kr/totalSearch/search.do?kwd=${encodeURIComponent(p.google_name)}&linkSrchFlag=Y`;
-    document.getElementById('dpDesc').innerHTML =
-            `<p style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;">
-         Get more details from Korea Tourism Organization.
-       </p>
-       <a href="${_visitUrl}" target="_blank" rel="noopener"
-          style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;
-                 border-radius:50px;border:1.5px solid var(--blue);color:var(--blue);
-                 font-size:13px;font-weight:700;text-decoration:none;background:#fff;
-                 transition:all .2s;margin-bottom:8px;"
-          onmouseover="this.style.background='var(--blue)';this.style.color='#fff'"
-          onmouseout="this.style.background='#fff';this.style.color='var(--blue)'">
-         🏛️ Official Tourism Info
-       </a>`;
+    document.getElementById('dpDesc').textContent = '';
 
     const reviews = p.reviews ?? [];
     const avg = p.rating ?? 0;
@@ -651,10 +622,10 @@
     else showRecent();
   }
   function onSearchBlur() {
-    setTimeout(() => {
+    hideTimer = setTimeout(() => {
       document.getElementById('suggestDropdown').classList.remove('show');
       document.getElementById('recentDropdown').classList.remove('show');
-    }, 300);
+    }, 500);
   }
   function onSearchInput(val) {
     if (val.trim().length === 0) {
@@ -713,12 +684,28 @@
     });
   }
   function deleteKeyword(kw, event) {
+    event.preventDefault();
     event.stopPropagation();
+    clearTimeout(hideTimer);
     csrfPost('/tour/search/history/delete', 'keyword=' + encodeURIComponent(kw))
-            .then(() => location.reload());
+            .then(() => {
+              const btn = event.target;
+              const item = btn.closest('.recent-item');
+              if (item) item.remove();
+              // 남은 항목 없으면 empty 표시
+              const dropdown = document.getElementById('recentDropdown');
+              if (dropdown.querySelectorAll('.recent-item').length === 0) {
+                dropdown.innerHTML = '<div class="recent-empty">No recent searches</div>';
+              }
+            });
   }
   function clearAllKeywords() {
-    csrfPost('/tour/search/history/clear', '').then(() => location.reload());
+    clearTimeout(hideTimer);
+    csrfPost('/tour/search/history/clear', '')
+            .then(() => {
+              const dropdown = document.getElementById('recentDropdown');
+              dropdown.innerHTML = '<div class="recent-empty">No recent searches</div>';
+            });
   }
 
   render();
