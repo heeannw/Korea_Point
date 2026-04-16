@@ -733,7 +733,8 @@
     <div class="relative bg-white rounded-2xl shadow-xl w-[360px] max-h-[90vh] flex flex-col overflow-hidden">
         <!-- 헤더 -->
         <div class="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
-            <span class="text-[17px] text-gray-900" style="font-weight:700;">신고</span>
+            <span class="text-[17px] text-gray-900" style="font-weight:700;"
+                  th:text="${#locale.language == 'en'} ? 'Report' : '신고'">신고</span>
             <button onclick="closeReportModal()" class="p-1 rounded-full hover:bg-gray-100 cursor-pointer text-gray-500">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -742,38 +743,67 @@
         </div>
         <!-- 본문 -->
         <div class="overflow-y-auto px-6 py-4 flex flex-col gap-1">
-            <p class="text-[15px] text-gray-900 mb-1" style="font-weight:600;">어떤 문제인가요?</p>
-            <p class="text-[13px] text-gray-500 mb-4">KoreaPoint에서 모든 커뮤니티 가이드에 대해 확인하므로 완벽히 들어맞지 않아도 괜찮습니다.</p>
+            <p class="text-[15px] text-gray-900 mb-1" style="font-weight:600;"
+               th:text="${#locale.language == 'en'} ? 'What is the issue?' : '어떤 문제인가요?'">어떤 문제인가요?</p>
+            <p class="text-[13px] text-gray-500 mb-4"
+               th:text="${#locale.language == 'en'} ? 'KoreaPoint reviews all reports. It does not need to be a perfect match.' : 'KoreaPoint에서 모든 커뮤니티 가이드에 대해 확인하므로 완벽히 들어맞지 않아도 괜찮습니다.'">KoreaPoint에서 모든 커뮤니티 가이드에 대해 확인하므로 완벽히 들어맞지 않아도 괜찮습니다.</p>
             <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
                 <input type="radio" name="reportReason" value="SPAM" class="w-4 h-4 accent-gray-800"/>
-                <span class="text-[14px] text-gray-800">성적인 콘텐츠</span>
+                <span class="text-[14px] text-gray-800"
+                      th:text="${#locale.language == 'en'} ? 'Sexual content' : '성적인 콘텐츠'">성적인 콘텐츠</span>
             </label>
             <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
                 <input type="radio" name="reportReason" value="ABUSE" class="w-4 h-4 accent-gray-800"/>
-                <span class="text-[14px] text-gray-800">폭력적 또는 혐오스러운 콘텐츠</span>
+                <span class="text-[14px] text-gray-800"
+                      th:text="${#locale.language == 'en'} ? 'Violent or repulsive content' : '폭력적 또는 혐오스러운 콘텐츠'">폭력적 또는 혐오스러운 콘텐츠</span>
             </label>
             <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
                 <input type="radio" name="reportReason" value="HATE" class="w-4 h-4 accent-gray-800"/>
-                <span class="text-[14px] text-gray-800">증오 또는 악의적인 콘텐츠</span>
+                <span class="text-[14px] text-gray-800"
+                      th:text="${#locale.language == 'en'} ? 'Hateful or abusive content' : '증오 또는 악의적인 콘텐츠'">증오 또는 악의적인 콘텐츠</span>
             </label>
             <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
                 <input type="radio" name="reportReason" value="HARASSMENT" class="w-4 h-4 accent-gray-800"/>
-                <span class="text-[14px] text-gray-800">괴롭힘 또는 폭력</span>
+                <span class="text-[14px] text-gray-800"
+                      th:text="${#locale.language == 'en'} ? 'Harassment or bullying' : '괴롭힘 또는 폭력'">괴롭힘 또는 폭력</span>
             </label>
             <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
                 <input type="radio" name="reportReason" value="HARMFUL" class="w-4 h-4 accent-gray-800"/>
-                <span class="text-[14px] text-gray-800">유해하거나 위험한 행위</span>
+                <span class="text-[14px] text-gray-800"
+                      th:text="${#locale.language == 'en'} ? 'Harmful or dangerous acts' : '유해하거나 위험한 행위'">유해하거나 위험한 행위</span>
             </label>
             <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
                 <input type="radio" name="reportReason" value="MISINFORMATION" class="w-4 h-4 accent-gray-800"/>
-                <span class="text-[14px] text-gray-800">자살, 자해 또는 섭식 장애</span>
+                <span class="text-[14px] text-gray-800"
+                      th:text="${#locale.language == 'en'} ? 'Suicide, self-harm or eating disorders' : '자살, 자해 또는 섭식 장애'">자살, 자해 또는 섭식 장애</span>
+            </label>
+            <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
+                <input type="radio" name="reportReason" value="WRONG_INFO" class="w-4 h-4 accent-gray-800"/>
+                <span class="text-[14px] text-gray-800"
+                      th:text="${#locale.language == 'en'} ? 'Misinformation' : '잘못된 정보'">잘못된 정보</span>
+            </label>
+            <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
+                <input type="radio" name="reportReason" value="CHILD_ABUSE" class="w-4 h-4 accent-gray-800"/>
+                <span class="text-[14px] text-gray-800"
+                      th:text="${#locale.language == 'en'} ? 'Child abuse' : '아동 학대'">아동 학대</span>
+            </label>
+            <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
+                <input type="radio" name="reportReason" value="TERRORISM" class="w-4 h-4 accent-gray-800"/>
+                <span class="text-[14px] text-gray-800"
+                      th:text="${#locale.language == 'en'} ? 'Promotes terrorism' : '테러 조장'">테러 조장</span>
+            </label>
+            <label class="flex items-center gap-3 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg px-1">
+                <input type="radio" name="reportReason" value="MISLEADING" class="w-4 h-4 accent-gray-800"/>
+                <span class="text-[14px] text-gray-800"
+                      th:text="${#locale.language == 'en'} ? 'Spam or misleading' : '스팸 또는 혼동을 야기하는 콘텐츠'">스팸 또는 혼동을 야기하는 콘텐츠</span>
             </label>
         </div>
         <!-- 하단 버튼 -->
         <div class="px-6 py-4 border-t border-gray-100">
             <button id="reportSubmitBtn" onclick="submitReport()" disabled
                     class="w-full py-3 text-[14px] text-white bg-gray-800 rounded-xl opacity-40 cursor-not-allowed"
-                    style="font-weight:600;">신고</button>
+                    style="font-weight:600;"
+                    th:text="${#locale.language == 'en'} ? 'Report' : '신고'">신고</button>
         </div>
     </div>
 </div>

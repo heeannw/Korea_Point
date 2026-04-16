@@ -654,7 +654,10 @@ public class AdminService {
         reports.stream().map(ContentReport::getReviewedByAdminId).filter(Objects::nonNull).forEach(userIds::add);
 
         Map<Long, String> userNames = resolveUserNames(userIds);
-        Map<String, String> targetSummaries = resolveReportTargetSummaries(reports);
+        ReportTargetCache targetCache = resolveReportTargetCache(reports);
+        Map<String, String> targetSummaries = targetCache.summaries;
+        Map<Long, Long> commentPostIds = targetCache.commentPostIds;
+        Map<String, Long> openCountCache = resolveOpenCountCache(reports);
 
         return reports.stream().map(report -> AdminDto.ReportItem.builder()
                 .id(report.getId())
@@ -662,6 +665,8 @@ public class AdminService {
                 .reporterUserName(userNames.getOrDefault(report.getReporterUserId(), "알 수 없음 #" + report.getReporterUserId()))
                 .targetType(report.getTargetType())
                 .targetId(report.getTargetId())
+                .postId(report.getTargetType() == ReportTargetType.COMMENT
+                        ? commentPostIds.get(report.getTargetId()) : null)
                 .targetSummary(targetSummaries.getOrDefault(reportKey(report.getTargetType(), report.getTargetId()),
                         defaultReportTargetSummary(report.getTargetType(), report.getTargetId())))
                 .reasonCode(report.getReasonCode())
@@ -674,8 +679,8 @@ public class AdminService {
                         : null)
                 .reviewedAt(report.getReviewedAt())
                 .createdAt(report.getCreatedAt())
-                .openCountForTarget(contentReportRepository.countByTargetTypeAndTargetIdAndStatusIn(
-                        report.getTargetType(), report.getTargetId(), OPEN_REPORT_STATUSES))
+                .openCountForTarget(openCountCache.getOrDefault(
+                        reportKey(report.getTargetType(), report.getTargetId()), 0L))
                 .build()).toList();
     }
 
@@ -688,7 +693,12 @@ public class AdminService {
         return names;
     }
 
-    private Map<String, String> resolveReportTargetSummaries(List<ContentReport> reports) {
+    private static class ReportTargetCache {
+        final Map<String, String> summaries = new HashMap<>();
+        final Map<Long, Long> commentPostIds = new HashMap<>();
+    }
+
+    private ReportTargetCache resolveReportTargetCache(List<ContentReport> reports) {
         Set<Long> postIds = reports.stream()
                 .filter(report -> report.getTargetType() == ReportTargetType.POST)
                 .map(ContentReport::getTargetId)
@@ -698,16 +708,36 @@ public class AdminService {
                 .map(ContentReport::getTargetId)
                 .collect(Collectors.toSet());
 
-        Map<String, String> summaries = new HashMap<>();
+        ReportTargetCache cache = new ReportTargetCache();
         if (!postIds.isEmpty()) {
             postRepository.findAllById(postIds)
-                    .forEach(post -> summaries.put(reportKey(ReportTargetType.POST, post.getId()), post.getTitle()));
+                    .forEach(post -> cache.summaries.put(reportKey(ReportTargetType.POST, post.getId()), post.getTitle()));
         }
         if (!commentIds.isEmpty()) {
-            commentRepository.findAllById(commentIds)
-                    .forEach(comment -> summaries.put(reportKey(ReportTargetType.COMMENT, comment.getId()), buildPreview(comment.getContent())));
+            commentRepository.findAllById(commentIds).forEach(comment -> {
+                cache.summaries.put(reportKey(ReportTargetType.COMMENT, comment.getId()), buildPreview(comment.getContent()));
+                if (comment.getPost() != null) {
+                    cache.commentPostIds.put(comment.getId(), comment.getPost().getId());
+                }
+            });
         }
-        return summaries;
+        return cache;
+    }
+
+    private Map<String, Long> resolveOpenCountCache(List<ContentReport> reports) {
+        // 중복 (targetType, targetId) 쌍을 제거하고 각 쌍당 한 번씩만 COUNT 쿼리 실행
+        Map<String, Long> cache = new HashMap<>();
+        reports.stream()
+                .map(report -> reportKey(report.getTargetType(), report.getTargetId()))
+                .distinct()
+                .forEach(key -> {
+                    String[] parts = key.split(":", 2);
+                    ReportTargetType type = ReportTargetType.valueOf(parts[0]);
+                    Long targetId = Long.parseLong(parts[1]);
+                    cache.put(key, contentReportRepository.countByTargetTypeAndTargetIdAndStatusIn(
+                            type, targetId, OPEN_REPORT_STATUSES));
+                });
+        return cache;
     }
 
     private AdminDto.UserItem toUserItem(User user) {
@@ -731,7 +761,7 @@ public class AdminService {
                 .categoryName(post.getCategory() != null ? post.getCategory().getName() : null)
                 .authorId(post.getUser() != null ? post.getUser().getId() : null)
                 .authorName(post.getUser() != null ? post.getUser().getName() : "(삭제된 사용자)")
-                .title(post.getTitle())
+                .title(koFirst(post.getTitleKo(), post.getTitle()))
                 .viewCount(post.getViewCount())
                 .commentCount(post.getCommentCount())
                 .createdAt(post.getCreatedAt())
@@ -754,10 +784,10 @@ public class AdminService {
         return AdminDto.CommentItem.builder()
                 .id(comment.getId())
                 .postId(comment.getPost() != null ? comment.getPost().getId() : null)
-                .postTitle(comment.getPost() != null ? comment.getPost().getTitle() : "(삭제된 게시글)")
+                .postTitle(comment.getPost() != null ? koFirst(comment.getPost().getTitleKo(), comment.getPost().getTitle()) : "(삭제된 게시글)")
                 .authorId(comment.getUser() != null ? comment.getUser().getId() : null)
                 .authorName(comment.getUser() != null ? comment.getUser().getName() : "(삭제된 사용자)")
-                .contentPreview(buildPreview(comment.getContent()))
+                .contentPreview(buildPreview(koFirst(comment.getContentKo(), comment.getContent())))
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
                 .replyToId(comment.getReplyToId())
                 .createdAt(comment.getCreatedAt())
@@ -799,6 +829,10 @@ public class AdminService {
                 .afterSnapshotJson(logItem.getAfterSnapshotJson())
                 .createdAt(logItem.getCreatedAt())
                 .build();
+    }
+
+    private String koFirst(String ko, String fallback) {
+        return (ko != null && !ko.isBlank()) ? ko : fallback;
     }
 
     private String buildPreview(String html) {

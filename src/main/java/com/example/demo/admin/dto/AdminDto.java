@@ -225,6 +225,7 @@ public class AdminDto {
         private String reporterUserName;
         private ReportTargetType targetType;
         private Long targetId;
+        private Long postId;        // COMMENT 신고일 때 댓글이 속한 게시글 ID
         private String targetSummary;
         private ContentReportReason reasonCode;
         private String reasonDetail;

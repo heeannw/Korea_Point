@@ -66,12 +66,16 @@ const REPORT_STATUS_LABELS = {
 };
 
 const REPORT_REASON_LABELS = {
-    SPAM: "스팸",
-    ABUSE: "욕설/비방",
-    HATE: "혐오 표현",
-    HARASSMENT: "괴롭힘",
-    HARMFUL: "유해 정보",
-    MISINFORMATION: "허위 정보",
+    SPAM: "성적 콘텐츠",
+    ABUSE: "폭력·혐오 콘텐츠",
+    HATE: "증오·악의적 콘텐츠",
+    HARASSMENT: "괴롭힘·폭력",
+    HARMFUL: "유해·위험 행위",
+    MISINFORMATION: "자살·자해",
+    WRONG_INFO: "잘못된 정보",
+    CHILD_ABUSE: "아동 학대",
+    TERRORISM: "테러 조장",
+    MISLEADING: "스팸·혼동 콘텐츠",
     OTHER: "기타"
 };
 
@@ -109,6 +113,10 @@ class ApiError extends Error {
 
 function syncLabelOptions(options, labels) {
     options.splice(0, options.length, ...Object.entries(labels).map(([value, label]) => ({ value, label })));
+}
+
+function toReasonOptions(keys) {
+    return keys.map((key) => ({ value: key, label: REASON_LABELS[key] || key }));
 }
 
 function populateStaticOptions() {
@@ -191,9 +199,12 @@ async function initializePage() {
         case "comments":
             await loadComments();
             break;
-        case "reports":
+        case "reports": {
+            const statusSel = document.getElementById("reportsStatus");
+            if (statusSel) statusSel.value = "OPEN";
             await loadReports();
             break;
+        }
         case "logs":
             await loadLogs();
             break;
@@ -276,6 +287,8 @@ async function loadUsers() {
     appendIfPresent(query, "keyword", document.getElementById("usersKeyword")?.value);
     appendIfPresent(query, "role", document.getElementById("usersRole")?.value);
     appendIfPresent(query, "accountStatus", document.getElementById("usersAccountStatus")?.value);
+    appendIfPresent(query, "dateFrom", document.getElementById("usersDateFrom")?.value);
+    appendIfPresent(query, "dateTo",   document.getElementById("usersDateTo")?.value);
 
     const data = await apiRequest(`/admin/api/users?${query.toString()}`);
     const body = document.getElementById("usersTableBody");
@@ -331,6 +344,7 @@ function openUserRoleModal(userId, userName, currentRole) {
         title: "권한 변경",
         summary: `${userName} 사용자의 권한을 변경합니다. (현재: ${currentRole})`,
         confirmText: "권한 변경",
+        reasonOptions: toReasonOptions(["ROLE_POLICY", "POLICY", "OTHER"]),
         extraHtml: `
             <label>변경할 역할
                 <select id="modalRoleValue">
@@ -356,6 +370,7 @@ function openUserPointModal(userId, userName, currentPoint) {
         title: "포인트 조정",
         summary: `${userName} 사용자의 포인트를 조정합니다. (현재: ${numberFormat(currentPoint)}P)`,
         confirmText: "포인트 조정",
+        reasonOptions: toReasonOptions(["POINT_ADJUSTMENT", "SPAM", "ABUSE", "POLICY", "REPORT_POLICY", "OTHER"]),
         extraHtml: `
             <label>조정 값
                 <input type="number" id="modalPointDelta" placeholder="지급: +100 / 차감: -500">
@@ -379,6 +394,9 @@ function openUserStatusModal(userId, userName, currentStatus) {
         title: "계정 상태 변경",
         summary: `${userName} 사용자를 ${labelForAccountStatus(nextStatus)} 상태로 변경합니다.`,
         confirmText: currentStatus === "SUSPENDED" ? "정지 해제" : "계정 정지",
+        reasonOptions: toReasonOptions(nextStatus === "SUSPENDED"
+            ? ["SUSPENSION_POLICY", "SPAM", "ABUSE", "POLICY", "REPORT_POLICY", "OTHER"]
+            : ["MANUAL_RESTORE", "SUSPENSION_POLICY", "REPORT_POLICY", "OTHER"]),
         getExtraPayload: () => ({ accountStatus: nextStatus }),
         submit: async (reasonPayload) => {
             const response = await apiRequest(`/admin/api/users/${userId}/account-status`, {
@@ -409,6 +427,8 @@ async function loadPosts() {
     appendIfPresent(query, "categoryId", document.getElementById("postsCategory")?.value);
     appendIfPresent(query, "status", document.getElementById("postsStatus")?.value);
     appendIfPresent(query, "purgeReady", document.getElementById("postsPurgeReady")?.value);
+    appendIfPresent(query, "dateFrom", document.getElementById("postsDateFrom")?.value);
+    appendIfPresent(query, "dateTo",   document.getElementById("postsDateTo")?.value);
 
     const data = await apiRequest(`/admin/api/posts?${query.toString()}`);
     const body = document.getElementById("postsTableBody");
@@ -465,6 +485,9 @@ function openPostActionModal(postId, mode, title) {
         title: isRestore ? "게시글 복구" : "게시글 숨김",
         summary: `"${title}" 게시글을 ${isRestore ? "복구" : "숨김"}합니다.`,
         confirmText: isRestore ? "복구" : "숨김",
+        reasonOptions: toReasonOptions(isRestore
+            ? ["MANUAL_RESTORE", "REPORT_POLICY", "POLICY", "OTHER"]
+            : ["SPAM", "ABUSE", "OFF_TOPIC", "POLICY", "DUPLICATE", "REPORT_POLICY", "OTHER"]),
         submit: async (reasonPayload) => {
             await apiRequest(`/admin/api/posts/${postId}/${mode}`, {
                 method: "POST",
@@ -482,6 +505,7 @@ function openPostPurgeModal(postId, title) {
         title: "게시글 영구 삭제",
         summary: `"${title}" 게시글을 복구할 수 없도록 영구 삭제합니다.`,
         confirmText: "영구 삭제",
+        reasonOptions: toReasonOptions(["PURGE_POLICY", "SPAM", "ABUSE", "POLICY", "OTHER"]),
         submit: async (reasonPayload) => {
             await apiRequest(`/admin/api/posts/${postId}/purge`, {
                 method: "POST",
@@ -498,6 +522,8 @@ async function loadComments() {
     appendIfPresent(query, "keyword", document.getElementById("commentsKeyword")?.value);
     appendIfPresent(query, "status", document.getElementById("commentsStatus")?.value);
     appendIfPresent(query, "purgeReady", document.getElementById("commentsPurgeReady")?.value);
+    appendIfPresent(query, "dateFrom", document.getElementById("commentsDateFrom")?.value);
+    appendIfPresent(query, "dateTo",   document.getElementById("commentsDateTo")?.value);
 
     const data = await apiRequest(`/admin/api/comments?${query.toString()}`);
     const body = document.getElementById("commentsTableBody");
@@ -556,6 +582,9 @@ function openCommentActionModal(commentId, mode) {
         title: isRestore ? "댓글 복구" : "댓글 숨김",
         summary: `댓글 #${commentId}를 ${isRestore ? "복구" : "숨김"}합니다.`,
         confirmText: isRestore ? "복구" : "숨김",
+        reasonOptions: toReasonOptions(isRestore
+            ? ["MANUAL_RESTORE", "REPORT_POLICY", "POLICY", "OTHER"]
+            : ["SPAM", "ABUSE", "OFF_TOPIC", "POLICY", "DUPLICATE", "REPORT_POLICY", "OTHER"]),
         submit: async (reasonPayload) => {
             await apiRequest(`/admin/api/comments/${commentId}/${mode}`, {
                 method: "POST",
@@ -573,6 +602,7 @@ function openCommentPurgeModal(commentId) {
         title: "댓글 영구 삭제",
         summary: `댓글 #${commentId}를 복구할 수 없도록 영구 삭제합니다.`,
         confirmText: "영구 삭제",
+        reasonOptions: toReasonOptions(["PURGE_POLICY", "SPAM", "ABUSE", "POLICY", "OTHER"]),
         submit: async (reasonPayload) => {
             await apiRequest(`/admin/api/comments/${commentId}/purge`, {
                 method: "POST",
@@ -590,6 +620,8 @@ async function loadReports() {
     appendIfPresent(query, "targetType", document.getElementById("reportsTargetType")?.value);
     appendIfPresent(query, "status", document.getElementById("reportsStatus")?.value);
     appendIfPresent(query, "reasonCode", document.getElementById("reportsReasonCode")?.value);
+    appendIfPresent(query, "dateFrom",       document.getElementById("reportsDateFrom")?.value);
+    appendIfPresent(query, "dateTo",         document.getElementById("reportsDateTo")?.value);
 
     const data = await apiRequest(`/admin/api/reports?${query.toString()}`);
     const body = document.getElementById("reportsTableBody");
@@ -612,7 +644,7 @@ async function loadReports() {
                 <td>
                     <div class="stack">
                         <strong>${escapeHtml(labelForTarget(item.targetType))}</strong>
-                        <a class="content-link" href="/community/post/${item.targetType === "POST" ? item.targetId : item.targetId}" target="_blank">${escapeHtml(item.targetSummary)}</a>
+                        <a class="content-link" href="/community/post/${item.targetType === "POST" ? item.targetId : item.postId}" target="_blank">${escapeHtml(item.targetSummary)}</a>
                         ${item.openCountForTarget > 1 ? `<span class="open-count-badge">신고 ${item.openCountForTarget}건</span>` : ""}
                     </div>
                 </td>
@@ -654,6 +686,7 @@ function openReportStatusModal(reportId, nextStatus, targetSummary) {
         title: "신고 상태 변경",
         summary: `${targetSummary} 신고 상태를 ${labelForReportStatus(nextStatus)}로 변경합니다.`,
         confirmText: "상태 변경",
+        reasonOptions: toReasonOptions(["REPORT_POLICY", "SPAM", "ABUSE", "OFF_TOPIC", "POLICY", "OTHER"]),
         submit: async (reasonPayload) => {
             const response = await apiRequest(`/admin/api/reports/${reportId}/status`, {
                 method: "PATCH",
@@ -671,6 +704,8 @@ async function loadLogs() {
     appendIfPresent(query, "targetType", document.getElementById("logsTargetType")?.value);
     appendIfPresent(query, "actionType", document.getElementById("logsActionType")?.value);
     appendIfPresent(query, "reasonCode", document.getElementById("logsReasonCode")?.value);
+    appendIfPresent(query, "dateFrom", document.getElementById("logsDateFrom")?.value);
+    appendIfPresent(query, "dateTo",   document.getElementById("logsDateTo")?.value);
 
     const data = await apiRequest(`/admin/api/logs?${query.toString()}`);
     const body = document.getElementById("logsTableBody");
@@ -723,6 +758,7 @@ function openActionModal(config) {
     document.getElementById("actionModalTitle").textContent = config.title;
     document.getElementById("actionModalSummary").textContent = config.summary;
     document.getElementById("modalConfirmButton").textContent = config.confirmText || "실행";
+    fillSelect("modalReasonCode", config.reasonOptions || REASON_OPTIONS, { firstLabel: "사유 코드를 선택해 주세요" });
     document.getElementById("modalReasonCode").value = "";
     document.getElementById("modalReasonDetail").value = "";
     const extraFieldsEl = document.getElementById("modalExtraFields");
