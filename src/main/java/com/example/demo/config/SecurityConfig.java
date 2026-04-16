@@ -20,7 +20,6 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                // 寃뚯떆湲 ?묒꽦쨌??젣, ?볤? API留?濡쒓렇???꾩슂
                 .requestMatchers("/community/**").authenticated()
                 .requestMatchers("/api/comments/**").authenticated()
                 .requestMatchers("/api/reports/**").authenticated()
@@ -28,9 +27,9 @@ public class SecurityConfig {
                 .requestMatchers("/transport/**").authenticated()
                 .requestMatchers("/foodmap/**").authenticated()
                 .requestMatchers("/cafe/**").authenticated()
+                .requestMatchers("/ko", "/kr").permitAll()
                 .requestMatchers("/en/**").authenticated()
                 .requestMatchers("/ko/**").authenticated()
-                // 洹???紐⑤뱺 ?붿껌? ?덉슜 (?ㅻⅨ ?꾨찓?몄뿉 ?곹뼢 ?놁쓬)
                 .anyRequest().permitAll()
             )
             .oauth2Login(oauth2 -> oauth2

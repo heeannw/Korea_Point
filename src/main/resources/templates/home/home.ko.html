@@ -1114,13 +1114,13 @@
                 <h2 class="section-title">여행 후기와 팁</h2>
                 <p class="section-sub">여행자들이 남긴 최신 후기와 실용적인 팁</p>
             </div>
-            <a class="see-all" th:href="@{/community/post-list}" href="/community/post-list">전체보기</a>
+            <a class="see-all" th:href="@{/community/post-list(lang='ko')}">전체보기</a>
         </div>
 
         <div class="post-list">
             <a class="post-item"
                th:each="post, iter : ${trendingPosts}"
-               th:href="@{/community/post/{id}(id=${post.postId})}"
+               th:href="@{/community/post/{id}(id=${post.postId},lang='ko')}"
                href="/community/post/1">
                 <span class="post-num" th:text="${iter.count < 10 ? '0' + iter.count : iter.count}">01</span>
                 <span th:class="${'post-tag ' +
@@ -1130,7 +1130,7 @@
                         (post.categoryName == '자유' ? 'cat-review' : 'cat-tip'))))}"
                       th:text="${post.categoryName}">카테고리</span>
                 <div class="post-main">
-                    <div class="post-title" th:text="${post.title}">샘플 게시글 제목</div>
+                    <div class="post-title" th:text="${post.titleKo}">샘플 게시글 제목</div>
                     <div class="post-meta">
                         <span>작성자</span>
                         <span th:text="${post.authorName}">Author</span>
