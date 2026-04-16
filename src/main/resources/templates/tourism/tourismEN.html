@@ -178,7 +178,8 @@
 <body>
 
 <header>
-  <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
+  <a class="logo" th:href="@{/en}">Korea<span>Point</span></a>
+
   <div class="header-right">
     <th:block th:if="${lang == 'en'}">
       <button class="h-btn"        onclick="switchLang('ko')">KR</button>
@@ -328,6 +329,8 @@
     '12': '🏛️', '14': '🏺', '15': '🎉',
     '25': '🎡', '28': '🌿', '38': '🛍️',
   };
+
+
 
   function createMarkerImage(color, emoji) {
     const em = emoji ?? '📍';
@@ -522,7 +525,7 @@
   function openDetail(p) {
     if (!p) return;
     const color = getCatColor(p.type);
-
+    const _visitUrl = `https://english.visitkorea.or.kr/totalSearch/search.do?kwd=${encodeURIComponent(p.google_name)}&linkSrchFlag=Y`;
     document.getElementById('dpTitle').textContent = p.google_name ?? '-';
     document.getElementById('dpImg').style.backgroundImage = `url('${p.image ?? ''}')`;
     document.getElementById('dpName').textContent = p.google_name ?? '-';
@@ -539,7 +542,19 @@
       <div class="dp-info"><div class="dp-info-label">Distance</div><div class="dp-info-val">${distStr(p.distance)} away</div></div>
       <div class="dp-info"><div class="dp-info-label">Score</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
       <div class="dp-info"><div class="dp-info-label">Category</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
-    document.getElementById('dpDesc').textContent = '';
+    document.getElementById('dpDesc').innerHTML = `
+  <p style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;">
+    Get more details from Korea Tourism Organization.
+  </p>
+  <a href="${_visitUrl}" target="_blank" rel="noopener"
+     style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;
+            border-radius:50px;border:1.5px solid var(--blue);color:var(--blue);
+            font-size:13px;font-weight:700;text-decoration:none;background:#fff;
+            transition:all .2s;margin-bottom:8px;"
+     onmouseover="this.style.background='var(--blue)';this.style.color='#fff'"
+     onmouseout="this.style.background='#fff';this.style.color='var(--blue)'">
+    🏛️ Official Tourism Info
+  </a>`;
 
     const reviews = p.reviews ?? [];
     const avg = p.rating ?? 0;
@@ -547,7 +562,7 @@
       <div>
         <div class="rev-score">${avg}</div>
         <div style="color:var(--gold);font-size:14px;margin-top:4px">${'★'.repeat(Math.round(avg))}</div>
-      </div>
+      </div
       <div class="rev-right"><div class="rev-bars">
         ${[5,4,3,2,1].map(s => {
       const cnt = reviews.filter(r => Math.round(r.rating ?? 0) === s).length;
@@ -567,17 +582,17 @@
 
     document.getElementById('itineraryBtn').onclick = function() {
       if (p.lat && p.lng) {
-        location.href = `/en/foodmap/mylocation/${p.lat}/${p.lng}`;
+        location.href = `/en/foodmap/mylocation/${p.lat}/${p.lng}?category=ALL&lang=en`;
       }
     };
 
     document.getElementById('itineraryBtn1').onclick = function() {
       if (p.lat && p.lng) {
-        location.href = `/en/cafe/mylocation/${p.lat}/${p.lng}`;
+        location.href = `/en/cafe/mylocation/${p.lat}/${p.lng}?lang=en`;
       }
     };
 
-    // ✅ 중복 없이 한 번만 선언
+
     document.getElementById('itineraryBtn2').onclick = function() {
       if (!(p.lat && p.lng)) { alert("관광지 좌표가 없습니다."); return; }
       const endTitle = encodeURIComponent(p.google_name ?? '');

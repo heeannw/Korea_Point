@@ -956,7 +956,7 @@
             <a th:if="${isAdmin}" th:href="@{/admin}" href="/admin" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                <button type="submit" class="h-btn h-btn-fill">로그아웃</button>
+                <button type="submit" class="h-btn h-btn-fill">Logout</button>
             </form>
         </th:block>
         <th:block th:unless="${isLoggedIn}">
@@ -1014,11 +1014,11 @@
 <!-- 카테고리: 주요 서비스 페이지로 이동하는 바로가기 -->
 <section class="categories" id="categorySection">
     <div class="category-grid">
-        <a class="category-item" th:href="@{/foodmap/all(category='RESTAURANT')}" href="/foodmap/all?category=RESTAURANT">
+        <a class="category-item" th:href="@{/foodmap/all(category='ALL',lang='kr')}" href="/foodmap/all?category=ALL&lang=kr">
             <span class="category-icon">🍴</span>
             <span>음식</span>
         </a>
-        <a class="category-item" th:href="@{/cafe/all(category='CAFE')}" href="/cafe/all?category=CAFE">
+        <a class="category-item" th:href="@{/cafe/all(lang='kr')}" href="/cafe/all?lang=kr">
             <span class="category-icon">☕</span>
             <span>카페</span>
         </a>
@@ -1030,7 +1030,7 @@
             <span class="category-icon">🚆</span>
             <span>교통</span>
         </a>
-        <a class="category-item" th:href="@{/community/post-list}" href="/community/post-list">
+        <a class="category-item" th:href="@{/community/post-list(lang='ko')}" href="/community/post-list?lang='ko'">
             <span class="category-icon">💬</span>
             <span>커뮤니티</span>
         </a>

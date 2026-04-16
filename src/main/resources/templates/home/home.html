@@ -1036,11 +1036,11 @@
 <!-- Categories: shortcuts to each major service page -->
 <section class="categories" id="categorySection">
     <div class="category-grid">
-        <a class="category-item" th:href="@{/foodmap/all(category='RESTAURANT')}" href="/foodmap/all?category=RESTAURANT">
+        <a class="category-item" th:href="@{/en/foodmap/all(category='ALL',lang='en')}" href="/en/foodmap/all?category=ALL&lang=en">
             <span class="category-icon">🍴</span>
             <span>Food</span>
         </a>
-        <a class="category-item" th:href="@{/cafe/all(category='CAFE')}" href="/cafe/all?category=CAFE">
+        <a class="category-item" th:href="@{/en/cafe/all(lang='en')}" href="/en/cafe/all?lang=en">
             <span class="category-icon">☕</span>
             <span>Cafe</span>
         </a>
@@ -1052,7 +1052,7 @@
             <span class="category-icon">🚆</span>
             <span>Transport</span>
         </a>
-        <a class="category-item" th:href="@{/community/post-list}" href="/community/post-list">
+        <a class="category-item" th:href="@{/community/post-list(lang='en')}" href="/community/post-list?lang='en'">
             <span class="category-icon">💬</span>
             <span>Community</span>
         </a>
