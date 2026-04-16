@@ -1135,13 +1135,13 @@
                 <h2 class="section-title">Travel Stories &amp; Tips</h2>
                 <p class="section-sub">Latest travel reviews and practical tips from visitors</p>
             </div>
-            <a class="see-all" th:href="@{/community/post-list}" href="/community/post-list">See all</a>
+            <a class="see-all" th:href="@{/community/post-list(lang='en')}">See all</a>
         </div>
 
         <div class="post-list">
             <a class="post-item"
                th:each="post, iter : ${trendingPosts}"
-               th:href="@{/community/post/{id}(id=${post.postId})}"
+               th:href="@{/community/post/{id}(id=${post.postId},lang='en')}"
                href="/community/post/1">
                 <span class="post-num" th:text="${iter.count < 10 ? '0' + iter.count : iter.count}">01</span>
                 <span th:class="${'post-tag ' +
@@ -1149,7 +1149,7 @@
                         (post.categoryName == '교통' ? 'cat-tip' :
                         (post.categoryName == '관광' ? 'cat-review' :
                         (post.categoryName == '자유' ? 'cat-review' : 'cat-tip'))))}"
-                      th:text="${post.categoryName}">Category</span>
+                      th:text="${post.categoryNameEn}">Category</span>
                 <div class="post-main">
                     <div class="post-title" th:text="${post.title}">Sample post title</div>
                     <div class="post-meta">
