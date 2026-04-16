@@ -7,5 +7,9 @@ public enum ContentReportReason {
     HARASSMENT,
     HARMFUL,
     MISINFORMATION,
+    CHILD_ABUSE,
+    TERRORISM,
+    WRONG_INFO,
+    MISLEADING,
     OTHER
 }
