@@ -24,12 +24,12 @@
   <div class="header-right">
     <!-- KO 버튼: ko일 때 active(클릭 불가), en일 때 클릭하면 ko로 전환 -->
     <th:block th:if="${lang == 'en'}">
-      <button class="h-btn"        onclick="switchLang('ko')">KR</button>
       <button class="h-btn active">EN</button>
+      <button class="h-btn"        onclick="switchLang('ko')">KR</button>
     </th:block>
     <th:block th:unless="${lang == 'en'}">
-      <button class="h-btn active">KR</button>
       <button class="h-btn"        onclick="switchLang('en')">EN</button>
+      <button class="h-btn active">KR</button>
     </th:block>
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}"></span>

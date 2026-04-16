@@ -33,7 +33,7 @@ public class TourismController {
                             @RequestParam(value = "lang") String lang) {
         lang = lang.toLowerCase();
         List<TourPlaceDto> displayList = tourismService.allList(lang);
-        displayList = displayList.stream().limit(100).toList();
+        displayList = displayList.stream().limit(300).toList();
         session.setAttribute("userlat", lat);
         session.setAttribute("userlon", lon);
 

@@ -118,7 +118,7 @@ header{height:56px;display:flex;align-items:center;justify-content:space-between
 .dp-img {
     width: 100%;
     aspect-ratio: 16 / 9;  /* ← 이걸로 교체 */
-    height: auto;
+    height: 360px;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
