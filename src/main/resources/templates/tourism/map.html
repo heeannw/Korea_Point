@@ -15,7 +15,12 @@
 <body>
 
 <header>
-  <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
+  <th:block th:if="${lang == 'en'}">
+    <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
+  </th:block>
+  <th:block th:unless="${lang == 'en'}">
+    <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
+  </th:block>
   <div class="header-right">
     <!-- KO 버튼: ko일 때 active(클릭 불가), en일 때 클릭하면 ko로 전환 -->
     <th:block th:if="${lang == 'en'}">

@@ -177,7 +177,7 @@
 </head>
 <body>
 <header>
-  <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
+  <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
   <div class="header-right">
     <th:block th:if="${lang == 'en'}">
       <button class="h-btn"        onclick="switchLang('ko')">KR</button>
@@ -326,6 +326,8 @@
     '12': '🏛️', '14': '🏺', '15': '🎉',
     '25': '🎡', '28': '🌿', '38': '🛍️',
   };
+
+
 
   function createMarkerImage(color, emoji) {
     const em = emoji ?? '📍';
@@ -512,9 +514,11 @@
   }
 
   function openDetail(p) {
+
     if (!p) return;
     const color = getCatColor(p.type);
-
+    const _keyword = (p.title && p.title.length < 20) ? p.title : p.google_name;
+    const _visitUrl = `https://korean.visitkorea.or.kr/search/search_list.do?keyword=${encodeURIComponent(_keyword)}`;
     document.getElementById('dpTitle').textContent = p.title ?? '-';
     document.getElementById('dpImg').style.backgroundImage = `url('${p.image ?? ''}')`;
     document.getElementById('dpName').textContent = p.title ?? '-';
@@ -531,8 +535,19 @@
       <div class="dp-info"><div class="dp-info-label">Distance</div><div class="dp-info-val">${distStr(p.distance)} away</div></div>
       <div class="dp-info"><div class="dp-info-label">Score</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
       <div class="dp-info"><div class="dp-info-label">Category</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
-    document.getElementById('dpDesc').textContent = '';
-
+    document.getElementById('dpDesc').innerHTML = `
+  <p style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;">
+    더 자세한 정보는 한국관광공사에서 확인하세요.
+  </p>
+  <a href="${_visitUrl}" target="_blank" rel="noopener"
+     style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;
+            border-radius:50px;border:1.5px solid var(--blue);color:var(--blue);
+            font-size:13px;font-weight:700;text-decoration:none;background:#fff;
+            transition:all .2s;margin-bottom:8px;"
+     onmouseover="this.style.background='var(--blue)';this.style.color='#fff'"
+     onmouseout="this.style.background='#fff';this.style.color='var(--blue)'">
+    🏛️ 관광지 상세보기
+  </a>`;
     const reviews = p.reviews ?? [];
     const avg = p.rating ?? 0;
     document.getElementById('dpRevSummary').innerHTML = `
@@ -559,13 +574,13 @@
 
     document.getElementById('itineraryBtn').onclick = function() {
       if (p.lat && p.lng) {
-        location.href = `/en/foodmap/mylocation/${p.lat}/${p.lng}`;
+        location.href = `/foodmap/mylocation/${p.lat}/${p.lng}?category=ALL&lang=ko`;
       }
     };
 
     document.getElementById('itineraryBtn1').onclick = function() {
       if (p.lat && p.lng) {
-        location.href = `/en/cafe/mylocation/${p.lat}/${p.lng}`;
+        location.href = `/cafe/mylocation/${p.lat}/${p.lng}?lang=ko`;
       }
     };
 

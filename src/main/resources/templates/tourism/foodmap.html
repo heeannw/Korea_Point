@@ -18,7 +18,13 @@
 <body>
 
 <header>
-  <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
+
+  <th:block th:if="${lang == 'en'}">
+    <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
+  </th:block>
+  <th:block th:unless="${lang == 'en'}">
+    <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
+  </th:block>
   <div class="header-right">
     <!-- 언어 버튼: th:if로 분기 (th:onclick SpEL 이스케이프 오류 방지) -->
     <th:block th:if="${lang == 'en'}">
@@ -789,6 +795,13 @@
   // ✅ 페이지 진입 시 저장된 언어와 현재 언어가 다르면 자동 전환
   // (다른 페이지 갔다 돌아왔을 때 언어 유지)
   (function autoLang() {
+    // URL에 lang 파라미터 있으면 그걸 우선
+    const urlLang = new URLSearchParams(location.search).get('lang');
+    if (urlLang) {
+      localStorage.setItem('site_lang', urlLang);
+      return;
+    }
+
     const saved = localStorage.getItem('site_lang');
     if (!saved) { localStorage.setItem('site_lang', LANG); return; }
     if (saved === 'en' && LANG !== 'en' && !location.pathname.startsWith('/en/')) {
