@@ -157,9 +157,18 @@
     if (!text || !text.trim() || LANG !== 'en') return text;
     if (_tCache[text] !== undefined) return _tCache[text];
     try {
+      // ✅ 수정 코드 — CSRF 토큰 추가
+      const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+      const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
       const res = await fetch('/api/translate', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          [_csrfHeader]: _csrfToken
+        },
+
+
         body: JSON.stringify({ text, source: 'ko', target: 'en' })
       });
       const data = await res.json();
@@ -169,21 +178,37 @@
     return _tCache[text];
   }
 
-  // 청크 단위 배치 번역: 10개씩 묶어서 API 호출 (파파고 글자수 제한 회피)
   async function _trChunk(arr) {
+    // 1. 유효한 텍스트만 먼저 필터링
     const valid = arr.filter(t => t && t.trim());
     if (!valid.length) return;
+
     try {
+      // 2. CSRF 토큰 가져오기
+      const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+      const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
       const res = await fetch('/api/translate', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          [csrfHeader]: csrfToken // 변수명 대괄호 확인
+        },
         body: JSON.stringify({ text: valid.join('\n'), source: 'ko', target: 'en' })
       });
+
       const data = await res.json();
       const translated = (data.translatedText || '').split('\n');
-      valid.forEach((t, i) => { _tCache[t] = translated[i]?.trim() || t; });
+
+      // 3. 번역 결과 매핑
+      valid.forEach((t, i) => {
+        _tCache[t] = translated[i]?.trim() || t;
+      });
       _saveCache();
-    } catch { valid.forEach(t => { _tCache[t] = t; }); }
+    } catch (e) {
+      console.error("Translation error:", e);
+      valid.forEach(t => { _tCache[t] = t; });
+    }
   }
 
   // 가시 영역 N개만 번역 (스크롤/카테고리 전환 시 호출)
