@@ -8,5 +8,5 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class FastApiCongestionResponse {
-    private int prediction;
+    private int congestion;
 }

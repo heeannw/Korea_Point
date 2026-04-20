@@ -61,21 +61,20 @@ public class TransportDetailController {
 
         int hour = java.time.LocalTime.now().getHour();
         int day = (java.time.LocalDate.now().getDayOfWeek().getValue() >= 6) ? 0 : 1;
-        // 일부만 보여주는게 아니라 바꾼 핵심 부분만 정확히 찍어줌
 
         int line = 2;
         String station = "강남";
+        String rawLineName = null;
 
         if (route != null && route.getSteps() != null) {
             for (var step : route.getSteps()) {
                 if ("subway".equals(step.getType()) && step.getLine() != null) {
-
                     if (step.getFromStation() != null && !step.getFromStation().isBlank()) {
                         station = step.getFromStation();
                     }
 
-                    String lineName = step.getLine();
-                    String cleanLine = lineName.replaceAll("[^가-힣0-9]", "");
+                    rawLineName = step.getLine();
+                    String cleanLine = rawLineName.replaceAll("[^가-힣0-9]", "");
                     String onlyNumber = cleanLine.replaceAll("[^0-9]", "");
 
                     if (!onlyNumber.isEmpty()) {
@@ -104,10 +103,28 @@ public class TransportDetailController {
                     "congestionMsg",
                     "en".equals(lang)
                             ? "No data available for this line"
-                            : "혼잡도 데이터가 부족한 노선입니다"
+                            : "혼잡도 데이터가 부족한 노선입니다."
             );
             return viewName;
         }
+
+        System.out.println("=== congestion debug start ===");
+        System.out.println("station raw = " + station);
+        System.out.println("line raw = " + rawLineName);
+        System.out.println("hour = " + hour + ", day = " + day + ", line = " + line);
+        if (station != null) {
+            System.out.println("station codepoints = " +
+                    station.chars()
+                            .mapToObj(c -> String.format("U+%04X", c))
+                            .toList());
+        }
+        if (rawLineName != null) {
+            System.out.println("line codepoints = " +
+                    rawLineName.chars()
+                            .mapToObj(c -> String.format("U+%04X", c))
+                            .toList());
+        }
+        System.out.println("=== congestion debug end ===");
 
         int congestion = congestionMlService.predict(hour, day, station, line);
 

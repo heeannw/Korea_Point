@@ -45,7 +45,7 @@ public class CongestionMlService {
             );
 
             if (response.getBody() != null) {
-                return response.getBody().getPrediction();
+                return response.getBody().getCongestion();
             }
         } catch (Exception e) {
             e.printStackTrace();
