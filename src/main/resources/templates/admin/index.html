@@ -60,7 +60,7 @@
                 <p class="topbar-copy">KoreaPoint 운영 데이터를 확인하고 필요한 변경은 확인 모달을 통해 안전하게 적용합니다.</p>
             </div>
             <div class="topbar-actions">
-                <a class="action-link" th:href="@{/}" href="/">서비스 보기</a>
+                <a class="action-link" th:href="@{/ko}" href="/">서비스 보기</a>
                 <form th:action="@{/logout}" method="post">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                     <button type="submit" class="ghost-button">로그아웃</button>

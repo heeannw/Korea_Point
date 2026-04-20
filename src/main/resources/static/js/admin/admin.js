@@ -46,8 +46,6 @@ const ACTION_TYPE_LABELS = {
     CATEGORY_CREATE: "카테고리 생성",
     CATEGORY_UPDATE: "카테고리 수정",
     CATEGORY_REORDER: "카테고리 순서 변경",
-    CATEGORY_ACTIVATE: "카테고리 활성화",
-    CATEGORY_DEACTIVATE: "카테고리 비활성화",
     REPORT_REVIEWING: "신고 검토 중",
     REPORT_RESOLVE: "신고 해결",
     REPORT_REJECT: "신고 반려"

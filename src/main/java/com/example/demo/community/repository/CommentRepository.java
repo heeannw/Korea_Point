@@ -75,6 +75,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("SELECT DISTINCT c FROM Comment c LEFT JOIN FETCH c.children LEFT JOIN FETCH c.post LEFT JOIN FETCH c.user LEFT JOIN FETCH c.parent WHERE c.id = :id")
     Optional<Comment> findAdminCommentById(@Param("id") Long id);
 
+    Optional<Comment> findByIdAndDeletedAtIsNull(Long id);
+
     List<Comment> findByParentIdOrderByCreatedAtAsc(Long parentId);
 
     List<Comment> findAllByPostId(Long postId);
