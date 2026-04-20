@@ -30,7 +30,4 @@ public class Category {
     @Column(nullable = false)
     private int sortOrder;
 
-    @Column(nullable = false, columnDefinition = "number(1,0) default 1")
-    @Builder.Default
-    private boolean active = true;
 }

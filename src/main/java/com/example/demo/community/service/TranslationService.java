@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,7 @@ public class TranslationService {
             String detectedLang = (String) first.get("detected_source_language");
             if ("EN".equals(detectedLang)) return null;
 
-            return (String) first.get("text");
+            return HtmlUtils.htmlUnescape((String) first.get("text"));
         } catch (Exception e) {
             return null;
         }
@@ -116,7 +117,7 @@ public class TranslationService {
             String detectedLang = (String) first.get("detected_source_language");
             if ("KO".equals(detectedLang)) return null;
 
-            return (String) first.get("text");
+            return HtmlUtils.htmlUnescape((String) first.get("text"));
         } catch (Exception e) {
             return null;
         }
