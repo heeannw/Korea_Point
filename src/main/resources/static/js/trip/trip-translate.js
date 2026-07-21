@@ -5,12 +5,26 @@ function googleTranslateElementInit() {
 
 function changeTripLanguage(language) {
     localStorage.setItem('tripLanguage', language);
+
+    const isHomePage = ['/', '/ko', '/kr', '/en'].includes(location.pathname);
     if (language === 'ko') {
         document.cookie = 'googtrans=; Max-Age=0; path=/';
-        location.reload();
+        location.href = isHomePage ? '/ko' : location.href;
         return;
     }
+    if (language === 'en' && isHomePage) {
+        document.cookie = 'googtrans=; Max-Age=0; path=/';
+        location.href = '/en';
+        return;
+    }
+
     document.cookie = `googtrans=/ko/${language}; path=/`;
+
+    // 일본어와 중국어는 한국어 원문 페이지를 기준으로 자동 번역한다.
+    if (isHomePage && location.pathname !== '/ko' && location.pathname !== '/kr') {
+        location.href = '/ko';
+        return;
+    }
     applyGoogleLanguage(language);
 }
 
@@ -26,6 +40,26 @@ function applyGoogleLanguage(language, attempt = 0) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const savedLanguage = localStorage.getItem('tripLanguage') || 'ko';
+    const isHomePage = ['/', '/ko', '/kr', '/en'].includes(location.pathname);
+
+    // 저장된 언어와 실제 홈 템플릿이 다르면 올바른 원문 페이지로 이동한다.
+    if (isHomePage) {
+        if (savedLanguage === 'ko' && location.pathname !== '/ko' && location.pathname !== '/kr') {
+            location.replace('/ko');
+            return;
+        }
+        if (savedLanguage === 'en' && location.pathname !== '/en') {
+            location.replace('/en');
+            return;
+        }
+        if (['ja', 'zh-CN'].includes(savedLanguage)
+            && location.pathname !== '/ko' && location.pathname !== '/kr') {
+            location.replace('/ko');
+            return;
+        }
+    }
+
     let select = document.getElementById('languageSelect');
     if (!select) {
         const headerRight = document.querySelector('header .header-right');
@@ -55,23 +89,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const bannerStyle = document.createElement('style');
     bannerStyle.textContent = `
         body { top: 0 !important; position: static !important; }
+        #google_translate_element,
+        .goog-te-gadget,
+        .goog-te-gadget-simple,
+        .goog-te-gadget-icon,
+        .goog-logo-link,
+        .VIpgJd-ZVi9od-l4eHX-hSRGPd,
         .goog-te-banner-frame,
         .goog-te-banner-frame.skiptranslate,
         .VIpgJd-ZVi9od-ORHb,
         .VIpgJd-ZVi9od-ORHb-OEVmcd,
-        body > .skiptranslate { display: none !important; height: 0 !important; visibility: hidden !important; }
+        body > .skiptranslate {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
+            visibility: hidden !important;
+        }
     `;
     document.head.appendChild(bannerStyle);
 
     new MutationObserver(() => {
         document.body.style.setProperty('top', '0px', 'important');
         document.body.style.setProperty('position', 'static', 'important');
-        document.querySelectorAll('.goog-te-banner-frame, .VIpgJd-ZVi9od-ORHb, .VIpgJd-ZVi9od-ORHb-OEVmcd').forEach(element => {
+        document.querySelectorAll('#google_translate_element, .goog-te-gadget, .goog-te-gadget-simple, .goog-te-banner-frame, .VIpgJd-ZVi9od-ORHb, .VIpgJd-ZVi9od-ORHb-OEVmcd').forEach(element => {
             element.style.setProperty('display', 'none', 'important');
         });
     }).observe(document.documentElement, {childList: true, subtree: true});
 
-    if (select) select.value = localStorage.getItem('tripLanguage') || 'ko';
+    if (select) select.value = savedLanguage;
     const script = document.createElement('script');
     script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
     script.async = true;
