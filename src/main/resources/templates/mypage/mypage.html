@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이페이지 | KoreaPoint</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
+</head>
+<body>
+<header>
+    <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
+    <div class="header-right">
+        <a th:href="@{/ko/reservation}" class="h-btn">예약</a>
+        <a th:href="@{/ko/mypage}" class="h-btn active">마이페이지</a>
+        <span class="h-btn" th:text="${currentUserName}">User</span>
+    </div>
+</header>
+
+<main class="page">
+    <section class="page-head">
+        <div>
+            <p class="eyebrow">My Page</p>
+            <h1>마이페이지</h1>
+            <p class="sub">DB와 캐시 없이 운영되는 예약 시뮬레이션 관리 화면입니다.</p>
+        </div>
+        <a class="btn" th:href="@{/ko/reservation}">예약하러 가기</a>
+    </section>
+
+    <div class="mypage-layout">
+        <aside class="panel">
+            <h2 class="place-title">내 정보</h2>
+            <dl class="summary-list">
+                <div class="summary-row">
+                    <dt>이름</dt>
+                    <dd th:text="${currentUserName}">User</dd>
+                </div>
+                <div class="summary-row">
+                    <dt>상태</dt>
+                    <dd>로그인 완료</dd>
+                </div>
+                <div class="summary-row">
+                    <dt>오늘</dt>
+                    <dd th:text="${today}">2026-07-21</dd>
+                </div>
+            </dl>
+        </aside>
+
+        <section class="panel">
+            <h2 class="place-title">예약 내역</h2>
+            <div class="empty" style="margin-top: 12px;">
+                현재 버전은 공모전 조건에 맞춰 예약 정보를 DB나 캐시에 저장하지 않습니다.<br>
+                예약 완료 화면에서만 시뮬레이션 결과를 확인할 수 있습니다.
+            </div>
+            <div class="quick-list" style="margin-top: 16px;">
+                <a class="btn" th:href="@{/ko/reservation}">TourAPI 관광지 조회 후 예약 흐름 시작</a>
+                <a class="btn secondary" th:href="@{/ko}">홈으로 이동</a>
+            </div>
+        </section>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예약하기 | KoreaPoint</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
+</head>
+<body>
+<header>
+    <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
+    <div class="header-right">
+        <a th:href="@{/ko/reservation}" class="h-btn active">예약</a>
+        <a th:href="@{/ko/mypage}" class="h-btn">마이페이지</a>
+        <th:block th:if="${isLoggedIn}">
+            <span class="h-btn" th:text="${currentUserName}">User</span>
+            <form th:action="@{/logout}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit" class="h-btn h-btn-fill">Logout</button>
+            </form>
+        </th:block>
+    </div>
+</header>
+
+<main class="page">
+    <section class="page-head">
+        <div>
+            <p class="eyebrow">Real-Time TourAPI</p>
+            <h1>관광지 예약 흐름</h1>
+            <p class="sub">관광지 정보는 저장하지 않고 화면에서 요청할 때마다 TourAPI를 호출합니다.</p>
+        </div>
+        <a class="btn secondary" th:href="@{/ko/mypage}">마이페이지</a>
+    </section>
+
+    <div class="notice" th:if="${hasTourApiKey}">
+        DB와 캐시를 사용하지 않는 예약 시뮬레이션입니다. 예약 완료 정보는 서버에 저장되지 않습니다.
+    </div>
+    <div class="notice warning" th:unless="${hasTourApiKey}">
+        TourAPI 인증키가 설정되지 않았습니다. 환경변수 <strong>TOURAPI_SERVICE_KEY</strong>를 설정하면 실시간 목록을 불러옵니다.
+    </div>
+
+    <form class="toolbar" id="searchForm">
+        <input class="input" id="keyword" name="keyword" th:value="${keyword}" placeholder="관광지명 또는 주소로 검색">
+        <button class="btn" type="submit">검색</button>
+    </form>
+
+    <section id="placeGrid" class="grid" aria-live="polite"></section>
+    <div id="emptyState" class="empty">TourAPI 관광지 목록을 불러오는 중입니다.</div>
+</main>
+
+<script>
+    const grid = document.getElementById("placeGrid");
+    const emptyState = document.getElementById("emptyState");
+    const form = document.getElementById("searchForm");
+    const keywordInput = document.getElementById("keyword");
+
+    function escapeHtml(value) {
+        return String(value || "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function renderPlaces(places) {
+        grid.innerHTML = "";
+        if (!places.length) {
+            emptyState.style.display = "block";
+            emptyState.textContent = "표시할 관광지가 없습니다. 검색어를 바꾸거나 TourAPI 설정을 확인해주세요.";
+            return;
+        }
+
+        emptyState.style.display = "none";
+        grid.innerHTML = places.map(place => {
+            const detailUrl = `/ko/reservation/new?contentId=${encodeURIComponent(place.contentId || "")}&contentTypeId=${encodeURIComponent(place.contentTypeId || "")}`;
+            const imageStyle = place.imageUrl ? `style="background-image:url('${escapeHtml(place.imageUrl)}')"` : "";
+            return `
+                <article class="place-card">
+                    <div class="place-image" ${imageStyle}></div>
+                    <div class="place-body">
+                        <h2 class="place-title">${escapeHtml(place.title || "관광지명 없음")}</h2>
+                        <p class="meta">${escapeHtml(place.displayAddress || place.address || "주소 정보 없음")}</p>
+                        <p class="meta">${escapeHtml(place.displayTel || place.tel || "전화번호 정보 없음")}</p>
+                        <div class="card-actions">
+                            <a class="btn" href="${detailUrl}">예약하기</a>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }).join("");
+    }
+
+    async function loadPlaces(keyword = "") {
+        emptyState.style.display = "block";
+        emptyState.textContent = "TourAPI를 실시간 호출하는 중입니다.";
+        grid.innerHTML = "";
+
+        const params = new URLSearchParams({ pageNo: "1", numOfRows: "12" });
+        if (keyword.trim()) {
+            params.set("keyword", keyword.trim());
+        }
+
+        try {
+            const response = await fetch(`/api/tourapi/places?${params.toString()}`);
+            if (!response.ok) throw new Error("request failed");
+            renderPlaces(await response.json());
+        } catch (error) {
+            emptyState.style.display = "block";
+            emptyState.textContent = "TourAPI 호출에 실패했습니다. 인증키와 공공데이터 API 경로를 확인해주세요.";
+        }
+    }
+
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        loadPlaces(keywordInput.value);
+    });
+
+    loadPlaces(keywordInput.value);
+</script>
+</body>
+</html>

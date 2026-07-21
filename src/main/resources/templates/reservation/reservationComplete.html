@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예약 완료 | KoreaPoint</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
+</head>
+<body>
+<header>
+    <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
+    <div class="header-right">
+        <a th:href="@{/ko/reservation}" class="h-btn">예약</a>
+        <a th:href="@{/ko/mypage}" class="h-btn active">마이페이지</a>
+        <span class="h-btn" th:text="${currentUserName}">User</span>
+    </div>
+</header>
+
+<main class="page">
+    <section class="page-head">
+        <div>
+            <p class="eyebrow">Complete</p>
+            <h1>예약 흐름이 완료되었습니다</h1>
+            <p class="sub">아래 정보는 저장되지 않는 시뮬레이션 결과입니다.</p>
+        </div>
+    </section>
+
+    <div class="notice warning">
+        공모전 조건에 맞춰 예약 정보는 DB와 캐시에 저장하지 않습니다. 이 화면을 벗어나면 예약 내역 조회는 제공되지 않습니다.
+    </div>
+
+    <section class="panel">
+        <dl class="summary-list">
+            <div class="summary-row">
+                <dt>예약번호</dt>
+                <dd th:text="${reservationNo}">KP-00000000-0000</dd>
+            </div>
+            <div class="summary-row">
+                <dt>관광지</dt>
+                <dd th:text="${place != null ? place.title : reservation.placeTitle}">관광지명</dd>
+            </div>
+            <div class="summary-row">
+                <dt>방문일</dt>
+                <dd th:text="${reservation.reservationDate}">2026-07-21</dd>
+            </div>
+            <div class="summary-row">
+                <dt>시간</dt>
+                <dd th:text="${reservation.reservationTime}">10:00</dd>
+            </div>
+            <div class="summary-row">
+                <dt>인원</dt>
+                <dd th:text="|${reservation.peopleCount}명|">1명</dd>
+            </div>
+            <div class="summary-row" th:if="${reservation.memo != null && !reservation.memo.isBlank()}">
+                <dt>메모</dt>
+                <dd th:text="${reservation.memo}">메모</dd>
+            </div>
+        </dl>
+
+        <div class="card-actions">
+            <a class="btn" th:href="@{/ko/reservation}">다른 관광지 예약</a>
+            <a class="btn secondary" th:href="@{/ko/mypage}">마이페이지 보기</a>
+        </div>
+    </section>
+</main>
+</body>
+</html>
