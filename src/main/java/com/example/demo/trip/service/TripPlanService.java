@@ -48,6 +48,7 @@ public class TripPlanService {
                 .companion(tripReq.getCompanion())
                 .budget(tripReq.getBudget())
                 .travelDays(tripReq.getTravelDays())
+                .startDate(tripReq.getStartDate())
                 .startHour(tripReq.getStartHour())
                 .endHour(tripReq.getEndHour())
                 .intensity(tripReq.getIntensity())
@@ -130,7 +131,8 @@ public class TripPlanService {
         TripPlanDto.Summary s = new TripPlanDto.Summary();
         s.setId(p.getId()); s.setTitle(p.getTitle());
         s.setTravelDays(p.getTravelDays());
-        s.setPreferredAreas(p.getPreferredAreas());
+        s.setStartDate(p.getStartDate());
+        s.setPreferredAreas(strToList(p.getPreferredAreas()));
         s.setCompanion(p.getCompanion());
         s.setCreatedAt(p.getCreatedAt());
         return s;
@@ -141,11 +143,12 @@ public class TripPlanService {
         d.setId(p.getId()); d.setTitle(p.getTitle());
         d.setAge(p.getAge()); d.setCompanion(p.getCompanion());
         d.setBudget(p.getBudget()); d.setTravelDays(p.getTravelDays());
+        d.setStartDate(p.getStartDate());
         d.setStartHour(p.getStartHour()); d.setEndHour(p.getEndHour());
         d.setIntensity(p.getIntensity());
-        d.setPreferredAreas(p.getPreferredAreas());
-        d.setMustVisit(p.getMustVisit());
-        d.setCategories(p.getCategories());
+        d.setPreferredAreas(strToList(p.getPreferredAreas()));
+        d.setMustVisit(strToList(p.getMustVisit()));
+        d.setCategories(strToList(p.getCategories()));
         d.setStyleDescription(p.getStyleDescription());
         d.setCreatedAt(p.getCreatedAt());
 
@@ -174,5 +177,13 @@ public class TripPlanService {
 
     private String listToStr(List<String> list) {
         return (list == null || list.isEmpty()) ? "" : String.join(",", list);
+    }
+
+    private List<String> strToList(String value) {
+        if (value == null || value.isBlank()) return List.of();
+        return java.util.Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(item -> !item.isEmpty())
+                .toList();
     }
 }

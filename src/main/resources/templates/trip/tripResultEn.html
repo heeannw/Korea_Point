@@ -120,8 +120,6 @@
 </div>
 
 <script>
-  const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
-
   /* ─── 토스트 ─── */
   function showToast(msg, duration = 2500) {
     const t = document.getElementById('toast');
@@ -170,11 +168,12 @@
   function openReservationModal(planId) {
     const modal=document.getElementById('reservationModal');modal.dataset.planId=planId;
     const slots=(tripResult.schedule||[]).flatMap(day=>(day.slots||[]).map(slot=>({...slot,day:day.day})));
-    document.getElementById('reservationPlace').innerHTML=slots.map(slot=>`<option value="${slot.placeName.replace(/"/g,'&quot;')}" data-time="${slot.time||'12:00'}">Day ${slot.day} · ${slot.placeName}</option>`).join('');
-    const today=new Date().toISOString().slice(0,10),dateInput=document.getElementById('reservationDate');dateInput.min=today;dateInput.value=today;
-    document.getElementById('reservationTime').value=slots[0]?.time||'12:00';document.getElementById('reservationPlace').onchange=event=>document.getElementById('reservationTime').value=event.target.selectedOptions[0]?.dataset.time||'12:00';
+    document.getElementById('reservationPlace').innerHTML=slots.map(slot=>`<option value="${slot.placeName.replace(/"/g,'&quot;')}" data-time="${slot.time||'12:00'}" data-day="${slot.day}">Day ${slot.day} · ${slot.placeName}</option>`).join('');
+    const today=new Date().toISOString().slice(0,10),dateInput=document.getElementById('reservationDate');dateInput.min=today;dateInput.value=reservationDateForDay(slots[0]?.day||1);
+    document.getElementById('reservationTime').value=slots[0]?.time||'12:00';document.getElementById('reservationPlace').onchange=event=>{const selected=event.target.selectedOptions[0];document.getElementById('reservationTime').value=selected?.dataset.time||'12:00';dateInput.value=reservationDateForDay(Number(selected?.dataset.day||1))};
     modal.classList.add('open');modal.setAttribute('aria-hidden','false');
   }
+  function reservationDateForDay(day){const base=tripRequest.startDate?new Date(`${tripRequest.startDate}T00:00:00`):new Date();base.setDate(base.getDate()+day-1);return base.toISOString().slice(0,10)}
   function closeReservationModal(){const modal=document.getElementById('reservationModal');modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
   async function submitReservation(){const modal=document.getElementById('reservationModal');const payload={tripPlanId:Number(modal.dataset.planId),placeName:document.getElementById('reservationPlace').value,visitDate:document.getElementById('reservationDate').value,visitTime:document.getElementById('reservationTime').value,partySize:Number(document.getElementById('reservationParty').value),requestNote:document.getElementById('reservationNote').value.trim()};const csrfToken=document.querySelector('meta[name="_csrf"]')?.content,csrfHeader=document.querySelector('meta[name="_csrf_header"]')?.content,headers={'Content-Type':'application/json'};if(csrfToken&&csrfHeader)headers[csrfHeader]=csrfToken;const response=await fetch('/api/trip/reservation',{method:'POST',headers,body:JSON.stringify(payload)});if(!response.ok){showToast('Could not save the booking request.');return}closeReservationModal();showToast('Booking request saved.')}
 
@@ -225,9 +224,7 @@
 
   // 변경 — size=3으로 늘리고, 첫 번째 결과가 서울 범위 내인지 확인
   function kakaoSearch(query) {
-    return fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query + ' 서울')}&size=3`, {
-      headers: { Authorization: KAKAO_KEY }
-    })
+    return fetch(`/api/kakao/search?query=${encodeURIComponent(query + ' 서울')}&size=3`)
             .then(r => r.json())
             .then(d => {
               if (!d.documents?.length) return null;

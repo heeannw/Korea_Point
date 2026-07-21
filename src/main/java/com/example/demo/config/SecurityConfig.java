@@ -25,6 +25,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/reports/**").authenticated()
                 .requestMatchers("/api/trip/plan/**").authenticated()
                 .requestMatchers("/api/trip/reservation/**").authenticated()
+                .requestMatchers("/api/transport/history/**").authenticated()
+                .requestMatchers("/api/kakao/**").authenticated()
                 .requestMatchers("/tour/**").authenticated()
                 .requestMatchers("/transport/**").authenticated()
                 .requestMatchers("/foodmap/**").authenticated()

@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface TripReservationRepository extends JpaRepository<TripReservation, Long> {
     List<TripReservation> findByUserIdOrderByCreatedAtDesc(String userId);
+    List<TripReservation> findAllByOrderByCreatedAtDesc();
     Optional<TripReservation> findByIdAndUserId(Long id, String userId);
 }

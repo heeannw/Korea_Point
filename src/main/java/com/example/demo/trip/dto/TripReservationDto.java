@@ -38,4 +38,9 @@ public class TripReservationDto {
         private ReservationStatus status;
         private LocalDateTime createdAt;
     }
+
+    @Data
+    public static class StatusRequest {
+        @NotNull private ReservationStatus status;
+    }
 }

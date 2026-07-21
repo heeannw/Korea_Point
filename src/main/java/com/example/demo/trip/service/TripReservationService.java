@@ -56,6 +56,22 @@ public class TripReservationService {
                 }).orElse(false);
     }
 
+    @Transactional(readOnly = true)
+    public List<TripReservationDto.Response> listAll() {
+        return reservationRepository.findAllByOrderByCreatedAtDesc().stream().map(this::toResponse).toList();
+    }
+
+    @Transactional
+    public boolean updateStatus(Long reservationId, ReservationStatus status) {
+        if (status != ReservationStatus.CONFIRMED && status != ReservationStatus.REJECTED) {
+            throw new IllegalArgumentException("예약 상태는 CONFIRMED 또는 REJECTED로만 변경할 수 있습니다.");
+        }
+        return reservationRepository.findById(reservationId).map(reservation -> {
+            reservation.setStatus(status);
+            return true;
+        }).orElse(false);
+    }
+
     private TripReservationDto.Response toResponse(TripReservation reservation) {
         TripReservationDto.Response response = new TripReservationDto.Response();
         response.setId(reservation.getId());

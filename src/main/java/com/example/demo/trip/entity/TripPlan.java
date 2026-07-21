@@ -3,6 +3,7 @@ package com.example.demo.trip.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +27,7 @@ public class TripPlan {
     @Column(length = 20)  private String companion;
     @Column(length = 20)  private String budget;
     private int travelDays;
+    private LocalDate startDate;
     private int startHour;
     private int endHour;
     @Column(length = 20)  private String intensity;

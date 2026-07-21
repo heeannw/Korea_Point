@@ -92,6 +92,10 @@
 
             <div class="time-row">
                 <div class="field-group">
+                    <label class="field-label">Start Date</label>
+                    <input class="field-input" id="startDate" type="date">
+                </div>
+                <div class="field-group">
                     <label class="field-label">Days</label>
                     <input class="field-input" id="travelDays" type="number" min="1" max="14" placeholder="e.g. 3">
                 </div>
@@ -325,7 +329,32 @@
         c.addEventListener('click', () => c.classList.toggle('selected'))
     );
 
-    loadAreaData();
+    loadAreaData().then(applyEditRequest);
+
+    function applyEditRequest() {
+        const raw = sessionStorage.getItem('tripEditRequest');
+        if (!raw) return;
+        sessionStorage.removeItem('tripEditRequest');
+        const edit = JSON.parse(raw);
+        document.getElementById('age').value = edit.age || '';
+        document.getElementById('companion').value = edit.companion || '';
+        document.getElementById('budget').value = edit.budget === 'low' ? 5 : edit.budget === 'high' ? 20 : 10;
+        document.getElementById('intensity').value = edit.intensity || '';
+        document.getElementById('travelDays').value = edit.travelDays || 1;
+        document.getElementById('startDate').value = edit.startDate || new Date().toISOString().slice(0,10);
+        document.getElementById('startHour').value = edit.startHour || 10;
+        document.getElementById('endHour').value = edit.endHour || 21;
+        document.getElementById('mustVisit').value = (edit.mustVisit || []).join(', ');
+        document.getElementById('styleDescription').value = edit.styleDescription || '';
+        (edit.preferredAreas || []).forEach(area => syncAreaChips(area, true));
+        document.querySelectorAll('#categoryChips .chip').forEach(chip =>
+            chip.classList.toggle('selected', (edit.categories || []).includes(chip.dataset.val)));
+        const list = document.getElementById('slotList'); list.innerHTML = '';
+        const firstDaySlots = edit.days?.[0]?.slots || [];
+        firstDaySlots.forEach(slot => addSlot(slot.category, '', slot.durationMinutes));
+        if (!firstDaySlots.length) renderSlotList();
+        updateNights(); updateBudgetLabel(document.getElementById('budget').value);
+    }
 
     /* ── nights calc ── */
     function updateNights() {
@@ -406,7 +435,7 @@
         }
     }
 
-    function addSlot(type, foodCategory = '') {
+    function addSlot(type, foodCategory = '', durationMinutes = null) {
         const cfg  = SLOT_CONFIG[type];
         const list = document.getElementById('slotList');
         const item = document.createElement('div');
@@ -420,8 +449,9 @@
          </select>`
             : '';
         const defaultDuration = type === 'tourism' ? 0 : 60;
+        const selectedDuration = durationMinutes ?? defaultDuration;
         const durationSelect = `<select class="slot-duration-select" title="Select duration">
-            ${DURATION_OPTIONS.map(o => `<option value="${o.value}" ${o.value === defaultDuration ? 'selected' : ''}>${o.label}</option>`).join('')}
+            ${DURATION_OPTIONS.map(o => `<option value="${o.value}" ${o.value === selectedDuration ? 'selected' : ''}>${o.label}</option>`).join('')}
         </select>`;
 
         item.innerHTML = `
@@ -465,6 +495,9 @@
 
     let dragSrc = null;
     renderSlotList();
+    const startDateInput = document.getElementById('startDate');
+    startDateInput.min = new Date().toISOString().slice(0, 10);
+    startDateInput.value = startDateInput.min;
 
     function getSlotOrders() {
         return [...document.querySelectorAll('#slotList .slot-item')].map(item => {
@@ -501,7 +534,7 @@
 
         document.getElementById('summaryBox').innerHTML = [
             `<b>👤 Basics</b>: ${document.getElementById('age').value}y / ${cmpMap[document.getElementById('companion').value]||'-'} / ${document.getElementById('budget').value||'-'} (₩${(parseInt(document.getElementById('budget').value)||0)*10000}+/day) / ${intMap[document.getElementById('intensity').value]||'-'}`,
-            `<b>🗓️ Trip</b>: ${days} days / ${document.getElementById('startHour').value||10}:00–${document.getElementById('endHour').value||21}:00`,
+            `<b>🗓️ Trip</b>: ${document.getElementById('startDate').value||'Date not set'} · ${days} days / ${document.getElementById('startHour').value||10}:00–${document.getElementById('endHour').value||21}:00`,
             `<b>📅 Daily Order</b>: ${slotLine || 'Not set'}`,
             `<b>📍 Areas</b>: ${areas.length ? areas.join(', ') : 'None selected'}`,
             must ? `<b>🌟 Must-visit</b>: ${must}` : '',
@@ -522,6 +555,7 @@
             budget:           getBudgetLevel(document.getElementById('budget').value),
             lang:             'en',
             travelDays:       parseInt(document.getElementById('travelDays').value) || 3,
+            startDate:        document.getElementById('startDate').value || new Date().toISOString().slice(0,10),
             startHour:        parseInt(document.getElementById('startHour').value)  || 10,
             endHour:          parseInt(document.getElementById('endHour').value)    || 21,
             intensity:        document.getElementById('intensity').value     || 'balanced',

@@ -25,6 +25,20 @@ public class TransportRouteController {
     @Autowired
     private RouteRepository routeRepository;
 
+    @ResponseBody
+    @GetMapping(value = "/api/kakao/search", produces = "application/json")
+    public String kakaoSearch(@RequestParam String query,
+                              @RequestParam(required = false) String category,
+                              @RequestParam(defaultValue = "4") int size) throws Exception {
+        return transportRouteService.searchKakaoPlaces(query, category, size);
+    }
+
+    @ResponseBody
+    @GetMapping(value = "/api/kakao/reverse", produces = "application/json")
+    public String kakaoReverse(@RequestParam double x, @RequestParam double y) throws Exception {
+        return transportRouteService.reverseGeocode(x, y);
+    }
+
     // ✅ BUG3 FIX: /transport/search 리다이렉트에 endLat/endLng 파라미터 추가
     @GetMapping("/transport/search")
     public String transportSearchRedirect(
@@ -80,9 +94,7 @@ public class TransportRouteController {
     @PostMapping("/api/transport/history")
     public String saveHistory(@RequestBody Route route,
                               HttpServletRequest request) {
-        String user = SecurityUtil.isLoggedIn()
-                ? SecurityUtil.getCurrentUserName()
-                : "guest";
+        String user = SecurityUtil.getCurrentUserName();
         route.setUserId(user);
 
         String referer = request.getHeader("Referer");
@@ -102,15 +114,14 @@ public class TransportRouteController {
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
 
-        String user = SecurityUtil.isLoggedIn()
-                ? SecurityUtil.getCurrentUserName()
-                : "guest";
+        String user = SecurityUtil.getCurrentUserName();
 
         String lang = viewName.contains("En") ? "en" : "ko";
         model.addAttribute("lang", lang);
 
-        model.addAttribute("recentRoutes",
-                routeRepository.findTop10ByUserIdAndLanguageOrderBySearchedAtDesc(user, lang));
+        model.addAttribute("recentRoutes", SecurityUtil.isLoggedIn()
+                ? routeRepository.findTop10ByUserIdAndLanguageOrderBySearchedAtDesc(user, lang)
+                : java.util.List.of());
 
         try {
             List<TransportRouteDto> routes;
