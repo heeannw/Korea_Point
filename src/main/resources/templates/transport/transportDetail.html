@@ -60,6 +60,13 @@
                 <div class="congestion-bar-fill" id="congestionBarFill" style="width:0%"></div>
             </div>
 
+            <div class="congestion-legend" aria-label="혼잡도 단계">
+                <span data-level="normal">보통</span>
+                <span data-level="caution">주의</span>
+                <span data-level="crowded">혼잡</span>
+                <span data-level="severe">심각</span>
+            </div>
+
             <!-- 메시지 -->
             <div id="congestionMsg"
                  class="congestion-msg"
@@ -71,7 +78,7 @@
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('steps', this)">📋 이동 단계</button>
-            <button class="tab-btn" onclick="switchTab('arrival', this)">🚇 실시간 도착정보</button>
+            <button class="tab-btn" id="arrivalTabBtn" onclick="switchTab('arrival', this)">🚇 실시간 도착정보</button>
         </div>
         <div id="tab-steps" class="tab-content active">
             <div id="stepList"><p class="no-data">로딩중...</p></div>
@@ -783,6 +790,109 @@
                     }
                 }
 
+                const isBusanSubwayRoute = steps.some(step =>
+                    step.type === 'subway' && (step.line || '').includes('부산')
+                );
+                const isBusanRoute = isBusanSubwayRoute
+                    || `${routeData.start || ''} ${routeData.end || ''}`.includes('부산');
+
+                function addMinutesToTime(baseTime, minutes) {
+                    const [hourText, minuteText] = (baseTime || '00:00').split(':');
+                    const date = new Date();
+                    date.setHours(parseInt(hourText, 10) || 0, parseInt(minuteText, 10) || 0, 0, 0);
+                    date.setMinutes(date.getMinutes() + minutes);
+                    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                }
+
+                function estimateBusanHeadway(lineName) {
+                    if ((lineName || '').includes('4호선')) return 8;
+                    if ((lineName || '').includes('3호선')) return 7;
+                    return 6;
+                }
+
+                async function fetchBusanBusArrival(step) {
+                    const first = step.path && step.path.length > 0 ? step.path[0] : {};
+                    const params = new URLSearchParams({
+                        stopName: step.fromStation || '',
+                        busNo: step.line || ''
+                    });
+                    if (first.lat && first.lng) {
+                        params.set('lat', first.lat);
+                        params.set('lng', first.lng);
+                    }
+
+                    try {
+                        const response = await fetch(`/api/transport/busan/bus-arrival?${params.toString()}`);
+                        return await response.json();
+                    } catch (e) {
+                        return { arrivals: [], error: 'request-failed' };
+                    }
+                }
+
+                if (isBusanRoute) {
+                    const arrivalTabBtn = document.getElementById('arrivalTabBtn');
+                    if (arrivalTabBtn) {
+                        arrivalTabBtn.textContent = '🚌 부산 도착정보';
+                    }
+
+                    let elapsed = 0;
+                    let html = '<p class="arrival-note">부산 지하철은 시간표 기반 예상정보로, 부산 버스는 BIMS 실시간 도착정보로 표시합니다. 조회 실패 시 경로 소요시간 기반 예상값을 보여줍니다.</p>';
+
+                    for (const step of steps) {
+                        if (step.type === 'subway') {
+                            const headway = estimateBusanHeadway(step.line);
+                            const timeRows = [0, 1, 2].map(index => {
+                                const offset = index * headway;
+                                const departAt = addMinutesToTime(routeData.departTime, elapsed + offset);
+                                const arriveAt = addMinutesToTime(routeData.departTime, elapsed + offset + (step.duration || 0));
+                                return `
+                                    <div class="timetable-row">
+                                        <span class="timetable-order">${index === 0 ? '다음' : `${index + 1}번째`}</span>
+                                        <span><b>출발</b>${departAt}</span>
+                                        <span><b>도착</b>${arriveAt}</span>
+                                    </div>`;
+                            }).join('');
+
+                            html += `
+                                <div class="arrival-card timetable">
+                                    <div class="arrival-station">${step.fromStation || '출발역'}</div>
+                                    <div class="arr-line">${step.line || '부산 지하철'} · ${step.toStation || '도착역'} 방면</div>
+                                    <div class="timetable-list">${timeRows}</div>
+                                </div>`;
+                        } else if (step.type === 'bus') {
+                            const busArrival = await fetchBusanBusArrival(step);
+                            const arrivals = busArrival.arrivals || [];
+                            const fallbackDepart = addMinutesToTime(routeData.departTime, elapsed);
+                            const fallbackArrive = addMinutesToTime(routeData.departTime, elapsed + (step.duration || 0));
+                            const timeRows = arrivals.length
+                                ? arrivals.map((arrival, index) => `
+                                    <div class="timetable-row">
+                                        <span class="timetable-order">${index === 0 ? '실시간' : `${index + 1}번째`}</span>
+                                        <span><b>노선</b>${arrival.line || step.line || '버스'}</span>
+                                        <span><b>도착</b>${arrival.message || '확인 중'}</span>
+                                    </div>`).join('')
+                                : `
+                                    <div class="timetable-row">
+                                        <span class="timetable-order">예상</span>
+                                        <span><b>출발</b>${fallbackDepart}</span>
+                                        <span><b>도착</b>${fallbackArrive}</span>
+                                    </div>`;
+
+                            html += `
+                                <div class="arrival-card timetable bus">
+                                    <div class="arrival-station">${step.fromStation || '버스 정류장'}</div>
+                                    <div class="arr-line">${step.line || '버스'} · ${step.toStation || '도착 정류장'} 방면</div>
+                                    <div class="timetable-list">${timeRows}</div>
+                                </div>`;
+                        }
+
+                        elapsed += step.duration || 0;
+                    }
+
+                    document.getElementById('arrivalList').innerHTML = html;
+                }
+
+                if (!isBusanRoute) {
                 // 여러 역 요청
                 const requests = stationList.map(st =>
                     fetch(`/api/transport/subway?station=${encodeURIComponent(st)}`)
@@ -861,8 +971,6 @@
                                 .trim();
                         }
 
-                        html += `<div style="margin-top:10px;font-weight:700;color:#3b9eff">${result.station}역</div>`;
-
                         html += finalList.map(item => {
 
                             const sec = parseInt(item.barvlDt);
@@ -872,19 +980,26 @@
                             else if (!isNaN(sec) && sec > 0) msg = `${Math.floor(sec / 60)}분 후 도착`;
                             else msg = (item.arvlMsg2 || '').replace(/\[/g, '').replace(/\]/g, '');
 
-                            return `
-                                <div class="arrival-card">
-                                    <div class="arr-line">${
-                                cleanLineName(
-                                    (Array.isArray(item.trainLineNm)
-                                            ? item.trainLineNm[0]
-                                            : item.trainLineNm
-                                    ).split('방면')[1] || (Array.isArray(item.trainLineNm)
+                            const lineText = cleanLineName(
+                                (Array.isArray(item.trainLineNm)
                                         ? item.trainLineNm[0]
-                                        : item.trainLineNm)
-                                )
-                            }</div>
-                                    <div class="arr-msg">${msg}</div>
+                                        : item.trainLineNm
+                                ).split('방면')[1] || (Array.isArray(item.trainLineNm)
+                                    ? item.trainLineNm[0]
+                                    : item.trainLineNm)
+                            );
+
+                            return `
+                                <div class="arrival-card timetable live">
+                                    <div class="arrival-station">${result.station}역</div>
+                                    <div class="arr-line">${lineText || '서울 지하철'}</div>
+                                    <div class="timetable-list">
+                                        <div class="timetable-row">
+                                            <span class="timetable-order">실시간</span>
+                                            <span><b>노선</b>${lineText || '지하철'}</span>
+                                            <span><b>도착</b>${msg}</span>
+                                        </div>
+                                    </div>
                                 </div>`;
                         }).join('');
                     });
@@ -896,6 +1011,7 @@
                     document.getElementById('arrivalList').innerHTML =
                         '<p class="no-data">조회 실패</p>';
                 });
+                }
 
                 // ── 혼잡도 ──
                 const stationCode = station
@@ -907,19 +1023,23 @@
                 const fill = document.getElementById('congestionBarFill');
                 const msgBox = document.getElementById('congestionMsg');
                 const chip = document.querySelector('.congestion-chip');
+                const legendItems = document.querySelectorAll('.congestion-legend span');
 
                 let pct = 50;
                 let cls = '';
 
-                if (congestionText === '여유') {
-                    pct = 30;
-                    cls = 'low';
-                } else if (congestionText === '보통') {
-                    pct = 60;
-                    cls = 'mid';
+                if (congestionText === '보통') {
+                    pct = 25;
+                    cls = 'normal';
+                } else if (congestionText === '주의') {
+                    pct = 50;
+                    cls = 'caution';
+                } else if (congestionText === '혼잡') {
+                    pct = 75;
+                    cls = 'crowded';
                 } else {
                     pct = 100;
-                    cls = 'high';
+                    cls = 'severe';
                 }
 
                 // 바 채우기
@@ -928,6 +1048,7 @@
 
                 // 텍스트 색상
                 chip.className = 'congestion-chip ' + cls;
+                legendItems.forEach(item => item.classList.toggle('active', item.dataset.level === cls));
 
             })
             .catch(err => {

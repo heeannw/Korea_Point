@@ -371,13 +371,18 @@ public class TransportRouteService {
                 String lineName   = lane.get("name").asText();
                 String fromSt     = stations != null ? stations.get(0).get("stationName").asText() : "";
                 String toSt       = stations != null ? stations.get(stations.size()-1).get("stationName").asText() : "";
+                Integer fromStationId = stations != null ? readStationId(stations.get(0)) : null;
+                Integer toStationId = stations != null ? readStationId(stations.get(stations.size()-1)) : null;
 
                 TransportStepDto step = new TransportStepDto();
                 step.setType("subway");
                 step.setLine(lineName);
+                step.setSubwayCode(subwayCode);
                 step.setColor(color);
                 step.setFromStation(fromSt);
                 step.setToStation(toSt);
+                step.setFromStationId(fromStationId);
+                step.setToStationId(toStationId);
                 step.setDuration(sectionTime);
                 step.setPath(pathCoords);
                 steps.add(step);
@@ -451,6 +456,28 @@ public class TransportRouteService {
         return steps;
     }
 
+    private Integer readStationId(JsonNode station) {
+        if (station == null) {
+            return null;
+        }
+
+        for (String field : List.of("stationID", "stationId", "stationCode", "localStationID")) {
+            JsonNode value = station.get(field);
+            if (value != null && value.canConvertToInt()) {
+                return value.asInt();
+            }
+            if (value != null && value.isTextual()) {
+                try {
+                    return Integer.parseInt(value.asText().trim());
+                } catch (NumberFormatException ignored) {
+                    // Try the next ODsay station id field.
+                }
+            }
+        }
+
+        return null;
+    }
+
     // -----------------------------------------------
     // 헬퍼 메서드들
     // -----------------------------------------------
@@ -509,7 +536,6 @@ public class TransportRouteService {
         }
         return cached.route();
     }
-
     private void cacheRoute(TransportRouteDto route) {
         Instant now = Instant.now();
         transportRouteStore.entrySet().removeIf(entry ->
