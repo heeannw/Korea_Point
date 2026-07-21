@@ -38,7 +38,10 @@ public class SecurityConfig {
             )
             .oauth2Login(oauth2 -> oauth2
                 .loginPage("/login")
-                .defaultSuccessUrl("/")
+                .successHandler((request, response, authentication) -> {
+                    Object language = request.getSession().getAttribute("loginLanguage");
+                    response.sendRedirect("ko".equals(language) ? "/ko" : "/");
+                })
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
                 )
