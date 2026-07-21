@@ -35,7 +35,7 @@ public class TransportMlService {
             loadDfMeta();
             System.out.println("✅ TransportMlService 초기화 완료");
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.out.println("⚠️ TransportMlService 로드 실패 (무시됨)");
             e.printStackTrace();
         }
