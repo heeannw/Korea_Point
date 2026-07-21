@@ -25,4 +25,8 @@ public class TripPlanSlot {
     private Double lat;
     private Double lng;
     @Column(length = 300)     private String address;
+    @Column(length = 1000)    private String imageUrl;
+    private double avgRating;
+    private int reviewCount;
+    private int durationMinutes;
 }

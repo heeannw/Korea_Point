@@ -61,6 +61,13 @@
         <div class="congestion-bar-fill" id="congestionBarFill" style="width:0%"></div>
       </div>
 
+      <div class="congestion-legend" aria-label="Congestion levels">
+        <span data-level="normal">Normal</span>
+        <span data-level="caution">Caution</span>
+        <span data-level="crowded">Crowded</span>
+        <span data-level="severe">Severe</span>
+      </div>
+
       <!-- Message -->
       <div id="congestionMsg"
            class="congestion-msg"
@@ -72,7 +79,7 @@
 
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('steps', this)">📋 Steps</button>
-      <button class="tab-btn" onclick="switchTab('arrival', this)">🚇 Live Arrivals</button>
+      <button class="tab-btn" id="arrivalTabBtn" onclick="switchTab('arrival', this)">🚇 Live Arrivals</button>
     </div>
     <div id="tab-steps" class="tab-content active">
       <div id="stepList"><p class="no-data">Loading...</p></div>
@@ -173,12 +180,8 @@
 
 
   // Kakao keyword search → return coordinates
-  const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
-
   function kakaoSearch(query) {
-    return fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}`, {
-      headers: { 'Authorization': KAKAO_KEY }
-    })
+    return fetch(`/api/kakao/search?query=${encodeURIComponent(query)}`)
             .then(r => r.json())
             .then(d => {
               if (d.documents && d.documents.length > 0) {
@@ -800,6 +803,109 @@
                 }
               }
 
+              const isBusanSubwayRoute = steps.some(step =>
+                      step.type === 'subway' && (step.line || '').includes('부산')
+              );
+              const isBusanRoute = isBusanSubwayRoute
+                      || `${routeData.start || ''} ${routeData.end || ''}`.includes('부산');
+
+              function addMinutesToTime(baseTime, minutes) {
+                const [hourText, minuteText] = (baseTime || '00:00').split(':');
+                const date = new Date();
+                date.setHours(parseInt(hourText, 10) || 0, parseInt(minuteText, 10) || 0, 0, 0);
+                date.setMinutes(date.getMinutes() + minutes);
+                return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+              }
+
+              function estimateBusanHeadway(lineName) {
+                if ((lineName || '').includes('4호선')) return 8;
+                if ((lineName || '').includes('3호선')) return 7;
+                return 6;
+              }
+
+              async function fetchBusanBusArrival(step) {
+                const first = step.path && step.path.length > 0 ? step.path[0] : {};
+                const params = new URLSearchParams({
+                  stopName: step.fromStation || '',
+                  busNo: step.line || ''
+                });
+                if (first.lat && first.lng) {
+                  params.set('lat', first.lat);
+                  params.set('lng', first.lng);
+                }
+
+                try {
+                  const response = await fetch(`/api/transport/busan/bus-arrival?${params.toString()}`);
+                  return await response.json();
+                } catch (e) {
+                  return { arrivals: [], error: 'request-failed' };
+                }
+              }
+
+              if (isBusanRoute) {
+                const arrivalTabBtn = document.getElementById('arrivalTabBtn');
+                if (arrivalTabBtn) {
+                  arrivalTabBtn.textContent = '🚌 Busan Arrivals';
+                }
+
+                let elapsed = 0;
+                let html = '<p class="arrival-note">Busan subway arrivals are timetable-based estimates. Busan bus arrivals use BIMS live data when available, then fall back to route-duration estimates.</p>';
+
+                for (const step of steps) {
+                  if (step.type === 'subway') {
+                    const headway = estimateBusanHeadway(step.line);
+                    const timeRows = [0, 1, 2].map(index => {
+                      const offset = index * headway;
+                      const departAt = addMinutesToTime(routeData.departTime, elapsed + offset);
+                      const arriveAt = addMinutesToTime(routeData.departTime, elapsed + offset + (step.duration || 0));
+                      return `
+                          <div class="timetable-row">
+                              <span class="timetable-order">${index === 0 ? 'Next' : `#${index + 1}`}</span>
+                              <span><b>Departs</b>${departAt}</span>
+                              <span><b>Arrives</b>${arriveAt}</span>
+                          </div>`;
+                    }).join('');
+
+                    html += `
+                      <div class="arrival-card timetable">
+                          <div class="arrival-station">${step.fromStation || 'Departure Station'}</div>
+                          <div class="arr-line">${step.line || 'Busan Subway'} · toward ${step.toStation || 'Destination'}</div>
+                          <div class="timetable-list">${timeRows}</div>
+                      </div>`;
+                  } else if (step.type === 'bus') {
+                    const busArrival = await fetchBusanBusArrival(step);
+                    const arrivals = busArrival.arrivals || [];
+                    const fallbackDepart = addMinutesToTime(routeData.departTime, elapsed);
+                    const fallbackArrive = addMinutesToTime(routeData.departTime, elapsed + (step.duration || 0));
+                    const timeRows = arrivals.length
+                            ? arrivals.map((arrival, index) => `
+                                <div class="timetable-row">
+                                    <span class="timetable-order">${index === 0 ? 'Live' : `#${index + 1}`}</span>
+                                    <span><b>Route</b>${arrival.line || step.line || 'Bus'}</span>
+                                    <span><b>Arrives</b>${arrival.message || 'Checking'}</span>
+                                </div>`).join('')
+                            : `
+                                <div class="timetable-row">
+                                    <span class="timetable-order">Est.</span>
+                                    <span><b>Departs</b>${fallbackDepart}</span>
+                                    <span><b>Arrives</b>${fallbackArrive}</span>
+                                </div>`;
+
+                    html += `
+                      <div class="arrival-card timetable bus">
+                          <div class="arrival-station">${step.fromStation || 'Bus Stop'}</div>
+                          <div class="arr-line">${step.line || 'Bus'} · toward ${step.toStation || 'Destination Stop'}</div>
+                          <div class="timetable-list">${timeRows}</div>
+                      </div>`;
+                  }
+
+                  elapsed += step.duration || 0;
+                }
+
+                document.getElementById('arrivalList').innerHTML = html;
+              }
+
+              if (!isBusanRoute) {
               // Request multiple stations
               const requests = stationList.map(st =>
                       fetch(`/api/transport/subway?station=${encodeURIComponent(st)}`)
@@ -886,8 +992,6 @@
                             .trim();
                   }
 
-                  html += `<div style="margin-top:10px;font-weight:700;color:#3b9eff">${result.station} Station</div>`;
-
                   html += finalList.map(item => {
 
                     const sec = parseInt(item.barvlDt);
@@ -904,9 +1008,16 @@
                     const lineText = cleanLineName(item.trainLineNm);
 
                     return `
-                      <div class="arrival-card">
-                          <div class="arr-line">${lineText}</div>
-                          <div class="arr-msg">${msg}</div>
+                      <div class="arrival-card timetable live">
+                          <div class="arrival-station">${result.station} Station</div>
+                          <div class="arr-line">${lineText || 'Seoul Subway'}</div>
+                          <div class="timetable-list">
+                              <div class="timetable-row">
+                                  <span class="timetable-order">Live</span>
+                                  <span class="timetable-route">${lineText || 'Subway'}</span>
+                                  <span class="timetable-arrival">${msg}</span>
+                              </div>
+                          </div>
                       </div>
                             `;
                   }).join('');
@@ -919,6 +1030,7 @@
                 document.getElementById('arrivalList').innerHTML =
                         '<p class="no-data">Failed to load</p>';
               });
+              }
 
               // ── Congestion ──
               const stationCode = station
@@ -930,19 +1042,23 @@
               const fill = document.getElementById('congestionBarFill');
               const msgBox = document.getElementById('congestionMsg');
               const chip = document.querySelector('.congestion-chip');
+              const legendItems = document.querySelectorAll('.congestion-legend span');
 
               let pct = 50;
               let cls = '';
 
-              if (congestionText === 'Comfortable') {
-                pct = 30;
-                cls = 'low';
-              } else if (congestionText === 'Moderate') {
-                pct = 60;
-                cls = 'mid';
+              if (congestionText === 'Normal') {
+                pct = 25;
+                cls = 'normal';
+              } else if (congestionText === 'Caution') {
+                pct = 50;
+                cls = 'caution';
+              } else if (congestionText === 'Crowded') {
+                pct = 75;
+                cls = 'crowded';
               } else {
                 pct = 100;
-                cls = 'high';
+                cls = 'severe';
               }
 
               // Fill bar
@@ -951,6 +1067,7 @@
 
               // Text color
               chip.className = 'congestion-chip ' + cls;
+              legendItems.forEach(item => item.classList.toggle('active', item.dataset.level === cls));
 
             })
             .catch(err => {

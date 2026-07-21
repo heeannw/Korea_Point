@@ -1,0 +1,1082 @@
+{
+  "1:괴정": {
+    "station_num": 0,
+    "line_num": 1,
+    "station_id": 105
+  },
+  "1:교대": {
+    "station_num": 1,
+    "line_num": 1,
+    "station_id": 124
+  },
+  "1:구서": {
+    "station_num": 2,
+    "line_num": 1,
+    "station_id": 130
+  },
+  "1:남산": {
+    "station_num": 3,
+    "line_num": 1,
+    "station_id": 132
+  },
+  "1:남포": {
+    "station_num": 4,
+    "line_num": 1,
+    "station_id": 111
+  },
+  "1:낫개": {
+    "station_num": 5,
+    "line_num": 1,
+    "station_id": 97
+  },
+  "1:노포": {
+    "station_num": 6,
+    "line_num": 1,
+    "station_id": 134
+  },
+  "1:다대포항": {
+    "station_num": 7,
+    "line_num": 1,
+    "station_id": 96
+  },
+  "1:다대포해수욕장": {
+    "station_num": 8,
+    "line_num": 1,
+    "station_id": 95
+  },
+  "1:당리": {
+    "station_num": 9,
+    "line_num": 1,
+    "station_id": 103
+  },
+  "1:대티": {
+    "station_num": 10,
+    "line_num": 1,
+    "station_id": 106
+  },
+  "1:동대신": {
+    "station_num": 11,
+    "line_num": 1,
+    "station_id": 108
+  },
+  "1:동래": {
+    "station_num": 12,
+    "line_num": 1,
+    "station_id": 125
+  },
+  "1:동매": {
+    "station_num": 13,
+    "line_num": 1,
+    "station_id": 100
+  },
+  "1:두실": {
+    "station_num": 14,
+    "line_num": 1,
+    "station_id": 131
+  },
+  "1:명륜": {
+    "station_num": 15,
+    "line_num": 1,
+    "station_id": 126
+  },
+  "1:범내골": {
+    "station_num": 16,
+    "line_num": 1,
+    "station_id": 118
+  },
+  "1:범어사": {
+    "station_num": 17,
+    "line_num": 1,
+    "station_id": 133
+  },
+  "1:범일": {
+    "station_num": 18,
+    "line_num": 1,
+    "station_id": 117
+  },
+  "1:부산대": {
+    "station_num": 19,
+    "line_num": 1,
+    "station_id": 128
+  },
+  "1:부산역": {
+    "station_num": 20,
+    "line_num": 1,
+    "station_id": 113
+  },
+  "1:부산진": {
+    "station_num": 21,
+    "line_num": 1,
+    "station_id": 115
+  },
+  "1:부전": {
+    "station_num": 22,
+    "line_num": 1,
+    "station_id": 120
+  },
+  "1:사하": {
+    "station_num": 23,
+    "line_num": 1,
+    "station_id": 104
+  },
+  "1:서대신": {
+    "station_num": 24,
+    "line_num": 1,
+    "station_id": 107
+  },
+  "1:서면": {
+    "station_num": 25,
+    "line_num": 1,
+    "station_id": 119
+  },
+  "1:시청": {
+    "station_num": 26,
+    "line_num": 1,
+    "station_id": 122
+  },
+  "1:신장림": {
+    "station_num": 27,
+    "line_num": 1,
+    "station_id": 98
+  },
+  "1:신평": {
+    "station_num": 28,
+    "line_num": 1,
+    "station_id": 101
+  },
+  "1:양정": {
+    "station_num": 29,
+    "line_num": 1,
+    "station_id": 121
+  },
+  "1:연산": {
+    "station_num": 30,
+    "line_num": 1,
+    "station_id": 123
+  },
+  "1:온천장": {
+    "station_num": 31,
+    "line_num": 1,
+    "station_id": 127
+  },
+  "1:자갈치": {
+    "station_num": 32,
+    "line_num": 1,
+    "station_id": 110
+  },
+  "1:장림": {
+    "station_num": 33,
+    "line_num": 1,
+    "station_id": 99
+  },
+  "1:장전": {
+    "station_num": 34,
+    "line_num": 1,
+    "station_id": 129
+  },
+  "1:좌천": {
+    "station_num": 35,
+    "line_num": 1,
+    "station_id": 116
+  },
+  "1:중앙": {
+    "station_num": 36,
+    "line_num": 1,
+    "station_id": 112
+  },
+  "1:초량": {
+    "station_num": 37,
+    "line_num": 1,
+    "station_id": 114
+  },
+  "1:토성": {
+    "station_num": 38,
+    "line_num": 1,
+    "station_id": 109
+  },
+  "1:하단": {
+    "station_num": 39,
+    "line_num": 1,
+    "station_id": 102
+  },
+  "2:가야": {
+    "station_num": 40,
+    "line_num": 2,
+    "station_id": 221
+  },
+  "2:감전": {
+    "station_num": 41,
+    "line_num": 2,
+    "station_id": 226
+  },
+  "2:개금": {
+    "station_num": 42,
+    "line_num": 2,
+    "station_id": 223
+  },
+  "2:경성대부경대": {
+    "station_num": 43,
+    "line_num": 2,
+    "station_id": 212
+  },
+  "2:광안": {
+    "station_num": 44,
+    "line_num": 2,
+    "station_id": 209
+  },
+  "2:구남": {
+    "station_num": 45,
+    "line_num": 2,
+    "station_id": 231
+  },
+  "2:구명": {
+    "station_num": 46,
+    "line_num": 2,
+    "station_id": 232
+  },
+  "2:국제금융센터부산은행": {
+    "station_num": 47,
+    "line_num": 2,
+    "station_id": 217
+  },
+  "2:금곡": {
+    "station_num": 48,
+    "line_num": 2,
+    "station_id": 238
+  },
+  "2:금련산": {
+    "station_num": 49,
+    "line_num": 2,
+    "station_id": 210
+  },
+  "2:남양산": {
+    "station_num": 50,
+    "line_num": 2,
+    "station_id": 242
+  },
+  "2:남천": {
+    "station_num": 51,
+    "line_num": 2,
+    "station_id": 211
+  },
+  "2:냉정": {
+    "station_num": 52,
+    "line_num": 2,
+    "station_id": 224
+  },
+  "2:대연": {
+    "station_num": 53,
+    "line_num": 2,
+    "station_id": 213
+  },
+  "2:덕천": {
+    "station_num": 54,
+    "line_num": 2,
+    "station_id": 233
+  },
+  "2:덕포": {
+    "station_num": 55,
+    "line_num": 2,
+    "station_id": 228
+  },
+  "2:동백": {
+    "station_num": 56,
+    "line_num": 2,
+    "station_id": 204
+  },
+  "2:동원": {
+    "station_num": 57,
+    "line_num": 2,
+    "station_id": 237
+  },
+  "2:동의대": {
+    "station_num": 58,
+    "line_num": 2,
+    "station_id": 222
+  },
+  "2:모덕": {
+    "station_num": 59,
+    "line_num": 2,
+    "station_id": 229
+  },
+  "2:모라": {
+    "station_num": 60,
+    "line_num": 2,
+    "station_id": 230
+  },
+  "2:못골": {
+    "station_num": 61,
+    "line_num": 2,
+    "station_id": 214
+  },
+  "2:문현": {
+    "station_num": 62,
+    "line_num": 2,
+    "station_id": 216
+  },
+  "2:민락": {
+    "station_num": 63,
+    "line_num": 2,
+    "station_id": 207
+  },
+  "2:벡스코": {
+    "station_num": 64,
+    "line_num": 2,
+    "station_id": 205
+  },
+  "2:부산대양산캠퍼스": {
+    "station_num": 65,
+    "line_num": 2,
+    "station_id": 241
+  },
+  "2:부암": {
+    "station_num": 66,
+    "line_num": 2,
+    "station_id": 220
+  },
+  "2:사상": {
+    "station_num": 67,
+    "line_num": 2,
+    "station_id": 227
+  },
+  "2:서면": {
+    "station_num": 68,
+    "line_num": 2,
+    "station_id": 219
+  },
+  "2:센텀시티": {
+    "station_num": 69,
+    "line_num": 2,
+    "station_id": 206
+  },
+  "2:수영": {
+    "station_num": 70,
+    "line_num": 2,
+    "station_id": 208
+  },
+  "2:수정": {
+    "station_num": 71,
+    "line_num": 2,
+    "station_id": 234
+  },
+  "2:양산": {
+    "station_num": 72,
+    "line_num": 2,
+    "station_id": 243
+  },
+  "2:율리": {
+    "station_num": 73,
+    "line_num": 2,
+    "station_id": 236
+  },
+  "2:장산": {
+    "station_num": 74,
+    "line_num": 2,
+    "station_id": 201
+  },
+  "2:전포": {
+    "station_num": 75,
+    "line_num": 2,
+    "station_id": 218
+  },
+  "2:주례": {
+    "station_num": 76,
+    "line_num": 2,
+    "station_id": 225
+  },
+  "2:중동": {
+    "station_num": 77,
+    "line_num": 2,
+    "station_id": 202
+  },
+  "2:증산": {
+    "station_num": 78,
+    "line_num": 2,
+    "station_id": 240
+  },
+  "2:지게골": {
+    "station_num": 79,
+    "line_num": 2,
+    "station_id": 215
+  },
+  "2:해운대": {
+    "station_num": 80,
+    "line_num": 2,
+    "station_id": 203
+  },
+  "2:호포": {
+    "station_num": 81,
+    "line_num": 2,
+    "station_id": 239
+  },
+  "2:화명": {
+    "station_num": 82,
+    "line_num": 2,
+    "station_id": 235
+  },
+  "3:강서구청": {
+    "station_num": 83,
+    "line_num": 3,
+    "station_id": 315
+  },
+  "3:거제": {
+    "station_num": 84,
+    "line_num": 3,
+    "station_id": 306
+  },
+  "3:구포": {
+    "station_num": 85,
+    "line_num": 3,
+    "station_id": 314
+  },
+  "3:남산정": {
+    "station_num": 86,
+    "line_num": 3,
+    "station_id": 311
+  },
+  "3:대저": {
+    "station_num": 87,
+    "line_num": 3,
+    "station_id": 317
+  },
+  "3:덕천": {
+    "station_num": 88,
+    "line_num": 3,
+    "station_id": 313
+  },
+  "3:만덕": {
+    "station_num": 89,
+    "line_num": 3,
+    "station_id": 310
+  },
+  "3:망미": {
+    "station_num": 90,
+    "line_num": 3,
+    "station_id": 302
+  },
+  "3:물만골": {
+    "station_num": 91,
+    "line_num": 3,
+    "station_id": 304
+  },
+  "3:미남": {
+    "station_num": 92,
+    "line_num": 3,
+    "station_id": 309
+  },
+  "3:배산": {
+    "station_num": 93,
+    "line_num": 3,
+    "station_id": 303
+  },
+  "3:사직": {
+    "station_num": 94,
+    "line_num": 3,
+    "station_id": 308
+  },
+  "3:숙등": {
+    "station_num": 95,
+    "line_num": 3,
+    "station_id": 312
+  },
+  "3:연산": {
+    "station_num": 96,
+    "line_num": 3,
+    "station_id": 305
+  },
+  "3:종합운동장": {
+    "station_num": 97,
+    "line_num": 3,
+    "station_id": 307
+  },
+  "3:체육공원": {
+    "station_num": 98,
+    "line_num": 3,
+    "station_id": 316
+  },
+  "4:고촌": {
+    "station_num": 99,
+    "line_num": 4,
+    "station_id": 413
+  },
+  "4:금사": {
+    "station_num": 100,
+    "line_num": 4,
+    "station_id": 408
+  },
+  "4:낙민": {
+    "station_num": 101,
+    "line_num": 4,
+    "station_id": 404
+  },
+  "4:동래": {
+    "station_num": 102,
+    "line_num": 4,
+    "station_id": 402
+  },
+  "4:명장": {
+    "station_num": 103,
+    "line_num": 4,
+    "station_id": 406
+  },
+  "4:반여농산물시장": {
+    "station_num": 104,
+    "line_num": 4,
+    "station_id": 409
+  },
+  "4:서동": {
+    "station_num": 105,
+    "line_num": 4,
+    "station_id": 407
+  },
+  "4:석대": {
+    "station_num": 106,
+    "line_num": 4,
+    "station_id": 410
+  },
+  "4:수안": {
+    "station_num": 107,
+    "line_num": 4,
+    "station_id": 403
+  },
+  "4:안평": {
+    "station_num": 108,
+    "line_num": 4,
+    "station_id": 414
+  },
+  "4:영산대": {
+    "station_num": 109,
+    "line_num": 4,
+    "station_id": 411
+  },
+  "4:윗반송": {
+    "station_num": 110,
+    "line_num": 4,
+    "station_id": 412
+  },
+  "4:충렬사": {
+    "station_num": 111,
+    "line_num": 4,
+    "station_id": 405
+  },
+  "괴정": {
+    "station_num": 0,
+    "line_num": 1,
+    "station_id": 105
+  },
+  "교대": {
+    "station_num": 1,
+    "line_num": 1,
+    "station_id": 124
+  },
+  "구서": {
+    "station_num": 2,
+    "line_num": 1,
+    "station_id": 130
+  },
+  "남산": {
+    "station_num": 3,
+    "line_num": 1,
+    "station_id": 132
+  },
+  "남포": {
+    "station_num": 4,
+    "line_num": 1,
+    "station_id": 111
+  },
+  "낫개": {
+    "station_num": 5,
+    "line_num": 1,
+    "station_id": 97
+  },
+  "노포": {
+    "station_num": 6,
+    "line_num": 1,
+    "station_id": 134
+  },
+  "다대포항": {
+    "station_num": 7,
+    "line_num": 1,
+    "station_id": 96
+  },
+  "다대포해수욕장": {
+    "station_num": 8,
+    "line_num": 1,
+    "station_id": 95
+  },
+  "당리": {
+    "station_num": 9,
+    "line_num": 1,
+    "station_id": 103
+  },
+  "대티": {
+    "station_num": 10,
+    "line_num": 1,
+    "station_id": 106
+  },
+  "동대신": {
+    "station_num": 11,
+    "line_num": 1,
+    "station_id": 108
+  },
+  "동매": {
+    "station_num": 13,
+    "line_num": 1,
+    "station_id": 100
+  },
+  "두실": {
+    "station_num": 14,
+    "line_num": 1,
+    "station_id": 131
+  },
+  "명륜": {
+    "station_num": 15,
+    "line_num": 1,
+    "station_id": 126
+  },
+  "범내골": {
+    "station_num": 16,
+    "line_num": 1,
+    "station_id": 118
+  },
+  "범어사": {
+    "station_num": 17,
+    "line_num": 1,
+    "station_id": 133
+  },
+  "범일": {
+    "station_num": 18,
+    "line_num": 1,
+    "station_id": 117
+  },
+  "부산대": {
+    "station_num": 19,
+    "line_num": 1,
+    "station_id": 128
+  },
+  "부산역": {
+    "station_num": 20,
+    "line_num": 1,
+    "station_id": 113
+  },
+  "부산진": {
+    "station_num": 21,
+    "line_num": 1,
+    "station_id": 115
+  },
+  "부전": {
+    "station_num": 22,
+    "line_num": 1,
+    "station_id": 120
+  },
+  "사하": {
+    "station_num": 23,
+    "line_num": 1,
+    "station_id": 104
+  },
+  "서대신": {
+    "station_num": 24,
+    "line_num": 1,
+    "station_id": 107
+  },
+  "시청": {
+    "station_num": 26,
+    "line_num": 1,
+    "station_id": 122
+  },
+  "신장림": {
+    "station_num": 27,
+    "line_num": 1,
+    "station_id": 98
+  },
+  "신평": {
+    "station_num": 28,
+    "line_num": 1,
+    "station_id": 101
+  },
+  "양정": {
+    "station_num": 29,
+    "line_num": 1,
+    "station_id": 121
+  },
+  "온천장": {
+    "station_num": 31,
+    "line_num": 1,
+    "station_id": 127
+  },
+  "자갈치": {
+    "station_num": 32,
+    "line_num": 1,
+    "station_id": 110
+  },
+  "장림": {
+    "station_num": 33,
+    "line_num": 1,
+    "station_id": 99
+  },
+  "장전": {
+    "station_num": 34,
+    "line_num": 1,
+    "station_id": 129
+  },
+  "좌천": {
+    "station_num": 35,
+    "line_num": 1,
+    "station_id": 116
+  },
+  "중앙": {
+    "station_num": 36,
+    "line_num": 1,
+    "station_id": 112
+  },
+  "초량": {
+    "station_num": 37,
+    "line_num": 1,
+    "station_id": 114
+  },
+  "토성": {
+    "station_num": 38,
+    "line_num": 1,
+    "station_id": 109
+  },
+  "하단": {
+    "station_num": 39,
+    "line_num": 1,
+    "station_id": 102
+  },
+  "가야": {
+    "station_num": 40,
+    "line_num": 2,
+    "station_id": 221
+  },
+  "감전": {
+    "station_num": 41,
+    "line_num": 2,
+    "station_id": 226
+  },
+  "개금": {
+    "station_num": 42,
+    "line_num": 2,
+    "station_id": 223
+  },
+  "경성대부경대": {
+    "station_num": 43,
+    "line_num": 2,
+    "station_id": 212
+  },
+  "광안": {
+    "station_num": 44,
+    "line_num": 2,
+    "station_id": 209
+  },
+  "구남": {
+    "station_num": 45,
+    "line_num": 2,
+    "station_id": 231
+  },
+  "구명": {
+    "station_num": 46,
+    "line_num": 2,
+    "station_id": 232
+  },
+  "국제금융센터부산은행": {
+    "station_num": 47,
+    "line_num": 2,
+    "station_id": 217
+  },
+  "금곡": {
+    "station_num": 48,
+    "line_num": 2,
+    "station_id": 238
+  },
+  "금련산": {
+    "station_num": 49,
+    "line_num": 2,
+    "station_id": 210
+  },
+  "남양산": {
+    "station_num": 50,
+    "line_num": 2,
+    "station_id": 242
+  },
+  "남천": {
+    "station_num": 51,
+    "line_num": 2,
+    "station_id": 211
+  },
+  "냉정": {
+    "station_num": 52,
+    "line_num": 2,
+    "station_id": 224
+  },
+  "대연": {
+    "station_num": 53,
+    "line_num": 2,
+    "station_id": 213
+  },
+  "덕포": {
+    "station_num": 55,
+    "line_num": 2,
+    "station_id": 228
+  },
+  "동백": {
+    "station_num": 56,
+    "line_num": 2,
+    "station_id": 204
+  },
+  "동원": {
+    "station_num": 57,
+    "line_num": 2,
+    "station_id": 237
+  },
+  "동의대": {
+    "station_num": 58,
+    "line_num": 2,
+    "station_id": 222
+  },
+  "모덕": {
+    "station_num": 59,
+    "line_num": 2,
+    "station_id": 229
+  },
+  "모라": {
+    "station_num": 60,
+    "line_num": 2,
+    "station_id": 230
+  },
+  "못골": {
+    "station_num": 61,
+    "line_num": 2,
+    "station_id": 214
+  },
+  "문현": {
+    "station_num": 62,
+    "line_num": 2,
+    "station_id": 216
+  },
+  "민락": {
+    "station_num": 63,
+    "line_num": 2,
+    "station_id": 207
+  },
+  "벡스코": {
+    "station_num": 64,
+    "line_num": 2,
+    "station_id": 205
+  },
+  "부산대양산캠퍼스": {
+    "station_num": 65,
+    "line_num": 2,
+    "station_id": 241
+  },
+  "부암": {
+    "station_num": 66,
+    "line_num": 2,
+    "station_id": 220
+  },
+  "사상": {
+    "station_num": 67,
+    "line_num": 2,
+    "station_id": 227
+  },
+  "센텀시티": {
+    "station_num": 69,
+    "line_num": 2,
+    "station_id": 206
+  },
+  "수영": {
+    "station_num": 70,
+    "line_num": 2,
+    "station_id": 208
+  },
+  "수정": {
+    "station_num": 71,
+    "line_num": 2,
+    "station_id": 234
+  },
+  "양산": {
+    "station_num": 72,
+    "line_num": 2,
+    "station_id": 243
+  },
+  "율리": {
+    "station_num": 73,
+    "line_num": 2,
+    "station_id": 236
+  },
+  "장산": {
+    "station_num": 74,
+    "line_num": 2,
+    "station_id": 201
+  },
+  "전포": {
+    "station_num": 75,
+    "line_num": 2,
+    "station_id": 218
+  },
+  "주례": {
+    "station_num": 76,
+    "line_num": 2,
+    "station_id": 225
+  },
+  "중동": {
+    "station_num": 77,
+    "line_num": 2,
+    "station_id": 202
+  },
+  "증산": {
+    "station_num": 78,
+    "line_num": 2,
+    "station_id": 240
+  },
+  "지게골": {
+    "station_num": 79,
+    "line_num": 2,
+    "station_id": 215
+  },
+  "해운대": {
+    "station_num": 80,
+    "line_num": 2,
+    "station_id": 203
+  },
+  "호포": {
+    "station_num": 81,
+    "line_num": 2,
+    "station_id": 239
+  },
+  "화명": {
+    "station_num": 82,
+    "line_num": 2,
+    "station_id": 235
+  },
+  "강서구청": {
+    "station_num": 83,
+    "line_num": 3,
+    "station_id": 315
+  },
+  "거제": {
+    "station_num": 84,
+    "line_num": 3,
+    "station_id": 306
+  },
+  "구포": {
+    "station_num": 85,
+    "line_num": 3,
+    "station_id": 314
+  },
+  "남산정": {
+    "station_num": 86,
+    "line_num": 3,
+    "station_id": 311
+  },
+  "대저": {
+    "station_num": 87,
+    "line_num": 3,
+    "station_id": 317
+  },
+  "만덕": {
+    "station_num": 89,
+    "line_num": 3,
+    "station_id": 310
+  },
+  "망미": {
+    "station_num": 90,
+    "line_num": 3,
+    "station_id": 302
+  },
+  "물만골": {
+    "station_num": 91,
+    "line_num": 3,
+    "station_id": 304
+  },
+  "미남": {
+    "station_num": 92,
+    "line_num": 3,
+    "station_id": 309
+  },
+  "배산": {
+    "station_num": 93,
+    "line_num": 3,
+    "station_id": 303
+  },
+  "사직": {
+    "station_num": 94,
+    "line_num": 3,
+    "station_id": 308
+  },
+  "숙등": {
+    "station_num": 95,
+    "line_num": 3,
+    "station_id": 312
+  },
+  "종합운동장": {
+    "station_num": 97,
+    "line_num": 3,
+    "station_id": 307
+  },
+  "체육공원": {
+    "station_num": 98,
+    "line_num": 3,
+    "station_id": 316
+  },
+  "고촌": {
+    "station_num": 99,
+    "line_num": 4,
+    "station_id": 413
+  },
+  "금사": {
+    "station_num": 100,
+    "line_num": 4,
+    "station_id": 408
+  },
+  "낙민": {
+    "station_num": 101,
+    "line_num": 4,
+    "station_id": 404
+  },
+  "명장": {
+    "station_num": 103,
+    "line_num": 4,
+    "station_id": 406
+  },
+  "반여농산물시장": {
+    "station_num": 104,
+    "line_num": 4,
+    "station_id": 409
+  },
+  "서동": {
+    "station_num": 105,
+    "line_num": 4,
+    "station_id": 407
+  },
+  "석대": {
+    "station_num": 106,
+    "line_num": 4,
+    "station_id": 410
+  },
+  "수안": {
+    "station_num": 107,
+    "line_num": 4,
+    "station_id": 403
+  },
+  "안평": {
+    "station_num": 108,
+    "line_num": 4,
+    "station_id": 414
+  },
+  "영산대": {
+    "station_num": 109,
+    "line_num": 4,
+    "station_id": 411
+  },
+  "윗반송": {
+    "station_num": 110,
+    "line_num": 4,
+    "station_id": 412
+  },
+  "충렬사": {
+    "station_num": 111,
+    "line_num": 4,
+    "station_id": 405
+  }
+}

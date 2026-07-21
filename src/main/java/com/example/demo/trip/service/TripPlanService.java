@@ -36,7 +36,7 @@ public class TripPlanService {
         if (title == null || title.isBlank()) {
             String areas = (tripReq.getPreferredAreas() != null && !tripReq.getPreferredAreas().isEmpty())
                     ? String.join("·", tripReq.getPreferredAreas().stream().limit(2).toList())
-                    : "서울";
+                    : "부산";
             int nights = Math.max(0, tripReq.getTravelDays() - 1);
             title = areas + " " + nights + "박" + tripReq.getTravelDays() + "일";
         }
@@ -48,8 +48,15 @@ public class TripPlanService {
                 .companion(tripReq.getCompanion())
                 .budget(tripReq.getBudget())
                 .travelDays(tripReq.getTravelDays())
+                .startDate(tripReq.getStartDate())
                 .startHour(tripReq.getStartHour())
                 .endHour(tripReq.getEndHour())
+                .arrivalAirport(tripReq.getArrivalAirport())
+                .arrivalTime(tripReq.getArrivalTime())
+                .arrivalReadyMinutes(tripReq.getArrivalReadyMinutes())
+                .departureAirport(tripReq.getDepartureAirport())
+                .departureTime(tripReq.getDepartureTime())
+                .departureLeadMinutes(tripReq.getDepartureLeadMinutes())
                 .intensity(tripReq.getIntensity())
                 .preferredAreas(listToStr(tripReq.getPreferredAreas()))
                 .mustVisit(listToStr(tripReq.getMustVisit()))
@@ -79,6 +86,10 @@ public class TripPlanService {
                                 .lat(slotDto.getLat())
                                 .lng(slotDto.getLng())
                                 .address(slotDto.getAddress())
+                                .imageUrl(slotDto.getImageUrl())
+                                .avgRating(slotDto.getAvgRating())
+                                .reviewCount(slotDto.getReviewCount())
+                                .durationMinutes(slotDto.getDurationMinutes())
                                 .build());
                     }
                 }
@@ -126,7 +137,8 @@ public class TripPlanService {
         TripPlanDto.Summary s = new TripPlanDto.Summary();
         s.setId(p.getId()); s.setTitle(p.getTitle());
         s.setTravelDays(p.getTravelDays());
-        s.setPreferredAreas(p.getPreferredAreas());
+        s.setStartDate(p.getStartDate());
+        s.setPreferredAreas(strToList(p.getPreferredAreas()));
         s.setCompanion(p.getCompanion());
         s.setCreatedAt(p.getCreatedAt());
         return s;
@@ -137,11 +149,16 @@ public class TripPlanService {
         d.setId(p.getId()); d.setTitle(p.getTitle());
         d.setAge(p.getAge()); d.setCompanion(p.getCompanion());
         d.setBudget(p.getBudget()); d.setTravelDays(p.getTravelDays());
+        d.setStartDate(p.getStartDate());
         d.setStartHour(p.getStartHour()); d.setEndHour(p.getEndHour());
+        d.setArrivalAirport(p.getArrivalAirport()); d.setArrivalTime(p.getArrivalTime());
+        d.setArrivalReadyMinutes(p.getArrivalReadyMinutes());
+        d.setDepartureAirport(p.getDepartureAirport()); d.setDepartureTime(p.getDepartureTime());
+        d.setDepartureLeadMinutes(p.getDepartureLeadMinutes());
         d.setIntensity(p.getIntensity());
-        d.setPreferredAreas(p.getPreferredAreas());
-        d.setMustVisit(p.getMustVisit());
-        d.setCategories(p.getCategories());
+        d.setPreferredAreas(strToList(p.getPreferredAreas()));
+        d.setMustVisit(strToList(p.getMustVisit()));
+        d.setCategories(strToList(p.getCategories()));
         d.setStyleDescription(p.getStyleDescription());
         d.setCreatedAt(p.getCreatedAt());
 
@@ -156,6 +173,10 @@ public class TripPlanService {
                 sd.setPlaceName(sl.getPlaceName()); sd.setReason(sl.getReason());
                 sd.setScore(sl.getScore()); sd.setLat(sl.getLat()); sd.setLng(sl.getLng());
                 sd.setAddress(sl.getAddress());
+                sd.setImageUrl(sl.getImageUrl());
+                sd.setAvgRating(sl.getAvgRating());
+                sd.setReviewCount(sl.getReviewCount());
+                sd.setDurationMinutes(sl.getDurationMinutes());
                 return sd;
             }).collect(Collectors.toList()));
             dayDtos.add(dd);
@@ -166,5 +187,13 @@ public class TripPlanService {
 
     private String listToStr(List<String> list) {
         return (list == null || list.isEmpty()) ? "" : String.join(",", list);
+    }
+
+    private List<String> strToList(String value) {
+        if (value == null || value.isBlank()) return List.of();
+        return java.util.Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(item -> !item.isEmpty())
+                .toList();
     }
 }

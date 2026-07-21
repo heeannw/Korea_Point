@@ -15,6 +15,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
+import java.time.Instant;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,7 +36,9 @@ public class TransportRouteService {
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private final Map<String, TransportRouteDto> transportRouteStore = new ConcurrentHashMap<>();
+    private static final Duration ROUTE_CACHE_TTL = Duration.ofMinutes(30);
+    private static final int ROUTE_CACHE_MAX_SIZE = 500;
+    private final Map<String, CachedRoute> transportRouteStore = new ConcurrentHashMap<>();
 
     private static final Map<Integer, String> SUBWAY_COLORS = new HashMap<>() {{
         put(1, "#0052A4"); put(2, "#00A84D"); put(3, "#EF7C1C");
@@ -68,6 +72,33 @@ public class TransportRouteService {
         double x = docs.get(0).get("x").asDouble();
         double y = docs.get(0).get("y").asDouble();
         return new double[]{x, y};
+    }
+
+    public String searchKakaoPlaces(String query, String category, int requestedSize) throws Exception {
+        int size = Math.max(1, Math.min(requestedSize, 15));
+        StringBuilder url = new StringBuilder("https://dapi.kakao.com/v2/local/search/keyword.json?query=")
+                .append(URLEncoder.encode(query, StandardCharsets.UTF_8))
+                .append("&size=").append(size);
+        if (category != null && !category.isBlank()) {
+            url.append("&category_group_code=")
+                    .append(URLEncoder.encode(category, StandardCharsets.UTF_8));
+        }
+        return callKakao(url.toString());
+    }
+
+    public String reverseGeocode(double x, double y) throws Exception {
+        return callKakao("https://dapi.kakao.com/v2/local/geo/coord2address.json?x=" + x + "&y=" + y);
+    }
+
+    private String callKakao(String url) throws Exception {
+        if (kakaoKey == null || kakaoKey.isBlank()) {
+            return "{\"documents\":[],\"message\":\"Kakao API key is not configured\"}";
+        }
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "KakaoAK " + kakaoKey)
+                .GET().build();
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
     }
 
     // -----------------------------------------------
@@ -271,7 +302,7 @@ public class TransportRouteService {
 
                 if (!isDuplicate) {
                     TransportRouteDto dto = buildDto(routeType, rawRoutes.get(finalBestIdx), startLabel, end, departTime);
-                    transportRouteStore.put(dto.getRouteId(), dto);
+                    cacheRoute(dto);
                     result.add(dto);
                 }
             }
@@ -279,7 +310,7 @@ public class TransportRouteService {
         } else {
             for (int i = 0; i < rawRoutes.size(); i++) {
                 TransportRouteDto dto = buildDto(typeLabels[i], rawRoutes.get(i), startLabel, end, departTime);
-                transportRouteStore.put(dto.getRouteId(), dto);
+                cacheRoute(dto);
                 result.add(dto);
             }
         }
@@ -340,13 +371,18 @@ public class TransportRouteService {
                 String lineName   = lane.get("name").asText();
                 String fromSt     = stations != null ? stations.get(0).get("stationName").asText() : "";
                 String toSt       = stations != null ? stations.get(stations.size()-1).get("stationName").asText() : "";
+                Integer fromStationId = stations != null ? readStationId(stations.get(0)) : null;
+                Integer toStationId = stations != null ? readStationId(stations.get(stations.size()-1)) : null;
 
                 TransportStepDto step = new TransportStepDto();
                 step.setType("subway");
                 step.setLine(lineName);
+                step.setSubwayCode(subwayCode);
                 step.setColor(color);
                 step.setFromStation(fromSt);
                 step.setToStation(toSt);
+                step.setFromStationId(fromStationId);
+                step.setToStationId(toStationId);
                 step.setDuration(sectionTime);
                 step.setPath(pathCoords);
                 steps.add(step);
@@ -420,6 +456,28 @@ public class TransportRouteService {
         return steps;
     }
 
+    private Integer readStationId(JsonNode station) {
+        if (station == null) {
+            return null;
+        }
+
+        for (String field : List.of("stationID", "stationId", "stationCode", "localStationID")) {
+            JsonNode value = station.get(field);
+            if (value != null && value.canConvertToInt()) {
+                return value.asInt();
+            }
+            if (value != null && value.isTextual()) {
+                try {
+                    return Integer.parseInt(value.asText().trim());
+                } catch (NumberFormatException ignored) {
+                    // Try the next ODsay station id field.
+                }
+            }
+        }
+
+        return null;
+    }
+
     // -----------------------------------------------
     // 헬퍼 메서드들
     // -----------------------------------------------
@@ -470,6 +528,25 @@ public class TransportRouteService {
     }
 
     public TransportRouteDto getTransportRouteDetail(String routeId) {
-        return transportRouteStore.get(routeId);
+        CachedRoute cached = transportRouteStore.get(routeId);
+        if (cached == null) return null;
+        if (cached.createdAt().plus(ROUTE_CACHE_TTL).isBefore(Instant.now())) {
+            transportRouteStore.remove(routeId, cached);
+            return null;
+        }
+        return cached.route();
     }
+    private void cacheRoute(TransportRouteDto route) {
+        Instant now = Instant.now();
+        transportRouteStore.entrySet().removeIf(entry ->
+                entry.getValue().createdAt().plus(ROUTE_CACHE_TTL).isBefore(now));
+        if (transportRouteStore.size() >= ROUTE_CACHE_MAX_SIZE) {
+            transportRouteStore.entrySet().stream()
+                    .min(Comparator.comparing(entry -> entry.getValue().createdAt()))
+                    .ifPresent(entry -> transportRouteStore.remove(entry.getKey(), entry.getValue()));
+        }
+        transportRouteStore.put(route.getRouteId(), new CachedRoute(route, now));
+    }
+
+    private record CachedRoute(TransportRouteDto route, Instant createdAt) {}
 }

@@ -9,25 +9,6 @@
 html,body{min-height:100%;overflow-x:hidden;overflow-y:auto}
 body{font-family:'DM Sans',sans-serif;color:var(--dark);background:#f8fafc}
 
-/* ─── 헤더 ─── */
-header{
-    height:56px;display:flex;align-items:center;justify-content:space-between;
-    padding:0 20px;border-bottom:1px solid var(--border);background:var(--white);
-    position:sticky;top:0;z-index:200;box-shadow:0 1px 8px rgba(0,0,0,.05);
-}
-.logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--blue-dk);text-decoration:none}
-.logo span{color:var(--dark)}
-.header-right{display:flex;gap:8px;align-items:center}
-.h-btn{
-    padding:7px 16px;border-radius:50px;border:1.5px solid var(--border);
-    background:transparent;font-size:12px;font-weight:600;cursor:pointer;
-    font-family:'DM Sans',sans-serif;color:var(--dark);text-decoration:none;
-    display:inline-flex;align-items:center;transition:all .2s;
-}
-.h-btn:hover,.h-btn.active{border-color:var(--blue);color:var(--blue)}
-.h-btn-fill{background:var(--blue);color:#fff;border-color:var(--blue)}
-.h-btn-fill:hover{background:var(--blue-dk);color:#fff}
-
 /* ─── 페이지 래퍼 ─── */
 .page-wrap{
     min-height:calc(100vh - 56px);
@@ -248,6 +229,12 @@ header{
     background:#fff;flex:1;max-width:160px;
 }
 .slot-food-select:focus{border-color:var(--blue)}
+.slot-duration-select{
+    padding:4px 9px;border:1.5px solid var(--border);border-radius:50px;
+    font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;
+    color:var(--gray);background:#fff;outline:none;cursor:pointer;flex-shrink:0;
+}
+.slot-duration-select:focus{border-color:var(--blue)}
 .slot-del{
     margin-left:auto;background:none;border:none;
     cursor:pointer;color:#94a3b8;font-size:17px;
@@ -287,3 +274,4 @@ header{
     pointer-events:none;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+body{top:0!important}.goog-te-banner-frame.skiptranslate{display:none!important}

@@ -11,6 +11,7 @@ import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -19,30 +20,32 @@ public class CongestionMlService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private OrtEnvironment env;
-    private OrtSession session;
-    private Map<String, StationMeta> stationMeta;
-    private FallbackData fallbackData;
+    private ModelBundle seoulModel;
+    private ModelBundle busanModel;
 
     @PostConstruct
     public void init() {
         try {
             env = OrtEnvironment.getEnvironment();
 
-            session = env.createSession(
-                    loadBytes("model/transport/transport_congestion.onnx"),
-                    new OrtSession.SessionOptions()
-            );
-
-            stationMeta = readJson(
+            seoulModel = loadModelBundle(
+                    "seoul",
+                    "model/transport/transport_congestion.onnx",
                     "model/transport/station_meta.json",
-                    new TypeReference<Map<String, StationMeta>>() {}
-            );
-            fallbackData = readJson(
-                    "model/transport/line_hour_fallback.json",
-                    new TypeReference<FallbackData>() {}
+                    "model/transport/line_hour_fallback.json"
             );
 
-            System.out.println("CongestionMlService ONNX ready: stations=" + stationMeta.size());
+            busanModel = loadModelBundle(
+                    "busan",
+                    "model/transport/busan_transport_congestion.onnx",
+                    "model/transport/busan_station_meta.json",
+                    "model/transport/busan_line_hour_fallback.json"
+            );
+
+            System.out.println(
+                    "CongestionMlService ONNX ready: seoulStations=" + seoulModel.stationMeta().size()
+                            + ", busanStations=" + busanModel.stationMeta().size()
+            );
 
         } catch (Throwable e) {
             System.out.println("CongestionMlService ONNX load failed");
@@ -51,18 +54,27 @@ public class CongestionMlService {
     }
 
     public int predict(int hour, int day, String station, int line) {
+        return predict("seoul", hour, day, station, line);
+    }
+
+    public int predict(String city, int hour, int day, String station, int line) {
+        return predict(city, hour, day, station, null, line);
+    }
+
+    public int predict(String city, int hour, int day, String station, Integer odsayStationId, int line) {
+        ModelBundle model = resolveModel(city);
         String normalizedStation = normalizeStation(station);
 
         try {
-            if (session == null || stationMeta == null) {
-                return fallback(line, day, hour, "onnx-not-ready", station, normalizedStation);
+            if (model == null || model.session() == null || model.stationMeta() == null) {
+                return fallback(model, line, day, hour, "onnx-not-ready", station, normalizedStation);
             }
 
-            StationMeta meta = resolveStationMeta(normalizedStation);
+            StationMeta meta = resolveStationMeta(model, normalizedStation, odsayStationId, line);
             int lineNum = line > 0 ? line : (meta != null ? meta.lineNum() : 0);
 
             if (meta == null) {
-                return fallback(lineNum, day, hour, "station-not-found", station, normalizedStation);
+                return fallback(model, lineNum, day, hour, "station-not-found", station, normalizedStation);
             }
 
             int stationNum = meta.stationNum();
@@ -71,14 +83,16 @@ public class CongestionMlService {
             };
 
             try (OnnxTensor tensor = OnnxTensor.createTensor(env, input);
-                 OrtSession.Result result = session.run(Map.of("input", tensor))) {
+                 OrtSession.Result result = model.session().run(Map.of("input", tensor))) {
 
                 long[] labels = (long[]) result.get(0).getValue();
                 int prediction = (int) labels[0];
 
                 System.out.println(
-                        "[Congestion ONNX] station=" + station
+                        "[Congestion ONNX] city=" + model.city()
+                                + ", station=" + station
                                 + ", normalizedStation=" + normalizedStation
+                                + ", odsayStationId=" + odsayStationId
                                 + ", stationMatched=true"
                                 + ", hour=" + hour
                                 + ", day=" + day
@@ -92,23 +106,59 @@ public class CongestionMlService {
 
         } catch (Exception e) {
             System.out.println("Congestion ONNX predict failed: " + e.getMessage());
-            return fallback(line, day, hour, "predict-error", station, normalizedStation);
+            return fallback(model, line, day, hour, "predict-error", station, normalizedStation);
         }
     }
 
     @PreDestroy
     public void close() throws Exception {
-        if (session != null) {
-            session.close();
+        closeModel(seoulModel);
+        closeModel(busanModel);
+    }
+
+    private ModelBundle loadModelBundle(String city, String onnxPath, String stationMetaPath, String fallbackPath)
+            throws Exception {
+        OrtSession session = env.createSession(loadBytes(onnxPath), new OrtSession.SessionOptions());
+        Map<String, StationMeta> stationMeta = readJson(
+                stationMetaPath,
+                new TypeReference<Map<String, StationMeta>>() {}
+        );
+        FallbackData fallbackData = readJson(
+                fallbackPath,
+                new TypeReference<FallbackData>() {}
+        );
+        return new ModelBundle(city, session, stationMeta, fallbackData);
+    }
+
+    private ModelBundle resolveModel(String city) {
+        String normalizedCity = city == null ? "" : city.trim().toLowerCase(Locale.ROOT);
+        if (normalizedCity.equals("busan")) {
+            return busanModel;
+        }
+        return seoulModel;
+    }
+
+    private void closeModel(ModelBundle model) throws Exception {
+        if (model != null && model.session() != null) {
+            model.session().close();
         }
     }
 
-    private int fallback(int line, int day, int hour, String reason, String station, String normalizedStation) {
-        FallbackEntry entry = findFallback(line, day, hour);
-        int prediction = entry != null ? entry.label() : 1;
+    private int fallback(
+            ModelBundle model,
+            int line,
+            int day,
+            int hour,
+            String reason,
+            String station,
+            String normalizedStation
+    ) {
+        FallbackEntry entry = findFallback(model, line, day, hour);
+        int prediction = entry != null ? entry.label() : -1;
 
         System.out.println(
                 "[Congestion fallback] reason=" + reason
+                        + ", city=" + (model != null ? model.city() : "unknown")
                         + ", station=" + station
                         + ", normalizedStation=" + normalizedStation
                         + ", hour=" + hour
@@ -121,17 +171,17 @@ public class CongestionMlService {
         return prediction;
     }
 
-    private FallbackEntry findFallback(int line, int day, int hour) {
-        if (fallbackData == null) {
+    private FallbackEntry findFallback(ModelBundle model, int line, int day, int hour) {
+        if (model == null || model.fallbackData() == null) {
             return null;
         }
 
-        FallbackEntry byLine = findFallbackEntry(fallbackData.byLine(), line, day, hour);
+        FallbackEntry byLine = findFallbackEntry(model.fallbackData().byLine(), line, day, hour);
         if (byLine != null) {
             return byLine;
         }
 
-        return findGlobalFallbackEntry(day, hour);
+        return findGlobalFallbackEntry(model.fallbackData(), day, hour);
     }
 
     private FallbackEntry findFallbackEntry(
@@ -156,7 +206,7 @@ public class CongestionMlService {
         return hourMap.get(String.valueOf(hour));
     }
 
-    private FallbackEntry findGlobalFallbackEntry(int day, int hour) {
+    private FallbackEntry findGlobalFallbackEntry(FallbackData fallbackData, int day, int hour) {
         if (fallbackData.global() == null) {
             return null;
         }
@@ -180,37 +230,61 @@ public class CongestionMlService {
                 .trim();
     }
 
-    private StationMeta resolveStationMeta(String station) {
-        if (station == null || station.isBlank() || stationMeta == null) {
+    private StationMeta resolveStationMeta(ModelBundle model, String station, Integer odsayStationId, int line) {
+        if (station == null || station.isBlank() || model == null || model.stationMeta() == null) {
             return null;
         }
 
-        StationMeta exact = stationMeta.get(station);
+        if (odsayStationId != null && odsayStationId > 0) {
+            StationMeta byOdsayId = resolveStationMetaByOdsayId(model, odsayStationId, line);
+            if (byOdsayId != null) {
+                return byOdsayId;
+            }
+        }
+
+        StationMeta exact = model.stationMeta().get(station);
         if (exact != null) {
             return exact;
         }
 
-        if (station.endsWith("역")) {
-            StationMeta withoutSuffix = stationMeta.get(station.substring(0, station.length() - 1));
-            if (withoutSuffix != null) {
-                return withoutSuffix;
+        if (line > 0) {
+            StationMeta lineStation = model.stationMeta().get(line + ":" + station);
+            if (lineStation != null) {
+                return lineStation;
             }
         }
 
-        StationMeta withSuffix = stationMeta.get(station + "역");
-        if (withSuffix != null) {
-            return withSuffix;
-        }
-
-        for (Map.Entry<String, StationMeta> entry : stationMeta.entrySet()) {
-            if (entry.getKey().equalsIgnoreCase(station)
-                    || entry.getKey().contains(station)
-                    || station.contains(entry.getKey())) {
+        for (Map.Entry<String, StationMeta> entry : model.stationMeta().entrySet()) {
+            String key = entry.getKey();
+            if (key.equalsIgnoreCase(station)
+                    || key.contains(station)
+                    || station.contains(key)
+                    || key.endsWith(":" + station)) {
                 return entry.getValue();
             }
         }
 
         return null;
+    }
+
+    private StationMeta resolveStationMetaByOdsayId(ModelBundle model, int odsayStationId, int line) {
+        StationMeta fallback = null;
+
+        for (StationMeta meta : model.stationMeta().values()) {
+            if (meta.stationId() == null || meta.stationId() != odsayStationId) {
+                continue;
+            }
+
+            if (line <= 0 || meta.lineNum() == line) {
+                return meta;
+            }
+
+            if (fallback == null) {
+                fallback = meta;
+            }
+        }
+
+        return fallback;
     }
 
     private <T> T readJson(String path, TypeReference<T> typeReference) throws Exception {
@@ -231,9 +305,17 @@ public class CongestionMlService {
         }
     }
 
+    private record ModelBundle(
+            String city,
+            OrtSession session,
+            Map<String, StationMeta> stationMeta,
+            FallbackData fallbackData
+    ) {}
+
     private record StationMeta(
             @JsonProperty("station_num") int stationNum,
-            @JsonProperty("line_num") int lineNum
+            @JsonProperty("line_num") int lineNum,
+            @JsonProperty("station_id") Integer stationId
     ) {}
 
     private record FallbackData(
