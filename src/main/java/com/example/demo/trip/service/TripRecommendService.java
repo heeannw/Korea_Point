@@ -75,6 +75,18 @@ public class TripRecommendService {
     private static final Map<String, double[]> AREA_COORDS;
     static {
         AREA_COORDS = new LinkedHashMap<>();
+        AREA_COORDS.put("해운대", new double[]{35.1631, 129.1635});
+        AREA_COORDS.put("광안리", new double[]{35.1532, 129.1187});
+        AREA_COORDS.put("감천문화마을", new double[]{35.0975, 129.0106});
+        AREA_COORDS.put("남포동", new double[]{35.1007, 129.0305});
+        AREA_COORDS.put("영도", new double[]{35.0787, 129.0444});
+        AREA_COORDS.put("송도", new double[]{35.0764, 129.0238});
+        AREA_COORDS.put("기장", new double[]{35.2446, 129.2157});
+        AREA_COORDS.put("서면", new double[]{35.1578, 129.0590});
+        AREA_COORDS.put("동래", new double[]{35.2050, 129.0838});
+        AREA_COORDS.put("송정", new double[]{35.1786, 129.1997});
+        AREA_COORDS.put("다대포", new double[]{35.0465, 128.9667});
+        AREA_COORDS.put("부산역", new double[]{35.1151, 129.0414});
         // ── 한국어 키 ──
         AREA_COORDS.put("종로",   new double[]{37.5704, 126.9920});
         AREA_COORDS.put("명동",   new double[]{37.5636, 126.9827});
@@ -143,14 +155,14 @@ public class TripRecommendService {
     @PostConstruct
     public void loadAllData() {
         try {
-            loadModelLookup();
-            loadReviews();
-            foodPlacesKo    = loadScoreFile(FOOD_PATH,    "food");
-            foodPlacesEn    = loadScoreFile(FOOD_PATH_EN, "food");
-            cafePlacesKo    = loadScoreFile(CAFE_PATH,    "cafe");
-            cafePlacesEn    = loadScoreFile(CAFE_PATH_EN, "cafe");
-            tourismPlacesKo = loadTourismCandidates(CANDIDATE_PATH_KO);
-            tourismPlacesEn = loadTourismCandidates(CANDIDATE_PATH_EN);
+            tourismPlacesKo = buildBusanTourismPlaces();
+            foodPlacesKo = buildBusanFoodPlaces();
+            cafePlacesKo = buildBusanCafePlaces();
+            tourismPlacesEn = tourismPlacesKo;
+            foodPlacesEn = foodPlacesKo;
+            cafePlacesEn = cafePlacesKo;
+            popularAreaList = new ArrayList<>(List.of("해운대", "광안리", "감천문화마을", "남포동", "영도", "송도", "기장", "서면"));
+            allAreaList = new ArrayList<>(List.of("해운대", "광안리", "감천문화마을", "남포동", "영도", "송도", "기장", "서면", "동래", "송정", "다대포", "부산역"));
             log.info("[TripService] 로드 완료 | 관광KO:{} 관광EN:{} 음식KO:{} 음식EN:{} 카페KO:{} 카페EN:{} | 리뷰캐시:{} | 지역:{}",
                     tourismPlacesKo.size(), tourismPlacesEn.size(),
                     foodPlacesKo.size(), foodPlacesEn.size(),
@@ -159,6 +171,79 @@ public class TripRecommendService {
         } catch (Exception e) {
             log.error("[TripService] 데이터 로드 실패", e);
         }
+    }
+
+    private List<PlaceData> buildBusanTourismPlaces() {
+        return List.of(
+                busanPlace("해운대해수욕장", "tourism", 35.1587, 129.1604, "해운대", "부산 해운대구 우동", 4.7),
+                busanPlace("광안리해수욕장", "tourism", 35.1532, 129.1187, "광안리", "부산 수영구 광안해변로", 4.7),
+                busanPlace("감천문화마을", "tourism", 35.0975, 129.0106, "감천문화마을", "부산 사하구 감내2로", 4.6),
+                busanPlace("태종대유원지", "tourism", 35.0526, 129.0872, "영도", "부산 영도구 전망로", 4.6),
+                busanPlace("송도해상케이블카", "tourism", 35.0764, 129.0238, "송도", "부산 서구 송도해변로", 4.6),
+                busanPlace("흰여울문화마을", "tourism", 35.0787, 129.0444, "영도", "부산 영도구 영선동4가", 4.6),
+                busanPlace("용두산공원 부산타워", "tourism", 35.1007, 129.0325, "남포동", "부산 중구 용두산길", 4.5),
+                busanPlace("자갈치시장", "tourism", 35.0967, 129.0305, "남포동", "부산 중구 자갈치해안로", 4.4),
+                busanPlace("국제시장", "tourism", 35.1023, 129.0287, "남포동", "부산 중구 국제시장2길", 4.4),
+                busanPlace("부평깡통시장", "tourism", 35.1018, 129.0264, "남포동", "부산 중구 부평1길", 4.4),
+                busanPlace("해동용궁사", "tourism", 35.1883, 129.2233, "기장", "부산 기장군 용궁길", 4.7),
+                busanPlace("오시리아 해안산책로", "tourism", 35.1963, 129.2272, "기장", "부산 기장군 기장해안로", 4.5),
+                busanPlace("동백섬", "tourism", 35.1527, 129.1521, "해운대", "부산 해운대구 우동", 4.6),
+                busanPlace("더베이101", "tourism", 35.1567, 129.1520, "해운대", "부산 해운대구 동백로", 4.5),
+                busanPlace("부산시립미술관", "tourism", 35.1712, 129.1370, "해운대", "부산 해운대구 APEC로", 4.5),
+                busanPlace("영화의전당", "tourism", 35.1710, 129.1270, "해운대", "부산 해운대구 수영강변대로", 4.6),
+                busanPlace("송정해수욕장", "tourism", 35.1786, 129.1997, "송정", "부산 해운대구 송정해변로", 4.5),
+                busanPlace("다대포해수욕장", "tourism", 35.0465, 128.9667, "다대포", "부산 사하구 다대동", 4.6),
+                busanPlace("부산시민공원", "tourism", 35.1683, 129.0571, "서면", "부산 부산진구 시민공원로", 4.6),
+                busanPlace("범어사", "tourism", 35.2839, 129.0684, "동래", "부산 금정구 범어사로", 4.7)
+        );
+    }
+
+    private List<PlaceData> buildBusanFoodPlaces() {
+        return List.of(
+                busanFood("해운대암소갈비집", 35.1631, 129.1667, "해운대", "고기_해산물"),
+                busanFood("초량밀면", 35.1143, 129.0393, "부산역", "한식"),
+                busanFood("본전돼지국밥", 35.1160, 129.0395, "부산역", "한식"),
+                busanFood("할매가야밀면", 35.1516, 129.0592, "서면", "한식"),
+                busanFood("동래할매파전", 35.2183, 129.0870, "동래", "한식"),
+                busanFood("원조18번완당", 35.1022, 129.0307, "남포동", "한식"),
+                busanFood("자갈치시장 회센터", 35.0967, 129.0305, "남포동", "고기_해산물"),
+                busanFood("기장시장 대게골목", 35.2446, 129.2157, "기장", "고기_해산물"),
+                busanFood("광안리 민락회타운", 35.1551, 129.1256, "광안리", "고기_해산물"),
+                busanFood("송정3대국밥", 35.1581, 129.0577, "서면", "한식"),
+                busanBar("광안리 해변 바거리", 35.1538, 129.1198, "광안리"),
+                busanBar("해운대 포장마차촌", 35.1595, 129.1635, "해운대"),
+                busanBar("전포 카페거리 펍", 35.1570, 129.0630, "서면"),
+                busanBar("남포동 비프광장 포차", 35.0988, 129.0289, "남포동")
+        );
+    }
+
+    private List<PlaceData> buildBusanCafePlaces() {
+        return List.of(
+                busanPlace("모모스커피 본점", "cafe", 35.2202, 129.0865, "동래", "부산 금정구 오시게로", 4.6),
+                busanPlace("웨이브온 커피", "cafe", 35.3027, 129.2615, "기장", "부산 기장군 해맞이로", 4.5),
+                busanPlace("카페 루프탑", "cafe", 35.1780, 129.1990, "송정", "부산 해운대구 송정광어골로", 4.4),
+                busanPlace("흰여울비치", "cafe", 35.0785, 129.0448, "영도", "부산 영도구 절영로", 4.4),
+                busanPlace("젬스톤 영도", "cafe", 35.0910, 129.0481, "영도", "부산 영도구 대교로", 4.4),
+                busanPlace("에테르", "cafe", 35.0792, 129.0447, "영도", "부산 영도구 절영로", 4.4),
+                busanPlace("블랙업커피 해운대", "cafe", 35.1600, 129.1615, "해운대", "부산 해운대구", 4.4),
+                busanPlace("수월경화", "cafe", 35.1610, 129.1634, "해운대", "부산 해운대구", 4.4)
+        );
+    }
+
+    private PlaceData busanFood(String name, double lat, double lng, String area, String foodCategory) {
+        return new PlaceData(name, "food", lat, lng, 4.5, 4.5, 0, area, foodCategory,
+                "부산 " + area, "", "", "");
+    }
+
+    private PlaceData busanBar(String name, double lat, double lng, String area) {
+        return new PlaceData(name, "bar", lat, lng, 4.4, 4.4, 0, area, "",
+                "부산 " + area, "", "", "");
+    }
+
+    private PlaceData busanPlace(String name, String category, double lat, double lng,
+                                 String area, String address, double rating) {
+        return new PlaceData(name, category, lat, lng, rating, rating, 0, area, "",
+                address, "", "", "");
     }
 
     // ────────────────────────────────────────────
@@ -304,14 +389,14 @@ public class TripRecommendService {
             }
 
             if (name.isBlank()) continue;
-            if (lat == 0 && lng == 0) { lat = 37.5665; lng = 126.9780; }
+            if (lat == 0 && lng == 0) { lat = 35.1796; lng = 129.0756; }
             list.add(new PlaceData(name, "tourism", lat, lng,
                     score > 0 ? score : 1.0, star, cnt, areaFromCoord(lat, lng), "", addr, img, "", ""));
         }
 
         if (list.isEmpty()) {
             foreignCoverage.forEach((name, cov) -> {
-                double[] coord = AREA_COORDS.getOrDefault(name, new double[]{37.5665, 126.9780});
+                double[] coord = AREA_COORDS.getOrDefault(name, new double[]{35.1796, 129.0756});
                 list.add(new PlaceData(name, "tourism", coord[0], coord[1], cov, 4.0, 0, areaFromCoord(coord[0], coord[1]), "", "", "", "", ""));
             });
         }
@@ -407,7 +492,7 @@ public class TripRecommendService {
 
         List<DayScheduleDto> result = new ArrayList<>();
         Set<String> used = new HashSet<>();
-        double anchorLat = 37.5665, anchorLng = 126.9780;
+        double anchorLat = 35.1796, anchorLng = 129.0756;
         if (req.getPreferredAreas() != null && !req.getPreferredAreas().isEmpty()) {
             for (String area : req.getPreferredAreas()) {
                 // 1순위: AREA_COORDS 행정구역명 직접 매칭
@@ -440,6 +525,18 @@ public class TripRecommendService {
             List<SlotDto> slots = new ArrayList<>();
             int currentMinutes = (req.getStartHour() > 0 ? req.getStartHour() : 10) * 60;
             int endMinutes = (req.getEndHour() > 0 ? req.getEndHour() : 21) * 60;
+            if (day == 1 && req.getArrivalTime() != null) {
+                int readyMinutes = req.getArrivalReadyMinutes() > 0
+                        ? req.getArrivalReadyMinutes() : defaultArrivalReadyMinutes(req.getArrivalAirport());
+                currentMinutes = Math.max(currentMinutes,
+                        req.getArrivalTime().getHour() * 60 + req.getArrivalTime().getMinute() + readyMinutes);
+            }
+            if (day == req.getTravelDays() && req.getDepartureTime() != null) {
+                int leadMinutes = req.getDepartureLeadMinutes() > 0
+                        ? req.getDepartureLeadMinutes() : defaultDepartureLeadMinutes(req.getDepartureAirport());
+                endMinutes = Math.min(endMinutes,
+                        req.getDepartureTime().getHour() * 60 + req.getDepartureTime().getMinute() - leadMinutes);
+            }
 
             for (SlotOrder order : orders) {
                 if (currentMinutes >= endMinutes) break;
@@ -492,6 +589,16 @@ public class TripRecommendService {
             result.add(d);
         }
         return result;
+    }
+
+    private int defaultArrivalReadyMinutes(String airport) {
+        if ("PUS".equalsIgnoreCase(airport)) return 90;
+        return "GMP".equalsIgnoreCase(airport) ? 120 : 180;
+    }
+
+    private int defaultDepartureLeadMinutes(String airport) {
+        if ("PUS".equalsIgnoreCase(airport)) return 180;
+        return "GMP".equalsIgnoreCase(airport) ? 210 : 270;
     }
 
     private List<SlotOrder> buildDefaultOrders(TripRecommendRequest req) {
@@ -649,7 +756,7 @@ public class TripRecommendService {
     //  유틸
     // ────────────────────────────────────────────
     private String areaFromCoord(double lat, double lng) {
-        String nearest = "서울"; double minDist = Double.MAX_VALUE;
+        String nearest = "부산"; double minDist = Double.MAX_VALUE;
         for (Map.Entry<String, double[]> e : AREA_COORDS.entrySet()) {
             double d = haversine(lat, lng, e.getValue()[0], e.getValue()[1]);
             if (d < minDist) { minDist = d; nearest = e.getKey(); }
@@ -916,7 +1023,7 @@ public class TripRecommendService {
                 "Feels like homemade Korean food. Lots of side dishes and the owner is so kind.",
                 "Generous portions and amazing flavor. Great value — I keep coming back.",
                 "You can taste the quality of every ingredient. Trustworthy and delicious.",
-                "One of the best Korean meals I've had in Seoul. Unforgettable taste.",
+                "One of the best Korean meals I've had in Busan. Unforgettable taste.",
                 "The kimchi is house-made and absolutely divine. Goes perfectly with everything.",
                 "The lunch set is incredible value. Left completely stuffed and satisfied.",
                 "Bibimbap here is a work of art. Fresh vegetables and a perfectly balanced sauce.",

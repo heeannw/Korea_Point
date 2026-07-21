@@ -2,6 +2,7 @@ package com.example.demo.trip.dto;
 
 import lombok.Data;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -14,6 +15,12 @@ public class TripRecommendRequest {
     private LocalDate startDate;
     private int startHour;
     private int endHour;
+    private String arrivalAirport;
+    private LocalTime arrivalTime;
+    private int arrivalReadyMinutes;
+    private String departureAirport;
+    private LocalTime departureTime;
+    private int departureLeadMinutes;
     private String intensity;   // relaxed / balanced / packed
 
     // ── 기존 숫자 입력 (슬롯 직접 설정 안 할 때 폴백용) ──

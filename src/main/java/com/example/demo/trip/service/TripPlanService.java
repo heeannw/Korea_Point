@@ -36,7 +36,7 @@ public class TripPlanService {
         if (title == null || title.isBlank()) {
             String areas = (tripReq.getPreferredAreas() != null && !tripReq.getPreferredAreas().isEmpty())
                     ? String.join("·", tripReq.getPreferredAreas().stream().limit(2).toList())
-                    : "서울";
+                    : "부산";
             int nights = Math.max(0, tripReq.getTravelDays() - 1);
             title = areas + " " + nights + "박" + tripReq.getTravelDays() + "일";
         }
@@ -51,6 +51,12 @@ public class TripPlanService {
                 .startDate(tripReq.getStartDate())
                 .startHour(tripReq.getStartHour())
                 .endHour(tripReq.getEndHour())
+                .arrivalAirport(tripReq.getArrivalAirport())
+                .arrivalTime(tripReq.getArrivalTime())
+                .arrivalReadyMinutes(tripReq.getArrivalReadyMinutes())
+                .departureAirport(tripReq.getDepartureAirport())
+                .departureTime(tripReq.getDepartureTime())
+                .departureLeadMinutes(tripReq.getDepartureLeadMinutes())
                 .intensity(tripReq.getIntensity())
                 .preferredAreas(listToStr(tripReq.getPreferredAreas()))
                 .mustVisit(listToStr(tripReq.getMustVisit()))
@@ -145,6 +151,10 @@ public class TripPlanService {
         d.setBudget(p.getBudget()); d.setTravelDays(p.getTravelDays());
         d.setStartDate(p.getStartDate());
         d.setStartHour(p.getStartHour()); d.setEndHour(p.getEndHour());
+        d.setArrivalAirport(p.getArrivalAirport()); d.setArrivalTime(p.getArrivalTime());
+        d.setArrivalReadyMinutes(p.getArrivalReadyMinutes());
+        d.setDepartureAirport(p.getDepartureAirport()); d.setDepartureTime(p.getDepartureTime());
+        d.setDepartureLeadMinutes(p.getDepartureLeadMinutes());
         d.setIntensity(p.getIntensity());
         d.setPreferredAreas(strToList(p.getPreferredAreas()));
         d.setMustVisit(strToList(p.getMustVisit()));

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +31,12 @@ public class TripPlan {
     private LocalDate startDate;
     private int startHour;
     private int endHour;
+    @Column(length = 30) private String arrivalAirport;
+    private LocalTime arrivalTime;
+    private int arrivalReadyMinutes;
+    @Column(length = 30) private String departureAirport;
+    private LocalTime departureTime;
+    private int departureLeadMinutes;
     @Column(length = 20)  private String intensity;
     @Column(length = 500) private String preferredAreas;
     @Column(length = 500) private String mustVisit;

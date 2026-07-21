@@ -3,6 +3,7 @@ package com.example.demo.trip.dto;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 public class TripPlanDto {
@@ -31,6 +32,12 @@ public class TripPlanDto {
         private LocalDate     startDate;
         private int           startHour;
         private int           endHour;
+        private String        arrivalAirport;
+        private LocalTime     arrivalTime;
+        private int           arrivalReadyMinutes;
+        private String        departureAirport;
+        private LocalTime     departureTime;
+        private int           departureLeadMinutes;
         private String        intensity;
         private List<String>  preferredAreas;
         private List<String>  mustVisit;

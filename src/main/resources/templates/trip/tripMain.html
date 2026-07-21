@@ -8,15 +8,17 @@
     <title>Trip Planner — KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/trip/trip-main.css}">
+    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
 <body>
+<div id="google_translate_element" style="display:none"></div>
 
 <!-- ─── 헤더 ─── -->
 <header>
     <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
     <div class="header-right">
         <!-- EN 버튼: sessionStorage 유지한 채 언어 전환 -->
-        <a href="/en/trip" class="h-btn">EN</a>
+        <select class="h-btn" id="languageSelect" onchange="changeTripLanguage(this.value)" aria-label="언어 선택"><option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option><option value="zh-CN">中文</option></select>
         <a href="/ko/trip" class="h-btn active">KR</a>
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}"></span>
@@ -36,8 +38,8 @@
 
     <!-- 타이틀 -->
     <div class="page-title-area">
-        <div class="page-eyebrow">✈️ Seoul Trip Planner</div>
-        <h1 class="page-h1">나만의 <span>서울 여행</span> 플래너</h1>
+        <div class="page-eyebrow">✈️ Busan Trip Planner</div>
+        <h1 class="page-h1">나만의 <span>부산 여행</span> 플래너</h1>
         <p class="page-sub">취향과 일정을 입력하면 딱 맞는 코스를 추천해드려요</p>
     </div>
 
@@ -108,6 +110,25 @@
                     <label class="field-label">종료 시간 (시)</label>
                     <input class="field-input" id="endHour" type="number" min="12" max="24" placeholder="예: 21">
                 </div>
+            </div>
+
+            <div class="time-row">
+                <div class="field-group">
+                    <label class="field-label">입국 공항</label>
+                    <select class="field-input" id="arrivalAirport" onchange="applyAirportDefaults('arrival')">
+                        <option value="PUS">김해국제공항</option><option value="ICN">인천국제공항</option><option value="GMP">김포국제공항</option><option value="OTHER">기타</option>
+                    </select>
+                </div>
+                <div class="field-group"><label class="field-label">한국 도착 시각</label><input class="field-input" id="arrivalTime" type="time"></div>
+                <div class="field-group"><label class="field-label">도착 후 일정 시작까지 (분)</label><input class="field-input" id="arrivalReadyMinutes" type="number" min="0" max="600" value="90"><p class="field-hint">입국수속·수하물·부산 이동 포함</p></div>
+                <div class="field-group">
+                    <label class="field-label">출국 공항</label>
+                    <select class="field-input" id="departureAirport" onchange="applyAirportDefaults('departure')">
+                        <option value="PUS">김해국제공항</option><option value="ICN">인천국제공항</option><option value="GMP">김포국제공항</option><option value="OTHER">기타</option>
+                    </select>
+                </div>
+                <div class="field-group"><label class="field-label">한국 출발 시각</label><input class="field-input" id="departureTime" type="time"></div>
+                <div class="field-group"><label class="field-label">출발 전 일정 종료 여유 (분)</label><input class="field-input" id="departureLeadMinutes" type="number" min="0" max="600" value="180"><p class="field-hint">공항 이동·출국수속 포함</p></div>
             </div>
 
             <div class="nights-row" id="nightsRow" style="display:none">
@@ -222,7 +243,7 @@
 
 <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
-    <div class="loading-text">AI가 최적의 서울 여행을 설계하는 중이에요...</div>
+    <div class="loading-text">AI가 최적의 부산 여행을 설계하는 중이에요...</div>
 </div>
 
 <!-- 토스트 -->
@@ -260,7 +281,7 @@
     const AREA_EMOJI = {
         '코엑스':'🏢','롯데월드잠실점':'🎡','국립중앙박물관':'🏛️','여의도한강공원':'🌸',
         '어린이대공원':'🎠','예술의전당':'🎭','올림픽공원':'⚽','반포한강공원':'🌉',
-        '서울숲':'🌿','뚝섬한강공원':'🛶','경복궁':'⛩','전쟁기념관':'🎖️',
+        '해운대':'🏖️','광안리':'🌉','감천문화마을':'🎨','태종대':'🌊','영도':'🛳️','기장':'🏯',
         '망원한강공원':'🚲','봉은사':'🏯','낙산공원':'🏰','조계사':'🕍',
         '하늘공원':'🌅','보라매공원':'🌳','길상사':'🌸','압구정로데오거리':'👗',
     };
@@ -273,7 +294,7 @@
             renderAllChips    (data.allAreas || []);
         } catch(e) {
             console.error('[지역 로드 실패]', e);
-            renderPopularChips(['코엑스','경복궁','남산서울타워','광장시장','홍대','명동','이태원','잠실','강남','성수','인사동','북촌한옥마을']);
+            renderPopularChips(['해운대','광안리','감천문화마을','남포동','영도','송도','기장','서면']);
             renderAllChips([]);
         }
     }
@@ -348,6 +369,12 @@
         document.getElementById('startDate').value = edit.startDate || new Date().toISOString().slice(0,10);
         document.getElementById('startHour').value = edit.startHour || 10;
         document.getElementById('endHour').value = edit.endHour || 21;
+        document.getElementById('arrivalAirport').value = edit.arrivalAirport || 'PUS';
+        document.getElementById('arrivalTime').value = edit.arrivalTime || '';
+        document.getElementById('arrivalReadyMinutes').value = edit.arrivalReadyMinutes || 90;
+        document.getElementById('departureAirport').value = edit.departureAirport || 'PUS';
+        document.getElementById('departureTime').value = edit.departureTime || '';
+        document.getElementById('departureLeadMinutes').value = edit.departureLeadMinutes || 180;
         document.getElementById('mustVisit').value = (edit.mustVisit || []).join(', ');
         document.getElementById('styleDescription').value = edit.styleDescription || '';
         (edit.preferredAreas || []).forEach(area => syncAreaChips(area, true));
@@ -392,6 +419,8 @@
             if (!document.getElementById('age').value)       { alert('나이를 입력해주세요'); return; }
             if (!document.getElementById('companion').value) { alert('동행 유형을 선택해주세요'); return; }
             if (!document.getElementById('travelDays').value){ alert('여행 일수를 입력해주세요'); return; }
+            if (!document.getElementById('arrivalTime').value){ alert('한국 도착 시각을 입력해주세요'); return; }
+            if (!document.getElementById('departureTime').value){ alert('한국 출발 시각을 입력해주세요'); return; }
         }
         if (from === 2) {
             if (document.querySelectorAll('#slotList .slot-item').length === 0) {
@@ -501,6 +530,13 @@
     startDateInput.min = new Date().toISOString().slice(0, 10);
     startDateInput.value = startDateInput.min;
 
+    function applyAirportDefaults(type) {
+        const arrival = document.getElementById('arrivalAirport').value;
+        const departure = document.getElementById('departureAirport').value;
+        if (type === 'arrival') document.getElementById('arrivalReadyMinutes').value = arrival === 'PUS' ? 90 : arrival === 'GMP' ? 120 : arrival === 'ICN' ? 180 : 120;
+        if (type === 'departure') document.getElementById('departureLeadMinutes').value = departure === 'PUS' ? 180 : departure === 'GMP' ? 210 : departure === 'ICN' ? 270 : 240;
+    }
+
     function getSlotOrders() {
         return [...document.querySelectorAll('#slotList .slot-item')].map(item => {
             const type = item.dataset.type;
@@ -538,6 +574,7 @@
         document.getElementById('summaryBox').innerHTML = [
             `<b>👤 기본</b>: ${document.getElementById('age').value}세 / ${cmpMap[document.getElementById('companion').value]||'-'} / ${document.getElementById('budget').value||'-'}만원 / ${intMap[document.getElementById('intensity').value]||'-'}`,
             `<b>🗓️ 여행</b>: ${document.getElementById('startDate').value||'날짜 미정'} · ${days}일 (${parseInt(days)-1}박 ${days}일) / ${document.getElementById('startHour').value||10}시~${document.getElementById('endHour').value||21}시`,
+            `<b>✈️ 항공</b>: ${document.getElementById('arrivalAirport').value} ${document.getElementById('arrivalTime').value||'-'} 도착 → ${document.getElementById('departureAirport').value} ${document.getElementById('departureTime').value||'-'} 출발`,
             `<b>📅 하루 순서</b>: ${slotLine || '미설정'}`,
             `<b>📍 지역</b>: ${areas.length ? areas.join(', ') : '미선택'}`,
             must ? `<b>🌟 꼭 갈 곳</b>: ${must}` : '',
@@ -561,6 +598,12 @@
             startDate:        document.getElementById('startDate').value || new Date().toISOString().slice(0,10),
             startHour:        parseInt(document.getElementById('startHour').value)  || 10,
             endHour:          parseInt(document.getElementById('endHour').value)    || 21,
+            arrivalAirport:   document.getElementById('arrivalAirport').value,
+            arrivalTime:      document.getElementById('arrivalTime').value || null,
+            arrivalReadyMinutes: parseInt(document.getElementById('arrivalReadyMinutes').value) || 0,
+            departureAirport: document.getElementById('departureAirport').value,
+            departureTime:    document.getElementById('departureTime').value || null,
+            departureLeadMinutes: parseInt(document.getElementById('departureLeadMinutes').value) || 0,
             intensity:        document.getElementById('intensity').value     || 'balanced',
             slotOrders,
             dailyTourism: slotOrders.filter(s => s.type === 'tourism').length,

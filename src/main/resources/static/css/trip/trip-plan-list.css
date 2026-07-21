@@ -14,3 +14,4 @@ header{height:64px;padding:0 28px;display:flex;align-items:center;justify-conten
 .section-title{margin:42px 0 15px;font-size:23px}.reservation-list{display:grid;gap:10px}.reservation-card{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}.reservation-card>div{flex:1}.status{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px}.status.requested{background:#fff7d6;color:#946200}.status.confirmed{background:#dcfce7;color:#166534}.status.cancelled{background:#f3f4f6;color:#667085}.cancel-btn{border:0;background:#fff0f0;color:var(--danger);padding:8px 10px;border-radius:9px;font-weight:700;cursor:pointer}
 .status.rejected{background:#fee2e2;color:#991b1b}
 @media(max-width:640px){header{padding:0 14px}.page{padding:28px 14px}.slot{grid-template-columns:58px 1fr}.slot-duration{grid-column:2}}
+body{top:0!important}.goog-te-banner-frame.skiptranslate{display:none!important}

@@ -9,16 +9,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
     <link rel="stylesheet" th:href="@{/css/trip/trip-result.css}">
+    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
 <body>
+<div id="google_translate_element" style="display:none"></div>
 
 <!-- ─── 헤더 ─── -->
 <header>
     <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
     <div class="header-right">
         <!-- sessionStorage 유지한 채 언어 전환 -->
-        <a href="/en/trip/result" class="h-btn">EN</a>
-        <a href="/ko/trip/result" class="h-btn active">KR</a>
+        <select class="h-btn" id="languageSelect" onchange="changeTripLanguage(this.value)" aria-label="언어 선택"><option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option><option value="zh-CN">中文</option></select>
         <th:block th:if="${isLoggedIn}">
             <button type="button" class="h-btn h-btn-save" id="savePlanBtn" onclick="saveTripPlan()">일정 저장</button>
             <a href="/ko/trip/plans" class="h-btn">내 일정</a>
@@ -230,7 +231,7 @@
 
     /* ─── 카카오 지도 초기화 ─── */
     const map = new kakao.maps.Map(document.getElementById('map'), {
-        center: new kakao.maps.LatLng(37.5665, 126.9780), level: 7
+        center: new kakao.maps.LatLng(35.1796, 129.0756), level: 8
     });
     document.getElementById('mcZI').onclick = () => map.setLevel(map.getLevel() - 1);
     document.getElementById('mcZO').onclick = () => map.setLevel(map.getLevel() + 1);
@@ -276,16 +277,16 @@
     /* ─── 카카오 키워드 검색 → 좌표 ─── */
     // 변경 — size=3으로 늘리고, 첫 번째 결과가 서울 범위 내인지 확인
     function kakaoSearch(query) {
-        return fetch(`/api/kakao/search?query=${encodeURIComponent(query + ' 서울')}&size=3`)
+        return fetch(`/api/kakao/search?query=${encodeURIComponent(query + ' 부산')}&size=3`)
             .then(r => r.json())
             .then(d => {
                 if (!d.documents?.length) return null;
                 // 서울 범위(위도 37.4~37.7, 경도 126.7~127.2) 내 첫 번째 결과
-                const seoulDoc = d.documents.find(doc => {
+                const busanDoc = d.documents.find(doc => {
                     const lat = parseFloat(doc.y), lng = parseFloat(doc.x);
-                    return lat > 37.4 && lat < 37.7 && lng > 126.7 && lng < 127.2;
+                    return lat > 34.9 && lat < 35.4 && lng > 128.7 && lng < 129.35;
                 });
-                const doc = seoulDoc || d.documents[0];
+                const doc = busanDoc || d.documents[0];
                 return { lat: parseFloat(doc.y), lng: parseFloat(doc.x) };
             })
             .catch(() => null);
@@ -605,7 +606,7 @@
         document.getElementById('dpName').textContent  = slot.placeName;
 
         const addrEl = document.getElementById('dpAddr');
-        addrEl.textContent = slot.address || '서울';
+        addrEl.textContent = slot.address || '부산';
         document.getElementById('dpSub').style.display = 'flex';
 
         const badges = document.getElementById('dpBadges');
@@ -759,7 +760,7 @@
         tripRequest = JSON.parse(sessionStorage.getItem('tripRequest') || '{}');
 
         const days = tripRequest.travelDays || tripResult.schedule.length;
-        const area = (tripRequest.preferredAreas||[]).slice(0,2).join(', ') || '서울';
+        const area = (tripRequest.preferredAreas||[]).slice(0,2).join(', ') || '부산';
         document.getElementById('tripMeta').textContent = `${area} · ${days-1}박 ${days}일`;
 
         buildDaySelector(tripResult.schedule);
