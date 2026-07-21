@@ -3,21 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <title>여행 일정 — KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
+    <link rel="stylesheet" th:href="@{/css/common/variables.css}">
+    <link rel="stylesheet" th:href="@{/css/common/reset.css}">
     <link rel="stylesheet" th:href="@{/css/trip/trip-result.css}">
+    <link rel="stylesheet" th:href="@{/css/common/layout.css}">
+    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
 <body>
+<div id="google_translate_element" style="display:none"></div>
 
 <!-- ─── 헤더 ─── -->
 <header>
-    <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
+    <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
     <div class="header-right">
         <!-- sessionStorage 유지한 채 언어 전환 -->
-        <a href="/en/trip/result" class="h-btn">EN</a>
-        <a href="/ko/trip/result" class="h-btn active">KR</a>
+        <select class="h-btn" id="languageSelect" onchange="changeTripLanguage(this.value)" aria-label="언어 선택"><option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option><option value="zh-CN">中文</option></select>
         <th:block th:if="${isLoggedIn}">
+            <button type="button" class="h-btn h-btn-save" id="savePlanBtn" onclick="saveTripPlan()">일정 저장</button>
+            <a href="/ko/trip/plans" class="h-btn">내 일정</a>
             <span class="h-btn" th:text="${currentUserName}"></span>
             <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
@@ -116,9 +124,20 @@
 <!-- 토스트 (상세 패널 안에서도 중앙 표시용 — detail-panel 내부로 이동됨) -->
 <div class="toast" id="toast"></div>
 
-<script>
-    const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
+<div class="reservation-modal" id="reservationModal" aria-hidden="true">
+    <div class="reservation-dialog">
+        <button class="reservation-close" type="button" onclick="closeReservationModal()">×</button>
+        <h2>예약을 도와드릴까요?</h2>
+        <p>예약 요청을 저장하면 내 일정에서 상태를 확인할 수 있습니다. 실제 예약 확정은 매장 확인이 필요합니다.</p>
+        <label>장소<select id="reservationPlace"></select></label>
+        <div class="reservation-row"><label>날짜<input id="reservationDate" type="date"></label><label>시간<input id="reservationTime" type="time"></label></div>
+        <label>인원<input id="reservationParty" type="number" min="1" max="30" value="2"></label>
+        <label>요청사항<textarea id="reservationNote" maxlength="500" placeholder="선택사항"></textarea></label>
+        <div class="reservation-actions"><button type="button" class="reservation-later" onclick="closeReservationModal()">나중에</button><button type="button" class="reservation-submit" onclick="submitReservation()">예약 요청 저장</button></div>
+    </div>
+</div>
 
+<script>
     /* ─── 토스트 ─── */
     function showToast(msg, duration = 2500) {
         const panelOpen = document.getElementById('detailPanel')?.classList.contains('open');
@@ -128,9 +147,94 @@
         setTimeout(() => t.classList.remove('show'), duration);
     }
 
+    async function saveTripPlan() {
+        if (!tripResult || !tripRequest) {
+            showToast('저장할 일정이 없습니다.');
+            return;
+        }
+
+        const title = prompt('일정 제목을 입력해주세요.', '나의 여행 일정');
+        if (title === null) return;
+
+        const button = document.getElementById('savePlanBtn');
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
+        button.disabled = true;
+        button.textContent = '저장 중...';
+        try {
+            const response = await fetch('/api/trip/plan/save', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ title: title.trim(), request: tripRequest, response: tripResult })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || '일정 저장에 실패했습니다.');
+
+            sessionStorage.setItem('savedTripPlanId', data.planId);
+            showToast('일정이 저장되었습니다.');
+            button.textContent = '저장 완료';
+            openReservationModal(data.planId);
+        } catch (error) {
+            showToast(error.message);
+            button.disabled = false;
+            button.textContent = '일정 저장';
+        }
+    }
+
+    function openReservationModal(planId) {
+        const modal = document.getElementById('reservationModal');
+        modal.dataset.planId = planId;
+        const slots = (tripResult.schedule || []).flatMap(day => (day.slots || []).map(slot => ({...slot, day: day.day})));
+        document.getElementById('reservationPlace').innerHTML = slots.map(slot =>
+            `<option value="${slot.placeName.replace(/"/g, '&quot;')}" data-time="${slot.time || '12:00'}" data-day="${slot.day}">Day ${slot.day} · ${slot.placeName}</option>`
+        ).join('');
+        const today = new Date().toISOString().slice(0, 10);
+        const dateInput = document.getElementById('reservationDate');
+        dateInput.min = today; dateInput.value = reservationDateForDay(slots[0]?.day || 1);
+        document.getElementById('reservationTime').value = slots[0]?.time || '12:00';
+        document.getElementById('reservationPlace').onchange = event => {
+            const selected = event.target.selectedOptions[0];
+            document.getElementById('reservationTime').value = selected?.dataset.time || '12:00';
+            dateInput.value = reservationDateForDay(Number(selected?.dataset.day || 1));
+        };
+        modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function reservationDateForDay(day) {
+        const base = tripRequest.startDate ? new Date(`${tripRequest.startDate}T00:00:00`) : new Date();
+        base.setDate(base.getDate() + day - 1);
+        return base.toISOString().slice(0, 10);
+    }
+
+    function closeReservationModal() {
+        const modal = document.getElementById('reservationModal');
+        modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true');
+    }
+
+    async function submitReservation() {
+        const modal = document.getElementById('reservationModal');
+        const payload = {
+            tripPlanId: Number(modal.dataset.planId),
+            placeName: document.getElementById('reservationPlace').value,
+            visitDate: document.getElementById('reservationDate').value,
+            visitTime: document.getElementById('reservationTime').value,
+            partySize: Number(document.getElementById('reservationParty').value),
+            requestNote: document.getElementById('reservationNote').value.trim()
+        };
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+        const headers = {'Content-Type':'application/json'}; if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+        const response = await fetch('/api/trip/reservation', {method:'POST', headers, body:JSON.stringify(payload)});
+        if (!response.ok) { showToast('예약 요청을 저장하지 못했습니다.'); return; }
+        closeReservationModal(); showToast('예약 요청이 저장되었습니다.');
+    }
+
     /* ─── 카카오 지도 초기화 ─── */
     const map = new kakao.maps.Map(document.getElementById('map'), {
-        center: new kakao.maps.LatLng(37.5665, 126.9780), level: 7
+        center: new kakao.maps.LatLng(35.1796, 129.0756), level: 8
     });
     document.getElementById('mcZI').onclick = () => map.setLevel(map.getLevel() - 1);
     document.getElementById('mcZO').onclick = () => map.setLevel(map.getLevel() + 1);
@@ -176,18 +280,16 @@
     /* ─── 카카오 키워드 검색 → 좌표 ─── */
     // 변경 — size=3으로 늘리고, 첫 번째 결과가 서울 범위 내인지 확인
     function kakaoSearch(query) {
-        return fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query + ' 서울')}&size=3`, {
-            headers: { Authorization: KAKAO_KEY }
-        })
+        return fetch(`/api/kakao/search?query=${encodeURIComponent(query + ' 부산')}&size=3`)
             .then(r => r.json())
             .then(d => {
                 if (!d.documents?.length) return null;
                 // 서울 범위(위도 37.4~37.7, 경도 126.7~127.2) 내 첫 번째 결과
-                const seoulDoc = d.documents.find(doc => {
+                const busanDoc = d.documents.find(doc => {
                     const lat = parseFloat(doc.y), lng = parseFloat(doc.x);
-                    return lat > 37.4 && lat < 37.7 && lng > 126.7 && lng < 127.2;
+                    return lat > 34.9 && lat < 35.4 && lng > 128.7 && lng < 129.35;
                 });
-                const doc = seoulDoc || d.documents[0];
+                const doc = busanDoc || d.documents[0];
                 return { lat: parseFloat(doc.y), lng: parseFloat(doc.x) };
             })
             .catch(() => null);
@@ -370,7 +472,7 @@
             ${!isLast ? '<div class="slot-line"></div>' : ''}
           </div>
           <div class="slot-info">
-            <div class="slot-time">${slot.time} · ${cfg.label}</div>
+            <div class="slot-time">${slot.time} · ${cfg.label}${slot.durationMinutes ? ` · ${slot.durationMinutes}분` : ''}</div>
             <div class="slot-name">${slot.placeName}</div>
             <div class="slot-reason">${slot.reason || ''}</div>
             <div class="slot-score">score ${(slot.score||0).toFixed(4)}</div>
@@ -507,7 +609,7 @@
         document.getElementById('dpName').textContent  = slot.placeName;
 
         const addrEl = document.getElementById('dpAddr');
-        addrEl.textContent = slot.address || '서울';
+        addrEl.textContent = slot.address || '부산';
         document.getElementById('dpSub').style.display = 'flex';
 
         const badges = document.getElementById('dpBadges');
@@ -661,7 +763,7 @@
         tripRequest = JSON.parse(sessionStorage.getItem('tripRequest') || '{}');
 
         const days = tripRequest.travelDays || tripResult.schedule.length;
-        const area = (tripRequest.preferredAreas||[]).slice(0,2).join(', ') || '서울';
+        const area = (tripRequest.preferredAreas||[]).slice(0,2).join(', ') || '부산';
         document.getElementById('tripMeta').textContent = `${area} · ${days-1}박 ${days}일`;
 
         buildDaySelector(tripResult.schedule);

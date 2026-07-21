@@ -2,6 +2,8 @@ package com.example.demo.trip.dto;
 
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 public class TripPlanDto {
@@ -12,7 +14,8 @@ public class TripPlanDto {
         private Long          id;
         private String        title;
         private int           travelDays;
-        private String        preferredAreas;
+        private LocalDate     startDate;
+        private List<String>  preferredAreas;
         private String        companion;
         private LocalDateTime createdAt;
     }
@@ -26,12 +29,19 @@ public class TripPlanDto {
         private String        companion;
         private String        budget;
         private int           travelDays;
+        private LocalDate     startDate;
         private int           startHour;
         private int           endHour;
+        private String        arrivalAirport;
+        private LocalTime     arrivalTime;
+        private int           arrivalReadyMinutes;
+        private String        departureAirport;
+        private LocalTime     departureTime;
+        private int           departureLeadMinutes;
         private String        intensity;
-        private String        preferredAreas;
-        private String        mustVisit;
-        private String        categories;
+        private List<String>  preferredAreas;
+        private List<String>  mustVisit;
+        private List<String>  categories;
         private String        styleDescription;
         private LocalDateTime createdAt;
         private List<DayDto>  days;
@@ -54,6 +64,10 @@ public class TripPlanDto {
         private Double lat;
         private Double lng;
         private String address;
+        private String imageUrl;
+        private double avgRating;
+        private int    reviewCount;
+        private int    durationMinutes;
     }
 
     /** 저장 요청 — 추천 파라미터 + 추천 결과를 함께 전송 */
