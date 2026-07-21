@@ -8,6 +8,7 @@ import com.example.demo.transport.service.CongestionMlService;
 import com.example.demo.transport.service.TransportRouteService;
 import com.example.demo.user.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,7 +26,8 @@ import java.net.URLEncoder;
 @Controller
 public class TransportDetailController {
 
-    private static final String SEOUL_API_KEY = "746f74584172696e37395277457a71";
+    @Value("${SEOUL_SUBWAY_API_KEY:}")
+    private String seoulApiKey;
 
     @Autowired
     private TransportRouteService transportRouteService;
@@ -150,7 +152,7 @@ public class TransportDetailController {
                 case 1: congestionText = "Caution"; break;
                 case 2: congestionText = "Crowded"; break;
                 case 3: congestionText = "Severe"; break;
-                default: congestionText = "Normal"; break;
+                default: congestionText = "Unavailable"; break;
             }
         } else {
             switch (congestion) {
@@ -158,7 +160,7 @@ public class TransportDetailController {
                 case 1: congestionText = "주의"; break;
                 case 2: congestionText = "혼잡"; break;
                 case 3: congestionText = "심각"; break;
-                default: congestionText = "보통"; break;
+                default: congestionText = "데이터 없음"; break;
             }
         }
         model.addAttribute("congestionText", congestionText);
@@ -179,7 +181,7 @@ public class TransportDetailController {
                     congestionMsg = "Severe congestion is expected. Consider delaying or changing routes.";
                     break;
                 default:
-                    congestionMsg = "Passenger volume is within the normal range.";
+                    congestionMsg = "Congestion data is currently unavailable.";
                     break;
             }
         } else {
@@ -197,7 +199,7 @@ public class TransportDetailController {
                     congestionMsg = "혼잡도가 심각한 시간대입니다. 이동 시간이나 경로 변경을 권장합니다.";
                     break;
                 default:
-                    congestionMsg = "현재 시간대는 보통 수준의 혼잡도입니다.";
+                    congestionMsg = "현재 혼잡도 데이터를 확인할 수 없습니다.";
                     break;
             }
         }
@@ -229,8 +231,11 @@ public class TransportDetailController {
     }
 
     private String callApi(String station) throws Exception {
+        if (seoulApiKey == null || seoulApiKey.isBlank()) {
+            return "{\"realtimeArrivalList\":[],\"message\":\"Subway API key is not configured\"}";
+        }
         StringBuilder urlBuilder = new StringBuilder("http://swopenapi.seoul.go.kr/api/subway");
-        urlBuilder.append("/").append(SEOUL_API_KEY);
+        urlBuilder.append("/").append(seoulApiKey);
         urlBuilder.append("/json/realtimeStationArrival/1/5/");
         urlBuilder.append(URLEncoder.encode(station, "UTF-8"));
 
@@ -267,7 +272,7 @@ public class TransportDetailController {
         Route route = routeRepository.findById(id).orElse(null);
         if (route == null) return "fail";
 
-        String user = SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserName() : "guest";
+        String user = SecurityUtil.getCurrentUserName();
         if (!user.equals(route.getUserId())) {
             return "forbidden";
         }
@@ -279,7 +284,7 @@ public class TransportDetailController {
     @ResponseBody
     @DeleteMapping("/api/transport/history")
     public String deleteMyHistory() {
-        String user = SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserName() : "guest";
+        String user = SecurityUtil.getCurrentUserName();
         routeRepository.deleteByUserId(user);
         return "ok";
     }

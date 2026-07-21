@@ -1,6 +1,8 @@
 package com.example.demo.trip.dto;
 
 import lombok.Data;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -10,8 +12,15 @@ public class TripRecommendRequest {
     private String companion;   // solo / friend / couple / family
     private String budget;      // low / medium / high
     private int travelDays;
+    private LocalDate startDate;
     private int startHour;
     private int endHour;
+    private String arrivalAirport;
+    private LocalTime arrivalTime;
+    private int arrivalReadyMinutes;
+    private String departureAirport;
+    private LocalTime departureTime;
+    private int departureLeadMinutes;
     private String intensity;   // relaxed / balanced / packed
 
     // ── 기존 숫자 입력 (슬롯 직접 설정 안 할 때 폴백용) ──
@@ -39,6 +48,7 @@ public class TripRecommendRequest {
     public static class SlotOrder {
         private String type;          // tourism / food / cafe / bar
         private String foodCategory;  // 한식 / 중식 / 일식 / 양식 / 고기_해산물 / 기타 (food일 때만)
+        private int durationMinutes;  // 0이면 장소 유형에 따른 기본 체류 시간 사용
     }
 
     private List<String> preferredAreas;

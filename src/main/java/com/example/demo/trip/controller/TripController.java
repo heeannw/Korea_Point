@@ -36,10 +36,8 @@ public class TripController {
 
     // ── 여행 플래너 메인 (EN) ──
     @GetMapping("/en/trip")
-    public String tripMainEn(Model model, HttpSession session) {
-        session(model, session);
-        model.addAttribute("lang", "en");
-        return "trip/tripMainEn";
+    public String tripMainEn() {
+        return "redirect:/ko/trip";
     }
 
     // ── 추천 결과 (KO) ──
@@ -52,10 +50,20 @@ public class TripController {
 
     // ── 추천 결과 (EN) ──
     @GetMapping("/en/trip/result")
-    public String tripResultEn(Model model, HttpSession session) {
+    public String tripResultEn() {
+        return "redirect:/ko/trip/result";
+    }
+
+    @GetMapping("/ko/trip/plans")
+    public String tripPlansKo(Model model, HttpSession session) {
         session(model, session);
-        model.addAttribute("lang", "en");
-        return "trip/tripResultEn";
+        model.addAttribute("lang", "ko");
+        return "trip/tripPlanList";
+    }
+
+    @GetMapping("/en/trip/plans")
+    public String tripPlansEn() {
+        return "redirect:/ko/trip/plans";
     }
 
     // ── REST: 지역 목록 (GET /api/trip/areas) ──

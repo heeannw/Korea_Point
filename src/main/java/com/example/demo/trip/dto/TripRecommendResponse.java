@@ -47,6 +47,7 @@ public class TripRecommendResponse {
         private String imageUrl;      // 대표 이미지
         private double avgRating;     // 평균 별점
         private int    reviewCount;   // 리뷰 수
+        private int    durationMinutes;
 
         /** 리뷰 목록 (최대 3개) */
         private List<ReviewDto> reviews;

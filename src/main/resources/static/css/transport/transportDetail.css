@@ -271,13 +271,16 @@
 
 .arrival-card.timetable {
     display: grid;
-    gap: 8px;
-    background: #eff6ff;
+    gap: 9px;
+    background: #f8fbff;
     border-color: #bfdbfe;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
 }
 
 .arrival-card.timetable.bus {
-    background: #ecfdf5;
+    background: #f6fef9;
     border-color: #bbf7d0;
 }
 
@@ -292,21 +295,21 @@
 
 .arrival-station {
     color: #2563eb;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 800;
 }
 
 .arrival-card.timetable .arr-line {
-    color: #111827;
-    font-size: 13px;
-    font-weight: 700;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 600;
     line-height: 1.35;
 }
 
 .timetable-times,
 .timetable-list {
     display: grid;
-    gap: 6px;
+    gap: 8px;
 }
 
 .timetable-times {
@@ -315,38 +318,67 @@
 
 .timetable-row {
     display: grid;
-    grid-template-columns: 54px minmax(0, 1fr) minmax(0, 1fr);
-    gap: 6px;
-    align-items: center;
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 8px 10px;
+    align-items: start;
+    padding: 9px 0 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.25);
 }
 
 .timetable-times span,
 .timetable-row span {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 5px;
     min-width: 0;
-    padding: 7px 9px;
-    border-radius: 7px;
-    background: #ffffff;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.timetable-row span:last-child {
+    grid-column: 2;
     color: #111827;
     font-size: 14px;
     font-weight: 800;
 }
 
+.timetable-route {
+    color: #475569 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+}
+
+.timetable-arrival {
+    margin-top: -2px;
+    color: #111827 !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+}
+
 .timetable-order {
     justify-content: center !important;
+    width: fit-content;
+    min-width: 46px !important;
+    padding: 3px 6px !important;
+    border-radius: 999px !important;
     background: #dbeafe !important;
     color: #2563eb !important;
-    font-size: 11px !important;
+    font-size: 10px !important;
 }
 
 .timetable-times b,
 .timetable-row b {
-    color: #64748b;
+    color: #94a3b8;
     font-size: 11px;
     font-weight: 700;
+    flex: 0 0 auto;
 }
 
 /* ================= 지도 ================= */

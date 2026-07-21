@@ -3,6 +3,8 @@ package com.example.demo.trip.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,8 +28,15 @@ public class TripPlan {
     @Column(length = 20)  private String companion;
     @Column(length = 20)  private String budget;
     private int travelDays;
+    private LocalDate startDate;
     private int startHour;
     private int endHour;
+    @Column(length = 30) private String arrivalAirport;
+    private LocalTime arrivalTime;
+    private int arrivalReadyMinutes;
+    @Column(length = 30) private String departureAirport;
+    private LocalTime departureTime;
+    private int departureLeadMinutes;
     @Column(length = 20)  private String intensity;
     @Column(length = 500) private String preferredAreas;
     @Column(length = 500) private String mustVisit;
@@ -41,6 +50,10 @@ public class TripPlan {
     @OrderBy("day ASC")
     @Builder.Default
     private List<TripPlanDay> days = new ArrayList<>();
+
+    @OneToMany(mappedBy = "tripPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<TripReservation> reservations = new ArrayList<>();
 
     @PrePersist
     public void prePersist() { this.createdAt = LocalDateTime.now(); }

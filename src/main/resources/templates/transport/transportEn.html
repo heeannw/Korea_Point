@@ -200,7 +200,6 @@
 </div>
 
 <script>
-    const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
     let acTimer = null;
 
     function formatMinutes(min) {
@@ -262,13 +261,11 @@
 
             acTimer = setTimeout(() => {
                 const subwaySearch = fetch(
-                    `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(q)}&category_group_code=SW8&size=4`,
-                    { headers: { 'Authorization': KAKAO_KEY } }
+                    `/api/kakao/search?query=${encodeURIComponent(q)}&category=SW8&size=4`
                 ).then(r => r.json());
 
                 const keywordSearch = fetch(
-                    `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(q)}&size=4`,
-                    { headers: { 'Authorization': KAKAO_KEY } }
+                    `/api/kakao/search?query=${encodeURIComponent(q)}&size=4`
                 ).then(r => r.json());
 
                 Promise.all([subwaySearch, keywordSearch]).then(([subway, keyword]) => {
@@ -400,9 +397,7 @@
                 document.getElementById('startLat').value = lat;
                 document.getElementById('startLng').value = lng;
 
-                fetch(`https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${lng}&y=${lat}`, {
-                    headers: { 'Authorization': KAKAO_KEY }
-                })
+                fetch(`/api/kakao/reverse?x=${lng}&y=${lat}`)
                     .then(r => r.json())
                     .then(data => {
                         const docs = data.documents;

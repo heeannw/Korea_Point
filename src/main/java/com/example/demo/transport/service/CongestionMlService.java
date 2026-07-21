@@ -154,7 +154,7 @@ public class CongestionMlService {
             String normalizedStation
     ) {
         FallbackEntry entry = findFallback(model, line, day, hour);
-        int prediction = entry != null ? entry.label() : 1;
+        int prediction = entry != null ? entry.label() : -1;
 
         System.out.println(
                 "[Congestion fallback] reason=" + reason

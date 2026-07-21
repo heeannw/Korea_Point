@@ -180,12 +180,8 @@
 
 
   // Kakao keyword search → return coordinates
-  const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
-
   function kakaoSearch(query) {
-    return fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}`, {
-      headers: { 'Authorization': KAKAO_KEY }
-    })
+    return fetch(`/api/kakao/search?query=${encodeURIComponent(query)}`)
             .then(r => r.json())
             .then(d => {
               if (d.documents && d.documents.length > 0) {
@@ -1018,8 +1014,8 @@
                           <div class="timetable-list">
                               <div class="timetable-row">
                                   <span class="timetable-order">Live</span>
-                                  <span><b>Line</b>${lineText || 'Subway'}</span>
-                                  <span><b>Arrives</b>${msg}</span>
+                                  <span class="timetable-route">${lineText || 'Subway'}</span>
+                                  <span class="timetable-arrival">${msg}</span>
                               </div>
                           </div>
                       </div>
