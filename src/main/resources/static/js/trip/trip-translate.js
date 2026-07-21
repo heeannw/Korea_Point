@@ -26,6 +26,32 @@ function applyGoogleLanguage(language, attempt = 0) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    let select = document.getElementById('languageSelect');
+    if (!select) {
+        const headerRight = document.querySelector('header .header-right');
+        if (headerRight) {
+            const languageButtons = [...headerRight.querySelectorAll(':scope > a.h-btn, :scope > button.h-btn')]
+                .filter(element => ['EN', 'KR'].includes(element.textContent.trim().toUpperCase()));
+            languageButtons.forEach(element => element.remove());
+
+            select = document.createElement('select');
+            select.id = 'languageSelect';
+            select.className = 'h-btn';
+            select.setAttribute('translate', 'no');
+            select.setAttribute('aria-label', '언어 선택');
+            select.innerHTML = '<option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option><option value="zh-CN">中文</option>';
+            select.addEventListener('change', event => changeTripLanguage(event.target.value));
+            headerRight.prepend(select);
+        }
+    }
+
+    if (!document.getElementById('google_translate_element')) {
+        const translateElement = document.createElement('div');
+        translateElement.id = 'google_translate_element';
+        translateElement.style.display = 'none';
+        document.body.prepend(translateElement);
+    }
+
     const bannerStyle = document.createElement('style');
     bannerStyle.textContent = `
         body { top: 0 !important; position: static !important; }
@@ -45,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }).observe(document.documentElement, {childList: true, subtree: true});
 
-    const select = document.getElementById('languageSelect');
     if (select) select.value = localStorage.getItem('tripLanguage') || 'ko';
     const script = document.createElement('script');
     script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';

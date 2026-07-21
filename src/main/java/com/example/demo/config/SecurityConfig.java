@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .loginPage("/login")
                 .successHandler((request, response, authentication) -> {
                     Object language = request.getSession().getAttribute("loginLanguage");
-                    response.sendRedirect("ko".equals(language) ? "/ko" : "/");
+                    response.sendRedirect("/ko");
                 })
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
