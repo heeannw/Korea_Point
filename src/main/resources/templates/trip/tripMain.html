@@ -19,7 +19,6 @@
     <div class="header-right">
         <!-- EN 버튼: sessionStorage 유지한 채 언어 전환 -->
         <select class="h-btn" id="languageSelect" onchange="changeTripLanguage(this.value)" aria-label="언어 선택"><option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option><option value="zh-CN">中文</option></select>
-        <a href="/ko/trip" class="h-btn active">KR</a>
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}"></span>
             <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
