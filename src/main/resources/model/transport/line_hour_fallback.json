@@ -1,0 +1,1858 @@
+{
+  "by_line": {
+    "1": {
+      "0": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 5.212,
+          "sample_count": 80
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 8.508,
+          "sample_count": 40
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 10.022,
+          "sample_count": 80
+        },
+        "7": {
+          "label": 0,
+          "avg_congestion": 11.619,
+          "sample_count": 80
+        },
+        "8": {
+          "label": 0,
+          "avg_congestion": 18.031,
+          "sample_count": 80
+        },
+        "9": {
+          "label": 0,
+          "avg_congestion": 25.115,
+          "sample_count": 80
+        },
+        "10": {
+          "label": 0,
+          "avg_congestion": 29.829,
+          "sample_count": 80
+        },
+        "11": {
+          "label": 1,
+          "avg_congestion": 30.175,
+          "sample_count": 80
+        },
+        "12": {
+          "label": 1,
+          "avg_congestion": 35.877,
+          "sample_count": 80
+        },
+        "13": {
+          "label": 1,
+          "avg_congestion": 37.112,
+          "sample_count": 80
+        },
+        "14": {
+          "label": 1,
+          "avg_congestion": 39.569,
+          "sample_count": 80
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 39.524,
+          "sample_count": 80
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 37.869,
+          "sample_count": 80
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 37.515,
+          "sample_count": 80
+        },
+        "18": {
+          "label": 0,
+          "avg_congestion": 29.357,
+          "sample_count": 80
+        },
+        "19": {
+          "label": 0,
+          "avg_congestion": 24.283,
+          "sample_count": 80
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 21.841,
+          "sample_count": 80
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 21.099,
+          "sample_count": 80
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 18.338,
+          "sample_count": 80
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 13.874,
+          "sample_count": 80
+        }
+      },
+      "1": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 3.675,
+          "sample_count": 40
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 10.515,
+          "sample_count": 20
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 15.863,
+          "sample_count": 40
+        },
+        "7": {
+          "label": 1,
+          "avg_congestion": 34.362,
+          "sample_count": 40
+        },
+        "8": {
+          "label": 1,
+          "avg_congestion": 48.108,
+          "sample_count": 40
+        },
+        "9": {
+          "label": 1,
+          "avg_congestion": 36.855,
+          "sample_count": 40
+        },
+        "10": {
+          "label": 0,
+          "avg_congestion": 28.73,
+          "sample_count": 40
+        },
+        "11": {
+          "label": 0,
+          "avg_congestion": 26.02,
+          "sample_count": 40
+        },
+        "12": {
+          "label": 0,
+          "avg_congestion": 29.96,
+          "sample_count": 40
+        },
+        "13": {
+          "label": 1,
+          "avg_congestion": 31.27,
+          "sample_count": 40
+        },
+        "14": {
+          "label": 0,
+          "avg_congestion": 29.352,
+          "sample_count": 40
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 36.41,
+          "sample_count": 40
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 36.783,
+          "sample_count": 40
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 45.08,
+          "sample_count": 40
+        },
+        "18": {
+          "label": 1,
+          "avg_congestion": 60.533,
+          "sample_count": 40
+        },
+        "19": {
+          "label": 0,
+          "avg_congestion": 29.548,
+          "sample_count": 40
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 24.027,
+          "sample_count": 40
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 24.557,
+          "sample_count": 40
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 21.135,
+          "sample_count": 40
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 13.372,
+          "sample_count": 40
+        }
+      }
+    },
+    "2": {
+      "0": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 0.0,
+          "sample_count": 432
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 15.073,
+          "sample_count": 216
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 12.222,
+          "sample_count": 432
+        },
+        "7": {
+          "label": 0,
+          "avg_congestion": 12.438,
+          "sample_count": 432
+        },
+        "8": {
+          "label": 0,
+          "avg_congestion": 20.575,
+          "sample_count": 432
+        },
+        "9": {
+          "label": 0,
+          "avg_congestion": 27.944,
+          "sample_count": 432
+        },
+        "10": {
+          "label": 1,
+          "avg_congestion": 31.238,
+          "sample_count": 432
+        },
+        "11": {
+          "label": 1,
+          "avg_congestion": 34.795,
+          "sample_count": 432
+        },
+        "12": {
+          "label": 1,
+          "avg_congestion": 38.307,
+          "sample_count": 432
+        },
+        "13": {
+          "label": 1,
+          "avg_congestion": 40.799,
+          "sample_count": 432
+        },
+        "14": {
+          "label": 1,
+          "avg_congestion": 40.871,
+          "sample_count": 432
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 41.798,
+          "sample_count": 432
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 46.22,
+          "sample_count": 432
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 44.598,
+          "sample_count": 432
+        },
+        "18": {
+          "label": 1,
+          "avg_congestion": 39.876,
+          "sample_count": 432
+        },
+        "19": {
+          "label": 1,
+          "avg_congestion": 33.117,
+          "sample_count": 432
+        },
+        "20": {
+          "label": 1,
+          "avg_congestion": 32.945,
+          "sample_count": 432
+        },
+        "21": {
+          "label": 1,
+          "avg_congestion": 33.478,
+          "sample_count": 432
+        },
+        "22": {
+          "label": 1,
+          "avg_congestion": 30.848,
+          "sample_count": 432
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 22.909,
+          "sample_count": 432
+        }
+      },
+      "1": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 8.627,
+          "sample_count": 216
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 23.536,
+          "sample_count": 108
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 24.002,
+          "sample_count": 216
+        },
+        "7": {
+          "label": 1,
+          "avg_congestion": 43.934,
+          "sample_count": 216
+        },
+        "8": {
+          "label": 1,
+          "avg_congestion": 62.143,
+          "sample_count": 216
+        },
+        "9": {
+          "label": 1,
+          "avg_congestion": 40.444,
+          "sample_count": 216
+        },
+        "10": {
+          "label": 0,
+          "avg_congestion": 28.858,
+          "sample_count": 216
+        },
+        "11": {
+          "label": 0,
+          "avg_congestion": 28.723,
+          "sample_count": 216
+        },
+        "12": {
+          "label": 1,
+          "avg_congestion": 31.894,
+          "sample_count": 216
+        },
+        "13": {
+          "label": 1,
+          "avg_congestion": 33.428,
+          "sample_count": 216
+        },
+        "14": {
+          "label": 1,
+          "avg_congestion": 32.992,
+          "sample_count": 216
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 38.091,
+          "sample_count": 216
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 44.64,
+          "sample_count": 216
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 55.078,
+          "sample_count": 216
+        },
+        "18": {
+          "label": 1,
+          "avg_congestion": 66.075,
+          "sample_count": 216
+        },
+        "19": {
+          "label": 1,
+          "avg_congestion": 39.312,
+          "sample_count": 216
+        },
+        "20": {
+          "label": 1,
+          "avg_congestion": 33.649,
+          "sample_count": 216
+        },
+        "21": {
+          "label": 1,
+          "avg_congestion": 37.007,
+          "sample_count": 216
+        },
+        "22": {
+          "label": 1,
+          "avg_congestion": 36.26,
+          "sample_count": 216
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 20.566,
+          "sample_count": 216
+        }
+      }
+    },
+    "3": {
+      "0": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 0.225,
+          "sample_count": 272
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 8.81,
+          "sample_count": 136
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 9.619,
+          "sample_count": 272
+        },
+        "7": {
+          "label": 0,
+          "avg_congestion": 10.551,
+          "sample_count": 272
+        },
+        "8": {
+          "label": 0,
+          "avg_congestion": 18.838,
+          "sample_count": 272
+        },
+        "9": {
+          "label": 0,
+          "avg_congestion": 25.236,
+          "sample_count": 272
+        },
+        "10": {
+          "label": 0,
+          "avg_congestion": 27.243,
+          "sample_count": 272
+        },
+        "11": {
+          "label": 0,
+          "avg_congestion": 29.632,
+          "sample_count": 272
+        },
+        "12": {
+          "label": 0,
+          "avg_congestion": 29.668,
+          "sample_count": 272
+        },
+        "13": {
+          "label": 1,
+          "avg_congestion": 30.43,
+          "sample_count": 272
+        },
+        "14": {
+          "label": 1,
+          "avg_congestion": 30.682,
+          "sample_count": 272
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 32.605,
+          "sample_count": 272
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 35.995,
+          "sample_count": 272
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 34.668,
+          "sample_count": 272
+        },
+        "18": {
+          "label": 0,
+          "avg_congestion": 29.469,
+          "sample_count": 272
+        },
+        "19": {
+          "label": 0,
+          "avg_congestion": 21.774,
+          "sample_count": 272
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 21.711,
+          "sample_count": 272
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 19.812,
+          "sample_count": 272
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 17.576,
+          "sample_count": 272
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 10.088,
+          "sample_count": 272
+        }
+      },
+      "1": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 4.94,
+          "sample_count": 136
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 15.396,
+          "sample_count": 68
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 21.085,
+          "sample_count": 136
+        },
+        "7": {
+          "label": 1,
+          "avg_congestion": 37.832,
+          "sample_count": 136
+        },
+        "8": {
+          "label": 1,
+          "avg_congestion": 50.323,
+          "sample_count": 136
+        },
+        "9": {
+          "label": 1,
+          "avg_congestion": 36.275,
+          "sample_count": 136
+        },
+        "10": {
+          "label": 0,
+          "avg_congestion": 28.486,
+          "sample_count": 136
+        },
+        "11": {
+          "label": 0,
+          "avg_congestion": 28.53,
+          "sample_count": 136
+        },
+        "12": {
+          "label": 1,
+          "avg_congestion": 31.767,
+          "sample_count": 136
+        },
+        "13": {
+          "label": 1,
+          "avg_congestion": 33.725,
+          "sample_count": 136
+        },
+        "14": {
+          "label": 1,
+          "avg_congestion": 32.321,
+          "sample_count": 136
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 38.938,
+          "sample_count": 136
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 46.136,
+          "sample_count": 136
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 51.139,
+          "sample_count": 136
+        },
+        "18": {
+          "label": 1,
+          "avg_congestion": 56.81,
+          "sample_count": 136
+        },
+        "19": {
+          "label": 1,
+          "avg_congestion": 33.751,
+          "sample_count": 136
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 24.317,
+          "sample_count": 136
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 23.277,
+          "sample_count": 136
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 24.037,
+          "sample_count": 136
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 13.718,
+          "sample_count": 136
+        }
+      }
+    },
+    "4": {
+      "0": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 0.442,
+          "sample_count": 208
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 14.616,
+          "sample_count": 104
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 14.25,
+          "sample_count": 208
+        },
+        "7": {
+          "label": 0,
+          "avg_congestion": 14.981,
+          "sample_count": 208
+        },
+        "8": {
+          "label": 0,
+          "avg_congestion": 25.176,
+          "sample_count": 208
+        },
+        "9": {
+          "label": 1,
+          "avg_congestion": 34.362,
+          "sample_count": 208
+        },
+        "10": {
+          "label": 1,
+          "avg_congestion": 37.119,
+          "sample_count": 208
+        },
+        "11": {
+          "label": 1,
+          "avg_congestion": 37.386,
+          "sample_count": 208
+        },
+        "12": {
+          "label": 1,
+          "avg_congestion": 33.427,
+          "sample_count": 208
+        },
+        "13": {
+          "label": 1,
+          "avg_congestion": 34.053,
+          "sample_count": 208
+        },
+        "14": {
+          "label": 1,
+          "avg_congestion": 34.004,
+          "sample_count": 208
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 35.412,
+          "sample_count": 208
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 38.307,
+          "sample_count": 208
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 39.602,
+          "sample_count": 208
+        },
+        "18": {
+          "label": 1,
+          "avg_congestion": 38.679,
+          "sample_count": 208
+        },
+        "19": {
+          "label": 1,
+          "avg_congestion": 31.3,
+          "sample_count": 208
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 29.296,
+          "sample_count": 208
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 29.503,
+          "sample_count": 208
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 25.304,
+          "sample_count": 208
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 22.184,
+          "sample_count": 208
+        }
+      },
+      "1": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 8.479,
+          "sample_count": 104
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 24.579,
+          "sample_count": 52
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 23.555,
+          "sample_count": 104
+        },
+        "7": {
+          "label": 1,
+          "avg_congestion": 38.131,
+          "sample_count": 104
+        },
+        "8": {
+          "label": 1,
+          "avg_congestion": 50.706,
+          "sample_count": 104
+        },
+        "9": {
+          "label": 1,
+          "avg_congestion": 37.889,
+          "sample_count": 104
+        },
+        "10": {
+          "label": 0,
+          "avg_congestion": 28.55,
+          "sample_count": 104
+        },
+        "11": {
+          "label": 0,
+          "avg_congestion": 28.323,
+          "sample_count": 104
+        },
+        "12": {
+          "label": 1,
+          "avg_congestion": 30.566,
+          "sample_count": 104
+        },
+        "13": {
+          "label": 1,
+          "avg_congestion": 31.665,
+          "sample_count": 104
+        },
+        "14": {
+          "label": 1,
+          "avg_congestion": 30.642,
+          "sample_count": 104
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 35.904,
+          "sample_count": 104
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 42.248,
+          "sample_count": 104
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 50.881,
+          "sample_count": 104
+        },
+        "18": {
+          "label": 1,
+          "avg_congestion": 54.753,
+          "sample_count": 104
+        },
+        "19": {
+          "label": 1,
+          "avg_congestion": 32.963,
+          "sample_count": 104
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 24.363,
+          "sample_count": 104
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 24.088,
+          "sample_count": 104
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 29.153,
+          "sample_count": 104
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 19.433,
+          "sample_count": 104
+        }
+      }
+    },
+    "5": {
+      "0": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 0.902,
+          "sample_count": 452
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 11.342,
+          "sample_count": 226
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 10.896,
+          "sample_count": 452
+        },
+        "7": {
+          "label": 0,
+          "avg_congestion": 12.857,
+          "sample_count": 452
+        },
+        "8": {
+          "label": 0,
+          "avg_congestion": 19.989,
+          "sample_count": 452
+        },
+        "9": {
+          "label": 0,
+          "avg_congestion": 25.423,
+          "sample_count": 452
+        },
+        "10": {
+          "label": 0,
+          "avg_congestion": 28.546,
+          "sample_count": 452
+        },
+        "11": {
+          "label": 0,
+          "avg_congestion": 29.588,
+          "sample_count": 452
+        },
+        "12": {
+          "label": 1,
+          "avg_congestion": 31.298,
+          "sample_count": 452
+        },
+        "13": {
+          "label": 1,
+          "avg_congestion": 32.992,
+          "sample_count": 452
+        },
+        "14": {
+          "label": 1,
+          "avg_congestion": 32.533,
+          "sample_count": 452
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 33.702,
+          "sample_count": 452
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 36.539,
+          "sample_count": 452
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 34.89,
+          "sample_count": 452
+        },
+        "18": {
+          "label": 0,
+          "avg_congestion": 29.147,
+          "sample_count": 452
+        },
+        "19": {
+          "label": 0,
+          "avg_congestion": 22.966,
+          "sample_count": 452
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 22.151,
+          "sample_count": 452
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 20.656,
+          "sample_count": 452
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 18.308,
+          "sample_count": 452
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 12.808,
+          "sample_count": 452
+        }
+      },
+      "1": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 6.798,
+          "sample_count": 226
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 17.888,
+          "sample_count": 113
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 21.798,
+          "sample_count": 226
+        },
+        "7": {
+          "label": 1,
+          "avg_congestion": 43.333,
+          "sample_count": 226
+        },
+        "8": {
+          "label": 1,
+          "avg_congestion": 49.92,
+          "sample_count": 226
+        },
+        "9": {
+          "label": 1,
+          "avg_congestion": 30.668,
+          "sample_count": 226
+        },
+        "10": {
+          "label": 0,
+          "avg_congestion": 23.998,
+          "sample_count": 226
+        },
+        "11": {
+          "label": 0,
+          "avg_congestion": 24.108,
+          "sample_count": 226
+        },
+        "12": {
+          "label": 0,
+          "avg_congestion": 25.77,
+          "sample_count": 226
+        },
+        "13": {
+          "label": 0,
+          "avg_congestion": 26.496,
+          "sample_count": 226
+        },
+        "14": {
+          "label": 0,
+          "avg_congestion": 25.638,
+          "sample_count": 226
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 30.28,
+          "sample_count": 226
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 38.515,
+          "sample_count": 226
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 47.541,
+          "sample_count": 226
+        },
+        "18": {
+          "label": 1,
+          "avg_congestion": 50.352,
+          "sample_count": 226
+        },
+        "19": {
+          "label": 1,
+          "avg_congestion": 34.941,
+          "sample_count": 226
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 28.617,
+          "sample_count": 226
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 26.131,
+          "sample_count": 226
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 24.732,
+          "sample_count": 226
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 15.646,
+          "sample_count": 226
+        }
+      }
+    },
+    "6": {
+      "0": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 0.623,
+          "sample_count": 296
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 10.4,
+          "sample_count": 148
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 11.075,
+          "sample_count": 296
+        },
+        "7": {
+          "label": 0,
+          "avg_congestion": 12.55,
+          "sample_count": 296
+        },
+        "8": {
+          "label": 0,
+          "avg_congestion": 18.64,
+          "sample_count": 296
+        },
+        "9": {
+          "label": 0,
+          "avg_congestion": 23.612,
+          "sample_count": 296
+        },
+        "10": {
+          "label": 0,
+          "avg_congestion": 25.752,
+          "sample_count": 296
+        },
+        "11": {
+          "label": 0,
+          "avg_congestion": 26.834,
+          "sample_count": 296
+        },
+        "12": {
+          "label": 0,
+          "avg_congestion": 29.023,
+          "sample_count": 296
+        },
+        "13": {
+          "label": 1,
+          "avg_congestion": 30.453,
+          "sample_count": 296
+        },
+        "14": {
+          "label": 1,
+          "avg_congestion": 30.357,
+          "sample_count": 296
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 31.364,
+          "sample_count": 296
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 34.576,
+          "sample_count": 296
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 33.413,
+          "sample_count": 296
+        },
+        "18": {
+          "label": 0,
+          "avg_congestion": 28.681,
+          "sample_count": 296
+        },
+        "19": {
+          "label": 0,
+          "avg_congestion": 22.485,
+          "sample_count": 296
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 20.691,
+          "sample_count": 296
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 21.484,
+          "sample_count": 296
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 19.569,
+          "sample_count": 296
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 13.839,
+          "sample_count": 296
+        }
+      },
+      "1": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 5.848,
+          "sample_count": 148
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 12.772,
+          "sample_count": 74
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 15.812,
+          "sample_count": 148
+        },
+        "7": {
+          "label": 0,
+          "avg_congestion": 29.66,
+          "sample_count": 148
+        },
+        "8": {
+          "label": 1,
+          "avg_congestion": 39.386,
+          "sample_count": 148
+        },
+        "9": {
+          "label": 0,
+          "avg_congestion": 28.533,
+          "sample_count": 148
+        },
+        "10": {
+          "label": 0,
+          "avg_congestion": 21.446,
+          "sample_count": 148
+        },
+        "11": {
+          "label": 0,
+          "avg_congestion": 20.376,
+          "sample_count": 148
+        },
+        "12": {
+          "label": 0,
+          "avg_congestion": 21.108,
+          "sample_count": 148
+        },
+        "13": {
+          "label": 0,
+          "avg_congestion": 22.113,
+          "sample_count": 148
+        },
+        "14": {
+          "label": 0,
+          "avg_congestion": 20.866,
+          "sample_count": 148
+        },
+        "15": {
+          "label": 0,
+          "avg_congestion": 24.767,
+          "sample_count": 148
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 31.389,
+          "sample_count": 148
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 38.397,
+          "sample_count": 148
+        },
+        "18": {
+          "label": 1,
+          "avg_congestion": 47.776,
+          "sample_count": 148
+        },
+        "19": {
+          "label": 0,
+          "avg_congestion": 28.518,
+          "sample_count": 148
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 20.567,
+          "sample_count": 148
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 21.677,
+          "sample_count": 148
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 21.656,
+          "sample_count": 148
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 12.633,
+          "sample_count": 148
+        }
+      }
+    },
+    "7": {
+      "0": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 1.165,
+          "sample_count": 336
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 19.897,
+          "sample_count": 168
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 17.364,
+          "sample_count": 336
+        },
+        "7": {
+          "label": 0,
+          "avg_congestion": 17.439,
+          "sample_count": 336
+        },
+        "8": {
+          "label": 0,
+          "avg_congestion": 27.27,
+          "sample_count": 336
+        },
+        "9": {
+          "label": 1,
+          "avg_congestion": 33.778,
+          "sample_count": 336
+        },
+        "10": {
+          "label": 1,
+          "avg_congestion": 33.423,
+          "sample_count": 336
+        },
+        "11": {
+          "label": 1,
+          "avg_congestion": 33.26,
+          "sample_count": 336
+        },
+        "12": {
+          "label": 1,
+          "avg_congestion": 34.079,
+          "sample_count": 336
+        },
+        "13": {
+          "label": 1,
+          "avg_congestion": 35.371,
+          "sample_count": 336
+        },
+        "14": {
+          "label": 1,
+          "avg_congestion": 35.233,
+          "sample_count": 336
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 37.105,
+          "sample_count": 336
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 41.478,
+          "sample_count": 336
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 39.967,
+          "sample_count": 336
+        },
+        "18": {
+          "label": 1,
+          "avg_congestion": 33.785,
+          "sample_count": 336
+        },
+        "19": {
+          "label": 0,
+          "avg_congestion": 27.39,
+          "sample_count": 336
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 25.78,
+          "sample_count": 336
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 25.193,
+          "sample_count": 336
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 22.435,
+          "sample_count": 336
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 15.887,
+          "sample_count": 336
+        }
+      },
+      "1": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 9.179,
+          "sample_count": 168
+        },
+        "5": {
+          "label": 1,
+          "avg_congestion": 33.906,
+          "sample_count": 84
+        },
+        "6": {
+          "label": 1,
+          "avg_congestion": 34.29,
+          "sample_count": 168
+        },
+        "7": {
+          "label": 1,
+          "avg_congestion": 55.273,
+          "sample_count": 168
+        },
+        "8": {
+          "label": 1,
+          "avg_congestion": 59.935,
+          "sample_count": 168
+        },
+        "9": {
+          "label": 1,
+          "avg_congestion": 44.642,
+          "sample_count": 168
+        },
+        "10": {
+          "label": 0,
+          "avg_congestion": 29.927,
+          "sample_count": 168
+        },
+        "11": {
+          "label": 0,
+          "avg_congestion": 26.07,
+          "sample_count": 168
+        },
+        "12": {
+          "label": 0,
+          "avg_congestion": 27.424,
+          "sample_count": 168
+        },
+        "13": {
+          "label": 0,
+          "avg_congestion": 27.832,
+          "sample_count": 168
+        },
+        "14": {
+          "label": 0,
+          "avg_congestion": 27.155,
+          "sample_count": 168
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 32.664,
+          "sample_count": 168
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 41.937,
+          "sample_count": 168
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 54.945,
+          "sample_count": 168
+        },
+        "18": {
+          "label": 1,
+          "avg_congestion": 60.52,
+          "sample_count": 168
+        },
+        "19": {
+          "label": 1,
+          "avg_congestion": 39.969,
+          "sample_count": 168
+        },
+        "20": {
+          "label": 1,
+          "avg_congestion": 31.994,
+          "sample_count": 168
+        },
+        "21": {
+          "label": 1,
+          "avg_congestion": 33.234,
+          "sample_count": 168
+        },
+        "22": {
+          "label": 1,
+          "avg_congestion": 32.918,
+          "sample_count": 168
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 20.483,
+          "sample_count": 168
+        }
+      }
+    },
+    "8": {
+      "0": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 0.077,
+          "sample_count": 152
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 12.3,
+          "sample_count": 76
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 11.976,
+          "sample_count": 152
+        },
+        "7": {
+          "label": 0,
+          "avg_congestion": 13.883,
+          "sample_count": 152
+        },
+        "8": {
+          "label": 0,
+          "avg_congestion": 22.622,
+          "sample_count": 152
+        },
+        "9": {
+          "label": 0,
+          "avg_congestion": 29.484,
+          "sample_count": 152
+        },
+        "10": {
+          "label": 1,
+          "avg_congestion": 31.784,
+          "sample_count": 152
+        },
+        "11": {
+          "label": 1,
+          "avg_congestion": 32.811,
+          "sample_count": 152
+        },
+        "12": {
+          "label": 1,
+          "avg_congestion": 34.561,
+          "sample_count": 152
+        },
+        "13": {
+          "label": 1,
+          "avg_congestion": 36.308,
+          "sample_count": 152
+        },
+        "14": {
+          "label": 1,
+          "avg_congestion": 35.902,
+          "sample_count": 152
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 37.185,
+          "sample_count": 152
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 40.707,
+          "sample_count": 152
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 39.561,
+          "sample_count": 152
+        },
+        "18": {
+          "label": 1,
+          "avg_congestion": 33.684,
+          "sample_count": 152
+        },
+        "19": {
+          "label": 0,
+          "avg_congestion": 26.107,
+          "sample_count": 152
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 24.706,
+          "sample_count": 152
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 24.691,
+          "sample_count": 152
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 21.775,
+          "sample_count": 152
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 12.783,
+          "sample_count": 152
+        }
+      },
+      "1": {
+        "0": {
+          "label": 0,
+          "avg_congestion": 7.882,
+          "sample_count": 76
+        },
+        "5": {
+          "label": 0,
+          "avg_congestion": 20.366,
+          "sample_count": 38
+        },
+        "6": {
+          "label": 0,
+          "avg_congestion": 22.982,
+          "sample_count": 76
+        },
+        "7": {
+          "label": 1,
+          "avg_congestion": 42.301,
+          "sample_count": 76
+        },
+        "8": {
+          "label": 1,
+          "avg_congestion": 60.383,
+          "sample_count": 76
+        },
+        "9": {
+          "label": 1,
+          "avg_congestion": 41.278,
+          "sample_count": 76
+        },
+        "10": {
+          "label": 0,
+          "avg_congestion": 25.139,
+          "sample_count": 76
+        },
+        "11": {
+          "label": 0,
+          "avg_congestion": 23.533,
+          "sample_count": 76
+        },
+        "12": {
+          "label": 0,
+          "avg_congestion": 26.134,
+          "sample_count": 76
+        },
+        "13": {
+          "label": 0,
+          "avg_congestion": 26.517,
+          "sample_count": 76
+        },
+        "14": {
+          "label": 0,
+          "avg_congestion": 25.754,
+          "sample_count": 76
+        },
+        "15": {
+          "label": 1,
+          "avg_congestion": 31.684,
+          "sample_count": 76
+        },
+        "16": {
+          "label": 1,
+          "avg_congestion": 37.992,
+          "sample_count": 76
+        },
+        "17": {
+          "label": 1,
+          "avg_congestion": 48.549,
+          "sample_count": 76
+        },
+        "18": {
+          "label": 1,
+          "avg_congestion": 56.892,
+          "sample_count": 76
+        },
+        "19": {
+          "label": 1,
+          "avg_congestion": 35.003,
+          "sample_count": 76
+        },
+        "20": {
+          "label": 0,
+          "avg_congestion": 26.683,
+          "sample_count": 76
+        },
+        "21": {
+          "label": 0,
+          "avg_congestion": 28.363,
+          "sample_count": 76
+        },
+        "22": {
+          "label": 0,
+          "avg_congestion": 29.843,
+          "sample_count": 76
+        },
+        "23": {
+          "label": 0,
+          "avg_congestion": 19.583,
+          "sample_count": 76
+        }
+      }
+    }
+  },
+  "global": {
+    "0": {
+      "0": {
+        "label": 0,
+        "avg_congestion": 0.703,
+        "sample_count": 2228
+      },
+      "5": {
+        "label": 0,
+        "avg_congestion": 13.19,
+        "sample_count": 1114
+      },
+      "6": {
+        "label": 0,
+        "avg_congestion": 12.352,
+        "sample_count": 2228
+      },
+      "7": {
+        "label": 0,
+        "avg_congestion": 13.368,
+        "sample_count": 2228
+      },
+      "8": {
+        "label": 0,
+        "avg_congestion": 21.474,
+        "sample_count": 2228
+      },
+      "9": {
+        "label": 0,
+        "avg_congestion": 28.009,
+        "sample_count": 2228
+      },
+      "10": {
+        "label": 1,
+        "avg_congestion": 30.34,
+        "sample_count": 2228
+      },
+      "11": {
+        "label": 1,
+        "avg_congestion": 31.76,
+        "sample_count": 2228
+      },
+      "12": {
+        "label": 1,
+        "avg_congestion": 33.161,
+        "sample_count": 2228
+      },
+      "13": {
+        "label": 1,
+        "avg_congestion": 34.688,
+        "sample_count": 2228
+      },
+      "14": {
+        "label": 1,
+        "avg_congestion": 34.662,
+        "sample_count": 2228
+      },
+      "15": {
+        "label": 1,
+        "avg_congestion": 35.947,
+        "sample_count": 2228
+      },
+      "16": {
+        "label": 1,
+        "avg_congestion": 39.331,
+        "sample_count": 2228
+      },
+      "17": {
+        "label": 1,
+        "avg_congestion": 38.168,
+        "sample_count": 2228
+      },
+      "18": {
+        "label": 1,
+        "avg_congestion": 33.111,
+        "sample_count": 2228
+      },
+      "19": {
+        "label": 0,
+        "avg_congestion": 26.432,
+        "sample_count": 2228
+      },
+      "20": {
+        "label": 0,
+        "avg_congestion": 25.374,
+        "sample_count": 2228
+      },
+      "21": {
+        "label": 0,
+        "avg_congestion": 24.95,
+        "sample_count": 2228
+      },
+      "22": {
+        "label": 0,
+        "avg_congestion": 22.331,
+        "sample_count": 2228
+      },
+      "23": {
+        "label": 0,
+        "avg_congestion": 15.947,
+        "sample_count": 2228
+      }
+    },
+    "1": {
+      "0": {
+        "label": 0,
+        "avg_congestion": 7.277,
+        "sample_count": 1114
+      },
+      "5": {
+        "label": 0,
+        "avg_congestion": 20.944,
+        "sample_count": 557
+      },
+      "6": {
+        "label": 0,
+        "avg_congestion": 23.259,
+        "sample_count": 1114
+      },
+      "7": {
+        "label": 1,
+        "avg_congestion": 41.884,
+        "sample_count": 1114
+      },
+      "8": {
+        "label": 1,
+        "avg_congestion": 53.172,
+        "sample_count": 1114
+      },
+      "9": {
+        "label": 1,
+        "avg_congestion": 36.692,
+        "sample_count": 1114
+      },
+      "10": {
+        "label": 0,
+        "avg_congestion": 26.716,
+        "sample_count": 1114
+      },
+      "11": {
+        "label": 0,
+        "avg_congestion": 25.766,
+        "sample_count": 1114
+      },
+      "12": {
+        "label": 0,
+        "avg_congestion": 27.943,
+        "sample_count": 1114
+      },
+      "13": {
+        "label": 0,
+        "avg_congestion": 28.997,
+        "sample_count": 1114
+      },
+      "14": {
+        "label": 0,
+        "avg_congestion": 28.083,
+        "sample_count": 1114
+      },
+      "15": {
+        "label": 1,
+        "avg_congestion": 33.32,
+        "sample_count": 1114
+      },
+      "16": {
+        "label": 1,
+        "avg_congestion": 40.453,
+        "sample_count": 1114
+      },
+      "17": {
+        "label": 1,
+        "avg_congestion": 49.636,
+        "sample_count": 1114
+      },
+      "18": {
+        "label": 1,
+        "avg_congestion": 56.603,
+        "sample_count": 1114
+      },
+      "19": {
+        "label": 1,
+        "avg_congestion": 35.174,
+        "sample_count": 1114
+      },
+      "20": {
+        "label": 0,
+        "avg_congestion": 27.814,
+        "sample_count": 1114
+      },
+      "21": {
+        "label": 0,
+        "avg_congestion": 28.276,
+        "sample_count": 1114
+      },
+      "22": {
+        "label": 0,
+        "avg_congestion": 28.34,
+        "sample_count": 1114
+      },
+      "23": {
+        "label": 0,
+        "avg_congestion": 17.234,
+        "sample_count": 1114
+      }
+    }
+  }
+}
