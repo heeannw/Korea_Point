@@ -39,6 +39,7 @@ public class TripRecommendRequest {
     public static class SlotOrder {
         private String type;          // tourism / food / cafe / bar
         private String foodCategory;  // 한식 / 중식 / 일식 / 양식 / 고기_해산물 / 기타 (food일 때만)
+        private int durationMinutes;  // 0이면 장소 유형에 따른 기본 체류 시간 사용
     }
 
     private List<String> preferredAreas;

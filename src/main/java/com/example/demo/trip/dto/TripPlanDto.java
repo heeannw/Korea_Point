@@ -54,6 +54,10 @@ public class TripPlanDto {
         private Double lat;
         private Double lng;
         private String address;
+        private String imageUrl;
+        private double avgRating;
+        private int    reviewCount;
+        private int    durationMinutes;
     }
 
     /** 저장 요청 — 추천 파라미터 + 추천 결과를 함께 전송 */

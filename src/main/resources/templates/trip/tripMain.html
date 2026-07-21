@@ -386,6 +386,10 @@
     };
 
     const FOOD_CATS = ['선택 안 함', '한식', '중식', '일식', '양식', '고기/해산물', '기타'];
+    const DURATION_OPTIONS = [
+        {value:0,label:'자동'}, {value:60,label:'1시간'}, {value:120,label:'2시간'},
+        {value:180,label:'3시간'}, {value:240,label:'4시간'}, {value:360,label:'6시간'}, {value:480,label:'8시간'}
+    ];
 
     const DEFAULT_SLOTS = [
         {type:'tourism'}, {type:'tourism'},
@@ -415,12 +419,17 @@
              ${c}</option>`).join('')}
          </select>`
             : '';
+        const defaultDuration = type === 'tourism' ? 0 : 60;
+        const durationSelect = `<select class="slot-duration-select" title="체류 시간 선택">
+            ${DURATION_OPTIONS.map(o => `<option value="${o.value}" ${o.value === defaultDuration ? 'selected' : ''}>${o.label}</option>`).join('')}
+        </select>`;
 
         item.innerHTML = `
       <span class="slot-drag" title="드래그해서 순서 변경">☰</span>
       <span class="slot-icon">${cfg.icon}</span>
-      <span class="slot-label">${cfg.label}</span>
-      ${foodSelect}
+       <span class="slot-label">${cfg.label}</span>
+       ${foodSelect}
+       ${durationSelect}
       <button class="slot-del" onclick="removeSlot(this)" title="삭제">✕</button>
     `;
 
@@ -463,7 +472,8 @@
         return [...document.querySelectorAll('#slotList .slot-item')].map(item => {
             const type = item.dataset.type;
             const sel  = item.querySelector('.slot-food-select');
-            return { type, foodCategory: sel ? sel.value : '' };
+            const duration = item.querySelector('.slot-duration-select');
+            return { type, foodCategory: sel ? sel.value : '', durationMinutes: parseInt(duration?.value || '0') };
         });
     }
 
@@ -488,7 +498,8 @@
         const slotLine = orders.map(o => {
             const icon = slotIcon[o.type] || '?';
             const fc   = o.foodCategory ? ` (${o.foodCategory})` : '';
-            return icon + fc;
+            const duration = o.durationMinutes ? ` ${o.durationMinutes / 60}시간` : ' 자동';
+            return icon + fc + duration;
         }).join(' → ');
 
         document.getElementById('summaryBox').innerHTML = [

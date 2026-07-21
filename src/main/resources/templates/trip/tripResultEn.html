@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf.token}">
+  <meta name="_csrf_header" th:content="${_csrf.headerName}">
   <title>Trip Itinerary — KoreaPoint</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
@@ -17,6 +19,8 @@
     <a href="/en/trip/result" class="h-btn active">EN</a>
     <a href="/ko/trip/result" class="h-btn">KR</a>
         <th:block th:if="${isLoggedIn}">
+            <button type="button" class="h-btn h-btn-save" id="savePlanBtn" onclick="saveTripPlan()">Save Trip</button>
+            <a href="/en/trip/plans" class="h-btn">My Trips</a>
             <span class="h-btn" th:text="${currentUserName}"></span>
             <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
@@ -111,6 +115,10 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="reservation-modal" id="reservationModal" aria-hidden="true">
+  <div class="reservation-dialog"><button class="reservation-close" type="button" onclick="closeReservationModal()">×</button><h2>Would you like help booking?</h2><p>This saves a booking request. The venue must still confirm the actual reservation.</p><label>Place<select id="reservationPlace"></select></label><div class="reservation-row"><label>Date<input id="reservationDate" type="date"></label><label>Time<input id="reservationTime" type="time"></label></div><label>Guests<input id="reservationParty" type="number" min="1" max="30" value="2"></label><label>Requests<textarea id="reservationNote" maxlength="500" placeholder="Optional"></textarea></label><div class="reservation-actions"><button type="button" class="reservation-later" onclick="closeReservationModal()">Later</button><button type="button" class="reservation-submit" onclick="submitReservation()">Save Request</button></div></div>
+</div>
+
 <script>
   const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
 
@@ -121,6 +129,54 @@
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), duration);
   }
+
+  async function saveTripPlan() {
+    if (!tripResult || !tripRequest) {
+      showToast('There is no trip to save.');
+      return;
+    }
+
+    const title = prompt('Enter a title for this trip.', 'My Trip');
+    if (title === null) return;
+
+    const button = document.getElementById('savePlanBtn');
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+    const headers = { 'Content-Type': 'application/json' };
+    if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
+    button.disabled = true;
+    button.textContent = 'Saving...';
+    try {
+      const response = await fetch('/api/trip/plan/save', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ title: title.trim(), request: tripRequest, response: tripResult })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Failed to save this trip.');
+
+      sessionStorage.setItem('savedTripPlanId', data.planId);
+      showToast('Your trip has been saved.');
+      button.textContent = 'Saved';
+      openReservationModal(data.planId);
+    } catch (error) {
+      showToast(error.message);
+      button.disabled = false;
+      button.textContent = 'Save Trip';
+    }
+  }
+
+  function openReservationModal(planId) {
+    const modal=document.getElementById('reservationModal');modal.dataset.planId=planId;
+    const slots=(tripResult.schedule||[]).flatMap(day=>(day.slots||[]).map(slot=>({...slot,day:day.day})));
+    document.getElementById('reservationPlace').innerHTML=slots.map(slot=>`<option value="${slot.placeName.replace(/"/g,'&quot;')}" data-time="${slot.time||'12:00'}">Day ${slot.day} · ${slot.placeName}</option>`).join('');
+    const today=new Date().toISOString().slice(0,10),dateInput=document.getElementById('reservationDate');dateInput.min=today;dateInput.value=today;
+    document.getElementById('reservationTime').value=slots[0]?.time||'12:00';document.getElementById('reservationPlace').onchange=event=>document.getElementById('reservationTime').value=event.target.selectedOptions[0]?.dataset.time||'12:00';
+    modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+  }
+  function closeReservationModal(){const modal=document.getElementById('reservationModal');modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
+  async function submitReservation(){const modal=document.getElementById('reservationModal');const payload={tripPlanId:Number(modal.dataset.planId),placeName:document.getElementById('reservationPlace').value,visitDate:document.getElementById('reservationDate').value,visitTime:document.getElementById('reservationTime').value,partySize:Number(document.getElementById('reservationParty').value),requestNote:document.getElementById('reservationNote').value.trim()};const csrfToken=document.querySelector('meta[name="_csrf"]')?.content,csrfHeader=document.querySelector('meta[name="_csrf_header"]')?.content,headers={'Content-Type':'application/json'};if(csrfToken&&csrfHeader)headers[csrfHeader]=csrfToken;const response=await fetch('/api/trip/reservation',{method:'POST',headers,body:JSON.stringify(payload)});if(!response.ok){showToast('Could not save the booking request.');return}closeReservationModal();showToast('Booking request saved.')}
 
   /* ─── 카카오 지도 ─── */
   const map = new kakao.maps.Map(document.getElementById('map'), {
@@ -340,7 +396,7 @@
             ${!isLast ? '<div class="slot-line"></div>' : ''}
           </div>
           <div class="slot-info">
-            <div class="slot-time">${slot.time} · ${cfg.label}</div>
+            <div class="slot-time">${slot.time} · ${cfg.label}${slot.durationMinutes ? ` · ${slot.durationMinutes} min` : ''}</div>
             <div class="slot-name">${slot.placeName}</div>
             <div class="slot-reason">${slot.reason || ''}</div>
             <div class="slot-score">score ${(slot.score||0).toFixed(4)}</div>

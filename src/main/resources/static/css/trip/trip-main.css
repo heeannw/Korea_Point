@@ -248,6 +248,12 @@ header{
     background:#fff;flex:1;max-width:160px;
 }
 .slot-food-select:focus{border-color:var(--blue)}
+.slot-duration-select{
+    padding:4px 9px;border:1.5px solid var(--border);border-radius:50px;
+    font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;
+    color:var(--gray);background:#fff;outline:none;cursor:pointer;flex-shrink:0;
+}
+.slot-duration-select:focus{border-color:var(--blue)}
 .slot-del{
     margin-left:auto;background:none;border:none;
     cursor:pointer;color:#94a3b8;font-size:17px;

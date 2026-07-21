@@ -58,6 +58,20 @@ public class TripController {
         return "trip/tripResultEn";
     }
 
+    @GetMapping("/ko/trip/plans")
+    public String tripPlansKo(Model model, HttpSession session) {
+        session(model, session);
+        model.addAttribute("lang", "ko");
+        return "trip/tripPlanList";
+    }
+
+    @GetMapping("/en/trip/plans")
+    public String tripPlansEn(Model model, HttpSession session) {
+        session(model, session);
+        model.addAttribute("lang", "en");
+        return "trip/tripPlanListEn";
+    }
+
     // ── REST: 지역 목록 (GET /api/trip/areas) ──
     @GetMapping("/api/trip/areas")
     @ResponseBody

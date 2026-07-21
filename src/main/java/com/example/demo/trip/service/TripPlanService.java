@@ -79,6 +79,10 @@ public class TripPlanService {
                                 .lat(slotDto.getLat())
                                 .lng(slotDto.getLng())
                                 .address(slotDto.getAddress())
+                                .imageUrl(slotDto.getImageUrl())
+                                .avgRating(slotDto.getAvgRating())
+                                .reviewCount(slotDto.getReviewCount())
+                                .durationMinutes(slotDto.getDurationMinutes())
                                 .build());
                     }
                 }
@@ -156,6 +160,10 @@ public class TripPlanService {
                 sd.setPlaceName(sl.getPlaceName()); sd.setReason(sl.getReason());
                 sd.setScore(sl.getScore()); sd.setLat(sl.getLat()); sd.setLng(sl.getLng());
                 sd.setAddress(sl.getAddress());
+                sd.setImageUrl(sl.getImageUrl());
+                sd.setAvgRating(sl.getAvgRating());
+                sd.setReviewCount(sl.getReviewCount());
+                sd.setDurationMinutes(sl.getDurationMinutes());
                 return sd;
             }).collect(Collectors.toList()));
             dayDtos.add(dd);

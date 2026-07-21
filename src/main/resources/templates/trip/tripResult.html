@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <title>여행 일정 — KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
@@ -18,6 +20,8 @@
         <a href="/en/trip/result" class="h-btn">EN</a>
         <a href="/ko/trip/result" class="h-btn active">KR</a>
         <th:block th:if="${isLoggedIn}">
+            <button type="button" class="h-btn h-btn-save" id="savePlanBtn" onclick="saveTripPlan()">일정 저장</button>
+            <a href="/ko/trip/plans" class="h-btn">내 일정</a>
             <span class="h-btn" th:text="${currentUserName}"></span>
             <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
@@ -116,6 +120,19 @@
 <!-- 토스트 (상세 패널 안에서도 중앙 표시용 — detail-panel 내부로 이동됨) -->
 <div class="toast" id="toast"></div>
 
+<div class="reservation-modal" id="reservationModal" aria-hidden="true">
+    <div class="reservation-dialog">
+        <button class="reservation-close" type="button" onclick="closeReservationModal()">×</button>
+        <h2>예약을 도와드릴까요?</h2>
+        <p>예약 요청을 저장하면 내 일정에서 상태를 확인할 수 있습니다. 실제 예약 확정은 매장 확인이 필요합니다.</p>
+        <label>장소<select id="reservationPlace"></select></label>
+        <div class="reservation-row"><label>날짜<input id="reservationDate" type="date"></label><label>시간<input id="reservationTime" type="time"></label></div>
+        <label>인원<input id="reservationParty" type="number" min="1" max="30" value="2"></label>
+        <label>요청사항<textarea id="reservationNote" maxlength="500" placeholder="선택사항"></textarea></label>
+        <div class="reservation-actions"><button type="button" class="reservation-later" onclick="closeReservationModal()">나중에</button><button type="button" class="reservation-submit" onclick="submitReservation()">예약 요청 저장</button></div>
+    </div>
+</div>
+
 <script>
     const KAKAO_KEY = 'KakaoAK 91fbd7e68922180d0fe82982e0a20c92';
 
@@ -126,6 +143,83 @@
         t.textContent = msg;
         t.classList.add('show');
         setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    async function saveTripPlan() {
+        if (!tripResult || !tripRequest) {
+            showToast('저장할 일정이 없습니다.');
+            return;
+        }
+
+        const title = prompt('일정 제목을 입력해주세요.', '나의 여행 일정');
+        if (title === null) return;
+
+        const button = document.getElementById('savePlanBtn');
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
+        button.disabled = true;
+        button.textContent = '저장 중...';
+        try {
+            const response = await fetch('/api/trip/plan/save', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ title: title.trim(), request: tripRequest, response: tripResult })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || '일정 저장에 실패했습니다.');
+
+            sessionStorage.setItem('savedTripPlanId', data.planId);
+            showToast('일정이 저장되었습니다.');
+            button.textContent = '저장 완료';
+            openReservationModal(data.planId);
+        } catch (error) {
+            showToast(error.message);
+            button.disabled = false;
+            button.textContent = '일정 저장';
+        }
+    }
+
+    function openReservationModal(planId) {
+        const modal = document.getElementById('reservationModal');
+        modal.dataset.planId = planId;
+        const slots = (tripResult.schedule || []).flatMap(day => (day.slots || []).map(slot => ({...slot, day: day.day})));
+        document.getElementById('reservationPlace').innerHTML = slots.map(slot =>
+            `<option value="${slot.placeName.replace(/"/g, '&quot;')}" data-time="${slot.time || '12:00'}">Day ${slot.day} · ${slot.placeName}</option>`
+        ).join('');
+        const today = new Date().toISOString().slice(0, 10);
+        const dateInput = document.getElementById('reservationDate');
+        dateInput.min = today; dateInput.value = today;
+        document.getElementById('reservationTime').value = slots[0]?.time || '12:00';
+        document.getElementById('reservationPlace').onchange = event => {
+            document.getElementById('reservationTime').value = event.target.selectedOptions[0]?.dataset.time || '12:00';
+        };
+        modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeReservationModal() {
+        const modal = document.getElementById('reservationModal');
+        modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true');
+    }
+
+    async function submitReservation() {
+        const modal = document.getElementById('reservationModal');
+        const payload = {
+            tripPlanId: Number(modal.dataset.planId),
+            placeName: document.getElementById('reservationPlace').value,
+            visitDate: document.getElementById('reservationDate').value,
+            visitTime: document.getElementById('reservationTime').value,
+            partySize: Number(document.getElementById('reservationParty').value),
+            requestNote: document.getElementById('reservationNote').value.trim()
+        };
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+        const headers = {'Content-Type':'application/json'}; if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+        const response = await fetch('/api/trip/reservation', {method:'POST', headers, body:JSON.stringify(payload)});
+        if (!response.ok) { showToast('예약 요청을 저장하지 못했습니다.'); return; }
+        closeReservationModal(); showToast('예약 요청이 저장되었습니다.');
     }
 
     /* ─── 카카오 지도 초기화 ─── */
@@ -370,7 +464,7 @@
             ${!isLast ? '<div class="slot-line"></div>' : ''}
           </div>
           <div class="slot-info">
-            <div class="slot-time">${slot.time} · ${cfg.label}</div>
+            <div class="slot-time">${slot.time} · ${cfg.label}${slot.durationMinutes ? ` · ${slot.durationMinutes}분` : ''}</div>
             <div class="slot-name">${slot.placeName}</div>
             <div class="slot-reason">${slot.reason || ''}</div>
             <div class="slot-score">score ${(slot.score||0).toFixed(4)}</div>

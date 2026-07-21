@@ -388,6 +388,10 @@
         { val: '고기_해산물',   label: 'BBQ / Seafood' },
         { val: '기타',         label: 'Other' },
     ];
+    const DURATION_OPTIONS = [
+        {value:0,label:'Auto'}, {value:60,label:'1 hr'}, {value:120,label:'2 hrs'},
+        {value:180,label:'3 hrs'}, {value:240,label:'4 hrs'}, {value:360,label:'6 hrs'}, {value:480,label:'8 hrs'}
+    ];
 
     const DEFAULT_SLOTS = [
         {type:'tourism'}, {type:'tourism'},
@@ -415,12 +419,17 @@
            ${FOOD_CATS_EN.map(c => `<option value="${c.val}" ${foodCategory === c.val ? 'selected' : ''}>${c.label}</option>`).join('')}
          </select>`
             : '';
+        const defaultDuration = type === 'tourism' ? 0 : 60;
+        const durationSelect = `<select class="slot-duration-select" title="Select duration">
+            ${DURATION_OPTIONS.map(o => `<option value="${o.value}" ${o.value === defaultDuration ? 'selected' : ''}>${o.label}</option>`).join('')}
+        </select>`;
 
         item.innerHTML = `
       <span class="slot-drag" title="Drag to reorder">☰</span>
       <span class="slot-icon">${cfg.icon}</span>
-      <span class="slot-label">${cfg.label}</span>
-      ${foodSelect}
+       <span class="slot-label">${cfg.label}</span>
+       ${foodSelect}
+       ${durationSelect}
       <button class="slot-del" onclick="removeSlot(this)" title="Remove">✕</button>
     `;
 
@@ -461,7 +470,8 @@
         return [...document.querySelectorAll('#slotList .slot-item')].map(item => {
             const type = item.dataset.type;
             const sel  = item.querySelector('.slot-food-select');
-            return { type, foodCategory: sel ? sel.value : '' };
+            const duration = item.querySelector('.slot-duration-select');
+            return { type, foodCategory: sel ? sel.value : '', durationMinutes: parseInt(duration?.value || '0') };
         });
     }
 
@@ -485,7 +495,8 @@
         const slotLine = orders.map(o => {
             const icon = slotIconMap[o.type] || '?';
             const fc   = o.foodCategory ? ` (${o.foodCategory})` : '';
-            return icon + fc;
+            const duration = o.durationMinutes ? ` ${o.durationMinutes / 60}h` : ' Auto';
+            return icon + fc + duration;
         }).join(' → ');
 
         document.getElementById('summaryBox').innerHTML = [

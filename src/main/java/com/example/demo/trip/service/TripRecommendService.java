@@ -438,36 +438,53 @@ public class TripRecommendService {
             DayScheduleDto d = new DayScheduleDto();
             d.setDay(day);
             List<SlotDto> slots = new ArrayList<>();
-            int hour = req.getStartHour() > 0 ? req.getStartHour() : 10;
-            int end  = req.getEndHour()   > 0 ? req.getEndHour()   : 21;
+            int currentMinutes = (req.getStartHour() > 0 ? req.getStartHour() : 10) * 60;
+            int endMinutes = (req.getEndHour() > 0 ? req.getEndHour() : 21) * 60;
 
             for (SlotOrder order : orders) {
-                if (hour >= end) break;
+                if (currentMinutes >= endMinutes) break;
                 switch (order.getType()) {
                     case "tourism" -> {
                         ScoredPlace p = pickNext(tourism, used, anchorLat, anchorLng, 10.0);
-                        if (p != null) { used.add(p.place.name()); slots.add(makeSlot(hour, "tourism", p, tourism)); if (p.place.lat() != 0) { anchorLat = p.place.lat(); anchorLng = p.place.lng(); } hour += 2; }
+                        if (p != null) {
+                            int duration = resolveDurationMinutes(order, "tourism", p.place);
+                            if (currentMinutes + duration > endMinutes) break;
+                            used.add(p.place.name());
+                            slots.add(makeSlot(currentMinutes, duration, "tourism", p, tourism));
+                            if (p.place.lat() != 0) { anchorLat = p.place.lat(); anchorLng = p.place.lng(); }
+                            currentMinutes += duration;
+                        }
                     }
                     case "food" -> {
                         String fc = order.getFoodCategory();
                         List<ScoredPlace> pool = (fc != null && !fc.isBlank() && foodByCat.containsKey(fc)) ? foodByCat.get(fc) : food;
                         ScoredPlace p = pickNext(pool, used, anchorLat, anchorLng, 8.0);
                         if (p != null) {
+                            int duration = resolveDurationMinutes(order, "food", p.place);
+                            if (currentMinutes + duration > endMinutes) break;
                             used.add(p.place.name());
-                            SlotDto slot = makeSlot(hour, "food", p, pool);
+                            SlotDto slot = makeSlot(currentMinutes, duration, "food", p, pool);
                             if (fc != null && !fc.isBlank()) slot.setReason("[" + fc + "] " + slot.getReason());
                             slots.add(slot);
                             if (p.place.lat() != 0) { anchorLat = p.place.lat(); anchorLng = p.place.lng(); }
-                            hour += 1;
+                            currentMinutes += duration;
                         }
                     }
                     case "cafe" -> {
                         ScoredPlace p = pickNext(cafe, used, anchorLat, anchorLng, 8.0);
-                        if (p != null) { used.add(p.place.name()); slots.add(makeSlot(hour, "cafe", p, cafe)); hour += 1; }
+                        if (p != null) {
+                            int duration = resolveDurationMinutes(order, "cafe", p.place);
+                            if (currentMinutes + duration > endMinutes) break;
+                            used.add(p.place.name()); slots.add(makeSlot(currentMinutes, duration, "cafe", p, cafe)); currentMinutes += duration;
+                        }
                     }
                     case "bar" -> {
                         ScoredPlace p = pickNext(bar, used, anchorLat, anchorLng, 8.0);
-                        if (p != null) { used.add(p.place.name()); slots.add(makeSlot(hour, "bar", p, bar)); hour += 1; }
+                        if (p != null) {
+                            int duration = resolveDurationMinutes(order, "bar", p.place);
+                            if (currentMinutes + duration > endMinutes) break;
+                            used.add(p.place.name()); slots.add(makeSlot(currentMinutes, duration, "bar", p, bar)); currentMinutes += duration;
+                        }
                     }
                 }
             }
@@ -490,6 +507,26 @@ public class TripRecommendService {
         SlotOrder o = new SlotOrder(); o.setType(type); o.setFoodCategory(foodCategory); return o;
     }
 
+    private int resolveDurationMinutes(SlotOrder order, String type, PlaceData place) {
+        if (order.getDurationMinutes() > 0) {
+            return Math.max(30, Math.min(order.getDurationMinutes(), 8 * 60));
+        }
+        if (!"tourism".equals(type)) return 60;
+
+        String text = String.join(" ",
+                Optional.ofNullable(place.name()).orElse(""),
+                Optional.ofNullable(place.nameEn()).orElse(""),
+                Optional.ofNullable(place.categoryEn()).orElse("")).toLowerCase(Locale.ROOT);
+        if (containsAny(text, "놀이공원", "테마파크", "워터파크", "동물원", "아쿠아리움",
+                "amusement park", "theme park", "water park", "zoo", "aquarium")) return 360;
+        if (containsAny(text, "전시관", "전시회", "박물관", "미술관", "museum", "gallery", "exhibition")) return 180;
+        return 120;
+    }
+
+    private boolean containsAny(String text, String... keywords) {
+        return Arrays.stream(keywords).anyMatch(text::contains);
+    }
+
     private ScoredPlace pickNext(List<ScoredPlace> list, Set<String> used,
                                  double anchorLat, double anchorLng, double maxKm) {
         for (ScoredPlace sp : list) {
@@ -500,11 +537,12 @@ public class TripRecommendService {
     }
 
     /** SlotDto 생성 — 주소/이미지/별점/리뷰 포함 */
-    private SlotDto makeSlot(int hour, String cat, ScoredPlace pick, List<ScoredPlace> pool) {
+    private SlotDto makeSlot(int startMinutes, int durationMinutes, String cat, ScoredPlace pick, List<ScoredPlace> pool) {
         PlaceData pl = pick.place;
         boolean hasEn = pl.nameEn() != null && !pl.nameEn().isBlank();
         SlotDto s = new SlotDto();
-        s.setTime(String.format("%02d:00", hour));
+        s.setTime(String.format("%02d:%02d", startMinutes / 60, startMinutes % 60));
+        s.setDurationMinutes(durationMinutes);
         // category는 항상 내부 타입 유지 (아이콘 매핑용)
         s.setCategory(cat);
         s.setPlaceName(hasEn ? pl.nameEn() : pl.name());

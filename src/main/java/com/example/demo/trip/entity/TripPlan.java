@@ -42,6 +42,10 @@ public class TripPlan {
     @Builder.Default
     private List<TripPlanDay> days = new ArrayList<>();
 
+    @OneToMany(mappedBy = "tripPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<TripReservation> reservations = new ArrayList<>();
+
     @PrePersist
     public void prePersist() { this.createdAt = LocalDateTime.now(); }
 }
