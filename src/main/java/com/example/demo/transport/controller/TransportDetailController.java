@@ -3,6 +3,7 @@ package com.example.demo.transport.controller;
 import com.example.demo.transport.dto.TransportRouteDto;
 import com.example.demo.transport.entity.Route;
 import com.example.demo.transport.repository.RouteRepository;
+import com.example.demo.transport.service.BusanBusArrivalService;
 import com.example.demo.transport.service.CongestionMlService;
 import com.example.demo.transport.service.TransportRouteService;
 import com.example.demo.user.util.SecurityUtil;
@@ -31,6 +32,9 @@ public class TransportDetailController {
 
     @Autowired
     private CongestionMlService congestionMlService;
+
+    @Autowired
+    private BusanBusArrivalService busanBusArrivalService;
 
     @Autowired
     private RouteRepository routeRepository;
@@ -63,6 +67,10 @@ public class TransportDetailController {
         int day = (java.time.LocalDate.now().getDayOfWeek().getValue() >= 6) ? 0 : 1;
 
         int line = 2;
+        int fallbackLine = 2;
+        Integer stationId = null;
+        Integer odsayLine = null;
+        String city = "seoul";
         String station = "강남";
         String rawLineName = null;
 
@@ -72,22 +80,26 @@ public class TransportDetailController {
                     if (step.getFromStation() != null && !step.getFromStation().isBlank()) {
                         station = step.getFromStation();
                     }
+                    stationId = step.getFromStationId();
+                    odsayLine = step.getSubwayCode();
 
                     rawLineName = step.getLine();
+                    city = rawLineName.contains("부산") ? "busan" : "seoul";
                     String cleanLine = rawLineName.replaceAll("[^가-힣0-9]", "");
                     String onlyNumber = cleanLine.replaceAll("[^0-9]", "");
 
                     if (!onlyNumber.isEmpty()) {
-                        line = Integer.parseInt(onlyNumber);
+                        fallbackLine = Integer.parseInt(onlyNumber);
                     } else {
-                        if (cleanLine.contains("경의중앙")) line = 10;
-                        else if (cleanLine.contains("분당")) line = 11;
-                        else if (cleanLine.contains("공항")) line = 12;
-                        else if (cleanLine.contains("신분당")) line = 14;
-                        else if (cleanLine.contains("우이신설")) line = 15;
-                        else line = 0;
+                        if (cleanLine.contains("경의중앙")) fallbackLine = 10;
+                        else if (cleanLine.contains("분당")) fallbackLine = 11;
+                        else if (cleanLine.contains("공항")) fallbackLine = 12;
+                        else if (cleanLine.contains("신분당")) fallbackLine = 14;
+                        else if (cleanLine.contains("우이신설")) fallbackLine = 15;
+                        else fallbackLine = 0;
                     }
 
+                    line = fallbackLine > 0 ? fallbackLine : (odsayLine != null ? odsayLine : 0);
                     break;
                 }
             }
@@ -109,8 +121,11 @@ public class TransportDetailController {
         }
 
         System.out.println("=== congestion debug start ===");
+        System.out.println("city = " + city);
         System.out.println("station raw = " + station);
+        System.out.println("station odsay id = " + stationId);
         System.out.println("line raw = " + rawLineName);
+        System.out.println("line odsay code = " + odsayLine + ", fallback line = " + fallbackLine);
         System.out.println("hour = " + hour + ", day = " + day + ", line = " + line);
         if (station != null) {
             System.out.println("station codepoints = " +
@@ -126,21 +141,23 @@ public class TransportDetailController {
         }
         System.out.println("=== congestion debug end ===");
 
-        int congestion = congestionMlService.predict(hour, day, station, line);
+        int congestion = congestionMlService.predict(city, hour, day, station, stationId, line);
 
         String congestionText;
         if ("en".equals(lang)) {
             switch (congestion) {
-                case 0: congestionText = "Comfortable"; break;
-                case 1: congestionText = "Moderate"; break;
+                case 0: congestionText = "Normal"; break;
+                case 1: congestionText = "Caution"; break;
                 case 2: congestionText = "Crowded"; break;
-                default: congestionText = "Moderate"; break;
+                case 3: congestionText = "Severe"; break;
+                default: congestionText = "Normal"; break;
             }
         } else {
             switch (congestion) {
-                case 0: congestionText = "여유"; break;
-                case 1: congestionText = "보통"; break;
+                case 0: congestionText = "보통"; break;
+                case 1: congestionText = "주의"; break;
                 case 2: congestionText = "혼잡"; break;
+                case 3: congestionText = "심각"; break;
                 default: congestionText = "보통"; break;
             }
         }
@@ -150,31 +167,37 @@ public class TransportDetailController {
         if ("en".equals(lang)) {
             switch (congestion) {
                 case 0:
-                    congestionMsg = "It's a comfortable time to travel.";
+                    congestionMsg = "Passenger volume is within the normal range.";
                     break;
                 case 1:
-                    congestionMsg = "Passenger volume is increasing.";
+                    congestionMsg = "Passenger volume is increasing. Please stay alert.";
                     break;
                 case 2:
-                    congestionMsg = "It's a crowded time. Consider another route.";
+                    congestionMsg = "This is a crowded time. Consider another route.";
+                    break;
+                case 3:
+                    congestionMsg = "Severe congestion is expected. Consider delaying or changing routes.";
                     break;
                 default:
-                    congestionMsg = "Passenger volume is average.";
+                    congestionMsg = "Passenger volume is within the normal range.";
                     break;
             }
         } else {
             switch (congestion) {
                 case 0:
-                    congestionMsg = "현재 시간대는 비교적 쾌적하게 이동할 수 있습니다.";
+                    congestionMsg = "현재 시간대는 보통 수준의 혼잡도입니다.";
                     break;
                 case 1:
-                    congestionMsg = "이용객이 점점 늘어나는 시간대입니다.";
+                    congestionMsg = "이용객이 늘어나는 주의 단계입니다.";
                     break;
                 case 2:
                     congestionMsg = "혼잡한 시간대입니다. 다른 경로도 고려해보세요.";
                     break;
+                case 3:
+                    congestionMsg = "혼잡도가 심각한 시간대입니다. 이동 시간이나 경로 변경을 권장합니다.";
+                    break;
                 default:
-                    congestionMsg = "평균적인 혼잡도입니다.";
+                    congestionMsg = "현재 시간대는 보통 수준의 혼잡도입니다.";
                     break;
             }
         }
@@ -225,6 +248,17 @@ public class TransportDetailController {
         rd.close();
         conn.disconnect();
         return sb.toString();
+    }
+
+    @ResponseBody
+    @GetMapping("/api/transport/busan/bus-arrival")
+    public String busanBusArrival(
+            @RequestParam(required = false) String stopName,
+            @RequestParam(required = false) String busNo,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng
+    ) {
+        return busanBusArrivalService.getArrivalJson(stopName, busNo, lat, lng);
     }
 
     @ResponseBody

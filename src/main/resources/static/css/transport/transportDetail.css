@@ -68,6 +68,10 @@
 .congestion-chip.low  { background: #d1fae5; color: #065f46; }
 .congestion-chip.mid  { background: #fef3c7; color: #92400e; }
 .congestion-chip.high { background: #fee2e2; color: #991b1b; }
+.congestion-chip.normal { background: #dbeafe; color: #1d4ed8; }
+.congestion-chip.caution { background: #fef3c7; color: #92400e; }
+.congestion-chip.crowded { background: #fed7aa; color: #c2410c; }
+.congestion-chip.severe { background: #fee2e2; color: #991b1b; }
 
 .congestion-bar-wrap {
     width: 100%;
@@ -87,6 +91,50 @@
 .congestion-bar-fill.low  { background: #10b981; }
 .congestion-bar-fill.mid  { background: var(--gold); }
 .congestion-bar-fill.high { background: #ef4444; }
+.congestion-bar-fill.normal { background: #3b82f6; }
+.congestion-bar-fill.caution { background: #f59e0b; }
+.congestion-bar-fill.crowded { background: #ef4444; }
+.congestion-bar-fill.severe { background: #7f1d1d; }
+
+.congestion-legend {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.congestion-legend span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 4px 3px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.65);
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.congestion-legend span::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.congestion-legend span[data-level="normal"]::before { background: #3b82f6; }
+.congestion-legend span[data-level="caution"]::before { background: #f59e0b; }
+.congestion-legend span[data-level="crowded"]::before { background: #ef4444; }
+.congestion-legend span[data-level="severe"]::before { background: #7f1d1d; }
+
+.congestion-legend span.active {
+    background: #ffffff;
+    color: #111827;
+    box-shadow: inset 0 0 0 1px rgba(17, 24, 39, 0.12);
+}
 
 /* ================= 탭 ================= */
 .tabs {
@@ -210,6 +258,97 @@
     margin-bottom: 8px;
 }
 
+.arrival-note {
+    margin: 0 0 10px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    color: #475569;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.arrival-card.timetable {
+    display: grid;
+    gap: 8px;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.arrival-card.timetable.bus {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+}
+
+.arrival-card.timetable.bus .arrival-station {
+    color: #059669;
+}
+
+.arrival-card.timetable.bus .timetable-order {
+    background: #d1fae5 !important;
+    color: #047857 !important;
+}
+
+.arrival-station {
+    color: #2563eb;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.arrival-card.timetable .arr-line {
+    color: #111827;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.timetable-times,
+.timetable-list {
+    display: grid;
+    gap: 6px;
+}
+
+.timetable-times {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.timetable-row {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+    align-items: center;
+}
+
+.timetable-times span,
+.timetable-row span {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+    padding: 7px 9px;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.timetable-order {
+    justify-content: center !important;
+    background: #dbeafe !important;
+    color: #2563eb !important;
+    font-size: 11px !important;
+}
+
+.timetable-times b,
+.timetable-row b {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+}
+
 /* ================= 지도 ================= */
 .map-controls {
     position: absolute;
@@ -276,10 +415,18 @@
 .congestion-bar-fill.low { background: #3b82f6; }   /* 파랑 */
 .congestion-bar-fill.mid { background: #f59e0b; }   /* 주황 */
 .congestion-bar-fill.high { background: #ef4444; }  /* 빨강 */
+.congestion-bar-fill.normal { background: #3b82f6; }
+.congestion-bar-fill.caution { background: #f59e0b; }
+.congestion-bar-fill.crowded { background: #ef4444; }
+.congestion-bar-fill.severe { background: #7f1d1d; }
 
 .congestion-chip.low { color: #3b82f6; }
 .congestion-chip.mid { color: #f59e0b; }
 .congestion-chip.high { color: #ef4444; }
+.congestion-chip.normal { color: #3b82f6; }
+.congestion-chip.caution { color: #f59e0b; }
+.congestion-chip.crowded { color: #ef4444; }
+.congestion-chip.severe { color: #7f1d1d; }
 
 .congestion-bar-fill {
     transition: width 0.5s ease;
