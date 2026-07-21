@@ -1,0 +1,35 @@
+{
+  "model": "DecisionTreeClassifier",
+  "onnx_file": "transport_congestion.onnx",
+  "feature_columns": [
+    "hour",
+    "day",
+    "line_num",
+    "station_num"
+  ],
+  "class_labels": {
+    "0": "normal",
+    "1": "caution",
+    "2": "crowded",
+    "3": "severe"
+  },
+  "label_rule": {
+    "0": "congestion < 30",
+    "1": "30 <= congestion < 60",
+    "2": "60 <= congestion < 90",
+    "3": "90 <= congestion"
+  },
+  "input_dtype": "float32",
+  "input_shape": [
+    null,
+    4
+  ],
+  "input_name": "input",
+  "output_label_index": 0,
+  "accuracy": 0.696563,
+  "macro_f1": 0.483508,
+  "tree_nodes": 6367,
+  "station_count": 245,
+  "fallback_file": "line_hour_fallback.json",
+  "csv_file": "서울교통공사_지하철혼잡도정보_20251130.csv"
+}

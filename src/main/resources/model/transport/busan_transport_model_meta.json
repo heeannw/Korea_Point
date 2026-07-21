@@ -1,0 +1,36 @@
+{
+  "model": "DecisionTreeClassifier",
+  "onnx_file": "busan_transport_congestion.onnx",
+  "feature_columns": [
+    "hour",
+    "day",
+    "line_num",
+    "station_num"
+  ],
+  "class_labels": {
+    "0": "normal",
+    "1": "caution",
+    "2": "crowded",
+    "3": "severe"
+  },
+  "label_rule": {
+    "0": "ride_total < q80 (1076.0)",
+    "1": "q80 <= ride_total < q95 (2420.0)",
+    "2": "q95 <= ride_total < q99 (4039.0)",
+    "3": "q99 <= ride_total"
+  },
+  "proxy_target": "hourly 승차 + 하차 count, not measured platform congestion",
+  "input_dtype": "float32",
+  "input_shape": [
+    null,
+    4
+  ],
+  "input_name": "input",
+  "output_label_index": 0,
+  "accuracy": 0.945946,
+  "macro_f1": 0.833324,
+  "tree_nodes": 2819,
+  "station_count": 112,
+  "fallback_file": "busan_line_hour_fallback.json",
+  "csv_file": "C:\\Users\\iy833\\Downloads\\부산교통공사_시간대별 승하차인원_20260531.csv"
+}
