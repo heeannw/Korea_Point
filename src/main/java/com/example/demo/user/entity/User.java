@@ -66,7 +66,7 @@ public class User {
     private int point = 1000;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20, columnDefinition = "varchar2(20 char) default 'ACTIVE'")
+    @Column(nullable = false, length = 20)
     @Builder.Default
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
 
