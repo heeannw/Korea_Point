@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Korea Point | 한국 여행 가이드</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Cormorant+Garamond:wght@600;700&family=Sora:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
     <!--
         home.ko.html 구조 안내
         1. style: 전체 CSS
@@ -944,13 +945,18 @@
     </style>
 </head>
 <body>
+<div id="google_translate_element" style="display:none"></div>
 <!-- 헤더: 상단 로고와 언어 버튼 -->
 <header>
     <a class="logo" th:href="@{/ko}" href="/ko">Korea<span>Point</span></a>
 
     <div class="header-right">
-        <a class="h-btn" th:href="@{/}" href="/">EN</a>
-        <a class="h-btn active" th:href="@{/ko}" href="/ko">KR</a>
+        <select class="h-btn" id="languageSelect" translate="no" onchange="changeTripLanguage(this.value)" aria-label="언어 선택">
+            <option value="ko">한국어</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="zh-CN">中文</option>
+        </select>
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}">사용자</span>
             <a th:if="${isAdmin}" th:href="@{/admin}" href="/admin" class="h-btn">Admin</a>
