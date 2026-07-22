@@ -22,18 +22,14 @@
         <div>
             <p class="eyebrow">Reservation Simulation</p>
             <h1>예약 정보 입력</h1>
-            <p class="sub">이 단계에서도 관광지 상세 정보는 TourAPI를 다시 호출해서 표시합니다.</p>
+            <p class="sub">방문 날짜와 시간, 인원을 선택해주세요.</p>
         </div>
         <a class="btn secondary" th:href="@{/ko/reservation}">목록으로</a>
     </section>
 
-    <div class="notice">
-        입력한 예약 정보는 완료 화면 표시용이며, DB나 캐시에 저장되지 않습니다.
-    </div>
-
     <section class="panel" style="margin-bottom: 18px;">
         <h2 class="place-title" th:text="${place != null ? place.title : reservationForm.placeTitle}">관광지명</h2>
-        <p class="meta" th:text="${place != null ? place.displayAddress : 'TourAPI 상세 정보를 불러오지 못했습니다.'}">주소</p>
+        <p class="meta" th:text="${place != null ? place.displayAddress : '상세 주소 정보가 없습니다.'}">주소</p>
         <p class="meta" th:text="${place != null ? place.displayTel : ''}">전화번호</p>
         <p class="meta" th:if="${place != null && place.overview != null && !place.overview.isBlank()}" th:text="${place.overview}">설명</p>
     </section>

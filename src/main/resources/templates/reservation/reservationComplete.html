@@ -22,13 +22,9 @@
         <div>
             <p class="eyebrow">Complete</p>
             <h1>예약 흐름이 완료되었습니다</h1>
-            <p class="sub">아래 정보는 저장되지 않는 시뮬레이션 결과입니다.</p>
+            <p class="sub">예약 내용을 확인해주세요.</p>
         </div>
     </section>
-
-    <div class="notice warning">
-        공모전 조건에 맞춰 예약 정보는 DB와 캐시에 저장하지 않습니다. 이 화면을 벗어나면 예약 내역 조회는 제공되지 않습니다.
-    </div>
 
     <section class="panel">
         <dl class="summary-list">
@@ -59,8 +55,28 @@
         </dl>
 
         <div class="card-actions">
-            <a class="btn" th:href="@{/ko/reservation}">다른 관광지 예약</a>
-            <a class="btn secondary" th:href="@{/ko/mypage}">마이페이지 보기</a>
+            <a class="btn"
+               th:href="@{/ko/reservation(
+                    reservationNo=${reservationNo},
+                    contentId=${reservation.contentId},
+                    contentTypeId=${reservation.contentTypeId},
+                    placeTitle=${place != null ? place.title : reservation.placeTitle},
+                    reservationDate=${reservation.reservationDate},
+                    reservationTime=${reservation.reservationTime},
+                    peopleCount=${reservation.peopleCount},
+                    memo=${reservation.memo}
+               )}">다른 관광지 예약</a>
+            <a class="btn secondary"
+               th:href="@{/ko/mypage(
+                    reservationNo=${reservationNo},
+                    contentId=${reservation.contentId},
+                    contentTypeId=${reservation.contentTypeId},
+                    placeTitle=${place != null ? place.title : reservation.placeTitle},
+                    reservationDate=${reservation.reservationDate},
+                    reservationTime=${reservation.reservationTime},
+                    peopleCount=${reservation.peopleCount},
+                    memo=${reservation.memo}
+               )}">마이페이지 보기</a>
         </div>
     </section>
 </main>

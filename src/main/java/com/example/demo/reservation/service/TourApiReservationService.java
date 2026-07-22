@@ -33,24 +33,31 @@ public class TourApiReservationService {
     @Value("${tourapi.mobile-app:KoreaPoint}")
     private String mobileApp;
 
+    @Value("${tourapi.area-code:6}")
+    private String areaCode;
+
     @Value("${tourapi.list-path:/areaBasedList1}")
     private String listPath;
 
     @Value("${tourapi.detail-path:/detailCommon1}")
     private String detailPath;
 
-    public List<TourApiPlaceDto> findPlaces(String keyword, int pageNo, int numOfRows) {
+    public List<TourApiPlaceDto> findPlaces(String keyword, String contentTypeId, int pageNo, int numOfRows) {
         if (!hasServiceKey()) {
             return List.of();
         }
 
-        URI uri = commonBuilder(baseUrl + listPath)
+        UriComponentsBuilder builder = commonBuilder(baseUrl + listPath)
                 .queryParam("pageNo", Math.max(pageNo, 1))
                 .queryParam("numOfRows", Math.max(numOfRows, 1))
                 .queryParam("arrange", "A")
-                .queryParam("areaCode", "1")
-                .build(true)
-                .toUri();
+                .queryParam("areaCode", areaCode);
+
+        if (contentTypeId != null && !contentTypeId.isBlank()) {
+            builder.queryParam("contentTypeId", contentTypeId);
+        }
+
+        URI uri = builder.build(true).toUri();
 
         JsonNode root = request(uri);
         List<TourApiPlaceDto> places = parseItems(root);

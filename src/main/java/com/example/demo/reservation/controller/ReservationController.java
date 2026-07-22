@@ -29,22 +29,26 @@ public class ReservationController {
 
     @GetMapping("/ko/reservation")
     public String reservationHome(Model model,
+                                  @ModelAttribute ReservationFormDto reservation,
+                                  @RequestParam(required = false) String reservationNo,
                                   @RequestParam(required = false) String keyword) {
         addSessionModel(model);
         model.addAttribute("keyword", keyword == null ? "" : keyword);
         model.addAttribute("hasTourApiKey", tourApiReservationService.hasServiceKey());
+        addReservationModel(model, reservation, reservationNo);
         return "reservation/reservation";
     }
 
     @GetMapping("/ko/reservation/new")
     public String reservationForm(@RequestParam String contentId,
                                   @RequestParam(required = false) String contentTypeId,
+                                  @RequestParam(required = false) String placeTitle,
                                   Model model) {
         TourApiPlaceDto place = tourApiReservationService.findDetail(contentId, contentTypeId);
         ReservationFormDto form = new ReservationFormDto();
         form.setContentId(contentId);
         form.setContentTypeId(contentTypeId);
-        form.setPlaceTitle(place != null && !place.getTitle().isBlank() ? place.getTitle() : "선택한 관광지");
+        form.setPlaceTitle(resolvePlaceTitle(place, placeTitle));
         form.setReservationDate(LocalDate.now());
         form.setReservationTime("10:00");
 
@@ -75,18 +79,22 @@ public class ReservationController {
     }
 
     @GetMapping("/ko/mypage")
-    public String myPage(Model model) {
+    public String myPage(@ModelAttribute ReservationFormDto reservation,
+                         @RequestParam(required = false) String reservationNo,
+                         Model model) {
         addSessionModel(model);
         model.addAttribute("today", LocalDate.now());
+        addReservationModel(model, reservation, reservationNo);
         return "mypage/mypage";
     }
 
     @GetMapping("/api/tourapi/places")
     @ResponseBody
     public ResponseEntity<List<TourApiPlaceDto>> places(@RequestParam(required = false) String keyword,
+                                                        @RequestParam(required = false) String contentTypeId,
                                                         @RequestParam(defaultValue = "1") int pageNo,
                                                         @RequestParam(defaultValue = "12") int numOfRows) {
-        return ResponseEntity.ok(tourApiReservationService.findPlaces(keyword, pageNo, numOfRows));
+        return ResponseEntity.ok(tourApiReservationService.findPlaces(keyword, contentTypeId, pageNo, numOfRows));
     }
 
     @GetMapping("/api/tourapi/places/{contentId}")
@@ -106,5 +114,30 @@ public class ReservationController {
         String date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
         int seed = Math.abs((form.getContentId() + form.getReservationDate() + form.getReservationTime()).hashCode());
         return "KP-" + date + "-" + String.format("%04d", seed % 10000);
+    }
+
+    private void addReservationModel(Model model, ReservationFormDto reservation, String reservationNo) {
+        if (reservation.getContentId() != null && !reservation.getContentId().isBlank()) {
+            TourApiPlaceDto place = tourApiReservationService.findDetail(
+                    reservation.getContentId(),
+                    reservation.getContentTypeId()
+            );
+            model.addAttribute("reservation", reservation);
+            model.addAttribute("reservationNo", reservationNo);
+            model.addAttribute("place", place);
+            model.addAttribute("hasReservation", true);
+        } else {
+            model.addAttribute("hasReservation", false);
+        }
+    }
+
+    private String resolvePlaceTitle(TourApiPlaceDto place, String fallbackTitle) {
+        if (place != null && place.getTitle() != null && !place.getTitle().isBlank()) {
+            return place.getTitle();
+        }
+        if (fallbackTitle != null && !fallbackTitle.isBlank()) {
+            return fallbackTitle;
+        }
+        return "선택한 관광지";
     }
 }

@@ -130,7 +130,7 @@ h1 {
 
 .toolbar {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr 220px auto;
     gap: 10px;
     margin-bottom: 24px;
 }

@@ -22,7 +22,7 @@
         <div>
             <p class="eyebrow">My Page</p>
             <h1>마이페이지</h1>
-            <p class="sub">DB와 캐시 없이 운영되는 예약 시뮬레이션 관리 화면입니다.</p>
+            <p class="sub">내 정보와 예약 내역을 확인할 수 있습니다.</p>
         </div>
         <a class="btn" th:href="@{/ko/reservation}">예약하러 가기</a>
     </section>
@@ -48,12 +48,55 @@
 
         <section class="panel">
             <h2 class="place-title">예약 내역</h2>
-            <div class="empty" style="margin-top: 12px;">
-                현재 버전은 공모전 조건에 맞춰 예약 정보를 DB나 캐시에 저장하지 않습니다.<br>
-                예약 완료 화면에서만 시뮬레이션 결과를 확인할 수 있습니다.
+            <div th:if="${hasReservation}" style="margin-top: 12px;">
+                <dl class="summary-list">
+                    <div class="summary-row">
+                        <dt>예약번호</dt>
+                        <dd th:text="${reservationNo != null && !reservationNo.isBlank() ? reservationNo : '임시 예약'}">KP-00000000-0000</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt>관광지</dt>
+                        <dd th:text="${place != null ? place.title : reservation.placeTitle}">관광지명</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt>방문일</dt>
+                        <dd th:text="${reservation.reservationDate}">2026-07-22</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt>시간</dt>
+                        <dd th:text="${reservation.reservationTime}">10:00</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt>인원</dt>
+                        <dd th:text="|${reservation.peopleCount}명|">1명</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt>상태</dt>
+                        <dd>예약 완료</dd>
+                    </div>
+                    <div class="summary-row" th:if="${reservation.memo != null && !reservation.memo.isBlank()}">
+                        <dt>메모</dt>
+                        <dd th:text="${reservation.memo}">메모</dd>
+                    </div>
+                </dl>
+            </div>
+            <div th:unless="${hasReservation}" class="empty" style="margin-top: 12px;">
+                아직 예약 내역이 없습니다.<br>
+                부산 관광지를 선택하고 예약을 진행해보세요.
             </div>
             <div class="quick-list" style="margin-top: 16px;">
-                <a class="btn" th:href="@{/ko/reservation}">TourAPI 관광지 조회 후 예약 흐름 시작</a>
+                <a th:if="${hasReservation}" class="btn"
+                   th:href="@{/ko/reservation(
+                        reservationNo=${reservationNo},
+                        contentId=${reservation.contentId},
+                        contentTypeId=${reservation.contentTypeId},
+                        placeTitle=${place != null ? place.title : reservation.placeTitle},
+                        reservationDate=${reservation.reservationDate},
+                        reservationTime=${reservation.reservationTime},
+                        peopleCount=${reservation.peopleCount},
+                        memo=${reservation.memo}
+                   )}">부산 관광지 예약하러 가기</a>
+                <a th:unless="${hasReservation}" class="btn" th:href="@{/ko/reservation}">부산 관광지 예약하러 가기</a>
                 <a class="btn secondary" th:href="@{/ko}">홈으로 이동</a>
             </div>
         </section>

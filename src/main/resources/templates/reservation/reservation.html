@@ -12,7 +12,18 @@
     <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
     <div class="header-right">
         <a th:href="@{/ko/reservation}" class="h-btn active">예약</a>
-        <a th:href="@{/ko/mypage}" class="h-btn">마이페이지</a>
+        <a th:if="${hasReservation}" class="h-btn"
+           th:href="@{/ko/mypage(
+                reservationNo=${reservationNo},
+                contentId=${reservation.contentId},
+                contentTypeId=${reservation.contentTypeId},
+                placeTitle=${place != null ? place.title : reservation.placeTitle},
+                reservationDate=${reservation.reservationDate},
+                reservationTime=${reservation.reservationTime},
+                peopleCount=${reservation.peopleCount},
+                memo=${reservation.memo}
+           )}">마이페이지</a>
+        <a th:unless="${hasReservation}" th:href="@{/ko/mypage}" class="h-btn">마이페이지</a>
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}">User</span>
             <form th:action="@{/logout}" method="post">
@@ -26,27 +37,49 @@
 <main class="page">
     <section class="page-head">
         <div>
-            <p class="eyebrow">Real-Time TourAPI</p>
+            <p class="eyebrow">Busan Travel</p>
             <h1>관광지 예약 흐름</h1>
-            <p class="sub">관광지 정보는 저장하지 않고 화면에서 요청할 때마다 TourAPI를 호출합니다.</p>
+            <p class="sub">부산의 관광지를 둘러보고 방문 일정을 예약해보세요.</p>
         </div>
-        <a class="btn secondary" th:href="@{/ko/mypage}">마이페이지</a>
+        <a th:if="${hasReservation}" class="btn secondary"
+           th:href="@{/ko/mypage(
+                reservationNo=${reservationNo},
+                contentId=${reservation.contentId},
+                contentTypeId=${reservation.contentTypeId},
+                placeTitle=${place != null ? place.title : reservation.placeTitle},
+                reservationDate=${reservation.reservationDate},
+                reservationTime=${reservation.reservationTime},
+                peopleCount=${reservation.peopleCount},
+                memo=${reservation.memo}
+           )}">마이페이지</a>
+        <a th:unless="${hasReservation}" class="btn secondary" th:href="@{/ko/mypage}">마이페이지</a>
     </section>
 
-    <div class="notice" th:if="${hasTourApiKey}">
-        DB와 캐시를 사용하지 않는 예약 시뮬레이션입니다. 예약 완료 정보는 서버에 저장되지 않습니다.
-    </div>
     <div class="notice warning" th:unless="${hasTourApiKey}">
-        TourAPI 인증키가 설정되지 않았습니다. 환경변수 <strong>TOURAPI_SERVICE_KEY</strong>를 설정하면 실시간 목록을 불러옵니다.
+        관광지 목록을 불러오기 위한 설정이 필요합니다.
     </div>
 
     <form class="toolbar" id="searchForm">
         <input class="input" id="keyword" name="keyword" th:value="${keyword}" placeholder="관광지명 또는 주소로 검색">
+        <select class="select" id="contentTypeId" name="contentTypeId" aria-label="카테고리">
+            <option value="">전체</option>
+            <option value="12">관광지</option>
+            <option value="14">문화시설</option>
+            <option value="15">행사/공연/축제</option>
+            <option value="25">여행코스</option>
+            <option value="28">레포츠</option>
+            <option value="32">숙박</option>
+            <option value="38">쇼핑</option>
+            <option value="39">음식점</option>
+        </select>
         <button class="btn" type="submit">검색</button>
     </form>
 
     <section id="placeGrid" class="grid" aria-live="polite"></section>
-    <div id="emptyState" class="empty">TourAPI 관광지 목록을 불러오는 중입니다.</div>
+    <div id="emptyState" class="empty">부산 관광지 목록을 불러오는 중입니다.</div>
+    <div class="card-actions" style="justify-content: center; margin-top: 24px;">
+        <button class="btn secondary" id="loadMoreBtn" type="button" style="display: none;">더보기</button>
+    </div>
 </main>
 
 <script>
@@ -54,6 +87,13 @@
     const emptyState = document.getElementById("emptyState");
     const form = document.getElementById("searchForm");
     const keywordInput = document.getElementById("keyword");
+    const contentTypeInput = document.getElementById("contentTypeId");
+    const loadMoreBtn = document.getElementById("loadMoreBtn");
+    const pageSize = 30;
+    let currentPage = 1;
+    let currentKeyword = "";
+    let currentContentTypeId = "";
+    let isLoading = false;
 
     function escapeHtml(value) {
         return String(value || "")
@@ -64,17 +104,21 @@
             .replaceAll("'", "&#039;");
     }
 
-    function renderPlaces(places) {
-        grid.innerHTML = "";
-        if (!places.length) {
+    function renderPlaces(places, append = false) {
+        if (!append) {
+            grid.innerHTML = "";
+        }
+
+        if (!places.length && !append) {
             emptyState.style.display = "block";
-            emptyState.textContent = "표시할 관광지가 없습니다. 검색어를 바꾸거나 TourAPI 설정을 확인해주세요.";
+            emptyState.textContent = "표시할 관광지가 없습니다. 검색어를 바꿔 다시 시도해주세요.";
+            loadMoreBtn.style.display = "none";
             return;
         }
 
         emptyState.style.display = "none";
-        grid.innerHTML = places.map(place => {
-            const detailUrl = `/ko/reservation/new?contentId=${encodeURIComponent(place.contentId || "")}&contentTypeId=${encodeURIComponent(place.contentTypeId || "")}`;
+        grid.insertAdjacentHTML("beforeend", places.map(place => {
+            const detailUrl = `/ko/reservation/new?contentId=${encodeURIComponent(place.contentId || "")}&contentTypeId=${encodeURIComponent(place.contentTypeId || "")}&placeTitle=${encodeURIComponent(place.title || "")}`;
             const imageStyle = place.imageUrl ? `style="background-image:url('${escapeHtml(place.imageUrl)}')"` : "";
             return `
                 <article class="place-card">
@@ -89,35 +133,59 @@
                     </div>
                 </article>
             `;
-        }).join("");
+        }).join(""));
+
+        loadMoreBtn.style.display = places.length >= pageSize ? "inline-flex" : "none";
     }
 
-    async function loadPlaces(keyword = "") {
+    async function loadPlaces(keyword = "", contentTypeId = "", pageNo = 1, append = false) {
+        if (isLoading) return;
+        isLoading = true;
         emptyState.style.display = "block";
-        emptyState.textContent = "TourAPI를 실시간 호출하는 중입니다.";
-        grid.innerHTML = "";
+        emptyState.textContent = append ? "다음 관광지 목록을 불러오는 중입니다." : "부산 관광지 목록을 불러오는 중입니다.";
+        loadMoreBtn.disabled = true;
+        if (!append) {
+            grid.innerHTML = "";
+        }
 
-        const params = new URLSearchParams({ pageNo: "1", numOfRows: "12" });
+        const params = new URLSearchParams({ pageNo: String(pageNo), numOfRows: String(pageSize) });
         if (keyword.trim()) {
             params.set("keyword", keyword.trim());
+        }
+        if (contentTypeId.trim()) {
+            params.set("contentTypeId", contentTypeId.trim());
         }
 
         try {
             const response = await fetch(`/api/tourapi/places?${params.toString()}`);
             if (!response.ok) throw new Error("request failed");
-            renderPlaces(await response.json());
+            const places = await response.json();
+            renderPlaces(places, append);
+            currentPage = pageNo;
         } catch (error) {
             emptyState.style.display = "block";
-            emptyState.textContent = "TourAPI 호출에 실패했습니다. 인증키와 공공데이터 API 경로를 확인해주세요.";
+            emptyState.textContent = "관광지 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.";
+            loadMoreBtn.style.display = "none";
+        } finally {
+            isLoading = false;
+            loadMoreBtn.disabled = false;
         }
     }
 
     form.addEventListener("submit", event => {
         event.preventDefault();
-        loadPlaces(keywordInput.value);
+        currentKeyword = keywordInput.value;
+        currentContentTypeId = contentTypeInput.value;
+        loadPlaces(currentKeyword, currentContentTypeId, 1, false);
     });
 
-    loadPlaces(keywordInput.value);
+    loadMoreBtn.addEventListener("click", () => {
+        loadPlaces(currentKeyword, currentContentTypeId, currentPage + 1, true);
+    });
+
+    currentKeyword = keywordInput.value;
+    currentContentTypeId = contentTypeInput.value;
+    loadPlaces(currentKeyword, currentContentTypeId, 1, false);
 </script>
 </body>
 </html>
