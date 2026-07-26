@@ -2,6 +2,8 @@ package com.example.demo.reservation.controller;
 
 import com.example.demo.reservation.dto.ReservationFormDto;
 import com.example.demo.reservation.dto.TourApiPlaceDto;
+import com.example.demo.reservation.entity.TourReservation;
+import com.example.demo.reservation.service.ReservationService;
 import com.example.demo.reservation.service.TourApiReservationService;
 import com.example.demo.user.util.SecurityUtil;
 import jakarta.validation.Valid;
@@ -18,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Controller
@@ -26,16 +27,15 @@ import java.util.List;
 public class ReservationController {
 
     private final TourApiReservationService tourApiReservationService;
+    private final ReservationService reservationService;
 
     @GetMapping("/ko/reservation")
     public String reservationHome(Model model,
-                                  @ModelAttribute ReservationFormDto reservation,
-                                  @RequestParam(required = false) String reservationNo,
                                   @RequestParam(required = false) String keyword) {
         addSessionModel(model);
         model.addAttribute("keyword", keyword == null ? "" : keyword);
         model.addAttribute("hasTourApiKey", tourApiReservationService.hasServiceKey());
-        addReservationModel(model, reservation, reservationNo);
+        addLatestReservationModel(model);
         return "reservation/reservation";
     }
 
@@ -71,20 +71,38 @@ public class ReservationController {
             return "reservation/reservationForm";
         }
 
+        TourReservation savedReservation = reservationService.create(SecurityUtil.getCurrentUserId(), form);
+        return "redirect:/ko/reservation/complete/" + savedReservation.getId();
+    }
+
+    @GetMapping("/ko/reservation/complete/{reservationId}")
+    public String reservationCompleteView(@PathVariable Long reservationId, Model model) {
+        TourReservation reservation = reservationService.findMine(reservationId, SecurityUtil.getCurrentUserId());
+        TourApiPlaceDto place = tourApiReservationService.findDetail(reservation.getContentId(), reservation.getContentTypeId());
+
         addSessionModel(model);
         model.addAttribute("place", place);
-        model.addAttribute("reservation", form);
-        model.addAttribute("reservationNo", createReservationNo(form));
+        model.addAttribute("reservation", reservation);
+        model.addAttribute("reservationNo", reservation.getReservationNo());
         return "reservation/reservationComplete";
     }
 
     @GetMapping("/ko/mypage")
-    public String myPage(@ModelAttribute ReservationFormDto reservation,
-                         @RequestParam(required = false) String reservationNo,
-                         Model model) {
+    public String myPage(Model model) {
         addSessionModel(model);
         model.addAttribute("today", LocalDate.now());
-        addReservationModel(model, reservation, reservationNo);
+        List<TourReservation> reservations = reservationService.findMyReservations(SecurityUtil.getCurrentUserId());
+        model.addAttribute("reservations", reservations);
+        model.addAttribute("hasReservation", !reservations.isEmpty());
+        if (!reservations.isEmpty()) {
+            TourReservation latestReservation = reservations.get(0);
+            model.addAttribute("reservation", latestReservation);
+            model.addAttribute("reservationNo", latestReservation.getReservationNo());
+            model.addAttribute("place", tourApiReservationService.findDetail(
+                    latestReservation.getContentId(),
+                    latestReservation.getContentTypeId()
+            ));
+        }
         return "mypage/mypage";
     }
 
@@ -110,24 +128,17 @@ public class ReservationController {
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
     }
 
-    private String createReservationNo(ReservationFormDto form) {
-        String date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
-        int seed = Math.abs((form.getContentId() + form.getReservationDate() + form.getReservationTime()).hashCode());
-        return "KP-" + date + "-" + String.format("%04d", seed % 10000);
-    }
-
-    private void addReservationModel(Model model, ReservationFormDto reservation, String reservationNo) {
-        if (reservation.getContentId() != null && !reservation.getContentId().isBlank()) {
-            TourApiPlaceDto place = tourApiReservationService.findDetail(
-                    reservation.getContentId(),
-                    reservation.getContentTypeId()
-            );
-            model.addAttribute("reservation", reservation);
-            model.addAttribute("reservationNo", reservationNo);
-            model.addAttribute("place", place);
-            model.addAttribute("hasReservation", true);
-        } else {
-            model.addAttribute("hasReservation", false);
+    private void addLatestReservationModel(Model model) {
+        List<TourReservation> reservations = reservationService.findMyReservations(SecurityUtil.getCurrentUserId());
+        model.addAttribute("hasReservation", !reservations.isEmpty());
+        if (!reservations.isEmpty()) {
+            TourReservation latestReservation = reservations.get(0);
+            model.addAttribute("reservation", latestReservation);
+            model.addAttribute("reservationNo", latestReservation.getReservationNo());
+            model.addAttribute("place", tourApiReservationService.findDetail(
+                    latestReservation.getContentId(),
+                    latestReservation.getContentTypeId()
+            ));
         }
     }
 

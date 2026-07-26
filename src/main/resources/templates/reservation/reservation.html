@@ -12,18 +12,7 @@
     <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
     <div class="header-right">
         <a th:href="@{/ko/reservation}" class="h-btn active">예약</a>
-        <a th:if="${hasReservation}" class="h-btn"
-           th:href="@{/ko/mypage(
-                reservationNo=${reservationNo},
-                contentId=${reservation.contentId},
-                contentTypeId=${reservation.contentTypeId},
-                placeTitle=${place != null ? place.title : reservation.placeTitle},
-                reservationDate=${reservation.reservationDate},
-                reservationTime=${reservation.reservationTime},
-                peopleCount=${reservation.peopleCount},
-                memo=${reservation.memo}
-           )}">마이페이지</a>
-        <a th:unless="${hasReservation}" th:href="@{/ko/mypage}" class="h-btn">마이페이지</a>
+        <a th:href="@{/ko/mypage}" class="h-btn">마이페이지</a>
         <th:block th:if="${isLoggedIn}">
             <span class="h-btn" th:text="${currentUserName}">User</span>
             <form th:action="@{/logout}" method="post">
@@ -38,25 +27,14 @@
     <section class="page-head">
         <div>
             <p class="eyebrow">Busan Travel</p>
-            <h1>관광지 예약 흐름</h1>
+            <h1>관광지 예약</h1>
             <p class="sub">부산의 관광지를 둘러보고 방문 일정을 예약해보세요.</p>
         </div>
-        <a th:if="${hasReservation}" class="btn secondary"
-           th:href="@{/ko/mypage(
-                reservationNo=${reservationNo},
-                contentId=${reservation.contentId},
-                contentTypeId=${reservation.contentTypeId},
-                placeTitle=${place != null ? place.title : reservation.placeTitle},
-                reservationDate=${reservation.reservationDate},
-                reservationTime=${reservation.reservationTime},
-                peopleCount=${reservation.peopleCount},
-                memo=${reservation.memo}
-           )}">마이페이지</a>
-        <a th:unless="${hasReservation}" class="btn secondary" th:href="@{/ko/mypage}">마이페이지</a>
+        <a class="btn secondary" th:href="@{/ko/mypage}">마이페이지</a>
     </section>
 
     <div class="notice warning" th:unless="${hasTourApiKey}">
-        관광지 목록을 불러오기 위한 설정이 필요합니다.
+        관광지 목록을 불러오기 위한 TourAPI 서비스 키 설정이 필요합니다.
     </div>
 
     <form class="toolbar" id="searchForm">
@@ -148,7 +126,7 @@
             grid.innerHTML = "";
         }
 
-        const params = new URLSearchParams({ pageNo: String(pageNo), numOfRows: String(pageSize) });
+        const params = new URLSearchParams({pageNo: String(pageNo), numOfRows: String(pageSize)});
         if (keyword.trim()) {
             params.set("keyword", keyword.trim());
         }

@@ -20,7 +20,7 @@
 <main class="page">
     <section class="page-head">
         <div>
-            <p class="eyebrow">Reservation Simulation</p>
+            <p class="eyebrow">Reservation</p>
             <h1>예약 정보 입력</h1>
             <p class="sub">방문 날짜와 시간, 인원을 선택해주세요.</p>
         </div>
@@ -30,7 +30,7 @@
     <section class="panel" style="margin-bottom: 18px;">
         <h2 class="place-title" th:text="${place != null ? place.title : reservationForm.placeTitle}">관광지명</h2>
         <p class="meta" th:text="${place != null ? place.displayAddress : '상세 주소 정보가 없습니다.'}">주소</p>
-        <p class="meta" th:text="${place != null ? place.displayTel : ''}">전화번호</p>
+        <p class="meta" th:if="${place != null && place.displayTel != null && !place.displayTel.isBlank()}" th:text="${place.displayTel}">전화번호</p>
         <p class="meta" th:if="${place != null && place.overview != null && !place.overview.isBlank()}" th:text="${place.overview}">설명</p>
     </section>
 
@@ -68,12 +68,12 @@
 
             <label class="field full">
                 <span class="label">요청 메모</span>
-                <textarea class="textarea" th:field="*{memo}" placeholder="시연용 메모를 입력하세요."></textarea>
+                <textarea class="textarea" th:field="*{memo}" placeholder="필요한 요청사항을 입력하세요"></textarea>
             </label>
         </div>
 
         <div class="card-actions">
-            <button class="btn" type="submit">예약 완료 화면 보기</button>
+            <button class="btn" type="submit">예약 완료</button>
             <a class="btn secondary" th:href="@{/ko/reservation}">취소</a>
         </div>
     </form>

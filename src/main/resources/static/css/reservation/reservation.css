@@ -270,6 +270,71 @@ h1 {
     font-weight: 800;
 }
 
+.reservation-list {
+    display: grid;
+    gap: 14px;
+    margin-top: 12px;
+}
+
+.reservation-card {
+    padding: 18px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 8px 26px rgba(59, 158, 255, 0.08);
+}
+
+.reservation-card-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: flex-start;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid #eef5ff;
+}
+
+.reservation-card-head h3 {
+    margin: 4px 0 0;
+    font-size: 20px;
+    line-height: 1.35;
+}
+
+.reservation-no {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.status-badge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border: 1px solid #bae6fd;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1a7de0;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.summary-list.compact {
+    gap: 8px;
+}
+
+.summary-list.compact .summary-row {
+    grid-template-columns: 90px 1fr;
+    padding-bottom: 8px;
+}
+
+.summary-list.compact .summary-row:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
 .empty {
     padding: 42px 20px;
     border: 1px dashed #b9d8f8;
