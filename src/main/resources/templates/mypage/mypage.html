@@ -5,15 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>마이페이지 | KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
+    <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}">
 </head>
 <body>
 <header>
     <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
     <div class="header-right">
+        <a th:href="@{/ko}" class="h-btn">홈</a>
+        <a th:href="@{/trip/plan/list}" class="h-btn">내 여행</a>
+        <a th:href="@{/community/post-list}" class="h-btn">커뮤니티</a>
         <a th:href="@{/ko/reservation}" class="h-btn">예약</a>
         <a th:href="@{/ko/mypage}" class="h-btn active">마이페이지</a>
-        <span class="h-btn" th:text="${currentUserName}">User</span>
     </div>
 </header>
 
@@ -21,72 +23,160 @@
     <section class="page-head">
         <div>
             <p class="eyebrow">My Page</p>
-            <h1>마이페이지</h1>
-            <p class="sub">내 정보와 예약 내역을 확인할 수 있습니다.</p>
+            <h1>내 여행 활동</h1>
+            <p class="sub">여행 일정, 예약, 커뮤니티 활동을 한곳에서 확인해요.</p>
         </div>
-        <a class="btn" th:href="@{/ko/reservation}">예약하러 가기</a>
+        <div class="head-actions">
+            <a class="btn secondary" th:href="@{/community/post-list}">커뮤니티 보기</a>
+            <a class="btn" th:href="@{/ko/trip}">여행 일정 만들기</a>
+        </div>
     </section>
 
-    <div class="mypage-layout">
-        <aside class="panel">
-            <h2 class="place-title">내 정보</h2>
-            <dl class="summary-list">
-                <div class="summary-row">
-                    <dt>이름</dt>
-                    <dd th:text="${currentUserName}">User</dd>
+    <section class="profile-panel">
+        <div class="profile-main">
+            <div class="avatar" th:text="${currentUserName != null and !#strings.isEmpty(currentUserName) ? #strings.substring(currentUserName, 0, 1) : 'U'}">U</div>
+            <div>
+                <div class="profile-name-row">
+                    <h2 th:text="${currentUserName}">User</h2>
+                    <span th:if="${isOwner}" class="owner-badge"
+                          th:text="${ownerStatus == 'APPROVED'} ? '인증 사업자' : '사업자 검토중'">사업자 검토중</span>
+                    <span th:unless="${isOwner}" class="user-badge">개인 여행자</span>
                 </div>
-                <div class="summary-row">
-                    <dt>상태</dt>
-                    <dd>로그인 완료</dd>
-                </div>
-                <div class="summary-row">
-                    <dt>오늘</dt>
-                    <dd th:text="${today}">2026-07-26</dd>
-                </div>
-            </dl>
-        </aside>
+                <p th:text="${user.email}">user@koreapoint.com</p>
+            </div>
+        </div>
+        <div class="profile-meta" th:if="${isOwner}">
+            <span>홍보 포인트</span>
+            <strong th:text="|${user.point}P|">1000P</strong>
+        </div>
+        <div class="profile-meta" th:unless="${isOwner}">
+            <span>활동 상태</span>
+            <strong>ACTIVE</strong>
+        </div>
+    </section>
 
-        <section class="panel">
-            <h2 class="place-title">예약 내역</h2>
-            <div th:if="${hasReservation}" class="reservation-list">
-                <article class="reservation-card" th:each="reservation : ${reservations}">
-                    <div class="reservation-card-head">
-                        <div>
-                            <p class="reservation-no" th:text="${reservation.reservationNo}">KP-00000000-0000</p>
-                            <h3 th:text="${reservation.placeTitle}">관광지명</h3>
-                        </div>
-                        <span class="status-badge" th:text="${reservation.status}">예약 완료</span>
+    <section class="metric-grid">
+        <article class="metric-card">
+            <span>내 여행 일정</span>
+            <strong th:text="${tripPlanCount}">0</strong>
+            <p>저장한 추천 코스</p>
+        </article>
+        <article class="metric-card">
+            <span>예약 내역</span>
+            <strong th:text="${reservationCount}">0</strong>
+            <p>관광지 예약</p>
+        </article>
+        <article class="metric-card">
+            <span>작성한 글</span>
+            <strong th:text="${postCount}">0</strong>
+            <p>커뮤니티 게시글</p>
+        </article>
+        <article class="metric-card">
+            <span>계정 유형</span>
+            <strong th:text="${isOwner} ? '사업자' : '개인'">개인</strong>
+            <p th:text="${isOwner} ? '입점 관리 가능' : '여행자 계정'">여행자 계정</p>
+        </article>
+    </section>
+
+    <section class="content-grid">
+        <article class="panel wide">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow small">Trip Plan</p>
+                    <h2>내 여행 일정</h2>
+                </div>
+                <a th:href="@{/ko/trip/plans}" class="text-link">전체보기</a>
+            </div>
+
+            <div th:if="${hasTripPlans}" class="item-list">
+                <a class="list-item" th:each="plan, iter : ${tripPlans}" th:if="${iter.index < 3}"
+                   th:href="@{/ko/trip/plans}">
+                    <div>
+                        <strong th:text="${plan.title}">부산 2박 3일</strong>
+                        <p>
+                            <span th:text="|${plan.travelDays}일 일정|">3일 일정</span>
+                            <span th:if="${plan.startDate != null}" th:text="| · ${plan.startDate}|"> · 2026-08-12</span>
+                        </p>
                     </div>
-                    <dl class="summary-list compact">
-                        <div class="summary-row">
-                            <dt>방문일</dt>
-                            <dd th:text="${reservation.reservationDate}">2026-07-26</dd>
-                        </div>
-                        <div class="summary-row">
-                            <dt>시간</dt>
-                            <dd th:text="${reservation.reservationTime}">10:00</dd>
-                        </div>
-                        <div class="summary-row">
-                            <dt>인원</dt>
-                            <dd th:text="|${reservation.peopleCount}명|">1명</dd>
-                        </div>
-                        <div class="summary-row" th:if="${reservation.memo != null && !reservation.memo.isBlank()}">
-                            <dt>메모</dt>
-                            <dd th:text="${reservation.memo}">메모</dd>
-                        </div>
-                    </dl>
+                    <span class="chip" th:text="${plan.companion != null && !plan.companion.isBlank()} ? ${plan.companion} : '여행'">여행</span>
+                </a>
+            </div>
+            <div th:unless="${hasTripPlans}" class="empty">
+                저장된 여행 일정이 아직 없어요.<br>
+                취향에 맞는 코스를 만들고 마이페이지에서 다시 확인해보세요.
+            </div>
+        </article>
+
+        <article class="panel">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow small">Account</p>
+                    <h2>계정 관리</h2>
+                </div>
+            </div>
+            <div class="quick-list">
+                <a th:href="@{/community/post/write}" class="quick-action">커뮤니티 글쓰기</a>
+                <a th:href="@{/ko/reservation}" class="quick-action">예약하러 가기</a>
+                <a th:href="@{/ko/trip}" class="quick-action">여행 일정 만들기</a>
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="quick-action logout">로그아웃</button>
+                </form>
+            </div>
+        </article>
+
+        <article class="panel wide">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow small">Reservation</p>
+                    <h2>예약 내역</h2>
+                </div>
+                <a th:href="@{/ko/reservation}" class="text-link">예약하기</a>
+            </div>
+
+            <div th:if="${hasReservation}" class="reservation-list">
+                <article class="reservation-card" th:each="reservation, iter : ${reservations}" th:if="${iter.index < 3}">
+                    <div>
+                        <p class="reservation-no" th:text="${reservation.reservationNo}">KP-00000000-0000</p>
+                        <h3 th:text="${reservation.placeTitle}">관광지명</h3>
+                        <p th:text="|${reservation.reservationDate} · ${reservation.reservationTime} · ${reservation.peopleCount}명|">2026-08-12 · 10:00 · 1명</p>
+                    </div>
+                    <span class="status-badge" th:text="${reservation.status}">예약 완료</span>
                 </article>
             </div>
-            <div th:unless="${hasReservation}" class="empty" style="margin-top: 12px;">
-                아직 예약 내역이 없습니다.<br>
+            <div th:unless="${hasReservation}" class="empty">
+                아직 예약 내역이 없어요.<br>
                 부산 관광지를 선택하고 예약을 진행해보세요.
             </div>
-            <div class="quick-list" style="margin-top: 16px;">
-                <a class="btn" th:href="@{/ko/reservation}">부산 관광지 예약하러 가기</a>
-                <a class="btn secondary" th:href="@{/ko}">홈으로 이동</a>
+        </article>
+
+        <article class="panel" th:if="${isOwner}">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow small">Business</p>
+                    <h2>사업자 관리</h2>
+                </div>
             </div>
-        </section>
-    </div>
+            <div class="business-box">
+                <span class="owner-badge"
+                      th:text="${ownerStatus == 'APPROVED'} ? '인증 사업자' : '사업자 검토중'">사업자 검토중</span>
+                <p>입점 서류와 메뉴 정보를 검토 중이에요. 승인 후 가게 정보를 관리할 수 있어요.</p>
+                <a class="btn secondary full" th:href="@{/ko/mypage}">입점 정보 확인</a>
+            </div>
+        </article>
+
+        <article class="panel" th:unless="${isOwner}">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow small">Community</p>
+                    <h2>커뮤니티 활동</h2>
+                </div>
+            </div>
+            <div class="business-box">
+                <p>내가 쓴 게시글은 총 <strong th:text="${postCount}">0</strong>개예요. 여행 팁이나 맛집 경험을 공유해보세요.</p>
+                <a class="btn secondary full" th:href="@{/community/post/write}">글쓰기</a>
+            </div>
+        </article>
+    </section>
 </main>
 </body>
 </html>

@@ -5,6 +5,11 @@ import com.example.demo.reservation.dto.TourApiPlaceDto;
 import com.example.demo.reservation.entity.TourReservation;
 import com.example.demo.reservation.service.ReservationService;
 import com.example.demo.reservation.service.TourApiReservationService;
+import com.example.demo.community.repository.PostRepository;
+import com.example.demo.trip.dto.TripPlanDto;
+import com.example.demo.trip.service.TripPlanService;
+import com.example.demo.user.entity.User;
+import com.example.demo.user.service.UserService;
 import com.example.demo.user.util.SecurityUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +33,9 @@ public class ReservationController {
 
     private final TourApiReservationService tourApiReservationService;
     private final ReservationService reservationService;
+    private final UserService userService;
+    private final TripPlanService tripPlanService;
+    private final PostRepository postRepository;
 
     @GetMapping("/ko/reservation")
     public String reservationHome(Model model,
@@ -90,8 +98,21 @@ public class ReservationController {
     @GetMapping("/ko/mypage")
     public String myPage(Model model) {
         addSessionModel(model);
+        Long userId = SecurityUtil.getCurrentUserId();
+        User user = userService.findById(userId);
+        List<TourReservation> reservations = reservationService.findMyReservations(userId);
+        List<TripPlanDto.Summary> tripPlans = tripPlanService.listByUser(String.valueOf(userId));
+        long postCount = postRepository.countByUser_IdAndDeletedAtIsNull(userId);
+
         model.addAttribute("today", LocalDate.now());
-        List<TourReservation> reservations = reservationService.findMyReservations(SecurityUtil.getCurrentUserId());
+        model.addAttribute("user", user);
+        model.addAttribute("isOwner", "OWNER".equals(user.getRole()));
+        model.addAttribute("ownerStatus", user.getOwnerVerificationStatus());
+        model.addAttribute("tripPlans", tripPlans);
+        model.addAttribute("hasTripPlans", !tripPlans.isEmpty());
+        model.addAttribute("tripPlanCount", tripPlans.size());
+        model.addAttribute("reservationCount", reservations.size());
+        model.addAttribute("postCount", postCount);
         model.addAttribute("reservations", reservations);
         model.addAttribute("hasReservation", !reservations.isEmpty());
         if (!reservations.isEmpty()) {

@@ -26,7 +26,7 @@
         <th:block th:if="${isLoggedIn}">
             <button type="button" class="h-btn h-btn-save" id="savePlanBtn" onclick="saveTripPlan()">일정 저장</button>
             <a href="/ko/trip/plans" class="h-btn">내 일정</a>
-            <span class="h-btn" th:text="${currentUserName}"></span>
+            <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
             <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
                 <button type="submit" class="h-btn h-btn-fill">Logout</button>

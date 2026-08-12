@@ -977,7 +977,7 @@
         <a class="h-btn active" th:href="@{/}" href="/">EN</a>
         <a class="h-btn" th:href="@{/ko}" href="/ko">KR</a>
         <th:block th:if="${isLoggedIn}">
-            <span class="h-btn" th:text="${currentUserName}">User</span>
+            <a th:href="@{/ko/mypage}" href="/ko/mypage" class="h-btn" th:text="${currentUserName}">User</a>
             <a th:if="${isAdmin}" th:href="@{/admin}" href="/admin" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
