@@ -20,6 +20,7 @@ import java.util.List;
 public class TourApiReservationService {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final TourPhotoGalleryService tourPhotoGalleryService;
 
     @Value("${tourapi.base-url}")
     private String baseUrl;
@@ -135,13 +136,19 @@ public class TourApiReservationService {
             address = address.isBlank() ? addr2 : address + " " + addr2;
         }
 
+        String title = text(item, "title");
+        String imageUrl = firstText(item, "firstimage", "firstimage2");
+        if (imageUrl.isBlank()) {
+            imageUrl = tourPhotoGalleryService.findImageUrl(title).orElse("");
+        }
+
         return TourApiPlaceDto.builder()
                 .contentId(text(item, "contentid"))
                 .contentTypeId(text(item, "contenttypeid"))
-                .title(text(item, "title"))
+                .title(title)
                 .address(address)
                 .tel(text(item, "tel"))
-                .imageUrl(firstText(item, "firstimage", "firstimage2"))
+                .imageUrl(imageUrl)
                 .mapX(text(item, "mapx"))
                 .mapY(text(item, "mapy"))
                 .overview(text(item, "overview"))

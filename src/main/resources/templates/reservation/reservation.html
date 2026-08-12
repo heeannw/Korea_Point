@@ -82,6 +82,22 @@
             .replaceAll("'", "&#039;");
     }
 
+    function imageMarkup(place) {
+        if (!place.imageUrl) {
+            return `<div class="place-image image-missing"><span>BUSAN</span></div>`;
+        }
+
+        return `
+            <div class="place-image">
+                <img src="${escapeHtml(place.imageUrl)}"
+                     alt="${escapeHtml(place.title || "부산 관광지")}"
+                     loading="lazy"
+                     onerror="this.parentElement.classList.add('image-missing'); this.remove();">
+                <span>BUSAN</span>
+            </div>
+        `;
+    }
+
     function renderPlaces(places, append = false) {
         if (!append) {
             grid.innerHTML = "";
@@ -97,10 +113,9 @@
         emptyState.style.display = "none";
         grid.insertAdjacentHTML("beforeend", places.map(place => {
             const detailUrl = `/ko/reservation/new?contentId=${encodeURIComponent(place.contentId || "")}&contentTypeId=${encodeURIComponent(place.contentTypeId || "")}&placeTitle=${encodeURIComponent(place.title || "")}`;
-            const imageStyle = place.imageUrl ? `style="background-image:url('${escapeHtml(place.imageUrl)}')"` : "";
             return `
                 <article class="place-card">
-                    <div class="place-image" ${imageStyle}></div>
+                    ${imageMarkup(place)}
                     <div class="place-body">
                         <h2 class="place-title">${escapeHtml(place.title || "관광지명 없음")}</h2>
                         <p class="meta">${escapeHtml(place.displayAddress || place.address || "주소 정보 없음")}</p>

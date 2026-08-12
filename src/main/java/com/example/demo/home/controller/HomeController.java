@@ -1,20 +1,27 @@
 package com.example.demo.home.controller;
 
 import com.example.demo.home.service.HomeService;
+import com.example.demo.reservation.dto.TourApiPlaceDto;
+import com.example.demo.reservation.service.TourApiReservationService;
+import com.example.demo.reservation.service.TourPhotoGalleryService;
 import com.example.demo.user.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequiredArgsConstructor
 public class HomeController {
 
     private final HomeService homeService;
+    private final TourApiReservationService tourApiReservationService;
+    private final TourPhotoGalleryService tourPhotoGalleryService;
 
 
     // @GetMapping: 브라우저에서 GET 방식으로 "/" 또는 "/en" 에 접속했을 때 이 메서드 실행
@@ -57,20 +64,16 @@ public class HomeController {
                 "Curated guides to the best attractions, food, and local experiences.");
 
         // ── 히어로 섹션 텍스트 (한국어) ───────────────────────────────────────
-        model.addAttribute("heroTitleKo", "한국을");
+        model.addAttribute("heroTitleKo", "부산을");
         model.addAttribute("heroSubTitleKo", "만나보세요");
         model.addAttribute("heroDescriptionKo",
-                "대표 관광지부터 맛집, 현지 정보까지 한국 여행에 필요한 정보를 한곳에 담았습니다.");
+                "대표 관광지부터 맛집, 현지 정보까지 부산 여행에 필요한 정보를 한곳에 담았습니다.");
 
         // ── 히어로 슬라이더 이미지 리스트 ────────────────────────────────────
         // List.of(): 수정 불가능한 리스트 생성 (3개 슬라이드)
         // 각 슬라이드는 "imageUrl" 키 하나만 가진 Map으로 구성
         // Thymeleaf에서 th:each 로 반복하며 각 slide.imageUrl 을 꺼내 씀
-        model.addAttribute("slides", List.of(
-                Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/c/cc/N_Seoul_Tower_%2813952097192%29.jpg"),
-                Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/a/ab/Bukchon-ro_11-gil_street_with_hanok_houses_and_blue_sky_in_Bukchon_Hanok_Village_Seoul.jpg"),
-                Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/d/d4/Gwanghwamun_%28Main_gate_of_Gyeongbokgung_Palace%29.jpg")
-        ));
+        model.addAttribute("slides", getBusanPhotoSlides());
 
         // ── 추천 관광지 카드 리스트 ────────────────────────────────────────────
         // attraction() 헬퍼 메서드를 호출하여 각 관광지 Map 을 생성
@@ -90,6 +93,35 @@ public class HomeController {
         // 총 5개의 게시글 데이터를 리스트로 묶어서 "posts" 이름으로 Model에 추가
         // Thymeleaf에서 th:each 로 반복하며 각 post.title, post.author 등을 꺼내 씀
         model.addAttribute("trendingPosts", homeService.getTrendingPosts());
+    }
+
+    private List<Map<String, String>> getBusanPhotoSlides() {
+        List<String> imageUrls = new ArrayList<>(tourPhotoGalleryService.findBusanHeroImageUrls(3));
+        if (imageUrls.size() < 3) {
+            tourApiReservationService.findPlaces(null, "12", 1, 30).stream()
+                    .map(TourApiPlaceDto::getImageUrl)
+                    .filter(imageUrl -> imageUrl != null && !imageUrl.isBlank())
+                    .filter(imageUrl -> !imageUrls.contains(imageUrl))
+                    .limit(3 - imageUrls.size())
+                    .forEach(imageUrls::add);
+        }
+
+        List<Map<String, String>> apiSlides = imageUrls.stream()
+                .filter(imageUrl -> imageUrl != null && !imageUrl.isBlank())
+                .distinct()
+                .limit(3)
+                .map(imageUrl -> Map.of("imageUrl", imageUrl))
+                .collect(Collectors.toList());
+
+        return apiSlides.isEmpty() ? fallbackBusanSlides() : apiSlides;
+    }
+
+    private List<Map<String, String>> fallbackBusanSlides() {
+        return List.of(
+                Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/9/9f/Haeundae_Beach_in_Busan.jpg"),
+                Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/8/88/Gamcheon_Culture_Village%2C_Busan%2C_Korea.jpg"),
+                Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/4/46/Busan_Gwangandaegyo_Bridge.jpg")
+        );
     }
 
     // ── attraction 헬퍼 메서드 ──────────────────────────────────────────────────
