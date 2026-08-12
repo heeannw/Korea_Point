@@ -9,6 +9,8 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -16,11 +18,33 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class TourApiClient {
 
     public static final String FOOD_CONTENT_TYPE = "39";
+    private static final String FESTIVAL_CONTENT_TYPE = "15";
+    /** 축제는 전국을 받아 부산만 추려내므로 목록 기본값보다 넉넉히 가져온다. */
+    private static final int FESTIVAL_FETCH_ROWS = 1000;
+
+    /**
+     * EngService2는 KorService2와 다른 콘텐츠 유형 코드를 쓴다(관광지 76, 음식점 82 …).
+     * 화면과 상세 조회는 국문 코드 기준이므로 API 경계에서만 변환한다.
+     */
+    private static final Map<String, String> ENGLISH_TO_KOREAN_TYPE = Map.of(
+            "76", "12",  // 관광지
+            "78", "14",  // 문화시설
+            "85", "15",  // 행사/공연/축제
+            "77", "25",  // 여행코스
+            "75", "28",  // 레포츠
+            "80", "32",  // 숙박
+            "79", "38",  // 쇼핑
+            "82", "39"); // 음식점
+
+    private static final Map<String, String> KOREAN_TO_ENGLISH_TYPE = ENGLISH_TO_KOREAN_TYPE
+            .entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
 
     private final RestClient restClient;
     private final TourApiProperties properties;
@@ -34,14 +58,50 @@ public class TourApiClient {
         this.objectMapper = objectMapper;
     }
 
-    /** 부산 지역 관광정보를 TourAPI에서 매번 조회한다. */
+    /**
+     * 부산 지역 관광정보를 TourAPI에서 매번 조회한다.
+     * areaBasedList2는 행사 기간을 응답에 담지 않아 종료된 축제까지 함께 내려주므로,
+     * 행사만 걷어내고 searchFestival2로 오늘 기준 진행/예정 축제를 다시 채운다.
+     */
     public List<TourPlaceDto> findBusanPlaces(String lang) {
         UriComponentsBuilder uri = commonUri(lang, "areaBasedList2")
                 .queryParam("areaCode", properties.getBusanAreaCode())
                 .queryParam("arrange", "Q")
                 .queryParam("numOfRows", properties.getDefaultRows())
                 .queryParam("pageNo", 1);
-        return request(uri);
+
+        List<TourPlaceDto> places = new ArrayList<>(request(uri, lang));
+        places.removeIf(this::isFestival);
+        places.addAll(findCurrentBusanFestivals(lang));
+        return places;
+    }
+
+    /**
+     * 오늘 이후에 끝나는(진행 중이거나 예정된) 부산 축제만 조회한다.
+     * 신규 등록 축제는 areacode가 비어 있어 areaCode 파라미터로 거르면 한 건도 남지 않는다.
+     * 전국을 받아 법정동 시도코드로 부산을 골라내야 한다.
+     */
+    public List<TourPlaceDto> findCurrentBusanFestivals(String lang) {
+        UriComponentsBuilder uri = commonUri(lang, "searchFestival2")
+                .queryParam("eventStartDate", LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE))
+                .queryParam("arrange", "A")
+                .queryParam("numOfRows", FESTIVAL_FETCH_ROWS)
+                .queryParam("pageNo", 1);
+
+        JsonNode items = requestRoot(uri).path("response").path("body").path("items").path("item");
+        List<TourPlaceDto> result = new ArrayList<>();
+        if (items.isArray()) {
+            for (JsonNode item : items) {
+                if (isBusan(item)) addMappedItem(result, item, lang);
+            }
+        } else if (items.isObject() && isBusan(items)) {
+            addMappedItem(result, items, lang);
+        }
+        return result;
+    }
+
+    private boolean isBusan(JsonNode item) {
+        return properties.getBusanLegalDongCode().equals(text(item, "lDongRegnCd"));
     }
 
     /** 부산으로 범위를 제한한 키워드 검색이다. */
@@ -52,7 +112,7 @@ public class TourApiClient {
                 .queryParam("arrange", "Q")
                 .queryParam("numOfRows", properties.getDefaultRows())
                 .queryParam("pageNo", 1);
-        return request(uri);
+        return dropEndedFestivals(request(uri, lang), lang);
     }
 
     /** 좌표 주변 장소를 조회한다. radiusKm는 TourAPI 제한에 맞춰 최대 20km로 제한한다. */
@@ -67,9 +127,9 @@ public class TourApiClient {
                 .queryParam("numOfRows", properties.getDefaultRows())
                 .queryParam("pageNo", 1);
         if (contentTypeId != null && !contentTypeId.isBlank()) {
-            uri.queryParam("contentTypeId", contentTypeId);
+            uri.queryParam("contentTypeId", toApiType(contentTypeId, lang));
         }
-        return request(uri);
+        return dropEndedFestivals(request(uri, lang), lang);
     }
 
     /** 상세 패널에서 사용할 설명과 콘텐츠 유형별 운영정보를 조회한다. */
@@ -79,7 +139,7 @@ public class TourApiClient {
 
         UriComponentsBuilder introUri = commonUri(lang, "detailIntro2")
                 .queryParam("contentId", contentId)
-                .queryParam("contentTypeId", contentTypeId);
+                .queryParam("contentTypeId", toApiType(contentTypeId, lang));
 
         UriComponentsBuilder imageUri = commonUri(lang, "detailImage2")
                 .queryParam("contentId", contentId)
@@ -118,9 +178,41 @@ public class TourApiClient {
                 .queryParam("_type", "json");
     }
 
-    private List<TourPlaceDto> request(UriComponentsBuilder uriBuilder) {
+    private List<TourPlaceDto> request(UriComponentsBuilder uriBuilder, String lang) {
         JsonNode root = requestRoot(uriBuilder);
-        return mapItems(root.path("response").path("body").path("items").path("item"));
+        return mapItems(root.path("response").path("body").path("items").path("item"), lang);
+    }
+
+    private boolean isFestival(TourPlaceDto place) {
+        return FESTIVAL_CONTENT_TYPE.equals(place.getType());
+    }
+
+    /**
+     * 목록에 섞여 온 종료된 축제를 걸러낸다. 검색/주변 조회 응답에는 행사 기간이 없어
+     * 현재 진행 중인 축제 목록과 대조하는 방식으로 판별한다.
+     */
+    private List<TourPlaceDto> dropEndedFestivals(List<TourPlaceDto> places, String lang) {
+        if (places.stream().noneMatch(this::isFestival)) return places;
+
+        Set<String> ongoing = findCurrentBusanFestivals(lang).stream()
+                .map(TourPlaceDto::getId)
+                .collect(Collectors.toSet());
+
+        List<TourPlaceDto> filtered = new ArrayList<>(places);
+        filtered.removeIf(place -> isFestival(place) && !ongoing.contains(place.getId()));
+        return filtered;
+    }
+
+    /** 국문 코드를 요청 대상 서비스가 이해하는 코드로 바꾼다. */
+    private String toApiType(String koreanType, String lang) {
+        if (koreanType == null || !"en".equalsIgnoreCase(lang)) return koreanType;
+        return KOREAN_TO_ENGLISH_TYPE.getOrDefault(koreanType, koreanType);
+    }
+
+    /** 응답의 콘텐츠 유형 코드를 화면이 기대하는 국문 코드로 통일한다. */
+    private String toKoreanType(String apiType, String lang) {
+        if (apiType == null || !"en".equalsIgnoreCase(lang)) return apiType;
+        return ENGLISH_TO_KOREAN_TYPE.getOrDefault(apiType, apiType);
     }
 
     private JsonNode requestRoot(UriComponentsBuilder uriBuilder) {
@@ -180,27 +272,27 @@ public class TourApiClient {
         }
     }
 
-    private List<TourPlaceDto> mapItems(JsonNode items) {
+    private List<TourPlaceDto> mapItems(JsonNode items, String lang) {
         if (items.isMissingNode() || items.isNull() || items.isTextual()) return List.of();
 
         List<TourPlaceDto> result = new ArrayList<>();
         if (items.isArray()) {
             Iterator<JsonNode> iterator = items.elements();
-            iterator.forEachRemaining(item -> addMappedItem(result, item));
+            iterator.forEachRemaining(item -> addMappedItem(result, item, lang));
         } else if (items.isObject()) {
-            addMappedItem(result, items);
+            addMappedItem(result, items, lang);
         }
         return result;
     }
 
-    private void addMappedItem(List<TourPlaceDto> result, JsonNode item) {
+    private void addMappedItem(List<TourPlaceDto> result, JsonNode item, String lang) {
         Double lat = nullableDouble(item, "mapy");
         Double lng = nullableDouble(item, "mapx");
         if (lat == null || lng == null) return;
 
         TourPlaceDto place = new TourPlaceDto();
         place.setId(text(item, "contentid"));
-        place.setType(text(item, "contenttypeid"));
+        place.setType(toKoreanType(text(item, "contenttypeid"), lang));
         place.setTitle(text(item, "title"));
         place.setAddr(joinAddress(text(item, "addr1"), text(item, "addr2")));
         place.setLat(lat);
