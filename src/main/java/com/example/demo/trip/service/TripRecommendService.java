@@ -6,6 +6,15 @@ import com.example.demo.trip.dto.TripRecommendRequest.SlotOrder;
 import com.example.demo.trip.dto.TripRecommendResponse;
 import com.example.demo.trip.dto.TripRecommendResponse.*;
 import com.example.demo.tourism.service.UnsplashImageService;
+import com.example.demo.trip.weather.WeatherForecast;
+import com.example.demo.trip.weather.WeatherForecastService;
+import com.example.demo.trip.weather.WeatherWarningService;
+import com.example.demo.trip.weather.AirQuality;
+import com.example.demo.trip.weather.AirQualityService;
+import com.example.demo.trip.ai.GeminiTripSummaryService;
+import com.example.demo.trip.weather.HealthRisk;
+import com.example.demo.trip.weather.HealthRiskService;
+import com.example.demo.trip.dto.TripReoptimizeRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
@@ -26,6 +35,11 @@ public class TripRecommendService {
 
     private final ObjectMapper objectMapper;
     private final UnsplashImageService unsplashImageService;
+    private final WeatherForecastService weatherForecastService;
+    private final WeatherWarningService weatherWarningService;
+    private final GeminiTripSummaryService geminiTripSummaryService;
+    private final AirQualityService airQualityService;
+    private final HealthRiskService healthRiskService;
 
     private static final String FOOD_PATH         = "model/tourism/food/food_scores.json";
     private static final String FOOD_PATH_EN      = "model/tourism/food/food_scores_EN.json";
@@ -70,6 +84,11 @@ public class TripRecommendService {
             String nameEn,    // 로마자 변환 이름 (EN용)
             String categoryEn // 영어 카테고리 (EN용)
     ) {}
+
+    private enum PlaceEnvironment { INDOOR, OUTDOOR, MIXED, WEATHER_SENSITIVE }
+
+    private static final Set<String> INDOOR_PLACES = Set.of("부산시립미술관", "영화의전당", "자갈치시장", "국제시장", "부평깡통시장");
+    private static final Set<String> WEATHER_SENSITIVE_PLACES = Set.of("송도해상케이블카", "해운대해수욕장", "광안리해수욕장", "송정해수욕장", "다대포해수욕장");
 
     // ── AREA_COORDS ──
     private static final Map<String, double[]> AREA_COORDS;
@@ -407,6 +426,31 @@ public class TripRecommendService {
     //  추천 + 일정 생성
     // ────────────────────────────────────────────
     public TripRecommendResponse recommend(TripRecommendRequest req) {
+        return recommendInternal(req, false);
+    }
+
+    public TripRecommendResponse reoptimize(TripReoptimizeRequest input) {
+        TripRecommendResponse updated = recommendInternal(input.getRequest(), true);
+        if (input.getCurrent() == null || input.getCurrent().getSchedule() == null) return updated;
+        Set<String> completed = new HashSet<>(Optional.ofNullable(input.getCompletedPlaceNames()).orElse(List.of()));
+        Set<String> reserved = new HashSet<>(Optional.ofNullable(input.getReservedPlaceNames()).orElse(List.of()));
+        Set<String> locked = new HashSet<>(completed); locked.addAll(reserved);
+        for (DayScheduleDto oldDay : input.getCurrent().getSchedule()) {
+            DayScheduleDto newDay = updated.getSchedule().stream().filter(d -> d.getDay() == oldDay.getDay()).findFirst().orElse(null);
+            if (newDay == null) continue;
+            for (int i = 0; i < oldDay.getSlots().size(); i++) {
+                SlotDto old = oldDay.getSlots().get(i);
+                if (!locked.contains(old.getPlaceName())) continue;
+                old.setLocked(true); old.setLockReason(completed.contains(old.getPlaceName()) ? "방문 완료" : "예약 장소");
+                newDay.getSlots().removeIf(s -> s.getPlaceName().equals(old.getPlaceName()));
+                newDay.getSlots().add(Math.min(i, newDay.getSlots().size()), old);
+            }
+        }
+        updated.setAiSummary(geminiTripSummaryService.summarize(input.getRequest(), updated));
+        return updated;
+    }
+
+    private TripRecommendResponse recommendInternal(TripRecommendRequest req, boolean useUltraForecast) {
         boolean isEn = "en".equalsIgnoreCase(req.getLang());
         // 언어별 데이터 선택
         List<PlaceData> tourismPlaces = isEn ? tourismPlacesEn : tourismPlacesKo;
@@ -422,7 +466,19 @@ public class TripRecommendService {
         resp.setTourismList(toRecList(tourism, 10));
         resp.setFoodList   (toRecList(food,    10));
         resp.setCafeList   (toRecList(cafe,    10));
-        resp.setSchedule   (buildSchedule(req, tourism, food, cafe, bar, tourismPlaces));
+        String warning = weatherWarningService.currentBusanWarning();
+        resp.setWeatherWarning(warning);
+        Optional<AirQuality> airQuality = airQualityService.currentBusan();
+        airQuality.ifPresent(air -> {
+            AirQualitySummary summary = new AirQualitySummary();
+            summary.setPm10(air.pm10()); summary.setPm25(air.pm25()); summary.setGrade(air.gradeLabel()); summary.setMeasuredAt(air.dataTime());
+            resp.setAirQuality(summary);
+        });
+        Optional<HealthRisk> healthRisk = healthRiskService.currentBusan();
+        healthRisk.ifPresent(risk -> { HealthRiskSummary s = new HealthRiskSummary(); s.setUvIndex(risk.uvIndex()); s.setUvLevel(risk.uvLevel()); s.setHeatRisk(risk.heatRisk()); s.setColdRisk(risk.coldRisk()); resp.setHealthRisk(s); });
+        resp.setForecastIssuedAt(weatherForecastService.forecastIssuedAt());
+        resp.setSchedule(buildSchedule(req, tourism, food, cafe, bar, tourismPlaces, !warning.isBlank(), airQuality, healthRisk, useUltraForecast));
+        resp.setAiSummary(geminiTripSummaryService.summarize(req, resp));
         return resp;
     }
 
@@ -486,7 +542,11 @@ public class TripRecommendService {
                                                List<ScoredPlace> food,
                                                List<ScoredPlace> cafe,
                                                List<ScoredPlace> bar,
-                                               List<PlaceData> tourismPlaces) {
+                                               List<PlaceData> tourismPlaces,
+                                               boolean warningActive,
+                                               Optional<AirQuality> airQuality,
+                                               Optional<HealthRisk> healthRisk,
+                                               boolean useUltraForecast) {
         List<SlotOrder> orders = (req.getSlotOrders() != null && !req.getSlotOrders().isEmpty())
                 ? req.getSlotOrders() : buildDefaultOrders(req);
 
@@ -519,9 +579,22 @@ public class TripRecommendService {
         for (ScoredPlace sp : food) foodByCat.computeIfAbsent(sp.place.foodCategory(), k -> new ArrayList<>()).add(sp);
         foodByCat.put("전체", food);
 
+        Map<java.time.LocalDateTime, WeatherForecast> forecasts = useUltraForecast
+                ? weatherForecastService.getUltraForecast(anchorLat, anchorLng)
+                : weatherForecastService.getForecast(anchorLat, anchorLng);
+        java.time.LocalDate tripStartDate = req.getStartDate() != null
+                ? req.getStartDate() : java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"));
+
         for (int day = 1; day <= req.getTravelDays(); day++) {
             DayScheduleDto d = new DayScheduleDto();
             d.setDay(day);
+            java.time.LocalDate currentDate = tripStartDate.plusDays(day - 1L);
+            weatherForecastService.nearest(forecasts, currentDate.atTime(12, 0)).ifPresent(w -> {
+                WeatherSummary summary = new WeatherSummary();
+                summary.setTemperature(w.temperature()); summary.setRainProbability(w.rainProbability());
+                summary.setWindSpeed(w.windSpeed()); summary.setPrecipitationType(w.precipitationType()); summary.setSky(w.sky());
+                d.setWeather(summary);
+            });
             List<SlotDto> slots = new ArrayList<>();
             int currentMinutes = (req.getStartHour() > 0 ? req.getStartHour() : 10) * 60;
             int endMinutes = (req.getEndHour() > 0 ? req.getEndHour() : 21) * 60;
@@ -542,12 +615,25 @@ public class TripRecommendService {
                 if (currentMinutes >= endMinutes) break;
                 switch (order.getType()) {
                     case "tourism" -> {
-                        ScoredPlace p = pickNext(tourism, used, anchorLat, anchorLng, 10.0);
+                        java.time.LocalDateTime slotAt = tripStartDate.plusDays(day - 1L)
+                                .atTime(currentMinutes / 60, currentMinutes % 60);
+                        Optional<WeatherForecast> weather = weatherForecastService.nearest(forecasts, slotAt);
+                        if (warningActive && weather.isEmpty()) {
+                            weather = Optional.of(new WeatherForecast(slotAt, 25, 80, "RAIN", 5, 10, "OVERCAST"));
+                        }
+                        Optional<WeatherForecast> slotWeather = weather;
+                        ScoredPlace p = pickNext(tourism, used, anchorLat, anchorLng, 10.0, slotWeather, airQuality, healthRisk);
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "tourism", p.place);
                             if (currentMinutes + duration > endMinutes) break;
                             used.add(p.place.name());
-                            slots.add(makeSlot(currentMinutes, duration, "tourism", p, tourism));
+                            SlotDto slot = makeSlot(currentMinutes, duration, "tourism", p, tourism);
+                            slotWeather.ifPresent(w -> slot.setReason(weatherReason(w, isIndoor(p.place)) + slot.getReason()));
+                            airQuality.filter(AirQuality::bad).ifPresent(a -> slot.setReason(
+                                    (isIndoor(p.place) ? "대기질을 고려한 실내 일정 · " : "미세먼지 주의 · ") + slot.getReason()));
+                            healthRisk.filter(HealthRisk::outdoorCaution).ifPresent(r -> slot.setReason(
+                                    (isIndoor(p.place) ? "자외선·체감위험을 고려한 실내 일정 · " : "한낮 야외활동 주의 · ") + slot.getReason()));
+                            slots.add(slot);
                             if (p.place.lat() != 0) { anchorLat = p.place.lat(); anchorLng = p.place.lng(); }
                             currentMinutes += duration;
                         }
@@ -641,6 +727,74 @@ public class TripRecommendService {
             if (haversine(anchorLat, anchorLng, sp.place.lat(), sp.place.lng()) <= maxKm) return sp;
         }
         return list.stream().filter(sp -> !used.contains(sp.place.name())).findFirst().orElse(null);
+    }
+
+    private ScoredPlace pickNext(List<ScoredPlace> list, Set<String> used,
+                                 double anchorLat, double anchorLng, double maxKm,
+                                 Optional<WeatherForecast> weather,
+                                 Optional<AirQuality> airQuality,
+                                 Optional<HealthRisk> healthRisk) {
+        if ((weather.isEmpty() || !weather.get().rainy()) && airQuality.filter(AirQuality::bad).isEmpty() && healthRisk.filter(HealthRisk::outdoorCaution).isEmpty()) {
+            return pickNext(list, used, anchorLat, anchorLng, maxKm);
+        }
+        return list.stream()
+                .filter(sp -> !used.contains(sp.place.name()))
+                .sorted(Comparator.comparingDouble((ScoredPlace sp) ->
+                        environmentalScore(sp, weather, airQuality, healthRisk, anchorLat, anchorLng, maxKm)).reversed())
+                .findFirst().orElse(null);
+    }
+
+    private double environmentalScore(ScoredPlace scored, Optional<WeatherForecast> weather,
+                                      Optional<AirQuality> airQuality, double anchorLat, double anchorLng, double maxKm) {
+        return environmentalScore(scored, weather, airQuality, Optional.empty(), anchorLat, anchorLng, maxKm);
+    }
+
+    private double environmentalScore(ScoredPlace scored, Optional<WeatherForecast> weather,
+                                      Optional<AirQuality> airQuality, Optional<HealthRisk> healthRisk, double anchorLat, double anchorLng, double maxKm) {
+        double adjusted = scored.score();
+        PlaceEnvironment environment = classifyEnvironment(scored.place());
+        boolean sheltered = environment == PlaceEnvironment.INDOOR || environment == PlaceEnvironment.MIXED;
+        if (weather.isPresent()) adjusted = weatherAdjustedScore(scored, weather.get(), anchorLat, anchorLng, maxKm);
+        if (airQuality.filter(AirQuality::bad).isPresent()) adjusted += sheltered ? 1.0 : -1.2;
+        if (healthRisk.filter(HealthRisk::outdoorCaution).isPresent()) adjusted += sheltered ? 0.8 : -1.0;
+        if (environment == PlaceEnvironment.WEATHER_SENSITIVE && weather.map(WeatherForecast::severeOutdoorWeather).orElse(false)) adjusted -= 2.5;
+        return adjusted;
+    }
+
+    private double weatherAdjustedScore(ScoredPlace scored, WeatherForecast weather,
+                                        double anchorLat, double anchorLng, double maxKm) {
+        double adjusted = scored.score();
+        boolean indoor = isIndoor(scored.place());
+        if (weather.rainy()) adjusted += indoor ? 1.2 : -1.5;
+        if (weather.severeOutdoorWeather()) adjusted += indoor ? 0.8 : -2.0;
+        double distance = haversine(anchorLat, anchorLng, scored.place.lat(), scored.place.lng());
+        adjusted -= Math.min(distance, maxKm * 2) * 0.03;
+        return adjusted;
+    }
+
+    private boolean isIndoor(PlaceData place) {
+        PlaceEnvironment environment = classifyEnvironment(place);
+        return environment == PlaceEnvironment.INDOOR || environment == PlaceEnvironment.MIXED;
+    }
+
+    private PlaceEnvironment classifyEnvironment(PlaceData place) {
+        if (INDOOR_PLACES.contains(place.name())) return PlaceEnvironment.INDOOR;
+        if (WEATHER_SENSITIVE_PLACES.contains(place.name())) return PlaceEnvironment.WEATHER_SENSITIVE;
+        String text = String.join(" ", Optional.ofNullable(place.name()).orElse(""),
+                Optional.ofNullable(place.nameEn()).orElse(""), Optional.ofNullable(place.address()).orElse(""))
+                .toLowerCase(Locale.ROOT);
+        if (containsAny(text, "박물관", "미술관", "전시", "아쿠아리움", "영화", "백화점", "몰",
+                "museum", "gallery", "exhibition", "aquarium", "mall")) return PlaceEnvironment.INDOOR;
+        if (containsAny(text, "시장", "타워", "절", "사찰", "market", "tower", "temple")) return PlaceEnvironment.MIXED;
+        if (containsAny(text, "해수욕장", "케이블카", "유람선", "해안", "beach", "cable car", "cruise")) return PlaceEnvironment.WEATHER_SENSITIVE;
+        return PlaceEnvironment.OUTDOOR;
+    }
+
+    private String weatherReason(WeatherForecast weather, boolean indoor) {
+        if (weather.severeOutdoorWeather() && indoor) return "악천후를 피해 실내 장소 우선 배치 · ";
+        if (weather.rainy() && indoor) return "비 예보를 반영한 실내 일정 · ";
+        if (weather.rainy()) return "비 예보가 있으므로 우산 준비 권장 · ";
+        return "날씨가 안정적인 시간대에 배치 · ";
     }
 
     /** SlotDto 생성 — 주소/이미지/별점/리뷰 포함 */
