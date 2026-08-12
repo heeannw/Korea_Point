@@ -966,6 +966,7 @@
             }
         }
     </style>
+    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
 <body>
 <!-- Header: top navigation and language buttons -->
@@ -1059,6 +1060,10 @@
         <a class="category-item" th:href="@{/ko/trip}" href="/ko/trip" aria-label="Custom Trip">
             <span class="category-icon">🧳</span>
             <span>Custom Trip</span>
+        </a>
+        <a class="category-item" th:href="@{/ko/reservation}" href="/ko/reservation" aria-label="Reservation">
+            <span class="category-icon">🎫</span>
+            <span>Reservation</span>
         </a>
     </div>
 </section>
