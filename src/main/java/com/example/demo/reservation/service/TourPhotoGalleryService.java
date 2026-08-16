@@ -24,8 +24,10 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class TourPhotoGalleryService {
 
-    private static final List<String> BUSAN_KEYWORDS = List.of(
-            "부산", "해운대", "광안리", "감천문화마을", "태종대", "송도해수욕장", "영도", "오륙도", "광안대교"
+    private static final List<List<String>> BUSAN_HERO_KEYWORD_GROUPS = List.of(
+            List.of("태종대", "오륙도", "송도해수욕장"),
+            List.of("광안대교", "광안리", "해운대"),
+            List.of("감천문화마을", "해동용궁사", "부산타워")
     );
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -59,13 +61,23 @@ public class TourPhotoGalleryService {
             return List.of();
         }
 
-        List<String> keywords = new ArrayList<>(BUSAN_KEYWORDS);
-        Collections.shuffle(keywords);
-
         Set<String> imageUrls = new LinkedHashSet<>();
-        for (String keyword : keywords) {
+        List<List<String>> keywordGroups = new ArrayList<>(BUSAN_HERO_KEYWORD_GROUPS);
+        Collections.shuffle(keywordGroups);
+
+        // Select at most one image per landmark group so consecutive shots of
+        // the same place cannot occupy multiple hero slides.
+        for (List<String> keywordGroup : keywordGroups) {
+            List<String> keywords = new ArrayList<>(keywordGroup);
+            Collections.shuffle(keywords);
+            String keyword = keywords.get(0);
             int pageNo = ThreadLocalRandom.current().nextInt(1, 4);
-            imageUrls.addAll(requestImageUrls(keyword, 20, pageNo));
+            List<String> candidates = new ArrayList<>(requestImageUrls(keyword, 20, pageNo));
+            Collections.shuffle(candidates);
+            candidates.stream()
+                    .filter(imageUrl -> !imageUrls.contains(imageUrl))
+                    .findFirst()
+                    .ifPresent(imageUrls::add);
             if (imageUrls.size() >= count) {
                 break;
             }

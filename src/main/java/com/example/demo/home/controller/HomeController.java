@@ -1,8 +1,6 @@
 package com.example.demo.home.controller;
 
 import com.example.demo.home.service.HomeService;
-import com.example.demo.reservation.dto.TourApiPlaceDto;
-import com.example.demo.reservation.service.TourApiReservationService;
 import com.example.demo.reservation.service.TourPhotoGalleryService;
 import com.example.demo.user.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +18,6 @@ import java.util.stream.Collectors;
 public class HomeController {
 
     private final HomeService homeService;
-    private final TourApiReservationService tourApiReservationService;
     private final TourPhotoGalleryService tourPhotoGalleryService;
 
 
@@ -98,8 +95,8 @@ public class HomeController {
     private List<Map<String, String>> getBusanPhotoSlides() {
         List<String> imageUrls = new ArrayList<>(tourPhotoGalleryService.findBusanHeroImageUrls(3));
         if (imageUrls.size() < 3) {
-            tourApiReservationService.findPlaces(null, "12", 1, 30).stream()
-                    .map(TourApiPlaceDto::getImageUrl)
+            fallbackBusanSlides().stream()
+                    .map(slide -> slide.get("imageUrl"))
                     .filter(imageUrl -> imageUrl != null && !imageUrl.isBlank())
                     .filter(imageUrl -> !imageUrls.contains(imageUrl))
                     .limit(3 - imageUrls.size())

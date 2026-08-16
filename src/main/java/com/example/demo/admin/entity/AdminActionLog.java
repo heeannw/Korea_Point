@@ -57,10 +57,10 @@ public class AdminActionLog {
     @Column(name = "reason_detail", length = 1000)
     private String reasonDetail;
 
-    @Column(name = "before_snapshot_json", nullable = false, columnDefinition = "CLOB")
+    @Column(name = "before_snapshot_json", nullable = false, columnDefinition = "text")
     private String beforeSnapshotJson;
 
-    @Column(name = "after_snapshot_json", nullable = false, columnDefinition = "CLOB")
+    @Column(name = "after_snapshot_json", nullable = false, columnDefinition = "text")
     private String afterSnapshotJson;
 
     @Column(nullable = false)
