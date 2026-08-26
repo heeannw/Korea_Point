@@ -63,11 +63,11 @@
     .chip:hover{border-color:var(--blue);color:var(--blue)}
     .chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
     .chip[data-cat="All"].active{background:var(--blue);border-color:var(--blue);color:#fff}
-    .chip[data-cat="Cultural Site"]:hover,.chip[data-cat="Cultural Site"].active{background:#ef4444;border-color:#ef4444;color:#fff}
-    .chip[data-cat="Museum"]:hover,.chip[data-cat="Museum"].active{background:#f59e0b;border-color:#f59e0b;color:#fff}
-    .chip[data-cat="Festival"]:hover,.chip[data-cat="Festival"].active{background:#ec4899;border-color:#ec4899;color:#fff}
-    .chip[data-cat="Experience"]:hover,.chip[data-cat="Experience"].active{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
-    .chip[data-cat="Nature"]:hover,.chip[data-cat="Nature"].active{background:#22c55e;border-color:#22c55e;color:#fff}
+    .chip[data-cat="Attraction"]:hover,.chip[data-cat="Attraction"].active{background:#ef4444;border-color:#ef4444;color:#fff}
+    .chip[data-cat="Cultural Facility"]:hover,.chip[data-cat="Cultural Facility"].active{background:#f59e0b;border-color:#f59e0b;color:#fff}
+    .chip[data-cat="Festival & Event"]:hover,.chip[data-cat="Festival & Event"].active{background:#ec4899;border-color:#ec4899;color:#fff}
+    .chip[data-cat="Travel Course"]:hover,.chip[data-cat="Travel Course"].active{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
+    .chip[data-cat="Leisure & Activities"]:hover,.chip[data-cat="Leisure & Activities"].active{background:#22c55e;border-color:#22c55e;color:#fff}
     .chip[data-cat="Shopping"]:hover,.chip[data-cat="Shopping"].active{background:#3b9eff;border-color:#3b9eff;color:#fff}
     .sort-row{padding:10px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
     .result-count{font-size:13px;color:var(--gray)}
@@ -97,12 +97,17 @@
     .mc:hover{background:var(--light)}
     .loc-btn{position:absolute;bottom:24px;right:16px;background:#fff;border:1px solid var(--border);border-radius:50px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--sh);color:var(--dark);font-family:'DM Sans',sans-serif;z-index:30;transition:all .2s}
     .loc-btn:hover{border-color:var(--blue);color:var(--blue)}
-    .detail-panel{position:absolute;inset:0;background:#fff;z-index:50;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none;}
+    .detail-panel{position:absolute;top:0;right:0;bottom:0;width:min(560px,100%);background:#fff;z-index:50;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none;box-shadow:-12px 0 32px rgba(15,23,42,.16)}
     .detail-panel.open{transform:translateX(0);pointer-events:auto;}
     .dp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:5}
     .dp-back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px;line-height:1}
     .dp-title{font-size:16px;font-weight:700;flex:1}
-    .dp-img{width:100%;height:360px;object-fit:cover;background-size:cover;background-position:center;background-color:var(--light)}
+    .dp-img{width:100%;height:360px;object-fit:cover;background-size:cover;background-position:center;background-color:var(--light);position:relative}
+    .dp-img-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:50%;background:rgba(15,23,42,.68);color:#fff;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+    .dp-img-nav:hover{background:rgba(15,23,42,.9)}
+    .dp-img-prev{left:14px}.dp-img-next{right:14px}
+    .dp-img-count{position:absolute;right:16px;bottom:14px;padding:5px 10px;border-radius:50px;background:rgba(15,23,42,.72);color:#fff;font-size:12px;font-weight:700}
+    .dp-img-hidden{display:none}
     .dp-body{padding:16px}
     .dp-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
     .dp-badge{padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700}
@@ -209,7 +214,7 @@
     <div class="search-bar">
       <form action="/tour/search/" method="get" id="searchForm">
         <div class="search-wrap">
-          <input type="text" placeholder="Search in Seoul..." name="keyword" id="searchInput"
+          <input type="text" placeholder="Search attractions in Busan..." name="keyword" id="searchInput"
                  th:value="${keyword}" autocomplete="off"
                  onfocus="onSearchFocus()" onblur="onSearchBlur()" oninput="onSearchInput(this.value)">
           <input name="lang" value="EN" type="hidden">
@@ -244,12 +249,12 @@
       <button class="scroll-btn left" id="scrollLeft" onclick="scrollFilter(-1)" disabled>‹</button>
       <div class="filter-row" id="filterRow">
         <div class="chip active" data-cat="All" onclick="setCategory('All')">🗺️ All</div>
-        <div class="chip" data-cat="Cultural Site" onclick="setCategory('Cultural Site')">🏛️ Cultural Site</div>
-        <div class="chip" data-cat="Museum" onclick="setCategory('Museum')">🏺 Museum</div>
-        <div class="chip" data-cat="Nature" onclick="setCategory('Nature')">🌿 Nature</div>
+        <div class="chip" data-cat="Attraction" onclick="setCategory('Attraction')">📍 Attractions</div>
+        <div class="chip" data-cat="Cultural Facility" onclick="setCategory('Cultural Facility')">🏛️ Culture</div>
+        <div class="chip" data-cat="Leisure & Activities" onclick="setCategory('Leisure & Activities')">🏄 Leisure & Activities</div>
         <div class="chip" data-cat="Shopping" onclick="setCategory('Shopping')">🛍️ Shopping</div>
-        <div class="chip" data-cat="Experience" onclick="setCategory('Experience')">🎡 Experience</div>
-        <div class="chip" data-cat="Festival" onclick="setCategory('Festival')">🎉 Festival</div>
+        <div class="chip" data-cat="Travel Course" onclick="setCategory('Travel Course')">🗺️ Travel Courses</div>
+        <div class="chip" data-cat="Festival & Event" onclick="setCategory('Festival & Event')">🎉 Festivals & Events</div>
       </div>
       <button class="scroll-btn right" id="scrollRight" onclick="scrollFilter(1)">›</button>
     </div>
@@ -280,7 +285,11 @@
         <div class="dp-title" id="dpTitle"></div>
         <div style="font-size:20px;cursor:pointer">🔖</div>
       </div>
-      <div class="dp-img" id="dpImg"></div>
+      <div class="dp-img" id="dpImg">
+        <button class="dp-img-nav dp-img-prev dp-img-hidden" id="dpImgPrev" type="button" onclick="moveDetailImage(-1)" aria-label="Previous image">‹</button>
+        <button class="dp-img-nav dp-img-next dp-img-hidden" id="dpImgNext" type="button" onclick="moveDetailImage(1)" aria-label="Next image">›</button>
+        <div class="dp-img-count dp-img-hidden" id="dpImgCount"></div>
+      </div>
       <div class="dp-body">
         <div class="dp-badge-row" id="dpBadges"></div>
         <div class="dp-name" id="dpName"></div>
@@ -302,11 +311,11 @@
 </div>
 
 <script th:inline="javascript">
-  const userLat   = /*[[${userlat}]]*/ 37.5665;
-  const userLon   = /*[[${userlon}]]*/ 126.9780;
+  const userLat   = /*[[${userlat}]]*/ 35.1796;
+  const userLon   = /*[[${userlon}]]*/ 129.0756;
   const PLACES    = /*[[${list}]]*/ [];
-  const centerLat = /*[[${centerLat}]]*/ 37.5665;
-  const centerLon = /*[[${centerLon}]]*/ 126.9780;
+  const centerLat = /*[[${centerLat}]]*/ 35.1796;
+  const centerLon = /*[[${centerLon}]]*/ 129.0756;
 </script>
 
 <script>
@@ -320,6 +329,8 @@
   let markerMap = [];
   let selectedMarker = null;
   let _markerJustClicked = false;
+  let detailImages = [];
+  let detailImageIndex = 0;
   let spotName = /*[[${spotname}]]*/ 'my location';
 
   const CATEGORY_COLOR = {
@@ -327,8 +338,8 @@
     '25': '#8b5cf6', '28': '#22c55e', '38': '#3b9eff',
   };
   const CATEGORY_EMOJI = {
-    '12': '🏛️', '14': '🏺', '15': '🎉',
-    '25': '🎡', '28': '🌿', '38': '🛍️',
+    '12': '📍', '14': '🏛️', '15': '🎉',
+    '25': '🗺️', '28': '🏄', '38': '🛍️',
   };
 
 
@@ -376,7 +387,7 @@
   window.addEventListener('load', updateScrollBtns);
 
   function typeName(type) {
-    const m = { '12':'Cultural Site','14':'Museum','15':'Festival','25':'Experience','28':'Nature','38':'Shopping' };
+    const m = { '12':'Attraction','14':'Cultural Facility','15':'Festival & Event','25':'Travel Course','28':'Leisure & Activities','38':'Shopping' };
     return m[String(type)] ?? 'Other';
   }
   function distStr(d) {
@@ -506,6 +517,9 @@
       if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 60);
     showPopup(p);
+    if (document.getElementById('detailPanel').classList.contains('open')) {
+      openDetail(p);
+    }
   }
 
   function showPopup(p) {
@@ -542,12 +556,94 @@
     render();
   }
 
+  function detailText(value) {
+    if (!value) return '';
+    const holder = document.createElement('div');
+    holder.innerHTML = String(value);
+    return holder.textContent?.trim() || '';
+  }
+
+  function setDetailImages(images) {
+    detailImages = [...new Set((images || []).filter(Boolean))];
+    detailImageIndex = 0;
+    renderDetailImage();
+  }
+
+  function moveDetailImage(direction) {
+    if (detailImages.length < 2) return;
+    detailImageIndex = (detailImageIndex + direction + detailImages.length) % detailImages.length;
+    renderDetailImage();
+  }
+
+  function renderDetailImage() {
+    const imageBox = document.getElementById('dpImg');
+    const hasImage = detailImages.length > 0;
+    const current = hasImage ? detailImages[detailImageIndex] : '';
+    imageBox.style.backgroundImage = current ? `url("${String(current).replace(/"/g, '%22')}")` : 'none';
+    const multiple = detailImages.length > 1;
+    document.getElementById('dpImgPrev').classList.toggle('dp-img-hidden', !multiple);
+    document.getElementById('dpImgNext').classList.toggle('dp-img-hidden', !multiple);
+    const counter = document.getElementById('dpImgCount');
+    counter.classList.toggle('dp-img-hidden', !multiple);
+    counter.textContent = multiple ? `${detailImageIndex + 1} / ${detailImages.length}` : '';
+  }
+
+  function escapeDetail(value) {
+    return detailText(value).replace(/[&<>"']/g, ch => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    })[ch]);
+  }
+
+  function detailDate(value) {
+    const text = detailText(value);
+    return /^\d{8}$/.test(text)
+            ? `${text.slice(0,4)}.${text.slice(4,6)}.${text.slice(6,8)}` : text;
+  }
+
+  const DETAIL_LABELS_EN = {
+    usetime:'Hours', restdate:'Closed', infocenter:'Contact', parking:'Parking',
+    usetimeculture:'Hours', restdateculture:'Closed', usefee:'Admission', parkingculture:'Parking',
+    eventstartdate:'Starts', eventenddate:'Ends', eventplace:'Venue', playtime:'Schedule',
+    usetimefestival:'Admission', spendtimefestival:'Duration', distance:'Course distance', taketime:'Duration',
+    infocentertourcourse:'Contact', openperiod:'Operating period', usetimeleports:'Hours',
+    restdateleports:'Closed', reservation:'Reservation', expagerangeleports:'Age range',
+    usefeeleports:'Fee', checkintime:'Check-in', checkouttime:'Check-out', reservationurl:'Reservation',
+    roomcount:'Rooms', parkinglodging:'Parking', opentime:'Hours', restdateshopping:'Closed',
+    saleitem:'Items', firstmenu:'Signature menu', opentimefood:'Hours', restdatefood:'Closed',
+    reservationfood:'Reservation', treatmenu:'Menu'
+  };
+
+  async function loadTourApiDetail(p) {
+    const desc = document.getElementById('dpDesc');
+    if (!p.id || !p.type) {
+      desc.innerHTML = '<p>No detail identifier is available.</p>';
+      return;
+    }
+    desc.innerHTML = '<p style="color:#64748b">Loading Korea Tourism Organization details...</p>';
+    try {
+      const response = await fetch(`/tour/api/detail/${encodeURIComponent(p.id)}?contentTypeId=${encodeURIComponent(p.type)}&lang=en`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const detail = await response.json();
+      const rows = Object.entries(detail.details || {}).map(([key, value]) => {
+        const shown = key.includes('date') ? detailDate(value) : detailText(value);
+        return `<div class="dp-info"><div class="dp-info-label">${escapeDetail(DETAIL_LABELS_EN[key] || key)}</div><div class="dp-info-val">${escapeDetail(shown)}</div></div>`;
+      }).join('');
+      const overview = escapeDetail(detail.overview || 'No description is currently available.');
+      const tel = detail.tel ? `<p style="margin-top:12px"><b>Tel:</b> ${escapeDetail(detail.tel)}</p>` : '';
+      desc.innerHTML = `<p style="line-height:1.75;white-space:pre-line">${overview}</p>${tel}${rows ? `<div class="dp-info-row" style="margin-top:18px">${rows}</div>` : ''}`;
+      setDetailImages(detail.images?.length ? detail.images : [detail.image || p.image]);
+    } catch (error) {
+      desc.innerHTML = '<p style="color:#b91c1c">Unable to load details. Please try again later.</p>';
+      console.error('TourAPI detail error', error);
+    }
+  }
+
   function openDetail(p) {
     if (!p) return;
     const color = getCatColor(p.type);
     const _visitUrl = `https://english.visitkorea.or.kr/totalSearch/search.do?kwd=${encodeURIComponent(p.google_name)}&linkSrchFlag=Y`;
     document.getElementById('dpTitle').textContent = p.google_name ?? '-';
-    document.getElementById('dpImg').style.backgroundImage = `url('${p.image ?? ''}')`;
+    setDetailImages([p.image]);
     document.getElementById('dpName').textContent = p.google_name ?? '-';
     document.getElementById('dpSub').textContent = p.google_addr ?? '';
     document.getElementById('dpBadges').innerHTML =
@@ -562,19 +658,7 @@
       <div class="dp-info"><div class="dp-info-label">Distance</div><div class="dp-info-val">${distStr(p.distance)} away</div></div>
       <div class="dp-info"><div class="dp-info-label">Score</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
       <div class="dp-info"><div class="dp-info-label">Category</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
-    document.getElementById('dpDesc').innerHTML = `
-  <p style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;">
-    Get more details from Korea Tourism Organization.
-  </p>
-  <a href="${_visitUrl}" target="_blank" rel="noopener"
-     style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;
-            border-radius:50px;border:1.5px solid var(--blue);color:var(--blue);
-            font-size:13px;font-weight:700;text-decoration:none;background:#fff;
-            transition:all .2s;margin-bottom:8px;"
-     onmouseover="this.style.background='var(--blue)';this.style.color='#fff'"
-     onmouseout="this.style.background='#fff';this.style.color='var(--blue)'">
-    🏛️ Official Tourism Info
-  </a>`;
+    document.getElementById('dpDesc').innerHTML = '<p style="color:#64748b">Preparing details...</p>';
 
     const reviews = p.reviews ?? [];
     const avg = p.rating ?? 0;
@@ -635,6 +719,7 @@
     };
 
     document.getElementById('detailPanel').classList.add('open');
+    loadTourApiDetail(p);
   }
 
   function closeDetail() {
@@ -660,7 +745,7 @@
     const options = { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 };
     navigator.geolocation.getCurrentPosition(
             pos => { location.href = `/tour/mylocation/${pos.coords.latitude}/${pos.coords.longitude}?lang=${lang}`; },
-            err => { location.href = `/tour/mylocation/37.5665/126.9780?lang=${lang}`; },
+            err => { location.href = `/tour/mylocation/35.1796/129.0756?lang=${lang}`; },
             options
     );
   }
@@ -808,6 +893,11 @@
         selectPlace(listIdx);
       });
     });
+    if (markerMap.length > 0) {
+      const bounds = new kakao.maps.LatLngBounds();
+      markerMap.forEach(item => bounds.extend(item.marker.getPosition()));
+      map.setBounds(bounds, 48, 48, 48, 48);
+    }
     // 마커 등록 완료 후 현재 카테고리에 맞게 핀 표시
     updateMarkerVisibility();
   });

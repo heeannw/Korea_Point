@@ -60,7 +60,8 @@ public class SecurityConfig {
             )
             // H2 肄섏넄 ?묎렐???꾪븳 ?ㅼ젙
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**", "/api/comments/**", "/api/reports/**")
+                .ignoringRequestMatchers("/h2-console/**", "/api/comments/**", "/api/reports/**",
+                        "/api/trip/recommend", "/api/trip/reoptimize")
             )
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin()) // H2 肄섏넄 iframe ?덉슜
