@@ -1,7 +1,10 @@
 package com.example.demo.user.controller;
 
 import jakarta.servlet.http.HttpSession;
+import com.example.demo.user.entity.User;
+import com.example.demo.user.service.OwnerRequestService;
 import com.example.demo.user.service.UserService;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
 
     private final UserService userService;
+    private final OwnerRequestService ownerRequestService;
 
     // Spring Security OAuth2의 loginPage("/login")이 이 URL을 바라봄
     @GetMapping("/login")
@@ -32,6 +36,7 @@ public class UserController {
     }
 
     @PostMapping("/signup")
+    @Transactional
     public String signup(@RequestParam(defaultValue = "personal") String accountType,
                          @RequestParam String loginId,
                          @RequestParam String password,
@@ -56,30 +61,30 @@ public class UserController {
             if (!password.equals(passwordConfirm)) {
                 throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
             }
-            userService.registerLocalUser(
-                    accountType,
+            User user = userService.registerLocalUser(
                     loginId,
                     password,
                     name,
-                    email,
-                    storeName,
-                    businessRegistrationNumber,
-                    originalFilename(businessRegistrationFile),
-                    originalFilename(businessLicenseFile),
-                    originalFilename(menuFile)
+                    email
             );
+            if ("owner".equals(accountType)) {
+                ownerRequestService.apply(
+                        user.getId(),
+                        storeName,
+                        businessRegistrationNumber,
+                        businessRegistrationFile,
+                        businessLicenseFile,
+                        menuFile
+                );
+            }
             return "redirect:/login?registered=true&lang=" + selected;
         } catch (IllegalArgumentException ex) {
             model.addAttribute("signupError", ex.getMessage());
             return "user/login";
+        } catch (IllegalStateException ex) {
+            model.addAttribute("signupError", ex.getMessage());
+            return "user/login";
         }
-    }
-
-    private String originalFilename(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            return null;
-        }
-        return file.getOriginalFilename();
     }
 
     private boolean isSupportedLanguage(String language) {

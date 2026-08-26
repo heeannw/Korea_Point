@@ -32,55 +32,58 @@
         </div>
     </section>
 
-    <section class="profile-panel">
-        <div class="profile-main">
+    <section class="profile">
+        <div class="user-info">
             <div class="avatar" th:text="${currentUserName != null and !#strings.isEmpty(currentUserName) ? #strings.substring(currentUserName, 0, 1) : 'U'}">U</div>
             <div>
-                <div class="profile-name-row">
+                <div class="name-row">
                     <h2 th:text="${currentUserName}">User</h2>
-                    <span th:if="${isOwner}" class="owner-badge"
+                    <span th:if="${isOwner}" class="owner-mark"
                           th:text="${ownerStatus == 'APPROVED'} ? '인증 사업자' : '사업자 검토중'">사업자 검토중</span>
-                    <span th:unless="${isOwner}" class="user-badge">개인 여행자</span>
+                    <span th:unless="${isOwner}" class="user-mark">개인 여행자</span>
                 </div>
                 <p th:text="${user.email}">user@koreapoint.com</p>
             </div>
         </div>
-        <div class="profile-meta" th:if="${isOwner}">
+        <div class="point-box" th:if="${isOwner}">
             <span>홍보 포인트</span>
             <strong th:text="|${user.point}P|">1000P</strong>
         </div>
-        <div class="profile-meta" th:unless="${isOwner}">
+        <div class="point-box" th:unless="${isOwner}">
             <span>활동 상태</span>
             <strong>ACTIVE</strong>
         </div>
     </section>
 
-    <section class="metric-grid">
-        <article class="metric-card">
+    <div th:if="${ownerRequestMessage}" class="notice success" th:text="${ownerRequestMessage}">신청이 접수됐어요.</div>
+    <div th:if="${ownerRequestError}" class="notice error" th:text="${ownerRequestError}">신청 정보를 확인해 주세요.</div>
+
+    <section class="stats">
+        <article class="stat">
             <span>내 여행 일정</span>
             <strong th:text="${tripPlanCount}">0</strong>
             <p>저장한 추천 코스</p>
         </article>
-        <article class="metric-card">
+        <article class="stat">
             <span>예약 내역</span>
             <strong th:text="${reservationCount}">0</strong>
             <p>관광지 예약</p>
         </article>
-        <article class="metric-card">
+        <article class="stat">
             <span>작성한 글</span>
             <strong th:text="${postCount}">0</strong>
             <p>커뮤니티 게시글</p>
         </article>
-        <article class="metric-card">
+        <article class="stat">
             <span>계정 유형</span>
             <strong th:text="${isOwner} ? '사업자' : '개인'">개인</strong>
             <p th:text="${isOwner} ? '입점 관리 가능' : '여행자 계정'">여행자 계정</p>
         </article>
     </section>
 
-    <section class="content-grid">
-        <article class="panel wide">
-            <div class="panel-head">
+    <section class="contents">
+        <article class="box wide">
+            <div class="box-title">
                 <div>
                     <p class="eyebrow small">Trip Plan</p>
                     <h2>내 여행 일정</h2>
@@ -107,25 +110,25 @@
             </div>
         </article>
 
-        <article class="panel">
-            <div class="panel-head">
+        <article class="box">
+            <div class="box-title">
                 <div>
                     <p class="eyebrow small">Account</p>
                     <h2>계정 관리</h2>
                 </div>
             </div>
-            <div class="quick-list">
-                <a th:href="@{/community/post/write}" class="quick-action">커뮤니티 글쓰기</a>
-                <a th:href="@{/ko/reservation}" class="quick-action">예약하러 가기</a>
-                <a th:href="@{/ko/trip}" class="quick-action">여행 일정 만들기</a>
+            <div class="menu-list">
+                <a th:href="@{/community/post/write}" class="menu-btn">커뮤니티 글쓰기</a>
+                <a th:href="@{/ko/reservation}" class="menu-btn">예약하러 가기</a>
+                <a th:href="@{/ko/trip}" class="menu-btn">여행 일정 만들기</a>
                 <form th:action="@{/logout}" method="post">
-                    <button type="submit" class="quick-action logout">로그아웃</button>
+                    <button type="submit" class="menu-btn logout">로그아웃</button>
                 </form>
             </div>
         </article>
 
-        <article class="panel wide">
-            <div class="panel-head">
+        <article class="box wide">
+            <div class="box-title">
                 <div>
                     <p class="eyebrow small">Reservation</p>
                     <h2>예약 내역</h2>
@@ -149,31 +152,67 @@
             </div>
         </article>
 
-        <article class="panel" th:if="${isOwner}">
-            <div class="panel-head">
+        <article class="box" th:if="${isOwner}">
+            <div class="box-title">
                 <div>
                     <p class="eyebrow small">Business</p>
                     <h2>사업자 관리</h2>
                 </div>
             </div>
-            <div class="business-box">
-                <span class="owner-badge"
+            <div class="owner-box">
+                <span class="owner-mark"
                       th:text="${ownerStatus == 'APPROVED'} ? '인증 사업자' : '사업자 검토중'">사업자 검토중</span>
                 <p>입점 서류와 메뉴 정보를 검토 중이에요. 승인 후 가게 정보를 관리할 수 있어요.</p>
                 <a class="btn secondary full" th:href="@{/ko/mypage}">입점 정보 확인</a>
             </div>
         </article>
 
-        <article class="panel" th:unless="${isOwner}">
-            <div class="panel-head">
+        <article class="box" th:unless="${isOwner}">
+            <div class="box-title">
                 <div>
-                    <p class="eyebrow small">Community</p>
-                    <h2>커뮤니티 활동</h2>
+                    <p class="eyebrow small">Business</p>
+                    <h2>사업자 전환 신청</h2>
                 </div>
             </div>
-            <div class="business-box">
-                <p>내가 쓴 게시글은 총 <strong th:text="${postCount}">0</strong>개예요. 여행 팁이나 맛집 경험을 공유해보세요.</p>
-                <a class="btn secondary full" th:href="@{/community/post/write}">글쓰기</a>
+
+            <div class="owner-box" th:if="${hasPendingOwnerRequest}">
+                <span class="owner-mark">검토 대기</span>
+                <p>
+                    <strong th:text="${ownerRequest.storeName}">가게명</strong> 사업자 신청이 접수됐어요.
+                    승인되면 계정 권한이 사업자로 변경됩니다.
+                </p>
+            </div>
+
+            <div class="owner-box" th:if="${ownerStatus == 'REJECTED'}">
+                <span class="status-badge rejected">반려</span>
+                <p th:text="${ownerRequest.reviewComment != null and !#strings.isEmpty(ownerRequest.reviewComment) ? ownerRequest.reviewComment : '신청 정보가 반려됐어요. 내용을 보완해 다시 신청해 주세요.'}">
+                    신청 정보가 반려됐어요.
+                </p>
+            </div>
+
+            <form th:if="${!hasPendingOwnerRequest}" class="owner-form"
+                  th:action="@{/ko/mypage/owner-application}" method="post" enctype="multipart/form-data">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input name="storeName" type="text" placeholder="가게명" required>
+                <input name="businessRegistrationNumber" type="text" placeholder="사업자등록번호" required>
+                <label>
+                    <span>사업자등록증</span>
+                    <input name="businessRegistrationFile" type="file" required>
+                </label>
+                <label>
+                    <span>영업신고증</span>
+                    <input name="businessLicenseFile" type="file" required>
+                </label>
+                <label>
+                    <span>메뉴판 또는 메뉴 정보</span>
+                    <input name="menuFile" type="file" required>
+                </label>
+                <button type="submit" class="btn full">사업자 전환 신청</button>
+            </form>
+
+            <div class="owner-box write-box">
+                <p>내가 쓴 게시글은 총 <strong th:text="${postCount}">0</strong>개예요.</p>
+                <a class="btn secondary full" th:href="@{/community/post/write}">커뮤니티 글쓰기</a>
             </div>
         </article>
     </section>

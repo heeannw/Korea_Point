@@ -41,10 +41,7 @@ public class UserService {
     }
 
     @Transactional
-    public User registerLocalUser(String accountType, String loginId, String password, String name,
-                                  String email, String storeName, String businessRegistrationNumber,
-                                  String businessRegistrationFileName, String businessLicenseFileName,
-                                  String menuFileName) {
+    public User registerLocalUser(String loginId, String password, String name, String email) {
         String normalizedLoginId = requireText(loginId, "아이디를 입력해 주세요.");
         String normalizedPassword = requireText(password, "비밀번호를 입력해 주세요.");
         validateLoginId(normalizedLoginId);
@@ -54,33 +51,14 @@ public class UserService {
             throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
         }
 
-        boolean owner = "owner".equals(accountType);
-        if (owner && !StringUtils.hasText(storeName)) {
-            throw new IllegalArgumentException("가게명을 입력해 주세요.");
-        }
-        if (owner && !StringUtils.hasText(businessRegistrationNumber)) {
-            throw new IllegalArgumentException("사업자등록번호를 입력해 주세요.");
-        }
-        if (owner && (!StringUtils.hasText(businessRegistrationFileName)
-                || !StringUtils.hasText(businessLicenseFileName)
-                || !StringUtils.hasText(menuFileName))) {
-            throw new IllegalArgumentException("입점에 필요한 서류를 모두 등록해 주세요.");
-        }
-
         return userRepository.save(User.builder()
                 .provider("local")
                 .providerId(normalizedLoginId)
                 .password(passwordEncoder.encode(normalizedPassword))
                 .name(requireText(name, "이름을 입력해 주세요."))
                 .email(requireText(email, "이메일을 입력해 주세요."))
-                .role(owner ? "OWNER" : "USER")
-                .point(owner ? 1000 : 0)
-                .storeName(owner ? storeName : null)
-                .businessRegistrationNumber(owner ? businessRegistrationNumber : null)
-                .businessRegistrationFileName(owner ? businessRegistrationFileName : null)
-                .businessLicenseFileName(owner ? businessLicenseFileName : null)
-                .menuFileName(owner ? menuFileName : null)
-                .ownerVerificationStatus(owner ? "PENDING" : null)
+                .role("USER")
+                .point(0)
                 .build());
     }
 

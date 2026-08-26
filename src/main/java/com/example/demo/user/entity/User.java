@@ -63,24 +63,6 @@ public class User {
     @Builder.Default
     private String role = "USER";
 
-    @Column(length = 30)
-    private String ownerVerificationStatus;
-
-    @Column(length = 80)
-    private String businessRegistrationNumber;
-
-    @Column(length = 120)
-    private String storeName;
-
-    @Column(length = 200)
-    private String businessRegistrationFileName;
-
-    @Column(length = 200)
-    private String businessLicenseFileName;
-
-    @Column(length = 200)
-    private String menuFileName;
-
     // 사업자 홍보 게시글 작성 시 사용하는 포인트
     @Column(nullable = false)
     @Builder.Default

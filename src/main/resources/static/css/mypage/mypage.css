@@ -76,8 +76,8 @@ header {
 }
 
 .page-head,
-.profile-panel,
-.panel-head,
+.profile,
+.box-title,
 .reservation-card {
     display: flex;
     justify-content: space-between;
@@ -157,21 +157,21 @@ h2 {
     width: 100%;
 }
 
-.profile-panel,
-.panel,
-.metric-card {
+.profile,
+.box,
+.stat {
     border: 1px solid #dbeafe;
     border-radius: 8px;
     background: #ffffff;
     box-shadow: 0 8px 26px rgba(59, 158, 255, 0.08);
 }
 
-.profile-panel {
+.profile {
     margin-bottom: 18px;
     padding: 22px;
 }
 
-.profile-main {
+.user-info {
     display: flex;
     align-items: center;
     gap: 16px;
@@ -189,20 +189,20 @@ h2 {
     font-weight: 900;
 }
 
-.profile-name-row {
+.name-row {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
 }
 
-.profile-name-row h2 {
+.name-row h2 {
     font-size: 24px;
 }
 
-.profile-main p,
-.business-box p,
-.metric-card p,
+.user-info p,
+.owner-box p,
+.stat p,
 .list-item p,
 .reservation-card p {
     margin-bottom: 0;
@@ -210,8 +210,8 @@ h2 {
     line-height: 1.6;
 }
 
-.owner-badge,
-.user-badge,
+.owner-mark,
+.user-mark,
 .status-badge,
 .chip {
     display: inline-flex;
@@ -223,76 +223,96 @@ h2 {
     font-weight: 800;
 }
 
-.owner-badge {
+.owner-mark {
     border: 1px solid #bae6fd;
     background: #eff6ff;
     color: #1a7de0;
 }
 
-.user-badge,
+.user-mark,
 .chip {
     border: 1px solid #e2e8f0;
     background: #f8fafc;
     color: #475569;
 }
 
-.profile-meta {
+.point-box {
     display: grid;
     gap: 5px;
     text-align: right;
 }
 
-.profile-meta span {
+.point-box span {
     color: #64748b;
     font-size: 13px;
     font-weight: 700;
 }
 
-.profile-meta strong {
+.point-box strong {
     color: #1a7de0;
     font-size: 24px;
 }
 
-.metric-grid {
+.notice {
+    margin: 0 0 18px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.notice.success {
+    border: 1px solid #bae6fd;
+    background: #eff6ff;
+    color: #1a7de0;
+}
+
+.notice.error {
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.stats {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 14px;
     margin-bottom: 18px;
 }
 
-.metric-card {
+.stat {
     padding: 18px;
 }
 
-.metric-card span {
+.stat span {
     color: #64748b;
     font-size: 13px;
     font-weight: 800;
 }
 
-.metric-card strong {
+.stat strong {
     display: block;
     margin: 10px 0 4px;
     font-size: 28px;
     line-height: 1;
 }
 
-.content-grid {
+.contents {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 320px;
     gap: 18px;
     align-items: start;
 }
 
-.panel {
+.box {
     padding: 20px;
 }
 
-.panel.wide {
+.box.wide {
     min-width: 0;
 }
 
-.panel-head {
+.box-title {
     margin-bottom: 16px;
     align-items: flex-start;
 }
@@ -305,7 +325,7 @@ h2 {
 
 .item-list,
 .reservation-list,
-.quick-list {
+.menu-list {
     display: grid;
     gap: 10px;
 }
@@ -368,7 +388,13 @@ h2 {
     color: #1a7de0;
 }
 
-.quick-action {
+.status-badge.rejected {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.menu-btn {
     width: 100%;
     min-height: 42px;
     display: inline-flex;
@@ -383,17 +409,66 @@ h2 {
     cursor: pointer;
 }
 
-.quick-action.logout {
+.menu-btn.logout {
     color: #64748b;
 }
 
-.quick-list form {
+.menu-list form {
     margin: 0;
 }
 
-.business-box {
+.owner-box {
     display: grid;
     gap: 14px;
+}
+
+.write-box {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #eef5ff;
+}
+
+.owner-form {
+    display: grid;
+    gap: 10px;
+}
+
+.owner-form input[type="text"] {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    padding: 0 12px;
+    color: #0f172a;
+    outline: none;
+}
+
+.owner-form input[type="text"]:focus {
+    border-color: #3b9eff;
+}
+
+.owner-form label {
+    display: grid;
+    gap: 6px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.owner-form input[type="file"] {
+    width: 100%;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.owner-form input[type="file"]::file-selector-button {
+    margin-right: 10px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #1a7de0;
+    padding: 8px 12px;
+    font-weight: 800;
 }
 
 @media (max-width: 900px) {
@@ -411,18 +486,18 @@ h2 {
     }
 
     .page-head,
-    .profile-panel {
+    .profile {
         display: block;
     }
 
     .head-actions,
-    .profile-meta {
+    .point-box {
         margin-top: 16px;
         text-align: left;
     }
 
-    .metric-grid,
-    .content-grid {
+    .stats,
+    .contents {
         grid-template-columns: 1fr;
     }
 }
