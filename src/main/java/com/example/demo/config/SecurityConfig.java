@@ -59,11 +59,8 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/")
             )
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**", "/api/comments/**", "/api/reports/**",
+                .ignoringRequestMatchers("/api/comments/**", "/api/reports/**",
                         "/api/trip/recommend", "/api/trip/reoptimize")
-            )
-            .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin()) // H2 肄섏넄 iframe ?덉슜
             );
 
         return http.build();
