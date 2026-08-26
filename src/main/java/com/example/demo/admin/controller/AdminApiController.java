@@ -10,6 +10,8 @@ import com.example.demo.community.entity.ContentReportReason;
 import com.example.demo.community.entity.ContentReportStatus;
 import com.example.demo.community.entity.ReportTargetType;
 import com.example.demo.user.entity.AccountStatus;
+import com.example.demo.user.entity.OwnerRequest;
+import com.example.demo.user.service.OwnerRequestService;
 import com.example.demo.user.util.SecurityUtil;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.validation.Valid;
@@ -40,6 +42,7 @@ import java.util.Map;
 public class AdminApiController {
 
     private final AdminService adminService;
+    private final OwnerRequestService ownerRequestService;
 
     @GetMapping("/dashboard")
     public AdminDto.DashboardResponse dashboard() {
@@ -74,6 +77,27 @@ public class AdminApiController {
     public AdminDto.UserActionResponse updateAccountStatus(@PathVariable Long id,
                                                            @Valid @RequestBody AdminDto.AccountStatusUpdateRequest request) {
         return adminService.updateUserAccountStatus(SecurityUtil.getCurrentUserId(), id, request);
+    }
+
+    @GetMapping("/owner-applications/pending")
+    public List<Map<String, Object>> pendingOwnerRequests() {
+        return ownerRequestService.findPendingRequests().stream()
+                .map(this::toOwnerRequestItem)
+                .toList();
+    }
+
+    @PostMapping("/owner-applications/{id}/approve")
+    public Map<String, Object> approveOwnerRequest(@PathVariable Long id,
+                                                       @RequestBody(required = false) Map<String, String> request) {
+        ownerRequestService.approve(id, request == null ? null : request.get("reviewComment"));
+        return Map.of("id", id, "status", "APPROVED", "message", "사업자 신청을 승인했습니다.");
+    }
+
+    @PostMapping("/owner-applications/{id}/reject")
+    public Map<String, Object> rejectOwnerRequest(@PathVariable Long id,
+                                                      @RequestBody(required = false) Map<String, String> request) {
+        ownerRequestService.reject(id, request == null ? null : request.get("reviewComment"));
+        return Map.of("id", id, "status", "REJECTED", "message", "사업자 신청을 반려했습니다.");
     }
 
     @GetMapping("/posts")
@@ -207,5 +231,21 @@ public class AdminApiController {
             message = "지원하지 않는 값이 포함되어 있습니다.";
         }
         return ResponseEntity.badRequest().body(Map.of("message", message));
+    }
+
+    private Map<String, Object> toOwnerRequestItem(OwnerRequest request) {
+        Map<String, Object> item = new HashMap<>();
+        item.put("id", request.getId());
+        item.put("userId", request.getUser().getId());
+        item.put("userName", request.getUser().getName());
+        item.put("userEmail", request.getUser().getEmail());
+        item.put("storeName", request.getStoreName());
+        item.put("businessRegistrationNumber", request.getBusinessRegistrationNumber());
+        item.put("businessRegistrationFilePath", request.getBusinessRegistrationFilePath());
+        item.put("businessLicenseFilePath", request.getBusinessLicenseFilePath());
+        item.put("menuFilePath", request.getMenuFilePath());
+        item.put("status", request.getStatus().name());
+        item.put("createdAt", request.getCreatedAt());
+        return item;
     }
 }

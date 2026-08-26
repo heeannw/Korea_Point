@@ -958,7 +958,7 @@
             <option value="zh-CN">中文</option>
         </select>
         <th:block th:if="${isLoggedIn}">
-            <span class="h-btn" th:text="${currentUserName}">사용자</span>
+            <a th:href="@{/ko/mypage}" href="/ko/mypage" class="h-btn" th:text="${currentUserName}">사용자</a>
             <a th:if="${isAdmin}" th:href="@{/admin}" href="/admin" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">

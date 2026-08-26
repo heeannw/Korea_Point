@@ -3,6 +3,7 @@ package com.example.demo.trip.controller;
 import com.example.demo.trip.dto.PlaceDetailDto;
 import com.example.demo.trip.dto.TripRecommendRequest;
 import com.example.demo.trip.dto.TripRecommendResponse;
+import com.example.demo.trip.dto.TripReoptimizeRequest;
 import com.example.demo.trip.service.TripRecommendService;
 import com.example.demo.user.util.SecurityUtil;               // ✅ 추가
 import lombok.RequiredArgsConstructor;
@@ -79,6 +80,12 @@ public class TripController {
     public ResponseEntity<TripRecommendResponse> recommend(
             @RequestBody TripRecommendRequest req) {
         return ResponseEntity.ok(tripRecommendService.recommend(req));
+    }
+
+    @PostMapping("/api/trip/reoptimize")
+    @ResponseBody
+    public ResponseEntity<TripRecommendResponse> reoptimize(@RequestBody TripReoptimizeRequest request) {
+        return ResponseEntity.ok(tripRecommendService.reoptimize(request));
     }
 
     // ── REST: 장소 상세 (GET /api/trip/place/{id}) ──

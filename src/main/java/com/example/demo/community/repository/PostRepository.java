@@ -95,6 +95,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     long countByDeletedAtIsNull();
 
+    long countByUser_IdAndDeletedAtIsNull(Long userId);
+
     List<Post> findAllByDeletedAtIsNotNullAndDeletedAtBefore(LocalDateTime deletedAt);
 
     // 議고쉶??+1

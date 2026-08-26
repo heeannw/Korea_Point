@@ -29,6 +29,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);
 .day-btn{padding:5px 14px;border-radius:50px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s}
 .day-btn:hover{border-color:var(--blue);color:var(--blue)}
 .day-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.trip-insight{padding:10px 14px;border-bottom:1px solid var(--border);background:#f8fbff;font-size:11px;line-height:1.5;color:var(--mid);max-height:132px;overflow-y:auto}
+.weather-line{font-weight:700;color:#1d4ed8}
+.air-line{margin-top:4px;font-weight:700;color:#0f766e}
+.health-line{margin-top:4px;font-weight:700;color:#b45309}
+.reoptimize-btn{width:100%;margin-top:7px;border:0;border-radius:8px;padding:7px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;cursor:pointer}
+.reoptimize-btn:disabled{opacity:.6;cursor:wait}
+.slot-lock{display:flex;align-items:center;gap:5px;margin:4px 0;font-size:10px;color:var(--gray);cursor:pointer}.slot-lock span{color:#0f766e;font-weight:700}
+.warning-line{margin-top:5px;padding:6px 8px;border-radius:8px;background:#fff7ed;color:#c2410c;font-weight:700}
+.ai-line{margin-top:5px;color:var(--gray)}
 
 .tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
 .tab-btn{flex:1;padding:11px 4px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--gray);font-family:'DM Sans',sans-serif;transition:color .2s}

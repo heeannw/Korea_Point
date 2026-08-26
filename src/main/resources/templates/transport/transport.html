@@ -61,7 +61,7 @@
         </a>
 
         <th:block th:if="${isLoggedIn}">
-            <span class="h-btn" th:text="${currentUserName}"></span>
+            <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
             <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
                 <button type="submit" class="h-btn h-btn-fill">Logout</button>

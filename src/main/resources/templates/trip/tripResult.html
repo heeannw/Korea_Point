@@ -26,7 +26,7 @@
         <th:block th:if="${isLoggedIn}">
             <button type="button" class="h-btn h-btn-save" id="savePlanBtn" onclick="saveTripPlan()">일정 저장</button>
             <a href="/ko/trip/plans" class="h-btn">내 일정</a>
-            <span class="h-btn" th:text="${currentUserName}"></span>
+            <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
             <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
                 <button type="submit" class="h-btn h-btn-fill">Logout</button>
@@ -48,6 +48,14 @@
             <span class="trip-meta" id="tripMeta">로딩 중...</span>
         </div>
         <div class="day-selector" id="daySelector"></div>
+        <div class="trip-insight" id="tripInsight" hidden>
+            <div class="weather-line" id="weatherLine"></div>
+            <div class="air-line" id="airLine" hidden></div>
+            <div class="health-line" id="healthLine" hidden></div>
+            <div class="warning-line" id="warningLine" hidden></div>
+            <div class="ai-line" id="aiLine"></div>
+            <button type="button" class="reoptimize-btn" id="reoptimizeBtn" onclick="reoptimizeRemaining()">현재 날씨로 남은 일정 다시 짜기</button>
+        </div>
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('schedule',this)">📅 일정</button>
             <button class="tab-btn" onclick="switchTab('tourism',this)">🏛️ 관광</button>
@@ -247,6 +255,8 @@
     };
 
     let tripResult = null, tripRequest = null, currentDay = 1;
+    let completedPlaces = new Set(JSON.parse(sessionStorage.getItem('completedTripPlaces') || '[]'));
+    let reservedPlaces = new Set();
     let myLoc = null, activeOverlays = [], activeLines = [], dayCache = {};
 
     /* ─── 내 위치 ─── */
@@ -462,6 +472,7 @@
     function renderSchedule(day) {
         const dayData = tripResult.schedule.find(d => d.day === day);
         if (!dayData) return;
+        renderTripInsight(dayData);
         document.getElementById('scheduleList').innerHTML = dayData.slots.map((slot, idx) => {
             const cfg = CAT[slot.category] || CAT.tourism;
             const isLast = idx === dayData.slots.length - 1;
@@ -474,6 +485,10 @@
           <div class="slot-info">
             <div class="slot-time">${slot.time} · ${cfg.label}${slot.durationMinutes ? ` · ${slot.durationMinutes}분` : ''}</div>
             <div class="slot-name">${slot.placeName}</div>
+            <label class="slot-lock" onclick="event.stopPropagation()">
+              <input type="checkbox" ${completedPlaces.has(slot.placeName) ? 'checked' : ''} onchange="toggleCompleted('${slot.placeName.replaceAll("'", "\\'")}', this.checked)">
+              방문 완료 ${reservedPlaces.has(slot.placeName) || slot.locked ? `<span>🔒 ${slot.lockReason || '예약 장소'}</span>` : ''}
+            </label>
             <div class="slot-reason">${slot.reason || ''}</div>
             <div class="slot-score">score ${(slot.score||0).toFixed(4)}</div>
             ${slot.alternatives?.length
@@ -489,6 +504,63 @@
           </div>
         </div>`;
         }).join('') || '<div class="empty-msg">슬롯이 없어요</div>';
+    }
+
+    function renderTripInsight(dayData) {
+        const box = document.getElementById('tripInsight');
+        const w = dayData.weather;
+        document.getElementById('weatherLine').textContent = w
+            ? `${weatherIcon(w)} Day ${dayData.day} · ${Math.round(w.temperature)}℃ · 강수 ${w.rainProbability}% · 바람 ${w.windSpeed.toFixed(1)}m/s · ${tripResult.forecastIssuedAt || ''} 발표`
+            : `🌦️ Day ${dayData.day} · 제공 가능한 단기예보가 없습니다.`;
+        const warning = document.getElementById('warningLine');
+        warning.hidden = !tripResult.weatherWarning;
+        warning.textContent = tripResult.weatherWarning ? `⚠️ ${tripResult.weatherWarning}` : '';
+        const air = document.getElementById('airLine');
+        air.hidden = !tripResult.airQuality;
+        air.textContent = tripResult.airQuality
+            ? `😷 부산 대기질 ${tripResult.airQuality.grade} · PM10 ${tripResult.airQuality.pm10} · PM2.5 ${tripResult.airQuality.pm25}` : '';
+        const health = document.getElementById('healthLine');
+        health.hidden = !tripResult.healthRisk;
+        health.textContent = tripResult.healthRisk
+            ? `☀️ 자외선 ${tripResult.healthRisk.uvLevel}${tripResult.healthRisk.uvIndex != null ? `(${tripResult.healthRisk.uvIndex})` : ''}${tripResult.healthRisk.heatRisk ? ` · 폭염 ${tripResult.healthRisk.heatRisk}` : ''}${tripResult.healthRisk.coldRisk ? ` · 한파 ${tripResult.healthRisk.coldRisk}` : ''}` : '';
+        document.getElementById('aiLine').textContent = tripResult.aiSummary ? `✨ ${tripResult.aiSummary}` : '';
+        box.hidden = false;
+    }
+
+    function weatherIcon(w) {
+        if (w.precipitationType === 'SNOW' || w.precipitationType === 'RAIN_SNOW') return '🌨️';
+        if (w.precipitationType === 'RAIN' || w.precipitationType === 'SHOWER' || w.rainProbability >= 50) return '🌧️';
+        if (w.sky === 'CLEAR') return '☀️';
+        if (w.sky === 'CLOUDY') return '⛅';
+        return '☁️';
+    }
+
+    function toggleCompleted(placeName, checked) {
+        checked ? completedPlaces.add(placeName) : completedPlaces.delete(placeName);
+        sessionStorage.setItem('completedTripPlaces', JSON.stringify([...completedPlaces]));
+    }
+
+    async function loadReservedPlaces() {
+        try {
+            const response = await fetch('/api/trip/reservation/list');
+            if (!response.ok) return;
+            const reservations = await response.json();
+            reservedPlaces = new Set(reservations.filter(r => !['CANCELLED','REJECTED'].includes(r.status)).map(r => r.placeName));
+        } catch (_) {}
+    }
+
+    async function reoptimizeRemaining() {
+        const button = document.getElementById('reoptimizeBtn');
+        button.disabled = true; button.textContent = '재조정 중...';
+        try {
+            const response = await fetch('/api/trip/reoptimize', {method:'POST', headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({request:tripRequest, current:tripResult, completedPlaceNames:[...completedPlaces], reservedPlaceNames:[...reservedPlaces]})});
+            if (!response.ok) throw new Error('재조정 실패');
+            tripResult = await response.json();
+            sessionStorage.setItem('tripResult', JSON.stringify(tripResult));
+            buildDaySelector(tripResult.schedule); await drawDay(currentDay);
+        } catch (e) { alert(e.message); }
+        finally { button.disabled = false; button.textContent = '현재 날씨로 남은 일정 다시 짜기'; }
     }
 
     function focusSlot(idx) {
@@ -752,7 +824,7 @@
     }
 
     /* ─── 초기화 ─── */
-    window.addEventListener('load', () => {
+    window.addEventListener('load', async () => {
         const raw = sessionStorage.getItem('tripResult');
         if (!raw) {
             document.getElementById('scheduleList').innerHTML =
@@ -761,6 +833,7 @@
         }
         tripResult  = JSON.parse(raw);
         tripRequest = JSON.parse(sessionStorage.getItem('tripRequest') || '{}');
+        await loadReservedPlaces();
 
         const days = tripRequest.travelDays || tripResult.schedule.length;
         const area = (tripRequest.preferredAreas||[]).slice(0,2).join(', ') || '부산';

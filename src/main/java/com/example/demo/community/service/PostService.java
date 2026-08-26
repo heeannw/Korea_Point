@@ -98,6 +98,9 @@ public class PostService {
         Post saved = postRepository.save(post);
 
         if ("홍보".equals(category.getName())) {
+            if (!"OWNER".equals(user.getRole())) {
+                throw new IllegalStateException("홍보 글은 사업자 회원만 작성할 수 있습니다.");
+            }
             if (user.getPoint() < 500) {
                 throw new IllegalStateException("포인트가 부족합니다. (필요: 500P, 보유: " + user.getPoint() + "P)");
             }

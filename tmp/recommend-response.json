@@ -1,0 +1,711 @@
+{
+    "tourismList":  [
+                        {
+                            "name":  "i?¢¥i?¢¥e?€i?¢¥i??i??i?¡Í",
+                            "score":  4.76,
+                            "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                            "category":  null,
+                            "lat":  35.1587,
+                            "lng":  129.1604,
+                            "address":  "e¢Ò€i?¡Æ i?¢¥i?¢¥e?€e¥ì¡þ i?¡Æe??",
+                            "imageUrl":  "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400",
+                            "avgRating":  4.7,
+                            "reviewCount":  0
+                        },
+                        {
+                            "name":  "e¢¥?i??e|¡þi?¢¥i??i??i?¡Í",
+                            "score":  4.76,
+                            "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                            "category":  null,
+                            "lat":  35.1532,
+                            "lng":  129.1187,
+                            "address":  "e¢Ò€i?¡Æ i??i??e¥ì¡þ e¢¥?i??i?¢¥e©ø€e¢®?",
+                            "imageUrl":  "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400",
+                            "avgRating":  4.7,
+                            "reviewCount":  0
+                        },
+                        {
+                            "name":  "i?¢¥e??i?¨Ïe¢Ò?i?¡þ",
+                            "score":  4.76,
+                            "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                            "category":  null,
+                            "lat":  35.1883,
+                            "lng":  129.2233,
+                            "address":  "e¢Ò€i?¡Æ e¢¬¡Æi?¡Íe¥ì¡Æ i?¨Ïe¢Ò?e¢¬¢¬",
+                            "imageUrl":  "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=400",
+                            "avgRating":  4.7,
+                            "reviewCount":  0
+                        },
+                        {
+                            "name":  "e©÷?i?¢¥i?¡þ",
+                            "score":  4.76,
+                            "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                            "category":  null,
+                            "lat":  35.2839,
+                            "lng":  129.0684,
+                            "address":  "e¢Ò€i?¡Æ e¢¬?i??e¥ì¡þ e©÷?i?¢¥i?¡þe¢®?",
+                            "imageUrl":  "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400",
+                            "avgRating":  4.7,
+                            "reviewCount":  0
+                        },
+                        {
+                            "name":  "e¡Æ?i©÷?e¡þ¢¬i??e¡×?i??",
+                            "score":  4.66,
+                            "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                            "category":  null,
+                            "lat":  35.0975,
+                            "lng":  129.0106,
+                            "address":  "e¢Ò€i?¡Æ i?¡þi??e¥ì¡þ e¡Æ?e?¢¥2e¢®?",
+                            "imageUrl":  "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=400",
+                            "avgRating":  4.6,
+                            "reviewCount":  0
+                        },
+                        {
+                            "name":  "i??i¡Ë\u0085e?€i??i??i¡×€",
+                            "score":  4.66,
+                            "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                            "category":  null,
+                            "lat":  35.0526,
+                            "lng":  129.0872,
+                            "address":  "e¢Ò€i?¡Æ i??e??e¥ì¡þ i??e¡×?e¢®?",
+                            "imageUrl":  "https://images.unsplash.com/photo-1537047902294-62a40c20a6ae?w=400",
+                            "avgRating":  4.6,
+                            "reviewCount":  0
+                        },
+                        {
+                            "name":  "i?¢®e??i?¢¥i??i¨ù€i?¢¥e¢¬?i©ö¢¥",
+                            "score":  4.66,
+                            "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                            "category":  null,
+                            "lat":  35.0764,
+                            "lng":  129.0238,
+                            "address":  "e¢Ò€i?¡Æ i??e¥ì¡þ i?¢®e??i?¢¥e©ø€e¢®?",
+                            "imageUrl":  "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=400",
+                            "avgRating":  4.6,
+                            "reviewCount":  0
+                        },
+                        {
+                            "name":  "i?¡Æi?¡þi?¢¬e¡þ¢¬i??e¡×?i??",
+                            "score":  4.66,
+                            "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                            "category":  null,
+                            "lat":  35.0787,
+                            "lng":  129.0444,
+                            "address":  "e¢Ò€i?¡Æ i??e??e¥ì¡þ i??i??e??4e¡Æ€",
+                            "imageUrl":  "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=400",
+                            "avgRating":  4.6,
+                            "reviewCount":  0
+                        },
+                        {
+                            "name":  "e??e¡Æ¡¾i?¡þ",
+                            "score":  4.66,
+                            "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                            "category":  null,
+                            "lat":  35.1527,
+                            "lng":  129.1521,
+                            "address":  "e¢Ò€i?¡Æ i?¢¥i?¢¥e?€e¥ì¡þ i?¡Æe??",
+                            "imageUrl":  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400",
+                            "avgRating":  4.6,
+                            "reviewCount":  0
+                        },
+                        {
+                            "name":  "i??i??i??i??e?©ö",
+                            "score":  4.66,
+                            "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                            "category":  null,
+                            "lat":  35.171,
+                            "lng":  129.127,
+                            "address":  "e¢Ò€i?¡Æ i?¢¥i?¢¥e?€e¥ì¡þ i??i??e¡Æ?e©ø€e?€e¢®?",
+                            "imageUrl":  "https://images.unsplash.com/photo-1424847651672-bf20a4b0982b?w=400",
+                            "avgRating":  4.6,
+                            "reviewCount":  0
+                        }
+                    ],
+    "foodList":  [
+                     {
+                         "name":  "i?¢¥i?¢¥e?€i??i??e¡Æ?e©ö?i¡×?",
+                         "score":  4.5,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.1631,
+                         "lng":  129.1667,
+                         "address":  "e¢Ò€i?¡Æ i?¢¥i?¢¥e?€",
+                         "imageUrl":  "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400",
+                         "avgRating":  4.5,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "i¢¥?e??e¡Æ€e¨Ï¢¥",
+                         "score":  4.5,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.1143,
+                         "lng":  129.0393,
+                         "address":  "e¢Ò€i?¡Æ e¢Ò€i?¡Æi?¡©",
+                         "imageUrl":  "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400",
+                         "avgRating":  4.5,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "e©ø¢¬i??e?¨ùi¡×€e¥ì¡©e¡Æ¡Í",
+                         "score":  4.5,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.116,
+                         "lng":  129.0395,
+                         "address":  "e¢Ò€i?¡Æ e¢Ò€i?¡Æi?¡©",
+                         "imageUrl":  "https://images.unsplash.com/photo-1547592180-85f173990554?w=400",
+                         "avgRating":  4.5,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "i??e¡×¢´e¡Æ€i?¨ùe¡Æ€e¨Ï¢¥",
+                         "score":  4.5,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.1516,
+                         "lng":  129.0592,
+                         "address":  "e¢Ò€i?¡Æ i??e¨Ï¢¥",
+                         "imageUrl":  "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
+                         "avgRating":  4.5,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "e??e??i??e¡×¢´i??i??",
+                         "score":  4.5,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.2183,
+                         "lng":  129.087,
+                         "address":  "e¢Ò€i?¡Æ e??e??",
+                         "imageUrl":  "https://images.unsplash.com/photo-1547592180-85f173990554?w=400",
+                         "avgRating":  4.5,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "i??i¢®¡Æ18e©÷?i??e?©ö",
+                         "score":  4.5,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.1022,
+                         "lng":  129.0307,
+                         "address":  "e¢Ò€i?¡Æ e?¡§i?¡þe??",
+                         "imageUrl":  "https://images.unsplash.com/photo-1583623025817-d180a2221d0a?w=400",
+                         "avgRating":  4.5,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "i??e¡Æ?i©ö?i??i?¡Í i??i?¨ùi?¡Æ",
+                         "score":  4.5,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.0967,
+                         "lng":  129.0305,
+                         "address":  "e¢Ò€i?¡Æ e?¡§i?¡þe??",
+                         "imageUrl":  "https://images.unsplash.com/photo-1510130387422-82bed34b37e9?w=400",
+                         "avgRating":  4.5,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "e¢¬¡Æi?¡Íi??i?¡Í e?€e©÷?e©ø¡§e¨£¨Ï",
+                         "score":  4.5,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.2446,
+                         "lng":  129.2157,
+                         "address":  "e¢Ò€i?¡Æ e¢¬¡Æi?¡Í",
+                         "imageUrl":  "https://images.unsplash.com/photo-1558030006-450675393462?w=400",
+                         "avgRating":  4.5,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "e¢¥?i??e|¡þ e?¨ùe?¨öi??i?€i?¢¥",
+                         "score":  4.5,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.1551,
+                         "lng":  129.1256,
+                         "address":  "e¢Ò€i?¡Æ e¢¥?i??e|¡þ",
+                         "imageUrl":  "https://images.unsplash.com/photo-1558030006-450675393462?w=400",
+                         "avgRating":  4.5,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "i?¢®i??3e?€e¥ì¡©e¡Æ¡Í",
+                         "score":  4.5,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.1581,
+                         "lng":  129.0577,
+                         "address":  "e¢Ò€i?¡Æ i??e¨Ï¢¥",
+                         "imageUrl":  "https://images.unsplash.com/photo-1583623025817-d180a2221d0a?w=400",
+                         "avgRating":  4.5,
+                         "reviewCount":  0
+                     }
+                 ],
+    "cafeList":  [
+                     {
+                         "name":  "e¨£¡§e¨£¡§i?¢´i¡í¢´i?¨ù e©ø¢¬i??",
+                         "score":  4.6,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.2202,
+                         "lng":  129.0865,
+                         "address":  "e¢Ò€i?¡Æ e¢¬?i??e¥ì¡þ i?¢´i??e©÷?e¢®?",
+                         "imageUrl":  "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400",
+                         "avgRating":  4.6,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "i?¡§i?¢¥e¢¬?i?¡§ i¡í¢´i?¨ù",
+                         "score":  4.5,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.3027,
+                         "lng":  129.2615,
+                         "address":  "e¢Ò€i?¡Æ e¢¬¡Æi?¡Íe¥ì¡Æ i?¢¥e¡×?i?¢¥e¢®?",
+                         "imageUrl":  "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
+                         "avgRating":  4.5,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "i©ö¢¥i?? e¡Ì¡§i??i??",
+                         "score":  4.4,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.178,
+                         "lng":  129.199,
+                         "address":  "e¢Ò€i?¡Æ i?¢¥i?¢¥e?€e¥ì¡þ i?¢®i??e¢¥?i?¢¥e©ø¡§e¢®?",
+                         "imageUrl":  "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=400",
+                         "avgRating":  4.4,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "i?¡Æi?¡þi?¢¬e©ö?i©ö?",
+                         "score":  4.4,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.0785,
+                         "lng":  129.0448,
+                         "address":  "e¢Ò€i?¡Æ i??e??e¥ì¡þ i??i??e¢®?",
+                         "imageUrl":  "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=400",
+                         "avgRating":  4.4,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "i?¡þi?¢´i?¢´ i??e??",
+                         "score":  4.4,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.091,
+                         "lng":  129.0481,
+                         "address":  "e¢Ò€i?¡Æ i??e??e¥ì¡þ e?€e¥ì?e¢®?",
+                         "imageUrl":  "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=400",
+                         "avgRating":  4.4,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "i??i\u0085?e¡Í¢¥",
+                         "score":  4.4,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.0792,
+                         "lng":  129.0447,
+                         "address":  "e¢Ò€i?¡Æ i??e??e¥ì¡þ i??i??e¢®?",
+                         "imageUrl":  "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
+                         "avgRating":  4.4,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "e¢¬?e??i?\u0085i¡í¢´i?¨ù i?¢¥i?¢¥e?€",
+                         "score":  4.4,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.16,
+                         "lng":  129.1615,
+                         "address":  "e¢Ò€i?¡Æ i?¢¥i?¢¥e?€e¥ì¡þ",
+                         "imageUrl":  "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400",
+                         "avgRating":  4.4,
+                         "reviewCount":  0
+                     },
+                     {
+                         "name":  "i??i??e©÷¨öi??",
+                         "score":  4.4,
+                         "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                         "category":  null,
+                         "lat":  35.161,
+                         "lng":  129.1634,
+                         "address":  "e¢Ò€i?¡Æ i?¢¥i?¢¥e?€e¥ì¡þ",
+                         "imageUrl":  "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=400",
+                         "avgRating":  4.4,
+                         "reviewCount":  0
+                     }
+                 ],
+    "schedule":  [
+                     {
+                         "day":  1,
+                         "slots":  [
+                                       {
+                                           "time":  "10:00",
+                                           "category":  "tourism",
+                                           "placeName":  "i?¢¥i?¢¥e?€i?¢¥i??i??i?¡Í",
+                                           "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                                           "distanceKm":  0.0,
+                                           "lat":  35.1587,
+                                           "lng":  129.1604,
+                                           "score":  4.76,
+                                           "address":  "e¢Ò€i?¡Æ i?¢¥i?¢¥e?€e¥ì¡þ i?¡Æe??",
+                                           "imageUrl":  "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400",
+                                           "avgRating":  4.1,
+                                           "reviewCount":  0,
+                                           "durationMinutes":  120,
+                                           "locked":  false,
+                                           "lockReason":  null,
+                                           "reviews":  [
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 1",
+                                                               "rating":  5.0,
+                                                               "text":  "i??i?? i€?e|¡þi?¡Æe¡Æ€ e??e©ø? i??e©ö?i?¢´e?? i¡Ë?i??i??. e¡Æ?e?¡Í i¢Ò?i©÷?i?¢¥i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 2",
+                                                               "rating":  5.0,
+                                                               "text":  "i©÷?i?? i??e??e?¡Æ i?¢¥e?¢¬ e?¡§e©ø¡§i?¢¥ e??i?¢¥i??. e¨£¡§e?? e¨Ï?e?¢¥e¡Æ€ e?¢¯e©ø? e¡§©öi?? i?? i??i?¢¥i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 3",
+                                                               "rating":  5.0,
+                                                               "text":  "i??e¡×? e¡×?i??i?¢¥i??. e?¢´i?? e¡Æ¨Ïe¡þ¢¬i??e©ø? i?¢Òi?€ e©ø©øi?¢¥i??i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 4",
+                                                               "rating":  5.0,
+                                                               "text":  "i¡Ì¨ùe©ø€i??i?? e¡Æ€i?¡Í e¡×?i??e?? i??e?©öi?¢¥i??i??. i?¡©i?? i?¡§i?¢¥i?\u0085i?¢¥ i??i?? e¡×?i?¢¥i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 5",
+                                                               "rating":  5.0,
+                                                               "text":  "e¢Ò?i??e¢¬¡Æe¡Æ€ i¡Ë?i??i?? i?¢´e?? i??e¢¬¡Æ i?¢¬i?¢¥i??. e¡×?e?? e¢¬¡Æe?€ i?¢¥i??i?¢¥i??i?¢¥i??.",
+                                                               "timeDesc":  ""
+                                                           }
+                                                       ],
+                                           "alternatives":  [
+                                                                {
+                                                                    "placeName":  "e¢¥?i??e|¡þi?¢¥i??i??i?¡Í",
+                                                                    "score":  4.76,
+                                                                    "distanceKm":  3.84,
+                                                                    "lat":  35.1532,
+                                                                    "lng":  129.1187
+                                                                },
+                                                                {
+                                                                    "placeName":  "i?¢¥e??i?¨Ïe¢Ò?i?¡þ",
+                                                                    "score":  4.76,
+                                                                    "distanceKm":  6.6,
+                                                                    "lat":  35.1883,
+                                                                    "lng":  129.2233
+                                                                },
+                                                                {
+                                                                    "placeName":  "e©÷?i?¢¥i?¡þ",
+                                                                    "score":  4.76,
+                                                                    "distanceKm":  16.24,
+                                                                    "lat":  35.2839,
+                                                                    "lng":  129.0684
+                                                                },
+                                                                {
+                                                                    "placeName":  "e¡Æ?i©÷?e¡þ¢¬i??e¡×?i??",
+                                                                    "score":  4.66,
+                                                                    "distanceKm":  15.23,
+                                                                    "lat":  35.0975,
+                                                                    "lng":  129.0106
+                                                                },
+                                                                {
+                                                                    "placeName":  "i??i¡Ë\u0085e?€i??i??i¡×€",
+                                                                    "score":  4.66,
+                                                                    "distanceKm":  13.55,
+                                                                    "lat":  35.0526,
+                                                                    "lng":  129.0872
+                                                                }
+                                                            ]
+                                       },
+                                       {
+                                           "time":  "12:00",
+                                           "category":  "tourism",
+                                           "placeName":  "e¢¥?i??e|¡þi?¢¥i??i??i?¡Í",
+                                           "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                                           "distanceKm":  0.0,
+                                           "lat":  35.1532,
+                                           "lng":  129.1187,
+                                           "score":  4.76,
+                                           "address":  "e¢Ò€i?¡Æ i??i??e¥ì¡þ e¢¥?i??i?¢¥e©ø€e¢®?",
+                                           "imageUrl":  "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400",
+                                           "avgRating":  4.1,
+                                           "reviewCount":  0,
+                                           "durationMinutes":  120,
+                                           "locked":  false,
+                                           "lockReason":  null,
+                                           "reviews":  [
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 1",
+                                                               "rating":  5.0,
+                                                               "text":  "i??e¡×? e¡×?i??i?¢¥i??. e?¢´i?? e¡Æ¨Ïe¡þ¢¬i??e©ø? i?¢Òi?€ e©ø©øi?¢¥i??i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 2",
+                                                               "rating":  5.0,
+                                                               "text":  "e¢Ò?i??e¢¬¡Æe¡Æ€ i¡Ë?i??i?? i?¢´e?? i??e¢¬¡Æ i?¢¬i?¢¥i??. e¡×?e?? e¢¬¡Æe?€ i?¢¥i??i?¢¥i??i?¢¥i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 3",
+                                                               "rating":  5.0,
+                                                               "text":  "i??e¡Æ?i??i?¨ùe¢®? e¡×?i¢®¡¾i?¢´e?¡þi??i?¢¥i??. e?¢´i??i?? e?? i?¢´e©ø? i?¢Òi?¢¥i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 4",
+                                                               "rating":  5.0,
+                                                               "text":  "i??i?? i€?e|¡þi?¡Æe¡Æ€ e??e©ø? i??e©ö?i?¢´e?? i¡Ë?i??i??. e¡Æ?e?¡Í i¢Ò?i©÷?i?¢¥i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 5",
+                                                               "rating":  5.0,
+                                                               "text":  "i??i??e?? e¡×?i??e©ø? i??e©ö?i?¢´e?? i©ö?i??i?¢¥i??. e¡Æ€e©÷¨Ïe?? i??e?©öi?? i?¢¬i?¢¥i??i??.",
+                                                               "timeDesc":  ""
+                                                           }
+                                                       ],
+                                           "alternatives":  [
+                                                                {
+                                                                    "placeName":  "i?¢¥i?¢¥e?€i?¢¥i??i??i?¡Í",
+                                                                    "score":  4.76,
+                                                                    "distanceKm":  3.84,
+                                                                    "lat":  35.1587,
+                                                                    "lng":  129.1604
+                                                                },
+                                                                {
+                                                                    "placeName":  "i?¢¥e??i?¨Ïe¢Ò?i?¡þ",
+                                                                    "score":  4.76,
+                                                                    "distanceKm":  10.28,
+                                                                    "lat":  35.1883,
+                                                                    "lng":  129.2233
+                                                                },
+                                                                {
+                                                                    "placeName":  "e©÷?i?¢¥i?¡þ",
+                                                                    "score":  4.76,
+                                                                    "distanceKm":  15.23,
+                                                                    "lat":  35.2839,
+                                                                    "lng":  129.0684
+                                                                },
+                                                                {
+                                                                    "placeName":  "e¡Æ?i©÷?e¡þ¢¬i??e¡×?i??",
+                                                                    "score":  4.66,
+                                                                    "distanceKm":  11.62,
+                                                                    "lat":  35.0975,
+                                                                    "lng":  129.0106
+                                                                },
+                                                                {
+                                                                    "placeName":  "i??i¡Ë\u0085e?€i??i??i¡×€",
+                                                                    "score":  4.66,
+                                                                    "distanceKm":  11.55,
+                                                                    "lat":  35.0526,
+                                                                    "lng":  129.0872
+                                                                }
+                                                            ]
+                                       },
+                                       {
+                                           "time":  "14:00",
+                                           "category":  "food",
+                                           "placeName":  "i?¢¥i?¢¥e?€i??i??e¡Æ?e©ö?i¡×?",
+                                           "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                                           "distanceKm":  0.0,
+                                           "lat":  35.1631,
+                                           "lng":  129.1667,
+                                           "score":  4.5,
+                                           "address":  "e¢Ò€i?¡Æ i?¢¥i?¢¥e?€",
+                                           "imageUrl":  "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400",
+                                           "avgRating":  4.1,
+                                           "reviewCount":  0,
+                                           "durationMinutes":  60,
+                                           "locked":  false,
+                                           "lockReason":  null,
+                                           "reviews":  [
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 1",
+                                                               "rating":  5.0,
+                                                               "text":  "i¡×?i??i?¢¥ e?¡Íi??i??e©÷? e¥ì¡þi??i¢´?i?? i?¢¬i??e©÷? e¡§©öi?? i?? i??i?¢¥i??. e©ø?e¢¬¡Æ i¡×?e?? i¥ì?i??e¢¬?i?¢¥i??i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 2",
+                                                               "rating":  5.0,
+                                                               "text":  "i??i??i?? i?¢¥i?¡Æe¡þ¨ùi?¢¥ e¡Æ€e??i?¢¥i??. i?¢¬i?¢¬ e¨Ï?e?¢¥e¡Æ€ e¥ì¡þi?¡¾i?¢¥ i¡Ë?e©ø? e¡Æ€i?¡¾e©ö?e?? i¥ì?e©ø?i??i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 3",
+                                                               "rating":  5.0,
+                                                               "text":  "e¡Æ?e©ö?e¡Æ€ i?¡Æi??e©ø? e?¡þi¨ö¢´i?¢¥i??. i?©öi?? i??e\u0085?i?¢¥ e©ø?e¢¬¡Æi?? i?? e¡Æ¡Æi?¢¥ i??i?¢¥i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 4",
+                                                               "rating":  5.0,
+                                                               "text":  "i??i?¡Æe¥ì¡þi?¢¥e¡Æ€ i?¡¾e¢¬€i?¡¾e¢¬€i??e©ø? e¡×?i??i?¢¥i??. i??i¡Ì¨ù i?? i??e©ø¨ù i?¡§e¡í? i??e¨Ï¢¥ i??e©÷¨öi?¢¥i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 5",
+                                                               "rating":  5.0,
+                                                               "text":  "i?¨ùe©÷©öi?¢¥i?¢¥ e??e¡í?e©ø? i?¢®i|?i?¢¥ i??e¢Ò€i?¢¥i??. e©ö€i©ö?i?€ i?¡§e¡í? e¡§©öi?¨ùe¨Ï¢¥ i??e¡×? i¥ì?e©ø?i??i??.",
+                                                               "timeDesc":  ""
+                                                           }
+                                                       ],
+                                           "alternatives":  [
+                                                                {
+                                                                    "placeName":  "i¢¥?e??e¡Æ€e¨Ï¢¥",
+                                                                    "score":  4.5,
+                                                                    "distanceKm":  12.79,
+                                                                    "lat":  35.1143,
+                                                                    "lng":  129.0393
+                                                                },
+                                                                {
+                                                                    "placeName":  "e©ø¢¬i??e?¨ùi¡×€e¥ì¡©e¡Æ¡Í",
+                                                                    "score":  4.5,
+                                                                    "distanceKm":  12.7,
+                                                                    "lat":  35.116,
+                                                                    "lng":  129.0395
+                                                                },
+                                                                {
+                                                                    "placeName":  "i??e¡×¢´e¡Æ€i?¨ùe¡Æ€e¨Ï¢¥",
+                                                                    "score":  4.5,
+                                                                    "distanceKm":  9.86,
+                                                                    "lat":  35.1516,
+                                                                    "lng":  129.0592
+                                                                },
+                                                                {
+                                                                    "placeName":  "e??e??i??e¡×¢´i??i??",
+                                                                    "score":  4.5,
+                                                                    "distanceKm":  9.49,
+                                                                    "lat":  35.2183,
+                                                                    "lng":  129.087
+                                                                },
+                                                                {
+                                                                    "placeName":  "i??i¢®¡Æ18e©÷?i??e?©ö",
+                                                                    "score":  4.5,
+                                                                    "distanceKm":  14.1,
+                                                                    "lat":  35.1022,
+                                                                    "lng":  129.0307
+                                                                }
+                                                            ]
+                                       },
+                                       {
+                                           "time":  "15:00",
+                                           "category":  "cafe",
+                                           "placeName":  "i©ö¢¥i?? e¡Ì¡§i??i??",
+                                           "reason":  "e¡þ¢¬i??/i?¡©i?¡þ e¡Æ?i??",
+                                           "distanceKm":  0.0,
+                                           "lat":  35.178,
+                                           "lng":  129.199,
+                                           "score":  4.4,
+                                           "address":  "e¢Ò€i?¡Æ i?¢¥i?¢¥e?€e¥ì¡þ i?¢®i??e¢¥?i?¢¥e©ø¡§e¢®?",
+                                           "imageUrl":  "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=400",
+                                           "avgRating":  4.1,
+                                           "reviewCount":  0,
+                                           "durationMinutes":  60,
+                                           "locked":  false,
+                                           "lockReason":  null,
+                                           "reviews":  [
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 1",
+                                                               "rating":  4.0,
+                                                               "text":  "i??i?? i€?e|¡þi?¡Æe¡Æ€ e??e©ø? i??e©ö?i?¢´e?? i¡Ë?i??i??. e¡Æ?e?¡Í i¢Ò?i©÷?i?¢¥i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 2",
+                                                               "rating":  4.0,
+                                                               "text":  "i¡Ì¨ùe©ø€i??i?? e¡Æ€i?¡Í e¡×?i??e?? i??e?©öi?¢¥i??i??. i?¡©i?? i?¡§i?¢¥i?\u0085i?¢¥ i??i?? e¡×?i?¢¥i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 3",
+                                                               "rating":  4.0,
+                                                               "text":  "i??e¡Æ?i??i?¨ùe¢®? e¡×?i¢®¡¾i?¢´e?¡þi??i?¢¥i??. e?¢´i??i?? e?? i?¢´e©ø? i?¢Òi?¢¥i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 4",
+                                                               "rating":  4.0,
+                                                               "text":  "i??i??e?? e¡×?i??e©ø? i??e©ö?i?¢´e?? i©ö?i??i?¢¥i??. e¡Æ€e©÷¨Ïe?? i??e?©öi?? i?¢¬i?¢¥i??i??.",
+                                                               "timeDesc":  ""
+                                                           },
+                                                           {
+                                                               "author":  "e¡Æ¨Ïe¡þ¢¬e¡Æ? 5",
+                                                               "rating":  4.0,
+                                                               "text":  "i??e¡×? e¡×?i??i?¢¥i??. e?¢´i?? e¡Æ¨Ïe¡þ¢¬i??e©ø? i?¢Òi?€ e©ø©øi?¢¥i??i??.",
+                                                               "timeDesc":  ""
+                                                           }
+                                                       ],
+                                           "alternatives":  [
+                                                                {
+                                                                    "placeName":  "e¨£¡§e¨£¡§i?¢´i¡í¢´i?¨ù e©ø¢¬i??",
+                                                                    "score":  4.6,
+                                                                    "distanceKm":  11.25,
+                                                                    "lat":  35.2202,
+                                                                    "lng":  129.0865
+                                                                },
+                                                                {
+                                                                    "placeName":  "i?¡§i?¢¥e¢¬?i?¡§ i¡í¢´i?¨ù",
+                                                                    "score":  4.5,
+                                                                    "distanceKm":  14.98,
+                                                                    "lat":  35.3027,
+                                                                    "lng":  129.2615
+                                                                },
+                                                                {
+                                                                    "placeName":  "i?¡Æi?¡þi?¢¬e©ö?i©ö?",
+                                                                    "score":  4.4,
+                                                                    "distanceKm":  17.86,
+                                                                    "lat":  35.0785,
+                                                                    "lng":  129.0448
+                                                                },
+                                                                {
+                                                                    "placeName":  "i?¡þi?¢´i?¢´ i??e??",
+                                                                    "score":  4.4,
+                                                                    "distanceKm":  16.79,
+                                                                    "lat":  35.091,
+                                                                    "lng":  129.0481
+                                                                },
+                                                                {
+                                                                    "placeName":  "i??i\u0085?e¡Í¢¥",
+                                                                    "score":  4.4,
+                                                                    "distanceKm":  17.82,
+                                                                    "lat":  35.0792,
+                                                                    "lng":  129.0447
+                                                                }
+                                                            ]
+                                       }
+                                   ],
+                         "weather":  null
+                     }
+                 ],
+    "aiSummary":  ":**\n    *   *Places:*",
+    "weatherWarning":  "",
+    "airQuality":  {
+                       "pm10":  16,
+                       "pm25":  6,
+                       "grade":  "e©ø¢¥i?¥ì",
+                       "measuredAt":  "2026-08-12 15:00"
+                   },
+    "forecastIssuedAt":  "2026-08-12 14:00",
+    "healthRisk":  {
+                       "uvIndex":  3,
+                       "uvLevel":  "e©ø¢¥i?¥ì",
+                       "heatRisk":  "",
+                       "coldRisk":  ""
+                   }
+}
