@@ -42,6 +42,12 @@ public class TourPlaceDto {
     private int    user_ratings_total;
     private List<TourReviewDto> reviews;
 
+    /** 여행코스일 때만 채워지는 경유지 목록이다. 다른 유형에서는 비어 있다. */
+    private List<TourCoursePointDto> coursePoints = List.of();
+
+    /** 음식점일 때 채워지는 음식 분류 슬러그(korean, cafe …). 화면에서 라벨로 옮긴다. */
+    private String foodCategory;
+
     // 계산 필드
     private Float  score;
     private Double distance;
@@ -84,6 +90,14 @@ public class TourPlaceDto {
 
     public List<TourReviewDto> getReviews() { return reviews; }
     public void setReviews(List<TourReviewDto> reviews) { this.reviews = reviews; }
+
+    public List<TourCoursePointDto> getCoursePoints() { return coursePoints; }
+    public void setCoursePoints(List<TourCoursePointDto> coursePoints) {
+        this.coursePoints = coursePoints == null ? List.of() : coursePoints;
+    }
+
+    public String getFoodCategory() { return foodCategory; }
+    public void setFoodCategory(String foodCategory) { this.foodCategory = foodCategory; }
 
     public Float getScore() { return score; }
     public void setScore(Float score) { this.score = score; }

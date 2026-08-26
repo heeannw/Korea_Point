@@ -10,6 +10,27 @@ public class TripRecommendResponse {
     private List<RecommendedPlace> foodList;
     private List<RecommendedPlace> cafeList;
     private List<DayScheduleDto>   schedule;
+    private String aiSummary;
+    private String weatherWarning;
+    private AirQualitySummary airQuality;
+    private String forecastIssuedAt;
+    private HealthRiskSummary healthRisk;
+
+    @Data
+    public static class HealthRiskSummary {
+        private Integer uvIndex;
+        private String uvLevel;
+        private String heatRisk;
+        private String coldRisk;
+    }
+
+    @Data
+    public static class AirQualitySummary {
+        private int pm10;
+        private int pm25;
+        private String grade;
+        private String measuredAt;
+    }
 
     @Data
     public static class RecommendedPlace {
@@ -29,6 +50,16 @@ public class TripRecommendResponse {
     public static class DayScheduleDto {
         private int           day;
         private List<SlotDto> slots;
+        private WeatherSummary weather;
+    }
+
+    @Data
+    public static class WeatherSummary {
+        private double temperature;
+        private int rainProbability;
+        private double windSpeed;
+        private String precipitationType;
+        private String sky;
     }
 
     @Data
@@ -48,6 +79,8 @@ public class TripRecommendResponse {
         private double avgRating;     // 평균 별점
         private int    reviewCount;   // 리뷰 수
         private int    durationMinutes;
+        private boolean locked;
+        private String lockReason;
 
         /** 리뷰 목록 (최대 3개) */
         private List<ReviewDto> reviews;

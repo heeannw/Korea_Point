@@ -1023,11 +1023,11 @@
 <!-- 카테고리: 주요 서비스 페이지로 이동하는 바로가기 -->
 <section class="categories" id="categorySection">
     <div class="category-grid">
-        <a class="category-item" th:href="@{/foodmap/all(category='ALL',lang='kr')}" href="/foodmap/all?category=ALL&lang=kr">
+        <a class="category-item" th:href="@{/tour/food(lang='ko')}" href="/tour/food?lang=ko">
             <span class="category-icon">🍴</span>
             <span>음식</span>
         </a>
-        <a class="category-item" th:href="@{/cafe/all(lang='kr')}" href="/cafe/all?lang=kr">
+        <a class="category-item" th:href="@{/tour/food(lang='ko',category='cafe')}" href="/tour/food?lang=ko&category=cafe">
             <span class="category-icon">☕</span>
             <span>카페</span>
         </a>

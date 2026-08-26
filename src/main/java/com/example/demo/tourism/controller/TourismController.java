@@ -15,6 +15,9 @@ import java.util.*;
 @Controller
 public class TourismController {
 
+    private static final double BUSAN_CENTER_LAT = 35.1796;
+    private static final double BUSAN_CENTER_LON = 129.0756;
+
     @Autowired
     TourismService tourismService;
 
@@ -33,7 +36,6 @@ public class TourismController {
                             @RequestParam(value = "lang") String lang) {
         lang = lang.toLowerCase();
         List<TourPlaceDto> displayList = tourismService.allList(lang);
-        displayList = displayList.stream().limit(300).toList();
         session.setAttribute("userlat", lat);
         session.setAttribute("userlon", lon);
 
@@ -45,8 +47,8 @@ public class TourismController {
         String spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
 
         if(lat == null){
-            model.addAttribute("centerLat", 37.5665);
-            model.addAttribute("centerLon", 126.9780);
+            model.addAttribute("centerLat", BUSAN_CENTER_LAT);
+            model.addAttribute("centerLon", BUSAN_CENTER_LON);
         } else{
             model.addAttribute("centerLat", lat);
             model.addAttribute("centerLon", lon);
@@ -84,7 +86,6 @@ public class TourismController {
 
         Double userlat = (Double) session.getAttribute("userlat");
         Double userlon = (Double) session.getAttribute("userlon");
-        System.out.println("keyword : !!!!!!!!!!!!!!>>>>" + keyword);
         List<TourPlaceDto> list;
 
         if (keyword != null && !keyword.isBlank()) {
@@ -92,15 +93,18 @@ public class TourismController {
             list = tourismService.searchKeyword(keyword.trim(), userlat, userlon, lang);
 
             if (list.isEmpty()) {
-                double fallbackLat = userlat != null ? userlat : 37.5665;
-                double fallbackLon = userlon != null ? userlon : 126.9780;
-                list = tourismService.analyzeLocation(fallbackLat, fallbackLon, lang);
+                list = tourismService.allList(lang);
+                if (userlat != null && userlon != null) {
+                    tourismService.allDistence(userlat, userlon, list);
+                }
                 model.addAttribute("searchFallback", true);
             }
         } else {
-            double fallbackLat = userlat != null ? userlat : 37.5665;
-            double fallbackLon = userlon != null ? userlon : 126.9780;
-            list = tourismService.analyzeLocation(fallbackLat, fallbackLon, lang);
+            // 빈 검색어는 '현재 위치 2km'가 아니라 부산 전체 목록으로 처리한다.
+            list = tourismService.allList(lang);
+            if (userlat != null && userlon != null) {
+                tourismService.allDistence(userlat, userlon, list);
+            }
         }
 
         setMapCenter(model, list, userlat, userlon);
@@ -133,7 +137,10 @@ public class TourismController {
         session.setAttribute("userlat", lat);
         session.setAttribute("userlon", lon);
 
-        List<TourPlaceDto> nearbyList = tourismService.analyzeLocation(lat, lon, lang);
+        // 위치를 받아도 목록 범위를 2km로 축소하지 않는다.
+        // 부산 전체 TourAPI 결과를 유지하고 각 장소까지의 거리만 계산한다.
+        List<TourPlaceDto> nearbyList = tourismService.allList(lang);
+        tourismService.allDistence(lat, lon, nearbyList);
 
         String spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
 
@@ -180,6 +187,15 @@ public class TourismController {
         model.addAttribute("userlon", userlon);
 
         return "tourism/itinerary";
+    }
+
+    @GetMapping("/tour/api/detail/{contentId}")
+    @ResponseBody
+    public Map<String, Object> tourDetail(
+            @PathVariable String contentId,
+            @RequestParam String contentTypeId,
+            @RequestParam(defaultValue = "ko") String lang) {
+        return tourismService.getDetail(contentId, contentTypeId, lang);
     }
 
     // ─────────────────────────────────────────────────────────
@@ -232,8 +248,8 @@ public class TourismController {
     private void setMapCenter(Model model, List<TourPlaceDto> list,
                               Double userLat, Double userLon) {
         if (list.isEmpty()) {
-            model.addAttribute("centerLat", userLat != null ? userLat : 37.5665);
-            model.addAttribute("centerLon", userLon != null ? userLon : 126.9780);
+            model.addAttribute("centerLat", userLat != null ? userLat : BUSAN_CENTER_LAT);
+            model.addAttribute("centerLon", userLon != null ? userLon : BUSAN_CENTER_LON);
             return;
         }
         int count = Math.min(5, list.size());

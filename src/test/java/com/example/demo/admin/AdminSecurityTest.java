@@ -7,6 +7,7 @@ import com.example.demo.admin.service.AdminService;
 import com.example.demo.config.SecurityConfig;
 import com.example.demo.user.dto.CustomOAuth2User;
 import com.example.demo.user.service.CustomOAuth2UserService;
+import com.example.demo.user.service.OwnerRequestService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -41,6 +42,9 @@ class AdminSecurityTest {
 
     @MockBean
     private AdminService adminService;
+
+    @MockBean
+    private OwnerRequestService ownerRequestService;
 
     @MockBean
     private CustomOAuth2UserService customOAuth2UserService;

@@ -20,7 +20,7 @@
         </select>
         <a th:href="@{/ko/reservation}" class="h-btn active">예약</a>
         <a th:href="@{/ko/mypage}" class="h-btn">마이페이지</a>
-        <span class="h-btn" th:text="${currentUserName}">User</span>
+        <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}">User</a>
     </div>
 </header>
 

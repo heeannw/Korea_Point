@@ -21,7 +21,7 @@
         <a th:href="@{/ko/reservation}" class="h-btn active">예약</a>
         <a th:href="@{/ko/mypage}" class="h-btn">마이페이지</a>
         <th:block th:if="${isLoggedIn}">
-            <span class="h-btn" th:text="${currentUserName}">User</span>
+            <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}">User</a>
             <form th:action="@{/logout}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <button type="submit" class="h-btn h-btn-fill">Logout</button>

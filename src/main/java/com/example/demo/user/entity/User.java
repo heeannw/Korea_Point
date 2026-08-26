@@ -44,6 +44,9 @@ public class User {
     @Column(name = "provider_id", nullable = false, length = 100)
     private String providerId;
 
+    @Column(length = 100)
+    private String password;
+
     // 사용자 이름
     @Column(nullable = false)
     private String name;
@@ -60,10 +63,10 @@ public class User {
     @Builder.Default
     private String role = "USER";
 
-    // 보유 포인트 (가입 시 1000P 지급, 홍보 게시글 작성 시 차감)
+    // 사업자 홍보 게시글 작성 시 사용하는 포인트
     @Column(nullable = false)
     @Builder.Default
-    private int point = 1000;
+    private int point = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
