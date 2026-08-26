@@ -135,13 +135,16 @@ public class TourApiReservationService {
             address = address.isBlank() ? addr2 : address + " " + addr2;
         }
 
+        String title = text(item, "title");
+        String imageUrl = firstText(item, "firstimage", "firstimage2");
+
         return TourApiPlaceDto.builder()
                 .contentId(text(item, "contentid"))
                 .contentTypeId(text(item, "contenttypeid"))
-                .title(text(item, "title"))
+                .title(title)
                 .address(address)
                 .tel(text(item, "tel"))
-                .imageUrl(firstText(item, "firstimage", "firstimage2"))
+                .imageUrl(imageUrl)
                 .mapX(text(item, "mapx"))
                 .mapY(text(item, "mapy"))
                 .overview(text(item, "overview"))
@@ -162,3 +165,4 @@ public class TourApiReservationService {
         return source != null && source.toLowerCase().contains(keyword);
     }
 }
+
