@@ -815,7 +815,8 @@
                     const first = step.path && step.path.length > 0 ? step.path[0] : {};
                     const params = new URLSearchParams({
                         stopName: step.fromStation || '',
-                        busNo: step.line || ''
+                        busNo: step.line || '',
+                        bstopid: step.fromStationId || ''
                     });
                     if (first.lat && first.lng) {
                         params.set('lat', first.lat);

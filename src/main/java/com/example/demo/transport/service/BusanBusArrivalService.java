@@ -24,7 +24,7 @@ import java.util.Map;
 @Service
 public class BusanBusArrivalService {
 
-    private static final String BASE_URL = "http://apis.data.go.kr/6260000/BusanBIMS";
+    private static final String BASE_URL = "https://apis.data.go.kr/6260000/BusanBIMS";
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -32,11 +32,12 @@ public class BusanBusArrivalService {
     @Value("${BUSAN_BIMS_SERVICE_KEY:}")
     private String serviceKey;
 
-    public String getArrivalJson(String stopName, String busNo, Double lat, Double lng) {
+    public String getArrivalJson(String stopName, String busNo, String bstopid, Double lat, Double lng) {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("source", "busan-bims");
         response.put("stopName", stopName);
         response.put("busNo", busNo);
+        response.put("requestedStopId", bstopid);
 
         try {
             if (serviceKey == null || serviceKey.isBlank()) {
@@ -45,17 +46,22 @@ public class BusanBusArrivalService {
                 return objectMapper.writeValueAsString(response);
             }
 
-            StopCandidate stop = findStop(stopName, lat, lng);
+            StopCandidate stop = makeStop(bstopid);
+            if (stop == null) {
+                stop = findStop(stopName, lat, lng);
+            }
             if (stop == null) {
                 response.put("arrivals", List.of());
                 response.put("error", "stop-not-found");
                 return objectMapper.writeValueAsString(response);
             }
 
-            List<Map<String, String>> arrivals = fetchArrivals(stop, busNo);
+            List<String> lineIds = findLineIds(busNo);
+            List<Map<String, String>> arrivals = fetchArrivals(stop, busNo, lineIds);
             response.put("stopId", stop.bstopid());
             response.put("arsNo", stop.arsno());
             response.put("matchedStopName", stop.bstopnm());
+            response.put("lineIds", lineIds);
             response.put("arrivals", arrivals);
         } catch (Exception e) {
             response.put("arrivals", List.of());
@@ -67,6 +73,13 @@ public class BusanBusArrivalService {
         } catch (Exception e) {
             return "{\"source\":\"busan-bims\",\"arrivals\":[],\"error\":\"json-error\"}";
         }
+    }
+
+    private StopCandidate makeStop(String bstopid) {
+        if (bstopid == null || bstopid.isBlank()) {
+            return null;
+        }
+        return new StopCandidate(bstopid.trim(), "", "", null, null);
     }
 
     private StopCandidate findStop(String stopName, Double lat, Double lng) throws Exception {
@@ -99,15 +112,49 @@ public class BusanBusArrivalService {
         return stops.get(0);
     }
 
-    private List<Map<String, String>> fetchArrivals(StopCandidate stop, String busNo) throws Exception {
-        List<String> urls = new ArrayList<>();
-        if (stop.bstopid() != null && !stop.bstopid().isBlank()) {
-            urls.add(BASE_URL + "/bitArrByBstopid?serviceKey=" + encode(serviceKey)
-                    + "&bstopid=" + encode(stop.bstopid()));
+    private List<String> findLineIds(String busNo) throws Exception {
+        String normalizedBusNo = normalizeBusNo(busNo);
+        if (normalizedBusNo.isBlank()) {
+            return List.of();
         }
+
+        String url = BASE_URL + "/busInfo"
+                + "?serviceKey=" + encode(serviceKey)
+                + "&lineno=" + encode(normalizedBusNo);
+
+        List<String> lineIds = new ArrayList<>();
+        for (Element item : readItems(callXml(url))) {
+            String lineNo = firstText(item, "buslinenum", "lineno");
+            if (!normalizeBusNo(lineNo).equals(normalizedBusNo)) {
+                continue;
+            }
+            String lineId = firstText(item, "lineId", "lineid");
+            if (!lineId.isBlank() && !lineIds.contains(lineId)) {
+                lineIds.add(lineId);
+            }
+        }
+        return lineIds;
+    }
+
+    private List<Map<String, String>> fetchArrivals(StopCandidate stop, String busNo, List<String> lineIds) throws Exception {
+        List<String> urls = new ArrayList<>();
+
+        if (stop.bstopid() != null && !stop.bstopid().isBlank() && lineIds != null && !lineIds.isEmpty()) {
+            for (String lineId : lineIds) {
+                urls.add(BASE_URL + "/busStopArrByBstopidLineid?serviceKey=" + encode(serviceKey)
+                        + "&bstopid=" + encode(stop.bstopid())
+                        + "&lineid=" + encode(lineId));
+            }
+        }
+
         if (stop.arsno() != null && !stop.arsno().isBlank()) {
             urls.add(BASE_URL + "/bitArrByArsno?serviceKey=" + encode(serviceKey)
                     + "&arsno=" + encode(stop.arsno()));
+        }
+
+        if (stop.bstopid() != null && !stop.bstopid().isBlank()) {
+            urls.add(BASE_URL + "/stopArrByBstopid?serviceKey=" + encode(serviceKey)
+                    + "&bstopid=" + encode(stop.bstopid()));
         }
 
         Exception lastError = null;

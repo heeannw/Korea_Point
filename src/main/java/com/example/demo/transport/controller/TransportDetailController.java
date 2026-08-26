@@ -260,10 +260,11 @@ public class TransportDetailController {
     public String busanBusArrival(
             @RequestParam(required = false) String stopName,
             @RequestParam(required = false) String busNo,
+            @RequestParam(required = false) String bstopid,
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng
     ) {
-        return busanBusArrivalService.getArrivalJson(stopName, busNo, lat, lng);
+        return busanBusArrivalService.getArrivalJson(stopName, busNo, bstopid, lat, lng);
     }
 
     @ResponseBody
