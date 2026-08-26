@@ -840,7 +840,15 @@
                   return await response.json();
                 } catch (e) {
                   return { arrivals: [], error: 'request-failed' };
-                }
+                  }
+              }
+
+              function busanArrivalErrorText(error) {
+                if (error === 'missing-service-key') return 'Missing BIMS key';
+                if (error === 'stop-not-found') return 'Stop match failed';
+                if (error === 'request-failed') return 'BIMS request failed';
+                if (error) return `BIMS error: ${error}`;
+                return 'No stop-arrival data';
               }
 
               if (isBusanRoute) {
@@ -850,7 +858,7 @@
                 }
 
                 let elapsed = 0;
-                let html = '<p class="arrival-note">Busan subway arrivals are timetable-based estimates. Busan bus arrivals use BIMS live data when available, then fall back to route-duration estimates.</p>';
+                let html = '<p class="arrival-note">Busan subway arrivals are timetable-based estimates. Busan bus arrivals show BIMS live stop-arrival data.</p>';
 
                 for (const step of steps) {
                   if (step.type === 'subway') {
@@ -876,20 +884,19 @@
                   } else if (step.type === 'bus') {
                     const busArrival = await fetchBusanBusArrival(step);
                     const arrivals = busArrival.arrivals || [];
-                    const fallbackDepart = addMinutesToTime(routeData.departTime, elapsed);
-                    const fallbackArrive = addMinutesToTime(routeData.departTime, elapsed + (step.duration || 0));
+                    const noArrivalText = busanArrivalErrorText(busArrival.error);
                     const timeRows = arrivals.length
                             ? arrivals.map((arrival, index) => `
                                 <div class="timetable-row">
-                                    <span class="timetable-order">${index === 0 ? 'Live' : `#${index + 1}`}</span>
+                                    <span class="timetable-order">${index === 0 ? '1st' : `#${index + 1}`}</span>
                                     <span><b>Route</b>${arrival.line || step.line || 'Bus'}</span>
-                                    <span><b>Arrives</b>${arrival.message || 'Checking'}</span>
+                                    <span class="timetable-arrival"><b>Arrives</b>${arrival.message || 'Checking'}</span>
                                 </div>`).join('')
                             : `
                                 <div class="timetable-row">
-                                    <span class="timetable-order">Est.</span>
-                                    <span><b>Departs</b>${fallbackDepart}</span>
-                                    <span><b>Arrives</b>${fallbackArrive}</span>
+                                    <span class="timetable-order">Live</span>
+                                    <span><b>Route</b>${step.line || 'Bus'}</span>
+                                    <span class="timetable-arrival"><b>Arrives</b>${noArrivalText}</span>
                                 </div>`;
 
                     html += `

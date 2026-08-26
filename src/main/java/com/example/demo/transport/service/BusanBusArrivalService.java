@@ -102,11 +102,11 @@ public class BusanBusArrivalService {
     private List<Map<String, String>> fetchArrivals(StopCandidate stop, String busNo) throws Exception {
         List<String> urls = new ArrayList<>();
         if (stop.bstopid() != null && !stop.bstopid().isBlank()) {
-            urls.add(BASE_URL + "/busStopArrByBstopid?serviceKey=" + encode(serviceKey)
+            urls.add(BASE_URL + "/bitArrByBstopid?serviceKey=" + encode(serviceKey)
                     + "&bstopid=" + encode(stop.bstopid()));
         }
         if (stop.arsno() != null && !stop.arsno().isBlank()) {
-            urls.add(BASE_URL + "/busStopArrByArsno?serviceKey=" + encode(serviceKey)
+            urls.add(BASE_URL + "/bitArrByArsno?serviceKey=" + encode(serviceKey)
                     + "&arsno=" + encode(stop.arsno()));
         }
 
@@ -138,21 +138,31 @@ public class BusanBusArrivalService {
                 continue;
             }
 
-            Map<String, String> arrival = new LinkedHashMap<>();
-            arrival.put("line", lineNo != null && !lineNo.isBlank() ? lineNo : busNo);
-            arrival.put("message", buildMessage(item));
-            arrival.put("remainingStops", firstText(item, "bstopcnt", "reststopcnt", "stationCnt", "stopCnt"));
-            arrival.put("vehicleNo", firstText(item, "carno", "vehicleno", "plateNo"));
-            arrivals.add(arrival);
+            addArrival(arrivals, item, lineNo, busNo, "1");
+            addArrival(arrivals, item, lineNo, busNo, "2");
         }
 
         return arrivals.stream().limit(3).toList();
     }
 
-    private String buildMessage(Element item) {
-        String minute = firstText(item, "min1", "arrtime", "arrivalTime", "resttime", "time");
-        String stopCount = firstText(item, "bstopcnt", "reststopcnt", "stationCnt", "stopCnt");
+    private void addArrival(List<Map<String, String>> arrivals, Element item, String lineNo, String busNo, String order) {
+        String minute = firstText(item, "min" + order);
+        String stopCount = firstText(item, "station" + order);
+        String vehicleNo = firstText(item, "carno" + order);
 
+        if (minute.isBlank() && stopCount.isBlank() && vehicleNo.isBlank()) {
+            return;
+        }
+
+        Map<String, String> arrival = new LinkedHashMap<>();
+        arrival.put("line", lineNo != null && !lineNo.isBlank() ? lineNo : busNo);
+        arrival.put("message", buildMessage(minute, stopCount));
+        arrival.put("remainingStops", stopCount);
+        arrival.put("vehicleNo", vehicleNo);
+        arrivals.add(arrival);
+    }
+
+    private String buildMessage(String minute, String stopCount) {
         if (minute != null && !minute.isBlank()) {
             String numberOnly = minute.replaceAll("[^0-9]", "");
             if (!numberOnly.isBlank()) {

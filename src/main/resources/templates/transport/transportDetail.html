@@ -830,6 +830,14 @@
                     }
                 }
 
+                function busanArrivalErrorText(error) {
+                    if (error === 'missing-service-key') return 'BIMS 인증키 없음';
+                    if (error === 'stop-not-found') return '정류장 매칭 실패';
+                    if (error === 'request-failed') return 'BIMS 요청 실패';
+                    if (error) return `BIMS 오류: ${error}`;
+                    return '정류장 도착정보 없음';
+                }
+
                 if (isBusanRoute) {
                     const arrivalTabBtn = document.getElementById('arrivalTabBtn');
                     if (arrivalTabBtn) {
@@ -837,7 +845,7 @@
                     }
 
                     let elapsed = 0;
-                    let html = '<p class="arrival-note">부산 지하철은 시간표 기반 예상정보로, 부산 버스는 BIMS 실시간 도착정보로 표시합니다. 조회 실패 시 경로 소요시간 기반 예상값을 보여줍니다.</p>';
+                    let html = '<p class="arrival-note">부산 지하철은 시간표 기반 예상정보로, 부산 버스는 BIMS 실시간 정류장 도착정보로 표시합니다.</p>';
 
                     for (const step of steps) {
                         if (step.type === 'subway') {
@@ -863,20 +871,19 @@
                         } else if (step.type === 'bus') {
                             const busArrival = await fetchBusanBusArrival(step);
                             const arrivals = busArrival.arrivals || [];
-                            const fallbackDepart = addMinutesToTime(routeData.departTime, elapsed);
-                            const fallbackArrive = addMinutesToTime(routeData.departTime, elapsed + (step.duration || 0));
+                            const noArrivalText = busanArrivalErrorText(busArrival.error);
                             const timeRows = arrivals.length
                                 ? arrivals.map((arrival, index) => `
                                     <div class="timetable-row">
-                                        <span class="timetable-order">${index === 0 ? '실시간' : `${index + 1}번째`}</span>
+                                        <span class="timetable-order">${index + 1}번째</span>
                                         <span><b>노선</b>${arrival.line || step.line || '버스'}</span>
-                                        <span><b>도착</b>${arrival.message || '확인 중'}</span>
+                                        <span class="timetable-arrival"><b>도착</b>${arrival.message || '확인 중'}</span>
                                     </div>`).join('')
                                 : `
                                     <div class="timetable-row">
-                                        <span class="timetable-order">예상</span>
-                                        <span><b>출발</b>${fallbackDepart}</span>
-                                        <span><b>도착</b>${fallbackArrive}</span>
+                                        <span class="timetable-order">실시간</span>
+                                        <span><b>노선</b>${step.line || '버스'}</span>
+                                        <span class="timetable-arrival"><b>도착</b>${noArrivalText}</span>
                                     </div>`;
 
                             html += `
