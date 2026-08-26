@@ -5,6 +5,13 @@ import com.example.demo.reservation.dto.TourApiPlaceDto;
 import com.example.demo.reservation.entity.TourReservation;
 import com.example.demo.reservation.service.ReservationService;
 import com.example.demo.reservation.service.TourApiReservationService;
+import com.example.demo.community.repository.PostRepository;
+import com.example.demo.trip.dto.TripPlanDto;
+import com.example.demo.trip.service.TripPlanService;
+import com.example.demo.user.entity.OwnerRequest;
+import com.example.demo.user.entity.User;
+import com.example.demo.user.service.OwnerRequestService;
+import com.example.demo.user.service.UserService;
 import com.example.demo.user.util.SecurityUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +25,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequiredArgsConstructor
@@ -28,6 +38,10 @@ public class ReservationController {
 
     private final TourApiReservationService tourApiReservationService;
     private final ReservationService reservationService;
+    private final UserService userService;
+    private final OwnerRequestService ownerRequestService;
+    private final TripPlanService tripPlanService;
+    private final PostRepository postRepository;
 
     @GetMapping("/ko/reservation")
     public String reservationHome(Model model,
@@ -90,8 +104,28 @@ public class ReservationController {
     @GetMapping("/ko/mypage")
     public String myPage(Model model) {
         addSessionModel(model);
+        Long userId = SecurityUtil.getCurrentUserId();
+        User user = userService.findById(userId);
+        Optional<OwnerRequest> latestOwnerRequest = ownerRequestService.findLatestByUserId(userId);
+        List<TourReservation> reservations = reservationService.findMyReservations(userId);
+        List<TripPlanDto.Summary> tripPlans = tripPlanService.listByUser(String.valueOf(userId));
+        long postCount = postRepository.countByUser_IdAndDeletedAtIsNull(userId);
+
         model.addAttribute("today", LocalDate.now());
-        List<TourReservation> reservations = reservationService.findMyReservations(SecurityUtil.getCurrentUserId());
+        model.addAttribute("user", user);
+        model.addAttribute("isOwner", "OWNER".equals(user.getRole()));
+        model.addAttribute("ownerRequest", latestOwnerRequest.orElse(null));
+        model.addAttribute("ownerStatus", latestOwnerRequest
+                .map(request -> request.getStatus().name())
+                .orElse("NONE"));
+        model.addAttribute("hasPendingOwnerRequest", latestOwnerRequest
+                .map(request -> "PENDING".equals(request.getStatus().name()))
+                .orElse(false));
+        model.addAttribute("tripPlans", tripPlans);
+        model.addAttribute("hasTripPlans", !tripPlans.isEmpty());
+        model.addAttribute("tripPlanCount", tripPlans.size());
+        model.addAttribute("reservationCount", reservations.size());
+        model.addAttribute("postCount", postCount);
         model.addAttribute("reservations", reservations);
         model.addAttribute("hasReservation", !reservations.isEmpty());
         if (!reservations.isEmpty()) {
@@ -104,6 +138,29 @@ public class ReservationController {
             ));
         }
         return "mypage/mypage";
+    }
+
+    @PostMapping("/ko/mypage/owner-application")
+    public String applyOwner(@RequestParam String storeName,
+                             @RequestParam String businessRegistrationNumber,
+                             @RequestParam MultipartFile businessRegistrationFile,
+                             @RequestParam MultipartFile businessLicenseFile,
+                             @RequestParam MultipartFile menuFile,
+                             RedirectAttributes redirectAttributes) {
+        try {
+            ownerRequestService.apply(
+                    SecurityUtil.getCurrentUserId(),
+                    storeName,
+                    businessRegistrationNumber,
+                    businessRegistrationFile,
+                    businessLicenseFile,
+                    menuFile
+            );
+            redirectAttributes.addFlashAttribute("ownerRequestMessage", "사업자 전환 신청이 접수됐어요. 검토 후 권한이 변경됩니다.");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("ownerRequestError", ex.getMessage());
+        }
+        return "redirect:/ko/mypage";
     }
 
     @GetMapping("/api/tourapi/places")

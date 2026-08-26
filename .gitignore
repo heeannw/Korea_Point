@@ -54,3 +54,6 @@ data/
 *.mv.db
 *.trace.db
 application-secret.properties
+
+# Local uploaded documents
+uploads/

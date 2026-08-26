@@ -46,6 +46,15 @@ public class SecurityConfig {
                     .userService(customOAuth2UserService)
                 )
             )
+            .formLogin(form -> form
+                .loginPage("/login")
+                .loginProcessingUrl("/login")
+                .usernameParameter("loginId")
+                .passwordParameter("password")
+                .defaultSuccessUrl("/ko", true)
+                .failureUrl("/login?error=true")
+                .permitAll()
+            )
             .logout(logout -> logout
                 .logoutSuccessUrl("/")
             )

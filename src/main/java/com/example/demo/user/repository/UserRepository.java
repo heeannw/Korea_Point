@@ -19,6 +19,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
+    boolean existsByProviderAndProviderId(String provider, String providerId);
+
     @Query("""
         SELECT u FROM User u
         WHERE (:keyword IS NULL OR :keyword = '' OR
