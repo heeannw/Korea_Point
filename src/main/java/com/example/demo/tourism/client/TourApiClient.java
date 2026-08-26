@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-@Component
+@Component("tourismTourApiClient")
 public class TourApiClient {
 
     public static final String FOOD_CONTENT_TYPE = "39";
