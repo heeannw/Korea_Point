@@ -126,6 +126,14 @@
     .dp-info-val{font-size:13px;font-weight:500;line-height:1.4}
     .dp-desc{font-size:14px;color:var(--mid);line-height:1.7;margin-bottom:16px}
     .dp-section-title{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--dark)}
+    .dp-course{margin-bottom:18px}
+    .dp-course-list{display:flex;flex-direction:column;gap:6px}
+    .dp-course-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;
+      background:#f8fafc;border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:left}
+    .dp-course-item:hover{background:#eef2f7}
+    .dp-course-num{flex:none;width:22px;height:22px;border-radius:50%;color:#fff;
+      font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+    .dp-course-name{font-size:13px;color:var(--dark);line-height:1.4}
     .rev-summary{display:flex;align-items:center;gap:16px;background:var(--light);border-radius:10px;padding:14px 16px;margin-bottom:12px}
     .rev-score{font-size:42px;font-weight:900;font-family:'Playfair Display',serif;line-height:1}
     .rev-right{flex:1}
@@ -294,6 +302,7 @@
         <div class="dp-stars" id="dpStars"></div>
         <div class="dp-info-row" id="dpInfoRow"></div>
         <div class="dp-desc" id="dpDesc"></div>
+        <div class="dp-course" id="dpCourse"></div>
         <div class="dp-section-title">Reviews</div>
         <div class="rev-summary" id="dpRevSummary"></div>
         <div id="dpReviews"></div>
@@ -370,6 +379,58 @@
     );
   }
 
+  // ── 여행코스 전용 표시 ─────────────────────────────
+  // 코스는 경로라 대표 좌표 하나로는 설명이 안 된다. 경유지를 번호 마커로 순서대로 찍는다.
+  let courseMarkers = [];
+  let currentDetailPlace = null;
+
+  function isCourse(p) {
+    return !!p && Array.isArray(p.coursePoints) && p.coursePoints.length > 0;
+  }
+
+  function createCourseMarkerImage(order) {
+    const color = CATEGORY_COLOR['25'] ?? '#64748b';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 36 48">
+      <path d="M18 0 C8.1 0 0 8.1 0 18 C0 31.5 18 48 18 48 C18 48 36 31.5 36 18 C36 8.1 27.9 0 18 0Z" fill="${color}" stroke="white" stroke-width="2"/>
+      <circle cx="18" cy="17" r="11" fill="white" opacity="0.95"/>
+      <text x="18" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a" font-family="system-ui,-apple-system,sans-serif">${order}</text>
+    </svg>`;
+    return new kakao.maps.MarkerImage(
+            'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+            new kakao.maps.Size(36, 48),
+            { offset: new kakao.maps.Point(18, 48) }
+    );
+  }
+
+  function exitCourseMode() {
+    if (courseMarkers.length === 0) return;
+    courseMarkers.forEach(marker => marker.setMap(null));
+    courseMarkers = [];
+    updateMarkerVisibility();
+  }
+
+  function enterCourseMode(p) {
+    exitCourseMode();
+    if (!map || !isCourse(p)) return;
+
+    // 경유지 번호가 일반 핀에 묻히지 않도록 코스를 볼 때는 나머지를 감춘다.
+    markerMap.forEach(item => item.marker.setMap(null));
+
+    const bounds = new kakao.maps.LatLngBounds();
+    p.coursePoints.forEach(pt => {
+      const position = new kakao.maps.LatLng(pt.lat, pt.lng);
+      courseMarkers.push(new kakao.maps.Marker({
+        map: map,
+        position: position,
+        title: `${pt.order}. ${pt.name ?? ''}`,
+        image: createCourseMarkerImage(pt.order),
+        zIndex: 3
+      }));
+      bounds.extend(position);
+    });
+    map.setBounds(bounds, 60, 60, 60, 60);
+  }
+
   function scrollFilter(dir) {
     const row = document.getElementById('filterRow');
     row.scrollLeft += dir * 120;
@@ -396,6 +457,7 @@
   }
 
   function highlightMarkerByTitle(title) {
+    if (courseMarkers.length > 0) return; // 코스 모드에서는 일반 핀을 건드리지 않는다
     const visibleTitles = new Set(getFiltered().map(p => p.title));
     markerMap.forEach(item => {
       if (!visibleTitles.has(item.title)) {
@@ -439,6 +501,7 @@
   }
 
   function setCategory(c) {
+    exitCourseMode();
     activeCategory = c;
     document.querySelectorAll('.chip').forEach(ch =>
             ch.classList.toggle('active', ch.dataset.cat === c)
@@ -459,6 +522,7 @@
 
   function updateMarkerVisibility() {
     if (!markerMap || markerMap.length === 0) return;
+    if (courseMarkers.length > 0) return; // 코스 모드에서는 일반 핀을 건드리지 않는다
     const visibleTitles = new Set(getFiltered().map(p => p.title));
     markerMap.forEach(item => {
       if (visibleTitles.has(item.title)) {
@@ -500,9 +564,14 @@
     const p = list[idx];
     if (!p) return;
     activePinId = Number(idx);
-    highlightMarkerByTitle(p.title);
+    if (isCourse(p)) {
+      enterCourseMode(p);
+    } else {
+      exitCourseMode();
+      highlightMarkerByTitle(p.title);
+    }
     render();
-    if (p.lat && p.lng && map) map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
+    if (!isCourse(p) && p.lat && p.lng && map) map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
     setTimeout(() => {
       const card = document.getElementById('card-' + idx);
       if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -544,6 +613,7 @@
     if (popupOverlay) { popupOverlay.setMap(null); popupOverlay = null; }
     currentPopupPlace = null;
     activePinId = null;
+    exitCourseMode();
     render();
   }
 
@@ -596,13 +666,38 @@
     usetimeculture:'이용시간', restdateculture:'휴무일', usefee:'이용요금', parkingculture:'주차',
     eventstartdate:'행사 시작', eventenddate:'행사 종료', eventplace:'행사 장소', playtime:'공연 시간',
     usetimefestival:'이용요금', spendtimefestival:'관람 소요시간',
-    distance:'코스 거리', taketime:'소요시간', infocentertourcourse:'코스 문의',
+    distance:'코스 거리', schedule:'일정', taketime:'소요시간', infocentertourcourse:'코스 문의',
     openperiod:'운영 기간', usetimeleports:'이용시간', restdateleports:'휴무일', reservation:'예약',
     expagerangeleports:'이용 연령', usefeeleports:'이용요금', checkintime:'체크인', checkouttime:'체크아웃',
     reservationurl:'예약 안내', roomcount:'객실 수', parkinglodging:'주차', opentime:'영업시간',
     restdateshopping:'휴무일', saleitem:'판매 품목', firstmenu:'대표 메뉴', opentimefood:'영업시간',
     restdatefood:'휴무일', reservationfood:'예약', treatmenu:'취급 메뉴'
   };
+
+  // 코스는 경유지가 핵심 정보라 상세 패널에 순서대로 펼쳐준다.
+  function renderCourseSection(p) {
+    const box = document.getElementById('dpCourse');
+    if (!isCourse(p)) { box.innerHTML = ''; return; }
+    const color = getCatColor(p.type);
+    box.innerHTML = `
+      <div class="dp-section-title">경유지 ${p.coursePoints.length}곳</div>
+      <div class="dp-course-list">
+        ${p.coursePoints.map(pt => `
+          <button type="button" class="dp-course-item" onclick="focusCoursePoint(${pt.order - 1})">
+            <span class="dp-course-num" style="background:${color}">${pt.order}</span>
+            <span class="dp-course-name">${escapeDetail(pt.name ?? '')}</span>
+          </button>`).join('')}
+      </div>`;
+  }
+
+  function focusCoursePoint(index) {
+    const p = currentDetailPlace;
+    if (!p || !isCourse(p) || !map) return;
+    const pt = p.coursePoints[index];
+    if (!pt) return;
+    if (courseMarkers.length === 0) enterCourseMode(p);
+    map.panTo(new kakao.maps.LatLng(pt.lat, pt.lng));
+  }
 
   async function loadTourApiDetail(p) {
     const desc = document.getElementById('dpDesc');
@@ -632,6 +727,7 @@
   function openDetail(p) {
 
     if (!p) return;
+    currentDetailPlace = p;
     const color = getCatColor(p.type);
     const _keyword = (p.title && p.title.length < 20) ? p.title : p.google_name;
     const _visitUrl = `https://korean.visitkorea.or.kr/search/search_list.do?keyword=${encodeURIComponent(_keyword)}`;
@@ -676,17 +772,18 @@
       </div>`).join('');
 
 
-    document.getElementById('itineraryBtn').onclick = function() {
-      if (p.lat && p.lng) {
-        location.href = `/foodmap/mylocation/${p.lat}/${p.lng}?category=ALL&lang=ko`;
-      }
-    };
+    // 이 관광지를 기준점으로 삼아 새 맛집 화면으로 넘긴다.
+    function goFood(category) {
+      if (!(p.lat && p.lng)) return;
+      const params = new URLSearchParams({
+        lang: 'ko', lat: p.lat, lon: p.lng, near: p.title ?? ''
+      });
+      if (category) params.set('category', category);
+      location.href = '/tour/food?' + params.toString();
+    }
 
-    document.getElementById('itineraryBtn1').onclick = function() {
-      if (p.lat && p.lng) {
-        location.href = `/cafe/mylocation/${p.lat}/${p.lng}?lang=ko`;
-      }
-    };
+    document.getElementById('itineraryBtn').onclick  = () => goFood(null);
+    document.getElementById('itineraryBtn1').onclick = () => goFood('cafe');
 
     // ✅ 중복 없이 한 번만 선언
     document.getElementById('itineraryBtn2').onclick = function() {
@@ -710,6 +807,7 @@
       );
     };
 
+    renderCourseSection(p);
     document.getElementById('detailPanel').classList.add('open');
     loadTourApiDetail(p);
   }

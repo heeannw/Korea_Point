@@ -1,6 +1,7 @@
 package com.example.demo.tourism.client;
 
 import com.example.demo.tourism.config.TourApiProperties;
+import com.example.demo.tourism.dto.TourCoursePointDto;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Component
@@ -25,8 +27,23 @@ public class TourApiClient {
 
     public static final String FOOD_CONTENT_TYPE = "39";
     private static final String FESTIVAL_CONTENT_TYPE = "15";
+    private static final String COURSE_CONTENT_TYPE = "25";
+    private static final String SHOPPING_CONTENT_TYPE = "38";
+
+    /** 음식 분류코드를 화면이 쓰는 슬러그로 옮긴다. 카페도 음식점 유형 안에 들어 있다. */
+    private static final Map<String, String> FOOD_CATEGORY_BY_CAT3 = Map.of(
+            "A05020100", "korean",
+            "A05020200", "western",
+            "A05020300", "japanese",
+            "A05020400", "chinese",
+            "A05020600", "snack",
+            "A05020700", "fusion",
+            "A05020900", "cafe");
+    private static final int COURSE_MAX_WAYPOINTS = 50;
     /** 축제는 전국을 받아 부산만 추려내므로 목록 기본값보다 넉넉히 가져온다. */
     private static final int FESTIVAL_FETCH_ROWS = 1000;
+    /** 페이지를 무한정 따라가지 않도록 둔 안전장치. */
+    private static final int MAX_PAGES = 20;
 
     /**
      * EngService2는 KorService2와 다른 콘텐츠 유형 코드를 쓴다(관광지 76, 음식점 82 …).
@@ -49,6 +66,8 @@ public class TourApiClient {
     private final RestClient restClient;
     private final TourApiProperties properties;
     private final ObjectMapper objectMapper;
+    /** 경유지는 거의 바뀌지 않는데 조회 비용이 커서 애플리케이션 수명 동안 재사용한다. */
+    private final Map<String, List<TourCoursePointDto>> courseWaypointCache = new ConcurrentHashMap<>();
 
     public TourApiClient(RestClient.Builder restClientBuilder,
                          TourApiProperties properties,
@@ -65,15 +84,89 @@ public class TourApiClient {
      */
     public List<TourPlaceDto> findBusanPlaces(String lang) {
         UriComponentsBuilder uri = commonUri(lang, "areaBasedList2")
-                .queryParam("areaCode", properties.getBusanAreaCode())
+                .queryParam("lDongRegnCd", properties.getBusanLegalDongCode())
                 .queryParam("arrange", "Q")
                 .queryParam("numOfRows", properties.getDefaultRows())
                 .queryParam("pageNo", 1);
 
-        List<TourPlaceDto> places = new ArrayList<>(request(uri, lang));
+        List<TourPlaceDto> places = new ArrayList<>(requestAllPages(uri, lang));
         places.removeIf(this::isFestival);
         places.addAll(findCurrentBusanFestivals(lang));
-        return places;
+        return withResolvedCoordinates(places, lang);
+    }
+
+    /**
+     * 좌표가 없는 여행코스에 경유지를 붙여 대표 좌표를 세우고,
+     * 그래도 좌표를 못 채운 항목은 지도에 찍을 수 없으므로 제외한다.
+     */
+    private List<TourPlaceDto> withResolvedCoordinates(List<TourPlaceDto> places, String lang) {
+        List<TourPlaceDto> resolved = new ArrayList<>(places);
+        attachCourseWaypoints(resolved, lang);
+        resolved.removeIf(place -> place.getLat() == null || place.getLng() == null);
+        return resolved;
+    }
+
+    /**
+     * 여행코스는 경로라서 mapx/mapy가 0으로 온다.
+     * 경유지를 붙이고 첫 경유지를 대표 좌표로 세워 목록·거리·지도가 동작하게 만든다.
+     */
+    private void attachCourseWaypoints(List<TourPlaceDto> places, String lang) {
+        for (TourPlaceDto place : places) {
+            if (!COURSE_CONTENT_TYPE.equals(place.getType())) continue;
+            if (place.getLat() != null && place.getLng() != null) continue;
+
+            List<TourCoursePointDto> points = findCourseWaypoints(place.getId(), lang);
+            if (points.isEmpty()) continue;
+
+            place.setCoursePoints(points);
+            place.setLat(points.get(0).getLat());
+            place.setLng(points.get(0).getLng());
+        }
+    }
+
+    /**
+     * 여행코스의 경유지를 순서대로 조회한다. detailInfo2는 경유지 이름과 subcontentid만 주므로
+     * 좌표는 경유지별로 detailCommon2를 한 번 더 호출해 얻는다. 호출이 많아 결과를 캐시한다.
+     */
+    public List<TourCoursePointDto> findCourseWaypoints(String contentId, String lang) {
+        return courseWaypointCache.computeIfAbsent(contentId + "|" + lang, key -> {
+            try {
+                return loadCourseWaypoints(contentId, lang);
+            } catch (RuntimeException e) {
+                return List.of();
+            }
+        });
+    }
+
+    private List<TourCoursePointDto> loadCourseWaypoints(String contentId, String lang) {
+        UriComponentsBuilder uri = commonUri(lang, "detailInfo2")
+                .queryParam("contentId", contentId)
+                .queryParam("contentTypeId", toApiType(COURSE_CONTENT_TYPE, lang))
+                .queryParam("numOfRows", COURSE_MAX_WAYPOINTS)
+                .queryParam("pageNo", 1);
+
+        JsonNode items = requestRoot(uri).path("response").path("body").path("items").path("item");
+        if (!items.isArray()) return List.of();
+
+        List<TourCoursePointDto> points = new ArrayList<>();
+        for (JsonNode item : items) {
+            String subContentId = text(item, "subcontentid");
+            if (subContentId == null) continue;
+
+            JsonNode detail = firstItem(requestRoot(
+                    commonUri(lang, "detailCommon2").queryParam("contentId", subContentId)));
+            Double lat = coordinate(detail, "mapy");
+            Double lng = coordinate(detail, "mapx");
+            if (lat == null || lng == null) continue;
+
+            TourCoursePointDto point = new TourCoursePointDto();
+            point.setOrder(points.size() + 1);
+            point.setName(firstNonBlank(text(item, "subname"), text(detail, "title")));
+            point.setLat(lat);
+            point.setLng(lng);
+            points.add(point);
+        }
+        return List.copyOf(points);
     }
 
     /**
@@ -104,15 +197,29 @@ public class TourApiClient {
         return properties.getBusanLegalDongCode().equals(text(item, "lDongRegnCd"));
     }
 
+    /**
+     * 부산 음식점을 조회한다. TourAPI는 카페를 음식점 유형 안에 담고 있어
+     * 음식점과 카페가 한 번의 호출로 함께 들어온다.
+     */
+    public List<TourPlaceDto> findBusanFoodPlaces(String lang) {
+        UriComponentsBuilder uri = commonUri(lang, "areaBasedList2")
+                .queryParam("lDongRegnCd", properties.getBusanLegalDongCode())
+                .queryParam("contentTypeId", toApiType(FOOD_CONTENT_TYPE, lang))
+                .queryParam("arrange", "Q")
+                .queryParam("numOfRows", properties.getDefaultRows())
+                .queryParam("pageNo", 1);
+        return withResolvedCoordinates(requestAllPages(uri, lang), lang);
+    }
+
     /** 부산으로 범위를 제한한 키워드 검색이다. */
     public List<TourPlaceDto> searchBusan(String keyword, String lang) {
         UriComponentsBuilder uri = commonUri(lang, "searchKeyword2")
-                .queryParam("areaCode", properties.getBusanAreaCode())
+                .queryParam("lDongRegnCd", properties.getBusanLegalDongCode())
                 .queryParam("keyword", keyword)
                 .queryParam("arrange", "Q")
                 .queryParam("numOfRows", properties.getDefaultRows())
                 .queryParam("pageNo", 1);
-        return dropEndedFestivals(request(uri, lang), lang);
+        return withResolvedCoordinates(dropEndedFestivals(requestAllPages(uri, lang), lang), lang);
     }
 
     /** 좌표 주변 장소를 조회한다. radiusKm는 TourAPI 제한에 맞춰 최대 20km로 제한한다. */
@@ -183,6 +290,23 @@ public class TourApiClient {
         return mapItems(root.path("response").path("body").path("items").path("item"), lang);
     }
 
+    /**
+     * totalCount에 도달할 때까지 페이지를 이어 받는다.
+     * 부산 관광정보는 700건에 가까워 numOfRows 한 페이지로는 목록 뒤쪽이 통째로 잘린다.
+     */
+    private List<TourPlaceDto> requestAllPages(UriComponentsBuilder uriBuilder, String lang) {
+        int pageSize = Math.max(1, properties.getDefaultRows());
+        List<TourPlaceDto> all = new ArrayList<>();
+
+        for (int page = 1; page <= MAX_PAGES; page++) {
+            JsonNode body = requestRoot(uriBuilder.replaceQueryParam("pageNo", page))
+                    .path("response").path("body");
+            all.addAll(mapItems(body.path("items").path("item"), lang));
+            if ((long) page * pageSize >= body.path("totalCount").asLong(0)) break;
+        }
+        return all;
+    }
+
     private boolean isFestival(TourPlaceDto place) {
         return FESTIVAL_CONTENT_TYPE.equals(place.getType());
     }
@@ -250,7 +374,9 @@ public class TourApiClient {
             case "15" -> addFields(details, intro,
                     "eventstartdate", "eventenddate", "eventplace", "playtime",
                     "usetimefestival", "spendtimefestival");
-            case "25" -> addFields(details, intro, "distance", "taketime", "infocentertourcourse");
+            // theme은 '----지자체-----' 같은 플레이스홀더가 그대로 들어오는 경우가 많아 제외한다.
+            case "25" -> addFields(details, intro,
+                    "distance", "schedule", "taketime", "infocentertourcourse");
             case "28" -> addFields(details, intro,
                     "openperiod", "usetimeleports", "restdateleports", "reservation",
                     "expagerangeleports", "usefeeleports");
@@ -286,18 +412,27 @@ public class TourApiClient {
     }
 
     private void addMappedItem(List<TourPlaceDto> result, JsonNode item, String lang) {
-        Double lat = nullableDouble(item, "mapy");
-        Double lng = nullableDouble(item, "mapx");
-        if (lat == null || lng == null) return;
+        Double lat = coordinate(item, "mapy");
+        Double lng = coordinate(item, "mapx");
+        String type = toKoreanType(text(item, "contenttypeid"), lang);
+
+        // 여행코스는 대표 좌표가 없으므로 경유지로 채울 수 있게 일단 통과시킨다.
+        if ((lat == null || lng == null) && !COURSE_CONTENT_TYPE.equals(type)) return;
+        if (isUntaggedShop(type, item)) return;
 
         TourPlaceDto place = new TourPlaceDto();
         place.setId(text(item, "contentid"));
-        place.setType(toKoreanType(text(item, "contenttypeid"), lang));
+        place.setType(type);
         place.setTitle(text(item, "title"));
         place.setAddr(joinAddress(text(item, "addr1"), text(item, "addr2")));
         place.setLat(lat);
         place.setLng(lng);
         place.setImage(normalizeImageUrl(firstNonBlank(text(item, "firstimage"), text(item, "firstimage2"))));
+        if (FOOD_CONTENT_TYPE.equals(type)) {
+            // 분류코드가 없는 음식점이 3분의 1이라 null 조회로 터지지 않게 먼저 막는다.
+            String cat3 = text(item, "cat3");
+            place.setFoodCategory(cat3 == null ? "etc" : FOOD_CATEGORY_BY_CAT3.getOrDefault(cat3, "etc"));
+        }
         place.setRating(null);
         place.setUser_ratings_total(0);
         place.setReviews(List.of());
@@ -314,6 +449,21 @@ public class TourApiClient {
     private String text(JsonNode node, String field) {
         String value = node.path(field).asText("").trim();
         return value.isEmpty() ? null : value;
+    }
+
+    /**
+     * 쇼핑에는 편의점·체인점까지 등록돼 있어 그대로 실으면 목록이 잡화점으로 덮인다.
+     * 관광 분류코드(cat3)가 붙은 항목만 관광 목적으로 등록된 곳이라 전통시장·아울렛만 남긴다.
+     * 다른 유형은 분류코드가 비어도 정상 콘텐츠이므로(해수욕장이 대표적) 이 규칙을 적용하지 않는다.
+     */
+    private boolean isUntaggedShop(String type, JsonNode item) {
+        return SHOPPING_CONTENT_TYPE.equals(type) && text(item, "cat3") == null;
+    }
+
+    /** TourAPI는 좌표가 없는 항목에 빈 값이 아니라 0을 넣어 보낸다. */
+    private Double coordinate(JsonNode node, String field) {
+        Double value = nullableDouble(node, field);
+        return value == null || value == 0.0 ? null : value;
     }
 
     private Double nullableDouble(JsonNode node, String field) {

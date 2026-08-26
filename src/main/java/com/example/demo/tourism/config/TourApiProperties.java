@@ -13,8 +13,10 @@ public class TourApiProperties {
     private String englishBaseUrl = "https://apis.data.go.kr/B551011/EngService2";
     private String mobileOs = "ETC";
     private String mobileApp = "KoreaPoint";
-    private int busanAreaCode = 6;
-    /** searchFestival2는 areacode가 비어 오는 경우가 많아 법정동 시도코드(부산 26)로 지역을 가른다. */
+    /**
+     * 지역 필터는 법정동 시도코드(부산 26)를 쓴다.
+     * areaCode는 신규 등록 항목에서 비어 오는 경우가 많아 해수욕장·축제가 통째로 누락된다.
+     */
     private String busanLegalDongCode = "26";
     private int defaultRows = 1000;
 
@@ -28,8 +30,6 @@ public class TourApiProperties {
     public void setMobileOs(String mobileOs) { this.mobileOs = mobileOs; }
     public String getMobileApp() { return mobileApp; }
     public void setMobileApp(String mobileApp) { this.mobileApp = mobileApp; }
-    public int getBusanAreaCode() { return busanAreaCode; }
-    public void setBusanAreaCode(int busanAreaCode) { this.busanAreaCode = busanAreaCode; }
     public String getBusanLegalDongCode() { return busanLegalDongCode; }
     public void setBusanLegalDongCode(String busanLegalDongCode) { this.busanLegalDongCode = busanLegalDongCode; }
     public int getDefaultRows() { return defaultRows; }

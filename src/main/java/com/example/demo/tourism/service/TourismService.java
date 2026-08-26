@@ -45,6 +45,25 @@ public class TourismService {
         return places;
     }
 
+    /** 음식점과 카페를 한 목록으로 돌려준다. TourAPI가 둘을 같은 유형으로 관리한다. */
+    public List<TourPlaceDto> foodList(String lang) {
+        List<TourPlaceDto> places = new ArrayList<>(tourApiClient.findBusanFoodPlaces(lang));
+        scoreAndSort(places);
+        return places;
+    }
+
+    /** 음식점 목록에서 키워드로 거른다. TourAPI 키워드 검색은 유형을 섞어 주기 때문이다. */
+    public List<TourPlaceDto> foodSearch(String keyword, Double userLat, Double userLon, String lang) {
+        List<TourPlaceDto> places = foodList(lang);
+        if (keyword != null && !keyword.isBlank()) {
+            String needle = keyword.trim().toLowerCase();
+            places.removeIf(place -> place.getTitle() == null
+                    || !place.getTitle().toLowerCase().contains(needle));
+        }
+        if (userLat != null && userLon != null) applyDistances(places, userLat, userLon);
+        return places;
+    }
+
     public List<TourPlaceDto> analyzeLocation(Double lat, Double lon, String lang) {
         if (lat == null || lon == null) return List.of();
         List<TourPlaceDto> places = tourApiClient
