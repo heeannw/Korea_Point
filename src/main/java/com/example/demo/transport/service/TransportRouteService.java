@@ -397,6 +397,8 @@ public class TransportRouteService {
                 String busNo   = lane.get("busNo").asText();
                 String fromSt  = stations != null ? stations.get(0).get("stationName").asText() : "";
                 String toSt    = stations != null ? stations.get(stations.size()-1).get("stationName").asText() : "";
+                Integer fromStationId = stations != null ? readStationId(stations.get(0)) : null;
+                Integer toStationId = stations != null ? readStationId(stations.get(stations.size()-1)) : null;
 
                 TransportStepDto step = new TransportStepDto();
                 step.setType("bus");
@@ -404,6 +406,8 @@ public class TransportRouteService {
                 step.setColor(color);
                 step.setFromStation(fromSt);
                 step.setToStation(toSt);
+                step.setFromStationId(fromStationId);
+                step.setToStationId(toStationId);
                 step.setDuration(sectionTime);
                 step.setPath(pathCoords);
                 steps.add(step);
