@@ -4,15 +4,15 @@
 
    tourismKo.html / tourismEN.html 에 각각 인라인으로 중복돼 있던
    .detail-panel / .dp-* / .rev-* / .review-* / .ri-* 규칙을
-   한 파일로 추출. 값은 기존 tourismKo.html 인라인과 1:1 동일
-   (왼쪽 드로어 380px, 대표 이미지 220px).
+   한 파일로 추출. 룩은 음식점(foodmap) 상세 패널과 동일하게 통일
+   (전체 덮기 inset:0, 대표 이미지 360px, 액션 버튼 12px).
 
    로드: <head> 에서 Google Fonts 링크 뒤, 페이지 <style> 앞에
      <link rel="stylesheet" th:href="@{/css/tourism/detail-panel.css}">
    변수(--blue, --border, --light 등)는 각 페이지 <style> 의 :root 에서 선언.
    ============================================================ */
 
-.detail-panel{position:absolute;top:0;left:0;bottom:0;width:min(380px,100%);background:#fff;z-index:50;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none;box-shadow:12px 0 32px rgba(15,23,42,.16)}
+.detail-panel{position:absolute;inset:0;background:#fff;z-index:50;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none}
 .detail-panel.open{transform:translateX(0);pointer-events:auto;}
 
 /* ── 헤더 ── */
@@ -21,7 +21,7 @@
 .dp-title{font-size:16px;font-weight:700;flex:1}
 
 /* ── 대표 이미지 + 캐러셀 ── */
-.dp-img{width:100%;height:220px;object-fit:cover;background-size:cover;background-position:center;background-color:var(--light);position:relative}
+.dp-img{width:100%;height:360px;object-fit:cover;background-size:cover;background-position:center;background-repeat:no-repeat;background-color:var(--light);position:relative}
 .dp-img-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:50%;background:rgba(15,23,42,.68);color:#fff;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
 .dp-img-nav:hover{background:rgba(15,23,42,.9)}
 .dp-img-prev{left:14px}.dp-img-next{right:14px}
@@ -82,21 +82,22 @@
   background:#fff;
   border-top:1px solid var(--border);
   display:flex;
-  gap:6px;
+  gap:8px;
 }
 .dp-action-btn{
-  flex:1;        /* ✅ 이게 핵심 - 3등분 */
-  padding:13px 6px;
+  flex:1;                 /* 3등분 */
+  padding:12px 10px;
   background:var(--blue);
   color:#fff;
   border:none;
   border-radius:50px;
-  font-size:11px;  /* ✅ 3개 들어가게 작게 */
+  font-size:12px;
   font-weight:700;
   cursor:pointer;
   font-family:'DM Sans',sans-serif;
   transition:background .2s;
   text-align:center;
+  white-space:nowrap;
 }
 .dp-action-btn:hover{background:var(--blue-dk)}
 .food-btn:hover{background: #ed59a7;}
