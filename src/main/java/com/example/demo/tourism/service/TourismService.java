@@ -1,6 +1,8 @@
 package com.example.demo.tourism.service;
 
+import com.example.demo.tourism.client.BusanStoryClient;
 import com.example.demo.tourism.client.TourApiClient;
+import com.example.demo.tourism.dto.BusanStoryDto;
 import com.example.demo.tourism.dto.FoodPopularityDto;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.example.demo.tourism.dto.TourPopularityDto;
@@ -35,12 +37,15 @@ public class TourismService {
     ));
 
     private final TourApiClient tourApiClient;
+    private final BusanStoryClient busanStoryClient;
     private final TourPopularityProvider popularityProvider;
     private final FoodPopularityProvider foodPopularityProvider;
 
-    public TourismService(TourApiClient tourApiClient, TourPopularityProvider popularityProvider,
+    public TourismService(TourApiClient tourApiClient, BusanStoryClient busanStoryClient,
+                          TourPopularityProvider popularityProvider,
                           FoodPopularityProvider foodPopularityProvider) {
         this.tourApiClient = tourApiClient;
+        this.busanStoryClient = busanStoryClient;
         this.popularityProvider = popularityProvider;
         this.foodPopularityProvider = foodPopularityProvider;
     }
@@ -179,8 +184,19 @@ public class TourismService {
         return places;
     }
 
+    /**
+     * TourAPI 상세 정보에, 좌표가 가까운 부산 스토리텔링 콘텐츠가 있으면 이야기를 함께 담는다.
+     * 스토리텔링 콘텐츠는 한국어뿐이라 영문 상세에서는 붙이지 않는다.
+     */
     public Map<String, Object> getDetail(String contentId, String contentTypeId, String lang) {
-        return tourApiClient.findDetail(contentId, contentTypeId, lang);
+        Map<String, Object> detail = tourApiClient.findDetail(contentId, contentTypeId, lang);
+        if (!"en".equalsIgnoreCase(lang)) {
+            Double lat = (Double) detail.get("lat");
+            Double lng = (Double) detail.get("lng");
+            busanStoryClient.findNearestStory(lat, lng)
+                    .ifPresent(story -> detail.put("story", story));
+        }
+        return detail;
     }
 
     /**
