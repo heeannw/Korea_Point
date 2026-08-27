@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>Korea Point | 부산 이야기 챗봇</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -33,6 +35,7 @@
             padding: 0 24px;
             background: var(--white);
             border-bottom: 1px solid var(--border);
+            flex: none;
         }
         .logo {
             font-family: "Playfair Display", serif;
@@ -49,6 +52,85 @@
             text-decoration: none;
         }
         .back-link:hover { color: var(--primary); }
+
+        .layout {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+
+        /* ===== 왼쪽: 지난 대화 목록 ===== */
+        .sidebar {
+            width: 260px;
+            flex: none;
+            background: var(--white);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        .new-chat-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            padding: 10px;
+            border: 1.5px solid var(--border);
+            border-radius: 50px;
+            background: transparent;
+            color: var(--primary-dark);
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: 16px;
+            transition: all 0.2s ease;
+        }
+        .new-chat-btn:hover { background: var(--light); border-color: var(--primary); }
+        .sidebar-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--gray);
+            margin: 4px 4px 8px;
+        }
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .history-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 10px 12px;
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            font-size: 13px;
+            color: var(--dark);
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background 0.15s ease;
+        }
+        .history-item:hover { background: var(--light); }
+        .history-item.active { background: var(--light); color: var(--primary-dark); font-weight: 700; }
+        .history-empty {
+            font-size: 12px;
+            color: #9aa7bd;
+            padding: 8px 12px;
+        }
+
+        /* ===== 오른쪽: 채팅 영역 ===== */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
         main {
             flex: 1;
             overflow-y: auto;
@@ -112,6 +194,7 @@
         footer {
             padding: 16px 24px 24px;
             background: var(--light);
+            flex: none;
         }
         .composer {
             max-width: 720px;
@@ -143,6 +226,10 @@
         }
         .composer button:hover { background: var(--primary-dark); }
         .composer button:disabled { background: var(--gray); cursor: not-allowed; }
+
+        @media (max-width: 720px) {
+            .sidebar { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -151,30 +238,115 @@
     <a class="back-link" th:href="@{/ko}" href="/ko">← 홈으로</a>
 </header>
 
-<main id="chatMain">
-    <div class="chat-shell" id="chatShell">
-        <div class="intro">
-            <h1>🤖 부산 이야기 챗봇</h1>
-            <p>부산의 설화와 장소에 얽힌 이야기를 물어보세요.</p>
+<div class="layout">
+    <aside class="sidebar">
+        <button type="button" class="new-chat-btn" id="newChatBtn">+ 새 대화</button>
+        <div class="sidebar-label">지난 대화</div>
+        <div class="history-list" id="historyList">
+            <div class="history-empty" id="historyEmpty">아직 대화 기록이 없어요.</div>
         </div>
-    </div>
-</main>
+    </aside>
 
-<footer>
-    <form class="composer" id="chatForm">
-        <input type="text" id="chatInput" placeholder="예) 해운대에 얽힌 전설 있어?" autocomplete="off" required>
-        <button type="submit" id="chatSend">보내기</button>
-    </form>
-</footer>
+    <div class="chat-area">
+        <main id="chatMain">
+            <div class="chat-shell" id="chatShell">
+                <div class="intro" id="chatIntro">
+                    <h1>🤖 부산 이야기 챗봇</h1>
+                    <p>부산의 설화와 장소에 얽힌 이야기를 물어보세요.</p>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <form class="composer" id="chatForm">
+                <input type="text" id="chatInput" placeholder="예) 해운대에 얽힌 전설 있어?" autocomplete="off" required>
+                <button type="submit" id="chatSend">보내기</button>
+            </form>
+        </footer>
+    </div>
+</div>
 
 <script th:inline="javascript">
+    const CSRF_TOKEN = document.querySelector('meta[name="_csrf"]').content;
+    const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]').content;
+    const STORAGE_KEY = 'chatbotConversations';
+
     const form = document.getElementById('chatForm');
     const input = document.getElementById('chatInput');
     const shell = document.getElementById('chatShell');
     const sendBtn = document.getElementById('chatSend');
     const main = document.getElementById('chatMain');
+    const historyList = document.getElementById('historyList');
+    const historyEmpty = document.getElementById('historyEmpty');
+    const newChatBtn = document.getElementById('newChatBtn');
+    const chatIntro = document.getElementById('chatIntro');
 
-    function addMessage(role, text) {
+    // ── 지난 대화는 브라우저(localStorage)에만 저장한다. 서버엔 대화 기록을 안 남긴다.
+    let conversations = loadConversations();
+    let activeId = null;
+
+    function loadConversations() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveConversations() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+        } catch (e) { /* 저장 공간이 없으면 그냥 이번 세션만 유지 */ }
+    }
+
+    function renderHistoryList() {
+        historyList.querySelectorAll('.history-item').forEach(el => el.remove());
+        historyEmpty.style.display = conversations.length ? 'none' : 'block';
+        [...conversations].reverse().forEach(conv => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'history-item' + (conv.id === activeId ? ' active' : '');
+            btn.textContent = conv.title;
+            btn.addEventListener('click', () => openConversation(conv.id));
+            historyList.appendChild(btn);
+        });
+    }
+
+    function openConversation(id) {
+        const conv = conversations.find(c => c.id === id);
+        if (!conv) return;
+        activeId = id;
+        shell.innerHTML = '';
+        conv.messages.forEach(msg => {
+            const bubble = addMessage(msg.role, msg.text, false);
+            if (msg.sources) addSources(bubble, msg.sources);
+        });
+        renderHistoryList();
+    }
+
+    function startNewConversation() {
+        activeId = null;
+        shell.innerHTML = '';
+        shell.appendChild(chatIntro);
+        renderHistoryList();
+        input.focus();
+    }
+
+    function ensureActiveConversation(firstQuestion) {
+        if (activeId) return conversations.find(c => c.id === activeId);
+        const conv = {
+            id: Date.now().toString(36),
+            title: firstQuestion.length > 24 ? firstQuestion.slice(0, 24) + '…' : firstQuestion,
+            messages: []
+        };
+        conversations.push(conv);
+        activeId = conv.id;
+        return conv;
+    }
+
+    function addMessage(role, text, removeIntro = true) {
+        if (removeIntro && chatIntro.parentNode) chatIntro.remove();
         const row = document.createElement('div');
         row.className = 'msg-row ' + role;
         const bubble = document.createElement('div');
@@ -199,12 +371,18 @@
         bubble.appendChild(box);
     }
 
+    newChatBtn.addEventListener('click', startNewConversation);
+
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const question = input.value.trim();
         if (!question) return;
 
+        const conv = ensureActiveConversation(question);
         addMessage('user', question);
+        conv.messages.push({ role: 'user', text: question });
+        renderHistoryList();
+
         input.value = '';
         sendBtn.disabled = true;
         const typingBubble = addMessage('bot', '');
@@ -214,7 +392,10 @@
         try {
             const response = await fetch('/chatbot/ask', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    [CSRF_HEADER]: CSRF_TOKEN
+                },
                 body: JSON.stringify({ question })
             });
             if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -222,6 +403,8 @@
             typingBubble.classList.remove('typing');
             typingBubble.textContent = data.answer || '답변을 받지 못했어요.';
             addSources(typingBubble, data.sources);
+            conv.messages.push({ role: 'bot', text: data.answer, sources: data.sources });
+            saveConversations();
         } catch (error) {
             typingBubble.classList.remove('typing');
             typingBubble.textContent = '답변을 가져오지 못했어요. 잠시 후 다시 시도해 주세요.';
@@ -231,6 +414,8 @@
             input.focus();
         }
     });
+
+    renderHistoryList();
 </script>
 </body>
 </html>
