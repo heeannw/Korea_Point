@@ -23,6 +23,7 @@ public class UserController {
     // Spring Security OAuth2의 loginPage("/login")이 이 URL을 바라봄
     @GetMapping("/login")
     public String loginPage(@RequestParam(required = false) String lang,
+                            @RequestParam(required = false, defaultValue = "false") boolean signup,
                             HttpSession session, Model model) {
         String selected = lang;
         if (!isSupportedLanguage(selected)) {
@@ -32,6 +33,7 @@ public class UserController {
         }
         session.setAttribute("loginLanguage", selected);
         model.addAttribute("lang", selected);
+        model.addAttribute("signupMode", signup);
         return "user/login";
     }
 

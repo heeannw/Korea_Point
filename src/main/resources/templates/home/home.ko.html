@@ -1225,6 +1225,26 @@
 </footer>
 
 <script>
+    const loginOpenButton = document.querySelector(".header-right a.h-btn-fill[href='/login']");
+
+    function openLoginWindow(event) {
+        if (event) event.preventDefault();
+        const popup = window.open(
+            "/login?lang=ko",
+            "koreaPointLogin",
+            "width=520,height=760,left=700,top=120,resizable=yes,scrollbars=yes"
+        );
+        if (popup) {
+            popup.focus();
+        } else {
+            window.location.href = "/login?lang=ko";
+        }
+    }
+
+    if (loginOpenButton) {
+        loginOpenButton.addEventListener("click", openLoginWindow);
+    }
+
     let current = 0;
     let currentPosition = 0;
     let isTransitioning = false;

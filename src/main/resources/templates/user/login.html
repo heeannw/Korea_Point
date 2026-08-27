@@ -9,9 +9,14 @@
     <script defer th:src="@{/js/trip/trip-translate.js}"></script>
     <style>
         body{top:0!important}.goog-te-banner-frame.skiptranslate,body>.skiptranslate{display:none!important}
+        .auth-wrap{max-width:460px}
+        .auth-wrap.choice-active{max-width:920px}
         .auth-heading{display:none}.auth-heading.active{display:block}
         .auth-panel{display:none}.auth-panel.active{display:block}
+        .signup-step{display:none}.signup-step.active{display:block}
         .account-panel{display:none}.account-panel.active{display:block}
+        .signup-choice-card{min-height:300px}
+        @media (max-width: 768px){.auth-wrap.choice-active{max-width:460px}.signup-choice-card{min-height:0}}
     </style>
 </head>
 <body class="min-h-screen bg-[#FAFAFA] flex flex-col items-center justify-center py-10">
@@ -27,7 +32,7 @@
         </select>
     </div>
 
-    <div class="w-full max-w-[460px] px-6">
+    <div id="authWrap" class="auth-wrap w-full px-6 transition-all duration-300">
         <div id="welcomeback" class="auth-heading" th:classappend="${signupMode} ? '' : ' active'">
             <div class="flex flex-col items-center mb-8">
                 <a th:href="@{/}" class="flex items-center gap-2 no-underline mb-6">
@@ -107,74 +112,115 @@
             </section>
 
             <section id="signupPanel" class="auth-panel" th:classappend="${signupMode} ? ' active' : ''">
-                <div class="grid grid-cols-2 gap-2 rounded-xl bg-gray-100 p-1 mb-5">
-                    <button type="button" data-account-target="personalPanel"
-                            class="account-tab h-10 rounded-lg text-[14px] transition-colors">개인</button>
-                    <button type="button" data-account-target="ownerPanel"
-                            class="account-tab h-10 rounded-lg text-[14px] transition-colors">사업자</button>
+                <div id="signupChoiceStep" class="signup-step">
+                    <div class="text-center mb-6">
+                        <p class="text-[13px] text-[#1a7de0]" style="font-weight:700;">가입 유형 선택</p>
+                        <h2 class="text-[24px] text-gray-900 mt-1" style="font-weight:800;">어떤 회원으로 시작할까요?</h2>
+                    </div>
+
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <button type="button" data-signup-type="personal"
+                                class="signup-choice-card group flex flex-col items-center justify-between rounded-2xl border border-blue-100 bg-white p-7 text-center shadow-sm transition-all hover:-translate-y-1 hover:border-[#3b9eff] hover:shadow-[0_16px_36px_rgba(59,158,255,0.16)]">
+                            <span class="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#eff6ff] text-[#2563EB] ring-1 ring-blue-100 transition-colors group-hover:bg-[#3b9eff] group-hover:text-white">
+                                <i data-lucide="user-round" class="h-10 w-10"></i>
+                            </span>
+                            <span class="mt-6 block text-[28px] text-gray-900" style="font-weight:800;">개인 회원</span>
+                            <span class="mt-2 block text-[14px] leading-relaxed text-gray-500">한국 여행 정보와 커뮤니티를 이용해요.</span>
+                            <span class="mt-7 inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#3b9eff] text-[15px] text-white transition-colors group-hover:bg-[#1a7de0]" style="font-weight:800;">개인으로 가입하기</span>
+                        </button>
+
+                        <button type="button" data-signup-type="owner"
+                                class="signup-choice-card group flex flex-col items-center justify-between rounded-2xl border border-blue-100 bg-[#f8fbff] p-7 text-center shadow-sm transition-all hover:-translate-y-1 hover:border-[#3b9eff] hover:shadow-[0_16px_36px_rgba(59,158,255,0.16)]">
+                            <span class="flex h-20 w-20 items-center justify-center rounded-2xl bg-white text-[#1a7de0] ring-1 ring-blue-100 transition-colors group-hover:bg-[#2563EB] group-hover:text-white">
+                                <i data-lucide="store" class="h-10 w-10"></i>
+                            </span>
+                            <span class="mt-6 block text-[28px] text-gray-900" style="font-weight:800;">사업자 회원</span>
+                            <span class="mt-2 block text-[14px] leading-relaxed text-gray-500">매장 정보와 입점 서류를 함께 등록해요.</span>
+                            <span class="mt-7 inline-flex h-12 w-full items-center justify-center rounded-xl border border-[#3b9eff] bg-white text-[15px] text-[#1a7de0] transition-colors group-hover:bg-[#2563EB] group-hover:text-white" style="font-weight:800;">사업자로 가입하기</span>
+                        </button>
+                    </div>
+
+                    <p class="text-center text-[13px] text-gray-500 mt-6">
+                        이미 계정이 있으신가요?
+                        <button type="button" data-auth-target="loginPanel"
+                                class="text-[#2563EB] hover:text-blue-700" style="font-weight:700;">아이디로 로그인</button>
+                    </p>
                 </div>
 
-                <form id="signupForm" th:action="@{/signup}" method="post" enctype="multipart/form-data" class="space-y-3">
-                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                    <input id="accountTypeInput" name="accountType" type="hidden" th:value="${accountType == 'owner'} ? 'owner' : 'personal'"/>
-                    <input type="hidden" name="lang" th:value="${lang}"/>
-
-                    <input name="name" type="text" placeholder="이름" autocomplete="name"
-                           class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                    <input id="signupLoginId" name="loginId" type="text" placeholder="아이디" autocomplete="username"
-                           pattern="(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{4,20}"
-                           title="아이디는 영문과 숫자를 포함한 4~20자로 입력해 주세요."
-                           class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                    <p class="text-[12px] text-gray-400 -mt-1">영문과 숫자를 포함해 4~20자로 입력해 주세요.</p>
-                    <input id="signupPassword" name="password" type="password" placeholder="비밀번호" autocomplete="new-password"
-                           pattern="(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,20}"
-                           title="비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자로 입력해 주세요."
-                           class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                    <p class="text-[12px] text-gray-400 -mt-1">영문, 숫자, 특수문자를 포함해 8~20자로 입력해 주세요.</p>
-                    <input id="signupPasswordConfirm" name="passwordConfirm" type="password" placeholder="비밀번호 확인" autocomplete="new-password"
-                           class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                    <input name="email" type="email" placeholder="이메일"
-                           class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-
-                    <div id="personalPanel" class="account-panel">
-                        <p class="text-[12px] text-gray-400 leading-relaxed pt-1">
-                            개인은 아이디 가입과 Google 로그인을 모두 이용할 수 있어요.
-                        </p>
+                <div id="signupFormStep" class="signup-step">
+                    <div class="mb-5 flex items-center justify-between gap-3">
+                        <button type="button" id="backToSignupChoice"
+                                class="inline-flex items-center gap-1 text-[13px] text-gray-500 hover:text-[#2563EB]">
+                            <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                            유형 다시 선택
+                        </button>
+                        <span id="accountTypeBadge"
+                              class="rounded-full border border-blue-100 bg-[#eff6ff] px-3 py-1 text-[12px] text-[#1a7de0]"
+                              style="font-weight:700;">개인 회원</span>
                     </div>
 
-                    <div id="ownerPanel" class="account-panel space-y-3">
-                        <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
-                            <div class="flex items-center gap-2 mb-3">
-                                <i data-lucide="store" class="w-4 h-4 text-[#2563EB]"></i>
-                                <strong class="text-[14px] text-gray-900">입점 서류 등록</strong>
-                                <span class="ml-auto text-[11px] text-blue-600 bg-white border border-blue-100 rounded-full px-2 py-1">검토 대기</span>
-                            </div>
-                            <input name="storeName" type="text" placeholder="가게명"
-                                   class="owner-required-field mb-2 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
-                            <input name="businessRegistrationNumber" type="text" placeholder="사업자등록번호"
-                                   class="owner-required-field mb-3 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
-                            <label class="block text-[12px] text-gray-500 mb-1">사업자등록증</label>
-                            <input name="businessRegistrationFile" type="file"
-                                   class="owner-required-field mb-3 w-full text-[12px] text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-[#2563EB]"/>
-                            <label class="block text-[12px] text-gray-500 mb-1">영업신고증</label>
-                            <input name="businessLicenseFile" type="file"
-                                   class="owner-required-field mb-3 w-full text-[12px] text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-[#2563EB]"/>
-                            <label class="block text-[12px] text-gray-500 mb-1">메뉴판 또는 메뉴 정보</label>
-                            <input name="menuFile" type="file"
-                                   class="owner-required-field w-full text-[12px] text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-[#2563EB]"/>
+                    <form id="signupForm" th:action="@{/signup}" method="post" enctype="multipart/form-data" class="space-y-3">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <input id="accountTypeInput" name="accountType" type="hidden" th:value="${accountType == 'owner'} ? 'owner' : 'personal'"/>
+                        <input type="hidden" name="lang" th:value="${lang}"/>
+
+                        <input name="name" type="text" placeholder="이름" autocomplete="name"
+                               class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                        <input id="signupLoginId" name="loginId" type="text" placeholder="아이디" autocomplete="username"
+                               pattern="(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{4,20}"
+                               title="아이디는 영문과 숫자를 포함한 4~20자로 입력해 주세요."
+                               class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                        <p class="text-[12px] text-gray-400 -mt-1">영문과 숫자를 포함해 4~20자로 입력해 주세요.</p>
+                        <input id="signupPassword" name="password" type="password" placeholder="비밀번호" autocomplete="new-password"
+                               pattern="(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,20}"
+                               title="비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자로 입력해 주세요."
+                               class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                        <p class="text-[12px] text-gray-400 -mt-1">영문, 숫자, 특수문자를 포함해 8~20자로 입력해 주세요.</p>
+                        <input id="signupPasswordConfirm" name="passwordConfirm" type="password" placeholder="비밀번호 확인" autocomplete="new-password"
+                               class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                        <input name="email" type="email" placeholder="이메일"
+                               class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+
+                        <div id="personalPanel" class="account-panel">
+                            <p class="text-[12px] text-gray-400 leading-relaxed pt-1">
+                                개인은 아이디 가입과 Google 로그인을 모두 이용할 수 있어요.
+                            </p>
                         </div>
-                    </div>
 
-                    <button type="submit"
-                            class="w-full h-12 rounded-xl bg-[#2563EB] text-white text-[15px] hover:bg-blue-700 transition-colors"
-                            style="font-weight:700;">회원가입 완료</button>
-                </form>
+                        <div id="ownerPanel" class="account-panel space-y-3">
+                            <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <i data-lucide="store" class="w-4 h-4 text-[#2563EB]"></i>
+                                    <strong class="text-[14px] text-gray-900">입점 서류 등록</strong>
+                                    <span class="ml-auto text-[11px] text-blue-600 bg-white border border-blue-100 rounded-full px-2 py-1">검토 대기</span>
+                                </div>
+                                <input name="storeName" type="text" placeholder="가게명"
+                                       class="owner-required-field mb-2 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
+                                <input name="businessRegistrationNumber" type="text" placeholder="사업자등록번호"
+                                       class="owner-required-field mb-3 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
+                                <label class="block text-[12px] text-gray-500 mb-1">사업자등록증</label>
+                                <input name="businessRegistrationFile" type="file"
+                                       class="owner-required-field mb-3 w-full text-[12px] text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-[#2563EB]"/>
+                                <label class="block text-[12px] text-gray-500 mb-1">영업신고증</label>
+                                <input name="businessLicenseFile" type="file"
+                                       class="owner-required-field mb-3 w-full text-[12px] text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-[#2563EB]"/>
+                                <label class="block text-[12px] text-gray-500 mb-1">메뉴판 또는 메뉴 정보</label>
+                                <input name="menuFile" type="file"
+                                       class="owner-required-field w-full text-[12px] text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-[#2563EB]"/>
+                            </div>
+                        </div>
 
-                <p class="text-center text-[13px] text-gray-500 mt-5">
-                    이미 계정이 있으신가요?
-                    <button type="button" data-auth-target="loginPanel"
-                            class="text-[#2563EB] hover:text-blue-700" style="font-weight:700;">아이디로 로그인</button>
-                </p>
+                        <button type="submit"
+                                class="w-full h-12 rounded-xl bg-[#2563EB] text-white text-[15px] hover:bg-blue-700 transition-colors"
+                                style="font-weight:700;">회원가입 완료</button>
+                    </form>
+
+                    <p class="text-center text-[13px] text-gray-500 mt-5">
+                        이미 계정이 있으신가요?
+                        <button type="button" data-auth-target="loginPanel"
+                                class="text-[#2563EB] hover:text-blue-700" style="font-weight:700;">아이디로 로그인</button>
+                    </p>
+                </div>
             </section>
 
             <p class="text-center text-[12px] text-gray-400 mt-5 leading-relaxed">
@@ -204,15 +250,38 @@
 
         const accountTypeFromServer = /*[[${accountType}]]*/ 'personal';
         const initialAccountType = accountTypeFromServer === 'owner' ? 'owner' : 'personal';
+        const startOnSignupForm = /*[[${signupError != null}]]*/ false;
+        const authWrap = document.getElementById('authWrap');
         const passwordInput = document.getElementById('signupPassword');
         const passwordConfirmInput = document.getElementById('signupPasswordConfirm');
 
-        function showAuthPanel(panelId) {
+        function showAuthPanel(panelId, options = {}) {
             document.querySelectorAll('.auth-panel').forEach(panel => panel.classList.remove('active'));
             document.getElementById(panelId).classList.add('active');
 
             document.querySelectorAll('.auth-heading').forEach(heading => heading.classList.remove('active'));
             document.getElementById(panelId === 'signupPanel' ? 'welcome' : 'welcomeback').classList.add('active');
+
+            if (panelId === 'signupPanel') {
+                options.form ? showSignupForm(initialAccountType) : showSignupChoice();
+            } else {
+                authWrap.classList.remove('choice-active');
+            }
+        }
+
+        function showSignupChoice() {
+            document.getElementById('signupChoiceStep').classList.add('active');
+            document.getElementById('signupFormStep').classList.remove('active');
+            authWrap.classList.add('choice-active');
+            lucide.createIcons();
+        }
+
+        function showSignupForm(type) {
+            document.getElementById('signupChoiceStep').classList.remove('active');
+            document.getElementById('signupFormStep').classList.add('active');
+            authWrap.classList.remove('choice-active');
+            showAccountPanel(type);
+            lucide.createIcons();
         }
 
         function showAccountPanel(type) {
@@ -220,13 +289,7 @@
             document.querySelectorAll('.account-panel').forEach(panel => panel.classList.remove('active'));
             document.getElementById(targetId).classList.add('active');
             document.getElementById('accountTypeInput').value = type;
-            document.querySelectorAll('.account-tab').forEach(tab => {
-                const active = tab.dataset.accountTarget === targetId;
-                tab.classList.toggle('bg-white', active);
-                tab.classList.toggle('text-gray-900', active);
-                tab.classList.toggle('shadow-sm', active);
-                tab.classList.toggle('text-gray-500', !active);
-            });
+            document.getElementById('accountTypeBadge').textContent = type === 'owner' ? '사업자 회원' : '개인 회원';
             document.querySelectorAll('.owner-required-field').forEach(field => {
                 field.required = type === 'owner';
             });
@@ -240,15 +303,18 @@
         document.querySelectorAll('[data-auth-target]').forEach(button => {
             button.addEventListener('click', () => showAuthPanel(button.dataset.authTarget));
         });
-        document.querySelectorAll('[data-account-target]').forEach(button => {
-            button.addEventListener('click', () => {
-                showAccountPanel(button.dataset.accountTarget === 'ownerPanel' ? 'owner' : 'personal');
-            });
+        document.querySelectorAll('[data-signup-type]').forEach(button => {
+            button.addEventListener('click', () => showSignupForm(button.dataset.signupType));
         });
+        document.getElementById('backToSignupChoice').addEventListener('click', showSignupChoice);
         passwordInput.addEventListener('input', validatePasswordConfirm);
         passwordConfirmInput.addEventListener('input', validatePasswordConfirm);
 
-        showAccountPanel(initialAccountType);
+        if (document.getElementById('signupPanel').classList.contains('active')) {
+            startOnSignupForm ? showSignupForm(initialAccountType) : showSignupChoice();
+        } else {
+            showAccountPanel(initialAccountType);
+        }
         lucide.createIcons();
     </script>
 </body>
