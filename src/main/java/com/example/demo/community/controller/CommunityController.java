@@ -73,7 +73,10 @@ public class CommunityController {
     }
 
     @GetMapping("/post/write")
-    public String writeForm(Model model, RedirectAttributes redirectAttributes) {
+    public String writeForm(@RequestParam(required = false) String placeContentId,
+                            @RequestParam(required = false) String placeContentTypeId,
+                            @RequestParam(required = false) String placeTitle,
+                            Model model, RedirectAttributes redirectAttributes) {
         if (isCommunitySuspended()) {
             redirectAttributes.addFlashAttribute("communityError", "커뮤니티 기능이 정지된 계정입니다.");
             return "redirect:/community/post-list";
@@ -83,6 +86,9 @@ public class CommunityController {
         model.addAttribute("currentUserPoint", userService.findById(SecurityUtil.getCurrentUserId()).getPoint());
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
+        model.addAttribute("placeContentId", placeContentId);
+        model.addAttribute("placeContentTypeId", placeContentTypeId);
+        model.addAttribute("placeTitle", placeTitle);
         return "community/post-write";
     }
 
