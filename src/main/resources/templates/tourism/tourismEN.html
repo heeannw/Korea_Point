@@ -206,28 +206,48 @@
       <div class="dp-header">
         <button class="dp-back" onclick="closeDetail()">←</button>
         <div class="dp-title" id="dpTitle"></div>
-        <div style="font-size:20px;cursor:pointer">🔖</div>
+        <div class="dp-header-right">
+          <button class="summary-save" id="btnSave" type="button" aria-label="Save place">♡</button>
+        </div>
       </div>
-      <div class="dp-img" id="dpImg">
-        <button class="dp-img-nav dp-img-prev dp-img-hidden" id="dpImgPrev" type="button" onclick="moveDetailImage(-1)" aria-label="Previous image">‹</button>
-        <button class="dp-img-nav dp-img-next dp-img-hidden" id="dpImgNext" type="button" onclick="moveDetailImage(1)" aria-label="Next image">›</button>
-        <div class="dp-img-count dp-img-hidden" id="dpImgCount"></div>
+      <div class="dp-hero no-image" id="dpHero">
+        <button class="dp-hero-nav dp-hero-prev dp-hero-hidden" id="dpImgPrev" type="button" onclick="moveDetailImage(-1)" aria-label="Previous image">‹</button>
+        <button class="dp-hero-nav dp-hero-next dp-hero-hidden" id="dpImgNext" type="button" onclick="moveDetailImage(1)" aria-label="Next image">›</button>
+        <div class="dp-hero-count dp-hero-hidden" id="dpImgCount"></div>
       </div>
       <div class="dp-body">
-        <div class="dp-badge-row" id="dpBadges"></div>
-        <div class="dp-name" id="dpName"></div>
-        <div class="dp-sub" id="dpSub"></div>
-        <div class="dp-stars" id="dpStars"></div>
-        <div class="dp-info-row" id="dpInfoRow"></div>
-        <div class="dp-desc" id="dpDesc"></div>
-        <div class="dp-section-title">Reviews</div>
-        <div class="rev-summary" id="dpRevSummary"></div>
-        <div id="dpReviews"></div>
-      </div>
-      <div class="dp-action">
-        <button class="dp-action-btn food-btn" id="itineraryBtn">🍽 Nearby Restaurants</button>
-        <button class="dp-action-btn cafe-btn" id="itineraryBtn1">☕️Nearby Cafés</button>
-        <button class="dp-action-btn route-btn" id="itineraryBtn2" type="button">🚇 Get Directions</button>
+        <section class="dp-summary">
+          <div class="dp-badges" id="dpBadges"></div>
+          <div class="dp-name" id="dpName"></div>
+          <div class="dp-sub" id="dpSub"></div>
+          <div class="dp-rating" id="dpRating"></div>
+        </section>
+        <div class="quick-actions">
+          <button class="quick-btn" id="itineraryBtn2" type="button">
+            <div class="qb-icon">🚇</div><span class="qb-label">Directions</span>
+          </button>
+          <button class="quick-btn" id="itineraryBtn" type="button">
+            <div class="qb-icon">🍽️</div><span class="qb-label">Food</span>
+          </button>
+          <button class="quick-btn" id="itineraryBtn1" type="button">
+            <div class="qb-icon">☕</div><span class="qb-label">Cafés</span>
+          </button>
+          <button class="quick-btn" id="btnShare" type="button">
+            <div class="qb-icon">🔗</div><span class="qb-label">Share</span>
+          </button>
+        </div>
+        <nav class="dp-tabs">
+          <button class="dp-tab active" type="button" data-tab="info" onclick="showDetailTab('info')">Info</button>
+          <button class="dp-tab" type="button" data-tab="reviews" onclick="showDetailTab('reviews')">Reviews</button>
+          <button class="dp-tab" type="button" data-tab="community" onclick="showDetailTab('community')">Community</button>
+        </nav>
+        <section class="tab-panel" id="tab-info">
+          <div class="dp-info-row" id="dpInfoRow"></div>
+          <div class="section-card"><div class="section-title">About</div><div class="dp-desc" id="dpDesc"></div></div>
+          <div id="dpApiInfo"></div>
+        </section>
+        <section class="tab-panel" id="tab-reviews" hidden><div id="dpReviews"></div></section>
+        <section class="tab-panel" id="tab-community" hidden><div id="dpCommunity"></div></section>
       </div>
     </div>
   </div>
@@ -248,6 +268,7 @@
   let activePinId = null;
   let popupOverlay = null;
   let currentPopupPlace = null;
+  let currentDetailPlace = null;
   let map;
   let markerMap = [];
   let selectedMarker = null;
@@ -499,15 +520,16 @@
   }
 
   function renderDetailImage() {
-    const imageBox = document.getElementById('dpImg');
+    const hero = document.getElementById('dpHero');
     const hasImage = detailImages.length > 0;
     const current = hasImage ? detailImages[detailImageIndex] : '';
-    imageBox.style.backgroundImage = current ? `url("${String(current).replace(/"/g, '%22')}")` : 'none';
+    hero.style.backgroundImage = current ? `url("${String(current).replace(/"/g, '%22')}")` : '';
+    hero.classList.toggle('no-image', !hasImage);
     const multiple = detailImages.length > 1;
-    document.getElementById('dpImgPrev').classList.toggle('dp-img-hidden', !multiple);
-    document.getElementById('dpImgNext').classList.toggle('dp-img-hidden', !multiple);
+    document.getElementById('dpImgPrev').classList.toggle('dp-hero-hidden', !multiple);
+    document.getElementById('dpImgNext').classList.toggle('dp-hero-hidden', !multiple);
     const counter = document.getElementById('dpImgCount');
-    counter.classList.toggle('dp-img-hidden', !multiple);
+    counter.classList.toggle('dp-hero-hidden', !multiple);
     counter.textContent = multiple ? `${detailImageIndex + 1} / ${detailImages.length}` : '';
   }
 
@@ -538,74 +560,148 @@
 
   async function loadTourApiDetail(p) {
     const desc = document.getElementById('dpDesc');
+    const apiInfo = document.getElementById('dpApiInfo');
     if (!p.id || !p.type) {
-      desc.innerHTML = '<p>No detail identifier is available.</p>';
+      desc.textContent = 'No detail identifier is available.';
       return;
     }
-    desc.innerHTML = '<p style="color:#64748b">Loading Korea Tourism Organization details...</p>';
+    desc.textContent = 'Loading Korea Tourism Organization details...';
     try {
       const response = await fetch(`/tour/api/detail/${encodeURIComponent(p.id)}?contentTypeId=${encodeURIComponent(p.type)}&lang=en`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const detail = await response.json();
+      if (currentDetailPlace !== p) return;
       const rows = Object.entries(detail.details || {}).map(([key, value]) => {
         const shown = key.includes('date') ? detailDate(value) : detailText(value);
         return `<div class="dp-info"><div class="dp-info-label">${escapeDetail(DETAIL_LABELS_EN[key] || key)}</div><div class="dp-info-val">${escapeDetail(shown)}</div></div>`;
       }).join('');
       const overview = escapeDetail(detail.overview || 'No description is currently available.');
-      const tel = detail.tel ? `<p style="margin-top:12px"><b>Tel:</b> ${escapeDetail(detail.tel)}</p>` : '';
-      desc.innerHTML = `<p style="line-height:1.75;white-space:pre-line">${overview}</p>${tel}${rows ? `<div class="dp-info-row" style="margin-top:18px">${rows}</div>` : ''}`;
+      const tel = detail.tel ? `<p style="margin-top:10px"><b>Tel:</b> ${escapeDetail(detail.tel)}</p>` : '';
+      desc.innerHTML = `<p style="line-height:1.75;white-space:pre-line">${overview}</p>${tel}`;
+      apiInfo.innerHTML = rows
+        ? `<div class="section-card"><div class="section-title">Visitor info</div><div class="dp-info-row" style="margin:0">${rows}</div></div>` : '';
       setDetailImages(detail.images?.length ? detail.images : [detail.image || p.image]);
     } catch (error) {
-      desc.innerHTML = '<p style="color:#b91c1c">Unable to load details. Please try again later.</p>';
+      desc.textContent = 'Unable to load details. Please try again later.';
       console.error('TourAPI detail error', error);
     }
   }
 
+  function showDetailTab(name) {
+    ['info', 'reviews', 'community'].forEach(tab => {
+      const panel = document.getElementById('tab-' + tab);
+      if (panel) panel.hidden = tab !== name;
+      document.querySelector(`.dp-tab[data-tab="${tab}"]`)?.classList.toggle('active', tab === name);
+    });
+  }
+
+  function renderReviews(p) {
+    const root = document.getElementById('dpReviews');
+    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
+    if (!reviews.length) {
+      root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">✎</span>
+        <strong>No visitor reviews yet</strong>Short reviews written after a visit will appear here.</div>`;
+      return;
+    }
+    root.innerHTML = `<div class="section-card"><div class="section-title">Visitor reviews <small>${reviews.length}</small></div>`
+      + reviews.slice(0, 10).map(r => `<article class="review-card">
+          <div class="review-head">
+            <span class="review-author">${escapeDetail(r.author_name || r.authorName || 'Visitor')}</span>
+            <span class="review-star">${r.rating ? `★ ${escapeDetail(String(r.rating))}` : ''}</span>
+          </div>
+          <p class="review-text">${escapeDetail(r.text || r.content || '')}</p>
+        </article>`).join('') + `</div>`;
+  }
+
+  async function loadCommunityPosts(p) {
+    const root = document.getElementById('dpCommunity');
+    const writeUrl = `/community/post/write?placeContentId=${encodeURIComponent(p.id || '')}`
+      + `&placeContentTypeId=${encodeURIComponent(p.type || '')}&placeTitle=${encodeURIComponent(p.google_name || p.title || '')}`;
+    root.innerHTML = `<div class="section-card empty-state">Loading community stories…</div>`;
+    try {
+      const res = await fetch(`/tour/api/community/${encodeURIComponent(p.id)}`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const posts = await res.json();
+      if (currentDetailPlace !== p) return;
+      if (!posts.length) {
+        root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">💬</span>
+          <strong>Be the first to share this place</strong>
+          Stories that tag this place in Community appear here.<br>
+          <a class="outline-btn" href="${writeUrl}">Write a story</a></div>`;
+        return;
+      }
+      root.innerHTML = `<div class="section-card"><div class="section-title">Community stories <small>${posts.length}</small></div>`
+        + posts.map(post => `<a class="community-card" href="/community/post/${post.postId}">
+            <div class="community-meta"><span>${escapeDetail(post.authorName || '')}</span><span>views ${Number(post.viewCount || 0).toLocaleString()} · comments ${Number(post.commentCount || 0).toLocaleString()}</span></div>
+            <div class="community-title">${escapeDetail((post.titleEn) || post.title || '')}</div>
+            <p class="community-preview">${escapeDetail((post.contentEnPreview) || post.contentPreview || '')}</p>
+          </a>`).join('') + `<a class="outline-btn" href="${writeUrl}">Write a story</a></div>`;
+    } catch (e) {
+      root.innerHTML = `<div class="section-card empty-state">Could not load Community stories.</div>`;
+      console.error('community posts error', e);
+    }
+  }
+
+  const SAVED_KEY = 'tourSavedPlaces';
+  function savedSet() {
+    try { return new Set(JSON.parse(localStorage.getItem(SAVED_KEY) || '[]')); }
+    catch (e) { return new Set(); }
+  }
+  function updateSaveButton(p) {
+    const btn = document.getElementById('btnSave');
+    const on = p && p.id != null && savedSet().has(String(p.id));
+    btn.classList.toggle('saved', on);
+    btn.textContent = on ? '♥' : '♡';
+  }
+  function toggleSave(p) {
+    if (!p || p.id == null) return;
+    const set = savedSet();
+    const key = String(p.id);
+    set.has(key) ? set.delete(key) : set.add(key);
+    try { localStorage.setItem(SAVED_KEY, JSON.stringify([...set])); } catch (e) {}
+    updateSaveButton(p);
+  }
+
   function openDetail(p) {
     if (!p) return;
+    currentDetailPlace = p;
+    showDetailTab('info');
     const color = getCatColor(p.type);
-    const _visitUrl = `https://english.visitkorea.or.kr/totalSearch/search.do?kwd=${encodeURIComponent(p.google_name)}&linkSrchFlag=Y`;
     document.getElementById('dpTitle').textContent = p.google_name ?? '-';
     setDetailImages([p.image]);
     document.getElementById('dpName').textContent = p.google_name ?? '-';
     document.getElementById('dpSub').textContent = p.google_addr ?? '';
     document.getElementById('dpBadges').innerHTML =
             `<span class="dp-badge" style="background:${color}22;color:${color}">${typeName(p.type)}</span>
-       <span class="dp-badge db-gold">🏆 ${p.score?.toFixed(1) ?? '-'}점</span>`;
-    document.getElementById('dpStars').innerHTML =
-            `<span class="s">★★★★★</span>
-       <span class="sc">${p.rating ?? '-'}</span>
-       <span class="sm">/ 5.0 &nbsp;·&nbsp; ${p.user_ratings_total?.toLocaleString() ?? '-'} reviews</span>`;
+       <span class="dp-badge db-gold">🏆 ${p.score?.toFixed(1) ?? '-'}</span>`;
+    const rc = Number(p.user_ratings_total || 0);
+    const rating = Number(p.rating || 0);
+    document.getElementById('dpRating').innerHTML = rating > 0
+            ? `<span class="dp-rating-stars">★</span>
+       <span class="dp-rating-score">${rating.toFixed(1)}</span>
+       <span class="dp-rating-count">${rc.toLocaleString()} reviews</span>`
+            : `<span style="color:#bbb;font-size:11px">No visitor ratings yet</span>`;
     document.getElementById('dpInfoRow').innerHTML = `
-      <div class="dp-info"><div class="dp-info-label">Address</div><div class="dp-info-val">${p.addr ?? '-'}</div></div>
+      <div class="dp-info"><div class="dp-info-label">Address</div><div class="dp-info-val">${escapeDetail(p.addr ?? '-')}</div></div>
       <div class="dp-info"><div class="dp-info-label">Distance</div><div class="dp-info-val">${distStr(p.distance)} away</div></div>
       <div class="dp-info"><div class="dp-info-label">Score</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
       <div class="dp-info"><div class="dp-info-label">Category</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
-    document.getElementById('dpDesc').innerHTML = '<p style="color:#64748b">Preparing details...</p>';
+    document.getElementById('dpDesc').textContent = 'Preparing details...';
+    document.getElementById('dpApiInfo').innerHTML = '';
+    renderReviews(p);
+    loadCommunityPosts(p);
+    updateSaveButton(p);
 
-    const reviews = p.reviews ?? [];
-    const avg = p.rating ?? 0;
-    document.getElementById('dpRevSummary').innerHTML = `
-      <div>
-        <div class="rev-score">${avg}</div>
-        <div style="color:var(--gold);font-size:14px;margin-top:4px">${'★'.repeat(Math.round(avg))}</div>
-      </div
-      <div class="rev-right"><div class="rev-bars">
-        ${[5,4,3,2,1].map(s => {
-      const cnt = reviews.filter(r => Math.round(r.rating ?? 0) === s).length;
-      const pct = reviews.length ? Math.round(cnt / reviews.length * 100) : 0;
-      return `<div class="rev-row"><span>${s}</span><div class="rev-track"><div class="rev-fill" style="width:${pct}%"></div></div><span>${pct}%</span></div>`;
-    }).join('')}
-      </div></div>`;
-    document.getElementById('dpReviews').innerHTML = reviews.slice(0, 5).map(r => `
-      <div class="review-item">
-        <div class="ri-top">
-          <div><div class="ri-name">${r.author_name ?? '익명'}</div><div class="ri-date">${r.relative_time_description ?? ''}</div></div>
-          <div class="ri-stars">${'★'.repeat(Math.round(r.rating ?? 0))}</div>
-        </div>
-        <div class="ri-text">${r.text ?? ''}</div>
-      </div>`).join('');
-
+    document.getElementById('btnSave').onclick = () => toggleSave(p);
+    document.getElementById('btnShare').onclick = async function () {
+      const shareData = { title: p.google_name || 'KoreaPoint', text: p.google_name || '', url: location.href };
+      try {
+        if (navigator.share) await navigator.share(shareData);
+        else { await navigator.clipboard.writeText(location.href); alert('Link copied.'); }
+      } catch (e) {
+        if (e?.name !== 'AbortError') console.error('share error', e);
+      }
+    };
 
     document.getElementById('itineraryBtn').onclick = function() {
       if (p.lat && p.lng) {
@@ -647,6 +743,7 @@
 
   function closeDetail() {
     document.getElementById('detailPanel').classList.remove('open');
+    currentDetailPlace = null;
   }
 
   function openDetailFromPopup(e) {
