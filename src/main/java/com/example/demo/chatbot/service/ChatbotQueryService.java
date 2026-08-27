@@ -91,7 +91,9 @@ public class ChatbotQueryService {
     private String buildPrompt(String question, List<SourceTextResolver.ResolvedSource> sources) {
         StringBuilder sb = new StringBuilder();
         sb.append("다음은 부산 지역 이야기 자료입니다. 이 자료만 근거로 삼아 사용자 질문에 한국어로 친절하게 답변하세요. ")
-          .append("자료에 없는 내용은 지어내지 말고, 모르면 모른다고 답하세요.\n\n");
+          .append("자료에 없는 내용은 지어내지 말고, 모르면 모른다고 답하세요. ")
+          .append("자료가 여러 개라도 전부 나열하지 말고 질문과 가장 관련 있는 것 위주로 3~5문장 정도로 간결하게 답하세요. ")
+          .append("이 답변은 채팅창에 그대로 표시되니 마크다운 문법(#, *, -, --- 등)은 쓰지 말고 순수한 문장으로만 답하세요.\n\n");
         for (int i = 0; i < sources.size(); i++) {
             SourceTextResolver.ResolvedSource source = sources.get(i);
             String text = source.text();

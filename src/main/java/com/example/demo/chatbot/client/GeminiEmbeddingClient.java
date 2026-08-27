@@ -2,12 +2,15 @@ package com.example.demo.chatbot.client;
 
 import com.example.demo.trip.integration.ExternalApiClient;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -23,7 +26,11 @@ import java.util.Map;
 @Component
 public class GeminiEmbeddingClient {
 
+    private static final Logger log = LoggerFactory.getLogger(GeminiEmbeddingClient.class);
     private static final String ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent";
+    /** 429(요청 한도 초과)를 만나면 이만큼 재시도한다. 분당 한도라면 대기 후 회복되지만, 일일/결제 한도라면 재시도해도 계속 실패한다. */
+    private static final int MAX_RETRIES = 3;
+    private static final long INITIAL_BACKOFF_MS = 3000;
 
     private final RestTemplate restTemplate;
 
@@ -57,22 +64,42 @@ public class GeminiEmbeddingClient {
                 "model", "models/" + model,
                 "content", Map.of("parts", List.of(Map.of("text", text))),
                 "outputDimensionality", dimension);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        String url = String.format(ENDPOINT, model);
 
-        try {
-            JsonNode root = restTemplate.exchange(
-                    String.format(ENDPOINT, model),
-                    HttpMethod.POST,
-                    new HttpEntity<>(body, headers),
-                    JsonNode.class).getBody();
-            JsonNode values = root == null ? null : root.at("/embedding/values");
-            if (values == null || !values.isArray() || values.isEmpty()) {
-                throw new ChatbotApiException("Gemini 임베딩 응답에 벡터 값이 없습니다.");
+        int attempt = 0;
+        while (true) {
+            try {
+                JsonNode root = restTemplate.exchange(url, HttpMethod.POST, request, JsonNode.class).getBody();
+                JsonNode values = root == null ? null : root.at("/embedding/values");
+                if (values == null || !values.isArray() || values.isEmpty()) {
+                    throw new ChatbotApiException("Gemini 임베딩 응답에 벡터 값이 없습니다.");
+                }
+                float[] vector = new float[values.size()];
+                for (int i = 0; i < values.size(); i++) vector[i] = (float) values.get(i).asDouble();
+                return vector;
+            } catch (HttpClientErrorException.TooManyRequests e) {
+                attempt++;
+                if (attempt > MAX_RETRIES) {
+                    throw new ChatbotApiException(
+                            "Gemini 임베딩 호출 한도를 초과했습니다(" + MAX_RETRIES + "회 재시도 후에도 실패). "
+                                    + "분당 한도가 아니라 일일/결제 한도일 수 있으니 Google AI Studio에서 사용량을 확인하세요.", e);
+                }
+                long backoffMs = INITIAL_BACKOFF_MS * (1L << (attempt - 1));
+                log.warn("Gemini 임베딩 429(한도 초과), {}ms 대기 후 재시도 ({}/{}차)", backoffMs, attempt, MAX_RETRIES);
+                sleep(backoffMs);
+            } catch (RestClientException e) {
+                throw new ChatbotApiException("Gemini 임베딩 호출에 실패했습니다: " + e.getMessage(), e);
             }
-            float[] vector = new float[values.size()];
-            for (int i = 0; i < values.size(); i++) vector[i] = (float) values.get(i).asDouble();
-            return vector;
-        } catch (RestClientException e) {
-            throw new ChatbotApiException("Gemini 임베딩 호출에 실패했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    private void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ChatbotApiException("재시도 대기 중 인터럽트되었습니다.", e);
         }
     }
 }

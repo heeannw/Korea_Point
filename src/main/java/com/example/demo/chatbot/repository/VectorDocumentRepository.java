@@ -4,6 +4,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * vector_documents 테이블 접근. 벡터(임베딩)와 원본을 가리키는 최소 식별자만 저장하고,
@@ -17,6 +18,12 @@ public class VectorDocumentRepository {
 
     public VectorDocumentRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    /** 이미 임베딩이 들어간 source_id 목록. 인입을 재실행할 때 이미 성공한 건 건너뛰어 API 호출을 아끼는 데 쓴다. */
+    public Set<String> findExistingSourceIds(String sourceType) {
+        String sql = "SELECT source_id FROM vector_documents WHERE source_type = ?";
+        return Set.copyOf(jdbcTemplate.queryForList(sql, String.class, sourceType));
     }
 
     /** source_type + source_id 기준으로 없으면 넣고 있으면 벡터를 갱신한다. */
