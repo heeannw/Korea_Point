@@ -53,3 +53,8 @@ application-secret.properties
 
 # Local uploaded documents
 uploads/
+
+# Local H2 dev database files (project uses PostgreSQL; these were committed by mistake)
+data/
+*.mv.db
+*.trace.db
