@@ -1,0 +1,115 @@
+/* ============================================================
+   detail-panel.css  —  관광 상세 패널 공용 스타일
+   위치: resources/static/css/tourism/detail-panel.css
+
+   tourismKo.html / tourismEN.html 에 각각 인라인으로 중복돼 있던
+   .detail-panel / .dp-* / .rev-* / .review-* / .ri-* 규칙을
+   한 파일로 추출. 값은 기존 tourismKo.html 인라인과 1:1 동일
+   (왼쪽 드로어 380px, 대표 이미지 220px).
+
+   로드: <head> 에서 Google Fonts 링크 뒤, 페이지 <style> 앞에
+     <link rel="stylesheet" th:href="@{/css/tourism/detail-panel.css}">
+   변수(--blue, --border, --light 등)는 각 페이지 <style> 의 :root 에서 선언.
+   ============================================================ */
+
+.detail-panel{position:absolute;top:0;left:0;bottom:0;width:min(380px,100%);background:#fff;z-index:50;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none;box-shadow:12px 0 32px rgba(15,23,42,.16)}
+.detail-panel.open{transform:translateX(0);pointer-events:auto;}
+
+/* ── 헤더 ── */
+.dp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:5}
+.dp-back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px;line-height:1}
+.dp-title{font-size:16px;font-weight:700;flex:1}
+
+/* ── 대표 이미지 + 캐러셀 ── */
+.dp-img{width:100%;height:220px;object-fit:cover;background-size:cover;background-position:center;background-color:var(--light);position:relative}
+.dp-img-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:50%;background:rgba(15,23,42,.68);color:#fff;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+.dp-img-nav:hover{background:rgba(15,23,42,.9)}
+.dp-img-prev{left:14px}.dp-img-next{right:14px}
+.dp-img-count{position:absolute;right:16px;bottom:14px;padding:5px 10px;border-radius:50px;background:rgba(15,23,42,.72);color:#fff;font-size:12px;font-weight:700}
+.dp-img-hidden{display:none}
+
+/* ── 본문 ── */
+.dp-body{padding:16px}
+.dp-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.dp-badge{padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700}
+.db-blue{background:var(--blue-lt);color:var(--blue-dk)}
+.db-gold{background:#fef3c7;color:#92400e}
+.db-green{background:#f0fdf4;color:#166534}
+.dp-name{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;margin-bottom:2px}
+.dp-sub{font-size:14px;color:var(--gray);margin-bottom:12px}
+.dp-stars{display:flex;align-items:center;gap:6px;margin-bottom:14px}
+.dp-stars .s{color:var(--gold);font-size:16px}
+.dp-stars .sc{font-size:18px;font-weight:700}
+.dp-stars .sm{font-size:13px;color:var(--gray)}
+.dp-info-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.dp-info{background:var(--light);border-radius:10px;padding:12px 14px}
+.dp-info-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.dp-info-val{font-size:13px;font-weight:500;line-height:1.4}
+.dp-desc{font-size:14px;color:var(--mid);line-height:1.7;margin-bottom:16px}
+.dp-section-title{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--dark)}
+
+/* ── 여행코스 경유지 목록 ── */
+.dp-course{margin-bottom:18px}
+.dp-course-list{display:flex;flex-direction:column;gap:6px}
+.dp-course-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;
+  background:#f8fafc;border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:left}
+.dp-course-item:hover{background:#eef2f7}
+.dp-course-num{flex:none;width:22px;height:22px;border-radius:50%;color:#fff;
+  font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.dp-course-name{font-size:13px;color:var(--dark);line-height:1.4}
+
+/* ── 리뷰 ── */
+.rev-summary{display:flex;align-items:center;gap:16px;background:var(--light);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.rev-score{font-size:42px;font-weight:900;font-family:'Playfair Display',serif;line-height:1}
+.rev-right{flex:1}
+.rev-bars{display:flex;flex-direction:column;gap:5px}
+.rev-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gray)}
+.rev-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.rev-fill{height:100%;background:var(--gold);border-radius:3px}
+.review-item{padding:12px 0;border-bottom:1px solid var(--border)}
+.review-item:last-child{border-bottom:none}
+.ri-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.ri-name{font-size:13px;font-weight:600}
+.ri-date{font-size:11px;color:var(--gray)}
+.ri-stars{font-size:12px;color:var(--gold)}
+.ri-text{font-size:13px;color:var(--mid);line-height:1.6}
+
+/* ── 하단 액션 버튼 ── */
+.dp-action{
+  position:sticky;
+  bottom:0;
+  padding:12px 16px;
+  background:#fff;
+  border-top:1px solid var(--border);
+  display:flex;
+  gap:6px;
+}
+.dp-action-btn{
+  flex:1;        /* ✅ 이게 핵심 - 3등분 */
+  padding:13px 6px;
+  background:var(--blue);
+  color:#fff;
+  border:none;
+  border-radius:50px;
+  font-size:11px;  /* ✅ 3개 들어가게 작게 */
+  font-weight:700;
+  cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  transition:background .2s;
+  text-align:center;
+}
+.dp-action-btn:hover{background:var(--blue-dk)}
+.food-btn:hover{background: #ed59a7;}
+.cafe-btn:hover{background: #322012;}
+.route-btn:hover{background:#1a7de0;}
+.food-btn{
+  background:#F472B6FF;
+}
+
+.cafe-btn{
+  background:#4A3220FF;
+}
+
+.route-btn{
+  background:#3b9eff;
+}
