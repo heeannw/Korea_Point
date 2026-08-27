@@ -14,7 +14,7 @@
     <link rel="stylesheet" th:href="@{/css/common/layout.css}">
     <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
-<body>
+<body th:data-logged-in="${isLoggedIn}">
 <div id="google_translate_element" style="display:none"></div>
 
 <!-- ─── 헤더 ─── -->
@@ -146,6 +146,8 @@
 </div>
 
 <script>
+    const isLoggedIn = document.body.dataset.loggedIn === 'true';
+
     /* ─── 토스트 ─── */
     function showToast(msg, duration = 2500) {
         const panelOpen = document.getElementById('detailPanel')?.classList.contains('open');
@@ -155,14 +157,11 @@
         setTimeout(() => t.classList.remove('show'), duration);
     }
 
-    async function saveTripPlan() {
+    async function persistTripPlan(title, options = {}) {
         if (!tripResult || !tripRequest) {
             showToast('저장할 일정이 없습니다.');
-            return;
+            return null;
         }
-
-        const title = prompt('일정 제목을 입력해주세요.', '나의 여행 일정');
-        if (title === null) return;
 
         const button = document.getElementById('savePlanBtn');
         const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
@@ -170,8 +169,10 @@
         const headers = { 'Content-Type': 'application/json' };
         if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
 
-        button.disabled = true;
-        button.textContent = '저장 중...';
+        if (button && !options.silent) {
+            button.disabled = true;
+            button.textContent = '저장 중...';
+        }
         try {
             const response = await fetch('/api/trip/plan/save', {
                 method: 'POST',
@@ -182,12 +183,58 @@
             if (!response.ok) throw new Error(data.error || '일정 저장에 실패했습니다.');
 
             sessionStorage.setItem('savedTripPlanId', data.planId);
-            showToast('일정이 저장되었습니다. 마이페이지에서 확인할 수 있어요.');
-            button.textContent = '저장 완료';
+            if (button) {
+                button.textContent = '저장 완료';
+                button.disabled = true;
+            }
+            if (!options.silent) {
+                showToast('일정이 저장되었습니다. 마이페이지에서 확인할 수 있어요.');
+            }
+            return data.planId;
         } catch (error) {
-            showToast(error.message);
-            button.disabled = false;
-            button.textContent = '일정 저장';
+            if (!options.silent) {
+                showToast(error.message);
+            }
+            if (button && !options.silent) {
+                button.disabled = false;
+                button.textContent = '일정 저장';
+            }
+            return null;
+        }
+    }
+
+    async function saveTripPlan() {
+        const title = prompt('일정 제목을 입력해주세요.', defaultTripPlanTitle());
+        if (title === null) return;
+        await persistTripPlan(title);
+    }
+
+    function defaultTripPlanTitle() {
+        const days = tripRequest?.travelDays || tripResult?.schedule?.length || 1;
+        const areas = Array.isArray(tripRequest?.preferredAreas) && tripRequest.preferredAreas.length
+            ? tripRequest.preferredAreas.slice(0, 2).join('·')
+            : '부산';
+        return `${areas} ${Math.max(0, days - 1)}박 ${days}일`;
+    }
+
+    async function autoSaveTripPlan() {
+        if (!isLoggedIn || !tripResult || !tripRequest) return;
+        const saveKey = JSON.stringify({
+            request: tripRequest,
+            schedule: tripResult.schedule || []
+        });
+        if (sessionStorage.getItem('savedTripPlanKey') === saveKey) {
+            const button = document.getElementById('savePlanBtn');
+            if (button) {
+                button.textContent = '저장 완료';
+                button.disabled = true;
+            }
+            return;
+        }
+        const planId = await persistTripPlan(defaultTripPlanTitle(), {silent: true});
+        if (planId) {
+            sessionStorage.setItem('savedTripPlanKey', saveKey);
+            showToast('일정이 자동 저장되었습니다. 마이페이지에서 확인할 수 있어요.');
         }
     }
 
@@ -843,6 +890,7 @@
         renderRecList('foodList',    tripResult.foodList);
         renderRecList('cafeList',    tripResult.cafeList);
         drawDay(1);
+        await autoSaveTripPlan();
     });
 </script>
 </body>

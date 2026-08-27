@@ -1,6 +1,8 @@
 package com.example.demo.config;
 
 import com.example.demo.user.service.CustomOAuth2UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,8 +41,7 @@ public class SecurityConfig {
             .oauth2Login(oauth2 -> oauth2
                 .loginPage("/login")
                 .successHandler((request, response, authentication) -> {
-                    Object language = request.getSession().getAttribute("loginLanguage");
-                    response.sendRedirect("/ko");
+                    response.sendRedirect(loginSuccessUrl(request));
                 })
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
@@ -51,12 +52,25 @@ public class SecurityConfig {
                 .loginProcessingUrl("/login")
                 .usernameParameter("loginId")
                 .passwordParameter("password")
-                .defaultSuccessUrl("/ko", true)
+                .successHandler((request, response, authentication) -> {
+                    response.sendRedirect(loginSuccessUrl(request));
+                })
                 .failureUrl("/login?error=true")
                 .permitAll()
             )
             .logout(logout -> logout
                 .logoutSuccessUrl("/")
+            )
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint((request, response, authException) -> {
+                    if (request.getRequestURI().startsWith("/api/")) {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.getWriter().write("{\"error\":\"로그인이 필요합니다\"}");
+                        return;
+                    }
+                    response.sendRedirect("/ko");
+                })
             )
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/api/comments/**", "/api/reports/**",
@@ -64,5 +78,11 @@ public class SecurityConfig {
             );
 
         return http.build();
+    }
+
+    private String loginSuccessUrl(HttpServletRequest request) {
+        Object language = request.getSession().getAttribute("loginLanguage");
+        String selected = language instanceof String value ? value : "ko";
+        return "/login/success?lang=" + selected;
     }
 }

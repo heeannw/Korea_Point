@@ -34,6 +34,7 @@ public class CommunityController {
     @GetMapping("/post-list")
     public String getPosts(@RequestParam(required = false) Long categoryId,
                            @RequestParam(required = false) String keyword,
+                           @RequestParam(required = false, defaultValue = "false") boolean mine,
                            @RequestParam(defaultValue = "0") int page,
                            @RequestParam(defaultValue = "latest") String sort,
                            Model model) {
@@ -41,7 +42,10 @@ public class CommunityController {
                 ? Sort.by("viewCount").descending()
                 : Sort.by("createdAt").descending();
         var pageable = PageRequest.of(page, 10, sortOrder);
-        var data = communityService.getCommunityPageData(categoryId, keyword, pageable);
+        boolean myPostsOnly = mine && SecurityUtil.isLoggedIn();
+        var data = myPostsOnly
+                ? communityService.getMyCommunityPageData(SecurityUtil.getCurrentUserId(), keyword, pageable)
+                : communityService.getCommunityPageData(categoryId, keyword, pageable);
 
         int totalPages = data.getPosts().getTotalPages();
         int currentPage = data.getPosts().getNumber();
@@ -55,6 +59,7 @@ public class CommunityController {
         model.addAttribute("selectedCategory", categoryId);
         model.addAttribute("keyword", keyword != null ? keyword : "");
         model.addAttribute("sort", sort);
+        model.addAttribute("mine", myPostsOnly);
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         model.addAttribute("communitySuspended", isCommunitySuspended());

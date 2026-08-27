@@ -15,9 +15,17 @@ public class TripPlanDto {
         private String        title;
         private int           travelDays;
         private LocalDate     startDate;
+        private LocalDate     endDate;
         private List<String>  preferredAreas;
         private String        companion;
         private LocalDateTime createdAt;
+        private String        tripStatus;
+        private String        tripStatusLabel;
+        private int           reservationCount;
+        private int           requestedReservationCount;
+        private int           confirmedReservationCount;
+        private int           rejectedReservationCount;
+        private int           cancelledReservationCount;
     }
 
     /** 상세 (일정 전체 포함) */
@@ -76,5 +84,10 @@ public class TripPlanDto {
         private String                title;    // null 이면 자동 생성
         private TripRecommendRequest  request;
         private TripRecommendResponse response;
+    }
+
+    @Data
+    public static class TitleUpdateRequest {
+        private String title;
     }
 }

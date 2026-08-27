@@ -18,11 +18,10 @@ public interface TripPlanRepository extends JpaRepository<TripPlan, Long> {
     /** 본인 소유 확인용 */
     Optional<TripPlan> findByIdAndUserId(Long id, String userId);
 
-    /** days + slots 한 번에 fetch (N+1 방지) */
+    /** days를 먼저 fetch하고 slots는 서비스 트랜잭션 안에서 지연 로딩한다. */
     @Query("""
         SELECT DISTINCT tp FROM TripPlan tp
         LEFT JOIN FETCH tp.days d
-        LEFT JOIN FETCH d.slots
         WHERE tp.id = :id AND tp.userId = :userId
     """)
     Optional<TripPlan> findWithDaysAndSlots(@Param("id") Long id,

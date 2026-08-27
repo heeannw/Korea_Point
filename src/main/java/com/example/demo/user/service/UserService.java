@@ -68,6 +68,33 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<String> findLocalLoginId(String name, String email) {
+        String normalizedName = requireText(name, "이름을 입력해 주세요.");
+        String normalizedEmail = requireText(email, "이메일을 입력해 주세요.");
+
+        return userRepository.findByProviderAndEmailIgnoreCase("local", normalizedEmail).stream()
+                .filter(user -> normalizedName.equals(user.getName()))
+                .map(User::getProviderId)
+                .findFirst();
+    }
+
+    @Transactional
+    public void resetLocalPassword(String loginId, String email, String newPassword, String passwordConfirm) {
+        String normalizedLoginId = requireText(loginId, "아이디를 입력해 주세요.");
+        String normalizedEmail = requireText(email, "이메일을 입력해 주세요.");
+        String normalizedPassword = requireText(newPassword, "새 비밀번호를 입력해 주세요.");
+        if (!normalizedPassword.equals(passwordConfirm)) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+        validatePassword(normalizedPassword);
+
+        User user = userRepository.findByProviderAndProviderId("local", normalizedLoginId)
+                .filter(found -> normalizedEmail.equalsIgnoreCase(found.getEmail()))
+                .orElseThrow(() -> new IllegalArgumentException("일치하는 계정을 찾을 수 없습니다."));
+        user.setPassword(passwordEncoder.encode(normalizedPassword));
+    }
+
+    @Transactional(readOnly = true)
     public User findById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));

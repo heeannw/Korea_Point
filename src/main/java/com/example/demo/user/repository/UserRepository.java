@@ -19,6 +19,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
+    List<User> findByProviderAndEmailIgnoreCase(String provider, String email);
+
     boolean existsByProviderAndProviderId(String provider, String providerId);
 
     @Query("""

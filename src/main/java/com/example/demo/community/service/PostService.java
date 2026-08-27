@@ -45,6 +45,17 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
+    public Page<PostDto> getPostsByUser(Long userId, Pageable pageable) {
+        return postRepository.findByUser_IdAndDeletedAtIsNull(userId, pageable).map(this::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PostDto> searchPostsByUser(Long userId, String keyword, Pageable pageable) {
+        return postRepository.findByUser_IdAndTitleContainingIgnoreCaseAndDeletedAtIsNull(userId, keyword, pageable)
+                .map(this::toDto);
+    }
+
+    @Transactional(readOnly = true)
     public Page<PostDto> searchPostsByCategory(Long categoryId, String keyword, Pageable pageable) {
         return postRepository.findByCategoryIdAndTitleContainingIgnoreCaseAndDeletedAtIsNull(categoryId, keyword, pageable)
                 .map(this::toDto);

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>로그인 완료 - KoreaPoint</title>
+</head>
+<body>
+    <p style="font-family: Arial, sans-serif; color: #64748b; text-align: center; margin-top: 80px;">
+        로그인 완료 중입니다.
+    </p>
+    <script th:inline="javascript">
+        const targetUrl = /*[[${targetUrl}]]*/ "/ko";
+        if (window.opener && !window.opener.closed) {
+            window.opener.location.href = targetUrl;
+            window.close();
+        } else {
+            window.location.href = targetUrl;
+        }
+    </script>
+</body>
+</html>

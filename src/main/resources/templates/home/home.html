@@ -1231,25 +1231,53 @@
     </div>
 </footer>
 
-<script>
+<script th:inline="javascript">
+    const isLoggedIn = /*[[${isLoggedIn}]]*/ false;
     const loginOpenButton = document.querySelector(".header-right a.h-btn-fill[href='/login']");
 
-    function openLoginWindow(event) {
+    function openLoginWindow(event, redirectUrl) {
         if (event) event.preventDefault();
+        const popupWidth = 480;
+        const popupHeight = 720;
+        const popupLeft = Math.max(0, window.screenX + (window.outerWidth - popupWidth) / 2);
+        const popupTop = Math.max(0, window.screenY + (window.outerHeight - popupHeight) / 2);
+        const loginUrl = "/login?lang=en" + (redirectUrl ? "&redirect=" + encodeURIComponent(redirectUrl) : "");
         const popup = window.open(
-            "/login?lang=en",
+            loginUrl,
             "koreaPointLogin",
-            "width=520,height=760,left=700,top=120,resizable=yes,scrollbars=yes"
+            `width=${popupWidth},height=${popupHeight},left=${popupLeft},top=${popupTop},resizable=yes,scrollbars=yes`
         );
         if (popup) {
             popup.focus();
+            popup.resizeTo(popupWidth, popupHeight);
+            popup.moveTo(popupLeft, popupTop);
         } else {
-            window.location.href = "/login?lang=en";
+            window.location.href = loginUrl;
         }
     }
 
     if (loginOpenButton) {
         loginOpenButton.addEventListener("click", openLoginWindow);
+    }
+
+    function isProtectedHomeLink(anchor) {
+        const url = new URL(anchor.href, window.location.origin);
+        if (url.origin !== window.location.origin) return false;
+        const path = url.pathname;
+        if (path === "/" || path === "/ko" || path === "/kr" || path.startsWith("/login")) return false;
+        if (path.startsWith("/ko/") || path.startsWith("/en/")) return true;
+        return ["/tour", "/transport", "/community", "/foodmap", "/cafe"]
+            .some(prefix => path === prefix || path.startsWith(prefix + "/"));
+    }
+
+    if (!isLoggedIn) {
+        document.querySelectorAll("a[href]").forEach(anchor => {
+            if (!isProtectedHomeLink(anchor)) return;
+            anchor.addEventListener("click", event => {
+                const url = new URL(anchor.href, window.location.origin);
+                openLoginWindow(event, url.pathname + url.search + url.hash);
+            });
+        });
     }
 
     // Slider state shared by arrows, dots, and autoplay.

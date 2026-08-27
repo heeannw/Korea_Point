@@ -1,6 +1,7 @@
 package com.example.demo.trip.service;
 
 import com.example.demo.trip.dto.TripPlanDto;
+import com.example.demo.trip.entity.ReservationStatus;
 import com.example.demo.trip.dto.TripRecommendResponse.DayScheduleDto;
 import com.example.demo.trip.dto.TripRecommendResponse.SlotDto;
 import com.example.demo.trip.entity.TripPlan;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -130,6 +132,78 @@ public class TripPlanService {
                 .orElse(false);
     }
 
+    @Transactional
+    public boolean updateTitle(String userId, Long planId, String title) {
+        String normalizedTitle = title == null ? "" : title.trim();
+        if (normalizedTitle.isBlank()) {
+            throw new IllegalArgumentException("일정 제목을 입력해 주세요.");
+        }
+        if (normalizedTitle.length() > 200) {
+            throw new IllegalArgumentException("일정 제목은 200자 이하로 입력해 주세요.");
+        }
+        return tripPlanRepository.findByIdAndUserId(planId, userId)
+                .map(plan -> {
+                    plan.setTitle(normalizedTitle);
+                    return true;
+                })
+                .orElse(false);
+    }
+
+    @Transactional
+    public Long copy(String userId, Long planId) {
+        TripPlan source = tripPlanRepository.findWithDaysAndSlots(planId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("계획을 찾을 수 없습니다."));
+        TripPlan copied = TripPlan.builder()
+                .userId(userId)
+                .title(source.getTitle() + " 복사본")
+                .age(source.getAge())
+                .companion(source.getCompanion())
+                .budget(source.getBudget())
+                .travelDays(source.getTravelDays())
+                .startDate(source.getStartDate())
+                .startHour(source.getStartHour())
+                .endHour(source.getEndHour())
+                .arrivalAirport(source.getArrivalAirport())
+                .arrivalTime(source.getArrivalTime())
+                .arrivalReadyMinutes(source.getArrivalReadyMinutes())
+                .departureAirport(source.getDepartureAirport())
+                .departureTime(source.getDepartureTime())
+                .departureLeadMinutes(source.getDepartureLeadMinutes())
+                .intensity(source.getIntensity())
+                .preferredAreas(source.getPreferredAreas())
+                .mustVisit(source.getMustVisit())
+                .categories(source.getCategories())
+                .styleDescription(source.getStyleDescription())
+                .build();
+
+        for (TripPlanDay sourceDay : source.getDays()) {
+            TripPlanDay copiedDay = TripPlanDay.builder()
+                    .tripPlan(copied)
+                    .day(sourceDay.getDay())
+                    .build();
+            for (TripPlanSlot sourceSlot : sourceDay.getSlots()) {
+                copiedDay.getSlots().add(TripPlanSlot.builder()
+                        .tripPlanDay(copiedDay)
+                        .slotOrder(sourceSlot.getSlotOrder())
+                        .time(sourceSlot.getTime())
+                        .category(sourceSlot.getCategory())
+                        .placeName(sourceSlot.getPlaceName())
+                        .reason(sourceSlot.getReason())
+                        .score(sourceSlot.getScore())
+                        .lat(sourceSlot.getLat())
+                        .lng(sourceSlot.getLng())
+                        .address(sourceSlot.getAddress())
+                        .imageUrl(sourceSlot.getImageUrl())
+                        .avgRating(sourceSlot.getAvgRating())
+                        .reviewCount(sourceSlot.getReviewCount())
+                        .durationMinutes(sourceSlot.getDurationMinutes())
+                        .build());
+            }
+            copied.getDays().add(copiedDay);
+        }
+        return tripPlanRepository.save(copied).getId();
+    }
+
     // ────────────────────────────────────────────
     //  변환 헬퍼
     // ────────────────────────────────────────────
@@ -138,9 +212,18 @@ public class TripPlanService {
         s.setId(p.getId()); s.setTitle(p.getTitle());
         s.setTravelDays(p.getTravelDays());
         s.setStartDate(p.getStartDate());
+        s.setEndDate(calculateEndDate(p));
         s.setPreferredAreas(strToList(p.getPreferredAreas()));
         s.setCompanion(p.getCompanion());
         s.setCreatedAt(p.getCreatedAt());
+        String status = calculateTripStatus(p);
+        s.setTripStatus(status);
+        s.setTripStatusLabel(toTripStatusLabel(status));
+        s.setReservationCount(p.getReservations().size());
+        s.setRequestedReservationCount(countReservations(p, ReservationStatus.REQUESTED));
+        s.setConfirmedReservationCount(countReservations(p, ReservationStatus.CONFIRMED));
+        s.setRejectedReservationCount(countReservations(p, ReservationStatus.REJECTED));
+        s.setCancelledReservationCount(countReservations(p, ReservationStatus.CANCELLED));
         return s;
     }
 
@@ -195,5 +278,43 @@ public class TripPlanService {
                 .map(String::trim)
                 .filter(item -> !item.isEmpty())
                 .toList();
+    }
+
+    private LocalDate calculateEndDate(TripPlan plan) {
+        if (plan.getStartDate() == null || plan.getTravelDays() <= 0) {
+            return null;
+        }
+        return plan.getStartDate().plusDays(plan.getTravelDays() - 1L);
+    }
+
+    private String calculateTripStatus(TripPlan plan) {
+        LocalDate startDate = plan.getStartDate();
+        LocalDate endDate = calculateEndDate(plan);
+        if (startDate == null || endDate == null) {
+            return "UNSCHEDULED";
+        }
+        LocalDate today = LocalDate.now();
+        if (today.isBefore(startDate)) {
+            return "UPCOMING";
+        }
+        if (today.isAfter(endDate)) {
+            return "COMPLETED";
+        }
+        return "ONGOING";
+    }
+
+    private String toTripStatusLabel(String status) {
+        return switch (status) {
+            case "UPCOMING" -> "예정";
+            case "ONGOING" -> "여행 중";
+            case "COMPLETED" -> "완료";
+            default -> "날짜 미정";
+        };
+    }
+
+    private int countReservations(TripPlan plan, ReservationStatus status) {
+        return (int) plan.getReservations().stream()
+                .filter(reservation -> reservation.getStatus() == status)
+                .count();
     }
 }

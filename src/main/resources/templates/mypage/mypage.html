@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <title>마이페이지 | KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}">
@@ -69,11 +71,11 @@
             <strong th:text="${reservationCount}">0</strong>
             <p>관광지 예약</p>
         </article>
-        <article class="stat">
+        <a class="stat stat-link" th:href="@{/community/post-list(mine=true)}">
             <span>작성한 글</span>
             <strong th:text="${postCount}">0</strong>
             <p>커뮤니티 게시글</p>
-        </article>
+        </a>
         <article class="stat">
             <span>계정 유형</span>
             <strong th:text="${isOwner} ? '사업자' : '개인'">개인</strong>
@@ -92,18 +94,42 @@
                    th:text="${hasTripPlans} ? '전체보기' : '일정 만들기'">전체보기</a>
             </div>
 
-            <div th:if="${hasTripPlans}" class="item-list">
-                <a class="list-item" th:each="plan, iter : ${tripPlans}" th:if="${iter.index < 3}"
-                   th:href="@{/ko/trip/plans}">
-                    <div>
-                        <strong th:text="${plan.title}">부산 2박 3일</strong>
-                        <p>
-                            <span th:text="|${plan.travelDays}일 일정|">3일 일정</span>
-                            <span th:if="${plan.startDate != null}" th:text="| · ${plan.startDate}|"> · 2026-08-12</span>
-                        </p>
+            <div th:if="${hasTripPlans}" class="trip-plan-list">
+                <article class="trip-plan-card" th:each="plan, iter : ${tripPlans}" th:if="${iter.index < 4}"
+                         th:data-plan-id="${plan.id}">
+                    <div class="trip-plan-main">
+                        <div>
+                            <div class="trip-title-row">
+                                <strong class="trip-plan-title" th:text="${plan.title}">부산 2박 3일</strong>
+                                <span class="status-badge"
+                                      th:classappend="${plan.tripStatus == 'ONGOING'} ? ' ongoing' : (${plan.tripStatus == 'COMPLETED'} ? ' completed' : (${plan.tripStatus == 'UNSCHEDULED'} ? ' muted' : ''))"
+                                      th:text="${plan.tripStatusLabel}">예정</span>
+                            </div>
+                            <p class="trip-meta">
+                                <span th:text="${plan.startDate != null} ? |${plan.startDate} ~ ${plan.endDate}| : '날짜 미정'">2026-08-12 ~ 2026-08-14</span>
+                                <span th:text="| · ${plan.travelDays}일|"> · 3일</span>
+                                <span th:if="${plan.companion != null && !plan.companion.isBlank()}" th:text="| · ${plan.companion}|"> · 친구</span>
+                            </p>
+                            <p class="trip-meta">
+                                <span th:if="${#lists.isEmpty(plan.preferredAreas)}">지역 미정</span>
+                                <span th:unless="${#lists.isEmpty(plan.preferredAreas)}">
+                                    <span th:each="area, areaStat : ${plan.preferredAreas}"
+                                          th:text="${areaStat.first} ? ${area} : |, ${area}|">부산</span>
+                                </span>
+                                <span th:text="| · 저장일 ${#temporals.format(plan.createdAt, 'yyyy-MM-dd')}|"> · 저장일 2026-08-12</span>
+                            </p>
+                        </div>
                     </div>
-                    <span class="chip" th:text="${plan.companion != null && !plan.companion.isBlank()} ? ${plan.companion} : '여행'">여행</span>
-                </a>
+                    <div class="trip-actions">
+                        <button type="button" class="mini-btn primary" th:onclick="|showTripPlanDetail(${plan.id})|">상세보기</button>
+                        <button type="button" class="mini-btn"
+                                th:data-plan-id="${plan.id}"
+                                th:data-plan-title="${plan.title}"
+                                onclick="renameTripPlan(this)">제목 수정</button>
+                        <button type="button" class="mini-btn" th:onclick="|copyTripPlan(${plan.id})|">복사</button>
+                        <button type="button" class="mini-btn danger" th:onclick="|deleteTripPlan(${plan.id})|">삭제</button>
+                    </div>
+                </article>
             </div>
             <div th:unless="${hasTripPlans}" class="empty">
                 저장된 여행 일정이 아직 없어요.<br>
@@ -111,7 +137,7 @@
             </div>
         </article>
 
-        <article class="box">
+        <article class="box account-box">
             <div class="box-title">
                 <div>
                     <p class="eyebrow small">Account</p>
@@ -119,6 +145,7 @@
                 </div>
             </div>
             <div class="menu-list">
+                <a th:href="@{/community/post-list(mine=true)}" class="menu-btn">내가 쓴 글 보기</a>
                 <a th:href="@{/community/post/write}" class="menu-btn">커뮤니티 글쓰기</a>
                 <a th:href="@{/ko/reservation}" class="menu-btn">예약하러 가기</a>
                 <a th:href="@{/ko/trip}" class="menu-btn">여행 일정 만들기</a>
@@ -153,7 +180,7 @@
             </div>
         </article>
 
-        <article class="box" th:if="${isOwner}">
+        <article class="box wide" th:if="${isOwner}">
             <div class="box-title">
                 <div>
                     <p class="eyebrow small">Business</p>
@@ -168,7 +195,7 @@
             </div>
         </article>
 
-        <article class="box" th:unless="${isOwner}">
+        <article class="box wide" th:unless="${isOwner}">
             <div class="box-title">
                 <div>
                     <p class="eyebrow small">Business</p>
@@ -213,10 +240,148 @@
 
             <div class="owner-box write-box">
                 <p>내가 쓴 게시글은 총 <strong th:text="${postCount}">0</strong>개예요.</p>
-                <a class="btn secondary full" th:href="@{/community/post/write}">커뮤니티 글쓰기</a>
+                <a class="btn secondary full" th:href="@{/community/post-list(mine=true)}">내가 쓴 글 보기</a>
             </div>
         </article>
     </section>
 </main>
+<div id="tripDetailModal" class="modal-backdrop" hidden>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="tripDetailTitle">
+        <div class="modal-head">
+            <div>
+                <p class="eyebrow small">Trip Detail</p>
+                <h2 id="tripDetailTitle">여행 일정 상세</h2>
+            </div>
+            <button type="button" class="modal-close" onclick="closeTripPlanDetail()" aria-label="닫기">×</button>
+        </div>
+        <div id="tripDetailMeta" class="detail-meta"></div>
+        <div id="tripDetailDays" class="detail-days"></div>
+        <div class="modal-actions">
+            <a class="btn secondary" th:href="@{/ko/trip/plans}">전체 일정으로 이동</a>
+            <button type="button" class="btn" onclick="closeTripPlanDetail()">확인</button>
+        </div>
+    </section>
+</div>
+<script>
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+    const jsonHeaders = {'Content-Type': 'application/json'};
+    if (csrfToken && csrfHeader) jsonHeaders[csrfHeader] = csrfToken;
+    const csrfHeaders = {};
+    if (csrfToken && csrfHeader) csrfHeaders[csrfHeader] = csrfToken;
+    const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+    }[char]));
+
+    function formatDate(value) {
+        return value ? new Date(value).toLocaleDateString('ko-KR') : '날짜 미정';
+    }
+
+    function formatAreas(areas) {
+        return Array.isArray(areas) && areas.length ? areas.join(', ') : '지역 미정';
+    }
+
+    async function showTripPlanDetail(planId) {
+        const modal = document.getElementById('tripDetailModal');
+        const title = document.getElementById('tripDetailTitle');
+        const meta = document.getElementById('tripDetailMeta');
+        const days = document.getElementById('tripDetailDays');
+
+        title.textContent = '일정을 불러오는 중입니다';
+        meta.textContent = '';
+        days.innerHTML = '<div class="detail-loading">잠시만 기다려 주세요.</div>';
+        modal.hidden = false;
+
+        const response = await fetch(`/api/trip/plan/${planId}`);
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            title.textContent = '일정을 불러오지 못했습니다';
+            days.innerHTML = `<div class="empty">${escapeHtml(data.error || '다시 시도해 주세요.')}</div>`;
+            return;
+        }
+
+        const plan = await response.json();
+        title.textContent = plan.title || '여행 일정 상세';
+        meta.textContent = `${formatAreas(plan.preferredAreas)} · ${plan.travelDays || 0}일 · ${formatDate(plan.startDate)}`;
+        days.innerHTML = (plan.days || []).map(day => `
+            <article class="detail-day">
+                <h3>Day ${day.day}</h3>
+                <div class="detail-slot-list">
+                    ${(day.slots || []).map(slot => `
+                        <div class="detail-slot">
+                            <span class="detail-time">${escapeHtml(slot.time || '-')}</span>
+                            <div>
+                                <strong>${escapeHtml(slot.placeName || '장소 미정')}</strong>
+                                <p>${escapeHtml(slot.address || slot.reason || '')}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </article>
+        `).join('') || '<div class="empty">저장된 상세 일정이 없습니다.</div>';
+    }
+
+    function closeTripPlanDetail() {
+        document.getElementById('tripDetailModal').hidden = true;
+    }
+
+    document.getElementById('tripDetailModal').addEventListener('click', event => {
+        if (event.target.id === 'tripDetailModal') {
+            closeTripPlanDetail();
+        }
+    });
+
+    async function renameTripPlan(button) {
+        const planId = button.dataset.planId;
+        const currentTitle = button.dataset.planTitle;
+        const title = prompt('새 일정 제목을 입력해 주세요.', currentTitle || '');
+        if (title === null) return;
+        if (!title.trim()) {
+            alert('일정 제목을 입력해 주세요.');
+            return;
+        }
+        const response = await fetch(`/api/trip/plan/${planId}/title`, {
+            method: 'PATCH',
+            headers: jsonHeaders,
+            body: JSON.stringify({title: title.trim()})
+        });
+        if (!response.ok) {
+            alert('제목을 수정하지 못했습니다.');
+            return;
+        }
+        location.reload();
+    }
+
+    async function copyTripPlan(planId) {
+        if (!confirm('이 일정을 복사할까요?')) return;
+        const response = await fetch(`/api/trip/plan/${planId}/copy`, {
+            method: 'POST',
+            headers: csrfHeaders
+        });
+        if (!response.ok) {
+            alert('일정을 복사하지 못했습니다.');
+            return;
+        }
+        location.reload();
+    }
+
+    async function deleteTripPlan(planId) {
+        if (!confirm('이 일정을 삭제할까요?')) return;
+        const response = await fetch(`/api/trip/plan/${planId}`, {
+            method: 'DELETE',
+            headers: csrfHeaders
+        });
+        if (!response.ok) {
+            alert('일정을 삭제하지 못했습니다.');
+            return;
+        }
+        location.reload();
+    }
+
+</script>
 </body>
 </html>

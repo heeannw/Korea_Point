@@ -68,4 +68,28 @@ public class TripPlanController {
                 ? ResponseEntity.ok(Map.of("message", "삭제되었습니다"))
                 : ResponseEntity.status(404).body(Map.of("error", "계획을 찾을 수 없습니다"));
     }
+
+    @PatchMapping("/{id}/title")
+    public ResponseEntity<?> updateTitle(@PathVariable Long id,
+                                         @RequestBody TripPlanDto.TitleUpdateRequest request) {
+        String uid = currentUserId();
+        if (uid == null) return ResponseEntity.status(401).body(Map.of("error", "로그인이 필요합니다"));
+        boolean ok = tripPlanService.updateTitle(uid, id, request.getTitle());
+        return ok
+                ? ResponseEntity.ok(Map.of("message", "수정되었습니다"))
+                : ResponseEntity.status(404).body(Map.of("error", "계획을 찾을 수 없습니다"));
+    }
+
+    @PostMapping("/{id}/copy")
+    public ResponseEntity<?> copy(@PathVariable Long id) {
+        String uid = currentUserId();
+        if (uid == null) return ResponseEntity.status(401).body(Map.of("error", "로그인이 필요합니다"));
+        Long copiedPlanId = tripPlanService.copy(uid, id);
+        return ResponseEntity.ok(Map.of("planId", copiedPlanId, "message", "복사되었습니다"));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleInvalidRequest(IllegalArgumentException exception) {
+        return ResponseEntity.badRequest().body(Map.of("error", exception.getMessage()));
+    }
 }

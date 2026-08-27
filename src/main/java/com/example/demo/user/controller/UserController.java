@@ -24,6 +24,7 @@ public class UserController {
     @GetMapping("/login")
     public String loginPage(@RequestParam(required = false) String lang,
                             @RequestParam(required = false, defaultValue = "false") boolean signup,
+                            @RequestParam(required = false) String redirect,
                             HttpSession session, Model model) {
         String selected = lang;
         if (!isSupportedLanguage(selected)) {
@@ -31,10 +32,28 @@ public class UserController {
             selected = saved instanceof String value && isSupportedLanguage(value)
                     ? value : "ko";
         }
+        if (isSafeRedirectPath(redirect)) {
+            session.setAttribute("loginRedirectUrl", redirect);
+        }
         session.setAttribute("loginLanguage", selected);
         model.addAttribute("lang", selected);
         model.addAttribute("signupMode", signup);
         return "user/login";
+    }
+
+    @GetMapping("/login/success")
+    public String loginSuccess(@RequestParam(required = false) String lang,
+                               HttpSession session,
+                               Model model) {
+        String selected = isSupportedLanguage(lang) ? lang : "ko";
+        session.setAttribute("loginLanguage", selected);
+        Object redirect = session.getAttribute("loginRedirectUrl");
+        session.removeAttribute("loginRedirectUrl");
+        String targetUrl = redirect instanceof String value && isSafeRedirectPath(value)
+                ? value
+                : ("ko".equals(selected) ? "/ko" : "/");
+        model.addAttribute("targetUrl", targetUrl);
+        return "user/login-success";
     }
 
     @PostMapping("/signup")
@@ -89,8 +108,56 @@ public class UserController {
         }
     }
 
+    @PostMapping("/find-login-id")
+    public String findLoginId(@RequestParam String name,
+                              @RequestParam String email,
+                              @RequestParam(required = false) String lang,
+                              HttpSession session,
+                              Model model) {
+        String selected = isSupportedLanguage(lang) ? lang : "ko";
+        session.setAttribute("loginLanguage", selected);
+        model.addAttribute("lang", selected);
+        model.addAttribute("activePanel", "findIdPanel");
+        try {
+            String loginId = userService.findLocalLoginId(name, email)
+                    .orElseThrow(() -> new IllegalArgumentException("일치하는 아이디를 찾을 수 없습니다."));
+            model.addAttribute("findIdResult", "회원님의 아이디는 " + loginId + " 입니다.");
+        } catch (IllegalArgumentException ex) {
+            model.addAttribute("findIdError", ex.getMessage());
+        }
+        return "user/login";
+    }
+
+    @PostMapping("/reset-password")
+    public String resetPassword(@RequestParam String loginId,
+                                @RequestParam String email,
+                                @RequestParam String newPassword,
+                                @RequestParam String passwordConfirm,
+                                @RequestParam(required = false) String lang,
+                                HttpSession session,
+                                Model model) {
+        String selected = isSupportedLanguage(lang) ? lang : "ko";
+        session.setAttribute("loginLanguage", selected);
+        model.addAttribute("lang", selected);
+        model.addAttribute("activePanel", "resetPasswordPanel");
+        try {
+            userService.resetLocalPassword(loginId, email, newPassword, passwordConfirm);
+            model.addAttribute("resetPasswordResult", "비밀번호가 변경됐어요. 새 비밀번호로 로그인해 주세요.");
+        } catch (IllegalArgumentException ex) {
+            model.addAttribute("resetPasswordError", ex.getMessage());
+        }
+        return "user/login";
+    }
+
     private boolean isSupportedLanguage(String language) {
         return "ko".equals(language) || "en".equals(language)
                 || "ja".equals(language) || "zh-CN".equals(language);
+    }
+
+    private boolean isSafeRedirectPath(String redirect) {
+        return redirect != null
+                && redirect.startsWith("/")
+                && !redirect.startsWith("//")
+                && !redirect.startsWith("/login");
     }
 }

@@ -27,6 +27,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @EntityGraph(attributePaths = {"user", "category"})
     Page<Post> findByTitleContainingIgnoreCaseAndDeletedAtIsNull(String keyword, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"user", "category"})
+    Page<Post> findByUser_IdAndDeletedAtIsNull(Long userId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"user", "category"})
+    Page<Post> findByUser_IdAndTitleContainingIgnoreCaseAndDeletedAtIsNull(Long userId, String keyword, Pageable pageable);
+
     // 移댄뀒怨좊━ + ?쒕ぉ 寃???숈떆 ?곸슜 (?섏씠吏?
     @EntityGraph(attributePaths = {"user", "category"})
     Page<Post> findByCategoryIdAndTitleContainingIgnoreCaseAndDeletedAtIsNull(Long categoryId, String keyword, Pageable pageable);

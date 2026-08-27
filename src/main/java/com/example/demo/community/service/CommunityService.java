@@ -40,6 +40,21 @@ public class CommunityService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public CommunityDto getMyCommunityPageData(Long userId, String keyword, Pageable pageable) {
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+
+        var posts = hasKeyword
+                ? postService.searchPostsByUser(userId, keyword, pageable)
+                : postService.getPostsByUser(userId, pageable);
+
+        return CommunityDto.builder()
+                .posts(posts)
+                .categories(getAllCategories())
+                .trendingPosts(postService.getTrendingPosts())
+                .build();
+    }
+
     // 카테고리 전체 목록 (정렬 순서대로)
     @Transactional(readOnly = true)
     public List<CategoryDto> getAllCategories() {
