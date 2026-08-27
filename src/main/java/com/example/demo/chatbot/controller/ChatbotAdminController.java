@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 챗봇 벡터 인덱스를 수동으로 다시 채우는 관리용 엔드포인트.
- * TODO: 지금은 시큐리티 설정이 없어 공개 상태다(SecurityConfig는 다른 팀원 소유라 직접 안 건드림) —
- *       배포 전에 관리자 인증을 붙여야 한다.
+ * 경로를 /admin/** 아래에 둬서 SecurityConfig의 기존 규칙(hasRole("ADMIN"))을
+ * 그대로 물려받는다 — SecurityConfig 자체는 건드리지 않았다.
  */
 @RestController
 public class ChatbotAdminController {
@@ -18,7 +18,7 @@ public class ChatbotAdminController {
         this.ingestionService = ingestionService;
     }
 
-    @PostMapping("/chatbot/admin/ingest/busan-story")
+    @PostMapping("/admin/chatbot/ingest/busan-story")
     public ChatbotIngestionService.IngestResult ingestBusanStories() {
         return ingestionService.ingestBusanStories();
     }
