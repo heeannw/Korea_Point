@@ -285,8 +285,6 @@ public class TourApiClient {
         detail.put("overview", text(common, "overview"));
         detail.put("homepage", text(common, "homepage"));
         detail.put("tel", text(common, "tel"));
-        detail.put("lat", coordinate(common, "mapy"));
-        detail.put("lng", coordinate(common, "mapx"));
         String representativeImage = normalizeImageUrl(
                 firstNonBlank(text(common, "firstimage"), text(common, "firstimage2")));
         detail.put("image", representativeImage);
