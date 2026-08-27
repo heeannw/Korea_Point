@@ -39,8 +39,7 @@ public class Post {
     private String title;
 
     // 내용
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "text")
     private String content;
 
     // 영문 번역 제목 (작성 시 자동 생성, nullable)
@@ -48,7 +47,7 @@ public class Post {
     private String titleEn;
 
     // 영문 번역 내용 (작성 시 자동 생성, nullable)
-    @Lob
+    @Column(columnDefinition = "text")
     private String contentEn;
 
     // 한국어 번역 제목 (영어로 작성 시 자동 생성, nullable)
@@ -56,7 +55,7 @@ public class Post {
     private String titleKo;
 
     // 한국어 번역 내용 (영어로 작성 시 자동 생성, nullable)
-    @Lob
+    @Column(columnDefinition = "text")
     private String contentKo;
 
     /** TourAPI 장소 태그. 외부 장소 원문 대신 식별값과 표시용 최소 정보만 저장한다. */

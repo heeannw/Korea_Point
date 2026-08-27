@@ -182,9 +182,8 @@
             if (!response.ok) throw new Error(data.error || '일정 저장에 실패했습니다.');
 
             sessionStorage.setItem('savedTripPlanId', data.planId);
-            showToast('일정이 저장되었습니다.');
+            showToast('일정이 저장되었습니다. 마이페이지에서 확인할 수 있어요.');
             button.textContent = '저장 완료';
-            openReservationModal(data.planId);
         } catch (error) {
             showToast(error.message);
             button.disabled = false;

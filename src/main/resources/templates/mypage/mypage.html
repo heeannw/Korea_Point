@@ -12,7 +12,7 @@
     <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
     <div class="header-right">
         <a th:href="@{/ko}" class="h-btn">홈</a>
-        <a th:href="@{/trip/plan/list}" class="h-btn">내 여행</a>
+        <a th:href="@{/ko/trip/plans}" class="h-btn">내 여행</a>
         <a th:href="@{/community/post-list}" class="h-btn">커뮤니티</a>
         <a th:href="@{/ko/reservation}" class="h-btn">예약</a>
         <a th:href="@{/ko/mypage}" class="h-btn active">마이페이지</a>
@@ -88,7 +88,8 @@
                     <p class="eyebrow small">Trip Plan</p>
                     <h2>내 여행 일정</h2>
                 </div>
-                <a th:href="@{/ko/trip/plans}" class="text-link">전체보기</a>
+                <a th:href="${hasTripPlans} ? @{/ko/trip/plans} : @{/ko/trip}" class="text-link"
+                   th:text="${hasTripPlans} ? '전체보기' : '일정 만들기'">전체보기</a>
             </div>
 
             <div th:if="${hasTripPlans}" class="item-list">
@@ -106,7 +107,7 @@
             </div>
             <div th:unless="${hasTripPlans}" class="empty">
                 저장된 여행 일정이 아직 없어요.<br>
-                취향에 맞는 코스를 만들고 마이페이지에서 다시 확인해보세요.
+                <a th:href="@{/ko/trip}">취향에 맞는 코스를 바로 만들어보세요.</a>
             </div>
         </article>
 

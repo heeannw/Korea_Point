@@ -48,15 +48,15 @@ public class Comment {
     private List<Comment> children = new ArrayList<>();
 
     // 내용 (소프트 딜리트 시 "삭제된 댓글입니다" 표시용으로 nullable)
-    @Column(columnDefinition = "CLOB")
+    @Column(columnDefinition = "text")
     private String content;
 
     // 영문 번역 내용 (작성 시 자동 생성, nullable)
-    @Column(columnDefinition = "CLOB")
+    @Column(columnDefinition = "text")
     private String contentEn;
 
     // 한국어 번역 내용 (영어로 작성 시 자동 생성, nullable)
-    @Column(columnDefinition = "CLOB")
+    @Column(columnDefinition = "text")
     private String contentKo;
 
     // 대댓글 내에서 어떤 댓글에 직접 답글을 달았는지 (들여쓰기 계산용, NULL이면 최상위 그룹의 직접 댓글)
