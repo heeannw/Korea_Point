@@ -1,6 +1,7 @@
 package com.example.demo.tourism.client;
 
 import com.example.demo.tourism.config.TourApiProperties;
+import com.example.demo.tourism.config.TourCategoryNames;
 import com.example.demo.tourism.dto.TourCoursePointDto;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,15 +31,31 @@ public class TourApiClient {
     private static final String COURSE_CONTENT_TYPE = "25";
     private static final String SHOPPING_CONTENT_TYPE = "38";
 
-    /** 음식 분류코드를 화면이 쓰는 슬러그로 옮긴다. 카페도 음식점 유형 안에 들어 있다. */
-    private static final Map<String, String> FOOD_CATEGORY_BY_CAT3 = Map.of(
-            "A05020100", "korean",
-            "A05020200", "western",
-            "A05020300", "japanese",
-            "A05020400", "chinese",
-            "A05020600", "snack",
-            "A05020700", "fusion",
-            "A05020900", "cafe");
+    /**
+     * 음식 분류를 화면이 쓰는 슬러그로 옮긴다. 카페도 음식점 유형 안에 들어 있다.
+     *
+     * 구 분류코드(cat3)는 부산 기준 63%만 채워져 있어 분류체계(lclsSystm)를 쓴다.
+     * 외국식(FD02)은 중식·일식·서양식으로 잘 갈리므로 소분류를 살리고,
+     * 나머지는 중분류로 묶는다. 한식 소분류(관광식당·모범음식점)는 음식 종류가 아니라
+     * 인증 구분이라 그대로 쓰면 한식 대부분이 '관광식당' 하나로 보인다.
+     */
+    private static final Map<String, String> FOOD_CATEGORY_BY_LCLS = Map.ofEntries(
+            Map.entry("FD020100", "chinese"),
+            Map.entry("FD020200", "japanese"),
+            Map.entry("FD020300", "western"),
+            Map.entry("FD020400", "foreign"),
+            Map.entry("FD020500", "fusion"),
+            Map.entry("FD050100", "cafe"),
+            Map.entry("FD050200", "teahouse"),
+            Map.entry("FD050300", "drink"),
+            Map.entry("FD01", "korean"),
+            Map.entry("FD02", "foreign"),
+            Map.entry("FD03", "snack"),
+            Map.entry("FD04", "bar"),
+            Map.entry("FD05", "cafe"));
+
+    /** 카페 페이지로 따로 빠지는 분류들. 음식점 목록에서는 제외한다. */
+    public static final Set<String> CAFE_CATEGORIES = Set.of("cafe", "teahouse", "drink");
     private static final int COURSE_MAX_WAYPOINTS = 50;
     /** 축제는 전국을 받아 부산만 추려내므로 목록 기본값보다 넉넉히 가져온다. */
     private static final int FESTIVAL_FETCH_ROWS = 1000;
@@ -66,15 +83,18 @@ public class TourApiClient {
     private final RestClient restClient;
     private final TourApiProperties properties;
     private final ObjectMapper objectMapper;
+    private final TourCategoryNames categoryNames;
     /** 경유지는 거의 바뀌지 않는데 조회 비용이 커서 애플리케이션 수명 동안 재사용한다. */
     private final Map<String, List<TourCoursePointDto>> courseWaypointCache = new ConcurrentHashMap<>();
 
     public TourApiClient(RestClient.Builder restClientBuilder,
                          TourApiProperties properties,
-                         ObjectMapper objectMapper) {
+                         ObjectMapper objectMapper,
+                         TourCategoryNames categoryNames) {
         this.restClient = restClientBuilder.build();
         this.properties = properties;
         this.objectMapper = objectMapper;
+        this.categoryNames = categoryNames;
     }
 
     /**
@@ -428,10 +448,11 @@ public class TourApiClient {
         place.setLat(lat);
         place.setLng(lng);
         place.setImage(normalizeImageUrl(firstNonBlank(text(item, "firstimage"), text(item, "firstimage2"))));
+        place.setTypeName(resolveTypeName(item));
+        place.setTypeDetailName(categoryNames.resolve(
+                text(item, "lclsSystm3"), text(item, "lclsSystm2"), text(item, "lclsSystm1")));
         if (FOOD_CONTENT_TYPE.equals(type)) {
-            // 분류코드가 없는 음식점이 3분의 1이라 null 조회로 터지지 않게 먼저 막는다.
-            String cat3 = text(item, "cat3");
-            place.setFoodCategory(cat3 == null ? "etc" : FOOD_CATEGORY_BY_CAT3.getOrDefault(cat3, "etc"));
+            place.setFoodCategory(resolveFoodCategory(item));
         }
         place.setRating(null);
         place.setUser_ratings_total(0);
@@ -449,6 +470,26 @@ public class TourApiClient {
     private String text(JsonNode node, String field) {
         String value = node.path(field).asText("").trim();
         return value.isEmpty() ? null : value;
+    }
+
+    /** 소분류를 먼저 보고 없으면 중분류로 물러난다. 둘 다 못 찾으면 기타로 둔다. */
+    private String resolveFoodCategory(JsonNode item) {
+        String small = text(item, "lclsSystm3");
+        if (small != null && FOOD_CATEGORY_BY_LCLS.containsKey(small)) {
+            return FOOD_CATEGORY_BY_LCLS.get(small);
+        }
+        String medium = text(item, "lclsSystm2");
+        return medium == null ? "etc" : FOOD_CATEGORY_BY_LCLS.getOrDefault(medium, "etc");
+    }
+
+    /**
+     * 화면에 띄울 세부 타입명이다.
+     * 한식은 소분류가 '관광식당'·'모범음식점' 같은 인증 구분이라 중분류('한식')를 쓴다.
+     */
+    private String resolveTypeName(JsonNode item) {
+        String medium = text(item, "lclsSystm2");
+        String small = "FD01".equals(medium) ? null : text(item, "lclsSystm3");
+        return categoryNames.resolve(small, medium, text(item, "lclsSystm1"));
     }
 
     /**

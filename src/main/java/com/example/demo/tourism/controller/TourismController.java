@@ -46,13 +46,9 @@ public class TourismController {
 
         String spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
 
-        if(lat == null){
-            model.addAttribute("centerLat", BUSAN_CENTER_LAT);
-            model.addAttribute("centerLon", BUSAN_CENTER_LON);
-        } else{
-            model.addAttribute("centerLat", lat);
-            model.addAttribute("centerLon", lon);
-        }
+        // 지도 중심은 항상 부산이다. 현위치는 거리 계산에만 쓴다.
+        model.addAttribute("centerLat", BUSAN_CENTER_LAT);
+        model.addAttribute("centerLon", BUSAN_CENTER_LON);
 
         model.addAttribute("spotname", spotname);
         model.addAttribute("userlat", lat);
@@ -147,8 +143,9 @@ public class TourismController {
         model.addAttribute("spotname", spotname);
         model.addAttribute("lang", lang);
         model.addAttribute("list", nearbyList);
-        model.addAttribute("centerLat", lat);
-        model.addAttribute("centerLon", lon);
+        // 현위치를 받아도 지도 중심은 부산을 유지한다.
+        model.addAttribute("centerLat", BUSAN_CENTER_LAT);
+        model.addAttribute("centerLon", BUSAN_CENTER_LON);
         model.addAttribute("userlat", lat);
         model.addAttribute("userlon", lon);
         model.addAttribute("kakaoKey", kakaoKey);
@@ -245,21 +242,11 @@ public class TourismController {
         return keywords != null ? keywords : List.of();
     }
 
+    /** 지도 중심은 검색 결과나 현위치와 무관하게 항상 부산으로 고정한다. */
     private void setMapCenter(Model model, List<TourPlaceDto> list,
                               Double userLat, Double userLon) {
-        if (list.isEmpty()) {
-            model.addAttribute("centerLat", userLat != null ? userLat : BUSAN_CENTER_LAT);
-            model.addAttribute("centerLon", userLon != null ? userLon : BUSAN_CENTER_LON);
-            return;
-        }
-        int count = Math.min(5, list.size());
-        double latSum = 0, lonSum = 0;
-        for (int i = 0; i < count; i++) {
-            latSum += list.get(i).getLat();
-            lonSum += list.get(i).getLng();
-        }
-        model.addAttribute("centerLat", latSum / count);
-        model.addAttribute("centerLon", lonSum / count);
+        model.addAttribute("centerLat", BUSAN_CENTER_LAT);
+        model.addAttribute("centerLon", BUSAN_CENTER_LON);
     }
 
     @RequestMapping("/tour/location")

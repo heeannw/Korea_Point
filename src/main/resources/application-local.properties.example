@@ -1,0 +1,4 @@
+# Copy this file to application-local.properties and keep the copy uncommitted.
+DB_URL=jdbc:postgresql://localhost:5433/korea_point
+DB_USERNAME=postgres
+DB_PASSWORD=korea_point_local
