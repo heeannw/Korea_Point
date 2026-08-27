@@ -1,0 +1,127 @@
+/* ============================================================
+   detail-panel.css  —  관광 상세 패널 공용 스타일 (tourismKo / tourismEN)
+   위치: resources/static/css/tourism/detail-panel.css
+
+   구조는 tourism/food.html(Taste 페이지)의 네이버 지도식 상세 패널과 동일:
+   왼쪽 390px 슬라이드 패널 · ♡ 저장 · quick-actions(길찾기/근처맛집/근처카페/공유)
+   · 정보 / 리뷰 / 커뮤니티 탭 · review-card.
+   관광 전용으로 여행코스 경유지 목록 + 대표 이미지 캐러셀을 추가로 둔다.
+
+   변수(--blue, --blue-dk, --border, --light 등)는 각 페이지 <style>의 :root 에서 선언.
+   ============================================================ */
+
+/* ── 패널 (왼쪽 슬라이드) ── */
+.detail-panel{position:absolute;top:0;left:0;width:390px;max-width:50%;height:100%;
+  background:#fff;transform:translateX(-100%);transition:transform .25s ease;
+  z-index:60;display:flex;flex-direction:column;box-shadow:2px 0 20px rgba(0,0,0,.12)}
+.detail-panel.open{transform:translateX(0)}
+
+/* ── 헤더 ── */
+.dp-header{height:48px;display:flex;align-items:center;padding:0 8px;gap:4px;
+  background:#fff;border-bottom:1px solid #f0f0f0;flex-shrink:0;z-index:5}
+.dp-back{width:36px;height:36px;border:none;background:transparent;border-radius:50%;
+  font-size:17px;cursor:pointer;color:#333;display:flex;align-items:center;justify-content:center}
+.dp-back:hover{background:#f3f4f6}
+.dp-title{flex:1;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;color:var(--dark);padding:0 4px}
+.dp-header-right{display:flex;gap:2px}
+.summary-save{width:36px;height:36px;border:none;border-radius:50%;background:transparent;
+  color:#bbb;font-size:21px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.summary-save:hover{color:#ef4444;background:#fef2f2}
+.summary-save.saved{color:#ef4444}
+
+/* ── 대표 이미지 (히어로) + 캐러셀 ── */
+.dp-hero{width:100%;height:195px;background:#eef2f7 center/cover no-repeat;
+  flex-shrink:0;position:relative;overflow:hidden}
+.dp-hero.no-image{height:0;visibility:hidden;pointer-events:none}
+.dp-hero-count{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.5);
+  color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:50px}
+.dp-hero-nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;
+  border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;z-index:2}
+.dp-hero-nav:hover{background:rgba(0,0,0,.65)}
+.dp-hero-prev{left:10px}
+.dp-hero-next{right:10px}
+.dp-hero-hidden{display:none}
+
+/* ── 본문 (스크롤) ── */
+.dp-body{flex:1;overflow-y:auto}
+.dp-summary{padding:16px 16px 14px;border-bottom:1px solid #f0f0f0}
+.dp-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.dp-badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:700}
+.dp-badge-detail{background:#f1f5f9;color:var(--mid)}
+.dp-badge-certified{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.db-blue{background:var(--blue-lt);color:var(--blue-dk)}
+.db-gold{background:#fffbeb;color:#92400e}
+.db-green{background:#f0fdf4;color:#166534}
+.dp-name{font-size:21px;font-weight:800;color:#111;line-height:1.25;margin-bottom:4px}
+.dp-sub{font-size:12px;color:#999;line-height:1.4;margin-bottom:5px}
+.dp-rating{display:flex;align-items:center;gap:5px;font-size:12px;margin-top:4px}
+.dp-rating-stars{color:#facc15;font-size:14px}
+.dp-rating-score{font-weight:700;color:#222;font-size:13px}
+.dp-rating-count{color:#aaa}
+
+/* ── quick actions ── */
+.quick-actions{display:flex;justify-content:space-around;align-items:flex-start;
+  padding:14px 4px;border-bottom:1px solid #f0f0f0}
+.quick-btn{display:flex;flex-direction:column;align-items:center;gap:5px;
+  border:none;background:transparent;cursor:pointer;padding:4px 6px;font-family:inherit}
+.quick-btn[hidden]{display:none!important}
+.qb-icon{width:44px;height:44px;border-radius:50%;border:1.5px solid #e8e8e8;background:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:18px;transition:background .15s,border-color .15s}
+.quick-btn:hover .qb-icon{background:#f3f4f6;border-color:#d1d5db}
+.qb-label{font-size:10px;font-weight:600;color:#555;white-space:nowrap}
+
+/* ── 탭 ── */
+.dp-tabs{position:sticky;top:0;z-index:4;display:flex;background:#fff;
+  border-bottom:2px solid #f0f0f0;flex-shrink:0;padding:0 8px}
+.dp-tab{flex:1;border:0;border-bottom:2px solid transparent;margin-bottom:-2px;
+  background:transparent;padding:12px 4px;color:#999;font:700 13px inherit;cursor:pointer;
+  transition:color .15s,border-color .15s}
+.dp-tab.active{border-bottom-color:var(--blue-dk);color:var(--blue-dk)}
+.dp-tab:hover:not(.active){color:#333}
+.tab-panel[hidden]{display:none!important}
+
+/* ── 섹션 / 정보 ── */
+.section-card{padding:18px 16px;border-bottom:8px solid #f5f7fa}
+.section-card:last-child{border-bottom:0}
+.section-title{font-size:14px;font-weight:800;color:#111;margin-bottom:12px}
+.section-title small{color:#aaa;font-weight:500;font-size:12px}
+.dp-info-row{padding:0 16px;border-bottom:8px solid #f5f7fa}
+.dp-info{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid #f5f7fa;align-items:flex-start}
+.dp-info:last-child{border-bottom:0}
+.dp-info-label{font-size:11px;color:#aaa;font-weight:600;min-width:50px;flex:none;padding-top:1px}
+.dp-info-val{font-size:13px;color:#333;flex:1;line-height:1.5;font-weight:500}
+.dp-desc{font-size:13px;color:#555;line-height:1.75;word-break:keep-all}
+.empty-state{text-align:center;padding:36px 16px;color:#aaa;display:flex;flex-direction:column;align-items:center;gap:3px}
+.empty-state strong{display:block;color:#555;font-size:14px;margin:6px 0 2px}
+.outline-btn{display:inline-block;margin-top:12px;padding:9px 18px;border:1.5px solid var(--blue);
+  border-radius:6px;color:var(--blue-dk);background:#fff;font:700 12px inherit;text-decoration:none;cursor:pointer}
+.outline-btn:hover{background:var(--light)}
+
+/* ── 여행코스 경유지 (관광 전용) ── */
+.dp-course{padding:18px 16px;border-bottom:8px solid #f5f7fa}
+.dp-course-list{display:flex;flex-direction:column;gap:6px}
+.dp-course-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;
+  background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;cursor:pointer;text-align:left}
+.dp-course-item:hover{background:#eef2f7}
+.dp-course-num{flex:none;width:22px;height:22px;border-radius:50%;color:#fff;
+  font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.dp-course-name{font-size:13px;color:#333;line-height:1.4}
+
+/* ── 리뷰 카드 ── */
+.review-card{padding:14px 16px;border-bottom:1px solid #f5f7fa}
+.review-card:last-child{border-bottom:0}
+.review-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.review-author{font-size:13px;font-weight:700;color:#222}
+.review-star{font-size:12px;color:#facc15;font-weight:600}
+.review-text{font-size:12px;color:#555;line-height:1.6}
+
+/* ── 커뮤니티 카드 ── */
+.community-card{display:block;padding:14px 16px;border-bottom:1px solid #f5f7fa;
+  color:inherit;text-decoration:none;transition:background .12s}
+.community-card:hover{background:#f9fafb}
+.community-card:last-child{border-bottom:0}
+.community-meta{display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-bottom:3px}
+.community-title{font-size:13px;font-weight:700;color:#222;margin-bottom:3px}
+.community-preview{font-size:12px;color:#777;line-height:1.5}

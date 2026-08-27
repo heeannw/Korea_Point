@@ -49,10 +49,6 @@ application-local.properties
 application-local.yml
 application-local.yaml
 
-# H2 DB
-data/
-*.mv.db
-*.trace.db
 application-secret.properties
 
 # Local uploaded documents

@@ -1,12 +1,15 @@
 package com.example.demo.tourism.service;
 
 import com.example.demo.tourism.client.TourApiClient;
+import com.example.demo.tourism.dto.FoodPopularityDto;
 import com.example.demo.tourism.dto.TourPlaceDto;
+import com.example.demo.tourism.dto.TourPopularityDto;
 import com.example.demo.tourism.dto.TourReviewDto;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +20,7 @@ import java.util.stream.Collectors;
 public class TourismService {
 
     private static final double DEFAULT_NEARBY_RADIUS_KM = 2.0;
+    private static final int DEFAULT_POPULAR_LIMIT = 20;
     private static final Set<String> TOUR_CONTENT_TYPES = Set.of("12", "14", "15", "25", "28", "38");
 
     private static final Set<String> POSITIVE_WORDS = new HashSet<>(Arrays.asList(
@@ -31,9 +35,33 @@ public class TourismService {
     ));
 
     private final TourApiClient tourApiClient;
+    private final TourPopularityProvider popularityProvider;
+    private final FoodPopularityProvider foodPopularityProvider;
 
-    public TourismService(TourApiClient tourApiClient) {
+    public TourismService(TourApiClient tourApiClient, TourPopularityProvider popularityProvider,
+                          FoodPopularityProvider foodPopularityProvider) {
         this.tourApiClient = tourApiClient;
+        this.popularityProvider = popularityProvider;
+        this.foodPopularityProvider = foodPopularityProvider;
+    }
+
+    /**
+     * 인기 순위를 목록에 얹는다. 공급자가 아직 준비되지 않았으면 아무것도 하지 않아
+     * 화면에서 인기 표시가 통째로 감춰진다.
+     */
+    private void applyPopularity(List<TourPlaceDto> places, String lang) {
+        if (!popularityProvider.isAvailable()) return;
+
+        Map<String, TourPopularityDto> byContentId = popularityProvider.findPopularity(lang);
+        if (byContentId.isEmpty()) return;
+
+        for (TourPlaceDto place : places) {
+            TourPopularityDto popularity = byContentId.get(place.getId());
+            if (popularity == null) continue;
+            place.setPopularRank(popularity.getPopularRank());
+            place.setPopularCategory(popularity.getPopularCategory());
+            place.setPopularityScore(popularity.getPopularityScore());
+        }
     }
 
     /** 부산 관광지 원본은 저장 파일이 아니라 TourAPI에서 매 요청마다 가져온다. */
@@ -41,20 +69,73 @@ public class TourismService {
         List<TourPlaceDto> places = tourApiClient.findBusanPlaces(lang).stream()
                 .filter(this::isTourContent)
                 .collect(Collectors.toCollection(ArrayList::new));
+        applyPopularity(places, lang);
         scoreAndSort(places);
         return places;
     }
 
-    /** 음식점과 카페를 한 목록으로 돌려준다. TourAPI가 둘을 같은 유형으로 관리한다. */
+    /** 음식점 목록이다. 카페는 별도 화면으로 빠져서 제외한다. */
     public List<TourPlaceDto> foodList(String lang) {
+        return busanFood(lang, false);
+    }
+
+    /** 카페·찻집 목록이다. TourAPI는 카페를 음식점 유형 안에 담고 있어 같은 응답에서 갈라낸다. */
+    public List<TourPlaceDto> cafeList(String lang) {
+        return busanFood(lang, true);
+    }
+
+    private List<TourPlaceDto> busanFood(String lang, boolean cafeOnly) {
         List<TourPlaceDto> places = new ArrayList<>(tourApiClient.findBusanFoodPlaces(lang));
+        places.removeIf(place ->
+                TourApiClient.CAFE_CATEGORIES.contains(place.getFoodCategory()) != cafeOnly);
+        // TourAPI 부산 응답에 실제 항목이 없는 주점 분류는 음식점 화면에서 제외한다.
+        if (!cafeOnly) places.removeIf(place -> "bar".equals(place.getFoodCategory()));
+        applyFoodPopularity(places, lang, cafeOnly, DEFAULT_POPULAR_LIMIT);
         scoreAndSort(places);
         return places;
+    }
+
+    /**
+     * 실제 인기 공급자가 연결된 경우에만 음식점 또는 카페 TOP N을 반환한다.
+     * 현재 빈 공급자 상태에서는 TourAPI까지 호출하지 않고 빈 목록을 즉시 반환한다.
+     */
+    public List<TourPlaceDto> popularFoodList(String lang, boolean cafeOnly, int limit) {
+        if (!foodPopularityProvider.isAvailable()) return List.of();
+
+        int safeLimit = Math.max(1, Math.min(limit, DEFAULT_POPULAR_LIMIT));
+        return busanFood(lang, cafeOnly).stream()
+                .filter(place -> place.getPopularRank() != null)
+                .sorted(Comparator.comparing(TourPlaceDto::getPopularRank))
+                .limit(safeLimit)
+                .toList();
+    }
+
+    private void applyFoodPopularity(List<TourPlaceDto> places, String lang,
+                                     boolean cafeOnly, int limit) {
+        if (!foodPopularityProvider.isAvailable()) return;
+
+        String section = cafeOnly
+                ? FoodPopularityProvider.CAFE_SECTION
+                : FoodPopularityProvider.FOOD_SECTION;
+        Map<String, FoodPopularityDto> byContentId =
+                foodPopularityProvider.findPopularity(section, lang, limit);
+        if (byContentId.isEmpty()) return;
+
+        for (TourPlaceDto place : places) {
+            FoodPopularityDto popularity = byContentId.get(place.getId());
+            if (popularity == null) continue;
+            place.setPopularRank(popularity.getPopularRank());
+            place.setPopularCategory(popularity.getSection());
+            place.setPopularityScore(popularity.getPopularityScore());
+            place.setPopularityBasis(popularity.getPopularityBasis());
+            place.setPopularityCalculatedAt(popularity.getCalculatedAt());
+        }
     }
 
     /** 음식점 목록에서 키워드로 거른다. TourAPI 키워드 검색은 유형을 섞어 주기 때문이다. */
-    public List<TourPlaceDto> foodSearch(String keyword, Double userLat, Double userLon, String lang) {
-        List<TourPlaceDto> places = foodList(lang);
+    public List<TourPlaceDto> foodSearch(String keyword, Double userLat, Double userLon,
+                                         String lang, boolean cafeOnly) {
+        List<TourPlaceDto> places = cafeOnly ? cafeList(lang) : foodList(lang);
         if (keyword != null && !keyword.isBlank()) {
             String needle = keyword.trim().toLowerCase();
             places.removeIf(place -> place.getTitle() == null

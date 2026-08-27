@@ -93,6 +93,9 @@ public class PostService {
                 .category(category)
                 .title(req.getTitle())
                 .content(req.getContent())
+                .placeContentId(blankToNull(req.getPlaceContentId()))
+                .placeContentTypeId(blankToNull(req.getPlaceContentTypeId()))
+                .placeTitle(blankToNull(req.getPlaceTitle()))
                 .build();
 
         Post saved = postRepository.save(post);
@@ -109,6 +112,13 @@ public class PostService {
 
         translationService.translatePostAsync(saved.getId(), req.getTitle(), req.getContent());
         return saved.getId();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PostDto> getPostsByPlace(String contentId) {
+        if (contentId == null || contentId.isBlank()) return List.of();
+        return postRepository.findTop10ByPlaceContentIdAndDeletedAtIsNullOrderByCreatedAtDesc(contentId)
+                .stream().map(this::toDto).toList();
     }
 
     @Transactional
@@ -138,12 +148,19 @@ public class PostService {
                 .titleKo(post.getTitleKo())
                 .contentKo(post.getContentKo())
                 .contentKoPreview(post.getContentKo() != null ? buildPreview(post.getContentKo()) : null)
+                .placeContentId(post.getPlaceContentId())
+                .placeContentTypeId(post.getPlaceContentTypeId())
+                .placeTitle(post.getPlaceTitle())
                 .authorName(post.getUser().getName())
                 .authorProfileImage(post.getUser().getProfileImage())
                 .viewCount(post.getViewCount())
                 .commentCount(post.getCommentCount())
                 .createdAt(post.getCreatedAt())
                 .build();
+    }
+
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private String buildPreview(String html) {

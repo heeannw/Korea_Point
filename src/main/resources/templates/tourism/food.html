@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <title>Taste — KoreaPoint</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --blue:#3b9eff; --blue-dk:#1a7de0; --dark:#0f172a; --mid:#334155; --gray:#64748b;
+      --border:#dbeafe; --white:#fff; --light:#f0f7ff; --r:12px;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%;overflow:hidden}
+    body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);display:flex;flex-direction:column}
+    header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;
+      border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;z-index:100}
+    .logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--blue-dk);text-decoration:none}
+    .logo span{color:var(--dark)}
+    .header-right{display:flex;gap:8px;align-items:center}
+    .h-btn{padding:7px 16px;border-radius:50px;border:1.5px solid var(--border);background:transparent;
+      font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--dark);text-decoration:none}
+    .h-btn:hover,.h-btn.active{border-color:var(--blue);color:var(--blue)}
+
+    .body-row{flex:1;display:flex;min-height:0}
+    .sidebar{width:380px;flex-shrink:0;display:flex;flex-direction:column;
+      border-right:1px solid var(--border);background:var(--white)}
+    .search-wrap{padding:12px}
+    .search-box{display:flex;gap:6px}
+    .search-box input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:50px;
+      font-size:13px;font-family:inherit;outline:none}
+    .search-box input:focus{border-color:var(--blue)}
+    .search-box button{padding:10px 16px;border:none;border-radius:50px;background:var(--blue);
+      color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+
+    .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:0 12px 12px;padding:4px;
+      border-radius:12px;background:var(--light);border:1px solid var(--border)}
+    .mode-tab{padding:8px 10px;border-radius:9px;text-align:center;text-decoration:none;color:var(--gray);
+      font-size:12px;font-weight:700;transition:background .15s,color .15s,box-shadow .15s}
+    .mode-tab:hover{color:var(--blue-dk)}
+    .mode-tab.active{background:var(--white);color:var(--blue-dk);box-shadow:0 2px 8px rgba(59,158,255,.15)}
+
+    .filter-wrap{display:flex;align-items:center;padding:0 0 10px;flex-shrink:0}
+    .filter-wrap[hidden]{display:none!important}
+    .scroll-btn{flex:none;width:28px;height:28px;border:1.5px solid var(--border);border-radius:50%;
+      background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;
+      font-size:13px;color:var(--gray);box-shadow:0 1px 6px rgba(0,0,0,.08);z-index:2}
+    .scroll-btn:hover{border-color:var(--blue);color:var(--blue)}
+    .scroll-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
+    .scroll-btn.left{margin-left:8px}
+    .scroll-btn.right{margin-right:8px}
+    .filter-row{flex:1;display:flex;gap:6px;overflow-x:auto;padding:0 6px;
+      scrollbar-width:none;scroll-behavior:smooth}
+    .filter-row::-webkit-scrollbar{display:none}
+    .chip{flex:none;padding:6px 13px;border:1.5px solid var(--border);border-radius:50px;
+      font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:var(--white)}
+    .chip.active{background:var(--blue);border-color:var(--blue);color:#fff}
+
+    .near-note{margin:0 12px 10px;padding:8px 11px;border-radius:10px;background:var(--light);
+      border:1px solid var(--border);font-size:12px;color:var(--mid);line-height:1.5}
+    .near-note b{color:var(--blue-dk)}
+    .list-head{display:flex;align-items:center;justify-content:space-between;padding:0 14px 10px}
+    .list-count{font-size:12px;color:var(--gray)}
+    .sort-btns{display:flex;gap:4px;max-width:270px;overflow-x:auto;scrollbar-width:none}
+    .sort-btns::-webkit-scrollbar{display:none}
+    .sort-btn{padding:5px 11px;border:1.5px solid var(--border);border-radius:50px;background:var(--white);
+      font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--mid)}
+    .sort-btn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+
+    .place-list{flex:1;overflow-y:auto;padding:0 12px 12px}
+    .place-card{display:flex;gap:10px;padding:10px;border:1.5px solid transparent;border-radius:var(--r);
+      cursor:pointer;margin-bottom:6px}
+    .place-card:hover{background:var(--light)}
+    .place-card.active{border-color:var(--blue);background:var(--light)}
+    .thumb{width:72px;height:72px;flex:none;border-radius:10px;background:#e2e8f0 center/cover no-repeat;position:relative}
+    .rank{position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:6px;color:#fff;
+      font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+    .card-info{flex:1;min-width:0}
+    .card-cat{font-size:11px;font-weight:700;margin-bottom:2px}
+    .card-name{font-size:14px;font-weight:600;margin-bottom:4px;line-height:1.3}
+    .card-meta{font-size:11px;color:var(--gray);display:flex;gap:8px;flex-wrap:wrap}
+    .empty{padding:30px 14px;text-align:center;color:var(--gray);font-size:13px;line-height:1.6}
+
+    .map-area{flex:1;position:relative;background:#e8f0fe;overflow:hidden}
+    #map{width:100%;height:100%}
+
+    /* ── Detail Panel (Naver-style) ── */
+    .detail-panel{position:absolute;top:0;left:0;width:390px;max-width:50%;height:100%;
+      background:#fff;transform:translateX(-100%);transition:transform .25s ease;
+      z-index:60;display:flex;flex-direction:column;box-shadow:2px 0 20px rgba(0,0,0,.12)}
+    .detail-panel.open{transform:translateX(0)}
+    .dp-header{height:48px;display:flex;align-items:center;padding:0 8px;gap:4px;
+      background:#fff;border-bottom:1px solid #f0f0f0;flex-shrink:0;z-index:5}
+    .dp-back{width:36px;height:36px;border:none;background:transparent;border-radius:50%;
+      font-size:17px;cursor:pointer;color:#333;display:flex;align-items:center;justify-content:center}
+    .dp-back:hover{background:#f3f4f6}
+    .dp-title{flex:1;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dark);padding:0 4px}
+    .dp-header-right{display:flex;gap:2px}
+    .summary-save{width:36px;height:36px;border:none;border-radius:50%;background:transparent;
+      color:#bbb;font-size:21px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+    .summary-save:hover{color:#ef4444;background:#fef2f2}
+
+    .dp-hero{width:100%;height:195px;background:#eef2f7 center/cover no-repeat;
+      flex-shrink:0;position:relative;overflow:hidden;cursor:pointer}
+    .dp-hero.no-image{height:0;visibility:hidden;pointer-events:none}
+    .dp-hero-count{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.5);
+      color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:50px}
+
+    .dp-body{flex:1;overflow-y:auto}
+    .dp-summary{padding:16px 16px 14px;border-bottom:1px solid #f0f0f0}
+    .dp-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+    .dp-badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:700}
+    .dp-badge-detail{background:#f1f5f9;color:var(--mid)}
+    .dp-badge-certified{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+    .dp-name{font-size:21px;font-weight:800;color:#111;line-height:1.25;margin-bottom:4px}
+    .dp-sub{font-size:12px;color:#999;line-height:1.4;margin-bottom:5px}
+    .dp-rating{display:flex;align-items:center;gap:5px;font-size:12px;margin-top:4px}
+    .dp-rating-stars{color:#facc15;font-size:14px}
+    .dp-rating-score{font-weight:700;color:#222;font-size:13px}
+    .dp-rating-count{color:#aaa}
+
+    .quick-actions{display:flex;justify-content:space-around;align-items:flex-start;padding:14px 4px;border-bottom:1px solid #f0f0f0}
+    .quick-btn{display:flex;flex-direction:column;align-items:center;gap:5px;
+      border:none;background:transparent;cursor:pointer;padding:4px 6px;font-family:inherit}
+    .quick-btn[hidden]{display:none!important}
+    .qb-icon{width:44px;height:44px;border-radius:50%;border:1.5px solid #e8e8e8;background:#fff;
+      display:flex;align-items:center;justify-content:center;font-size:18px;transition:background .15s,border-color .15s}
+    .quick-btn:hover .qb-icon{background:#f3f4f6;border-color:#d1d5db}
+    .qb-label{font-size:10px;font-weight:600;color:#555;white-space:nowrap}
+
+    .dp-tabs{position:sticky;top:0;z-index:4;display:flex;background:#fff;
+      border-bottom:2px solid #f0f0f0;flex-shrink:0;padding:0 8px}
+    .dp-tab{flex:1;border:0;border-bottom:2px solid transparent;margin-bottom:-2px;
+      background:transparent;padding:12px 4px;color:#999;font:700 13px inherit;cursor:pointer;
+      transition:color .15s,border-color .15s}
+    .dp-tab.active{border-bottom-color:var(--blue-dk);color:var(--blue-dk)}
+    .dp-tab:hover:not(.active){color:#333}
+    .tab-panel[hidden]{display:none!important}
+
+    .section-card{padding:18px 16px;border-bottom:8px solid #f5f7fa}
+    .section-card:last-child{border-bottom:0}
+    .section-title{font-size:14px;font-weight:800;color:#111;margin-bottom:12px}
+    .section-title small{color:#aaa;font-weight:500;font-size:12px}
+    .dp-info-row{padding:0 16px;border-bottom:8px solid #f5f7fa}
+    .dp-info{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid #f5f7fa;align-items:flex-start}
+    .dp-info:last-child{border-bottom:0}
+    .dp-info-label{font-size:11px;color:#aaa;font-weight:600;min-width:50px;flex:none;padding-top:1px}
+    .dp-info-val{font-size:13px;color:#333;flex:1;line-height:1.5;font-weight:500}
+    .dp-desc{font-size:13px;color:#555;line-height:1.75;word-break:keep-all}
+    .empty-state{text-align:center;padding:36px 16px;color:#aaa;display:flex;flex-direction:column;align-items:center;gap:3px}
+    .empty-state strong{display:block;color:#555;font-size:14px;margin:6px 0 2px}
+    .outline-btn{display:inline-block;margin-top:12px;padding:9px 18px;border:1.5px solid var(--blue);
+      border-radius:6px;color:var(--blue-dk);background:#fff;font:700 12px inherit;text-decoration:none;cursor:pointer}
+    .outline-btn:hover{background:var(--light)}
+    .review-card{padding:14px 16px;border-bottom:1px solid #f5f7fa}
+    .review-card:last-child{border-bottom:0}
+    .review-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+    .review-author{font-size:13px;font-weight:700;color:#222}
+    .review-star{font-size:12px;color:#facc15;font-weight:600}
+    .review-text{font-size:12px;color:#555;line-height:1.6}
+    .community-card{display:block;padding:14px 16px;border-bottom:1px solid #f5f7fa;
+      color:inherit;text-decoration:none;transition:background .12s}
+    .community-card:hover{background:#f9fafb}
+    .community-card:last-child{border-bottom:0}
+    .community-meta{display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-bottom:3px}
+    .community-title{font-size:13px;font-weight:700;color:#222;margin-bottom:3px}
+    .community-preview{font-size:12px;color:#777;line-height:1.5}
+    .media-viewer{position:fixed;inset:0;background:#fff;z-index:300;display:none;flex-direction:column}.media-viewer.open{display:flex}
+    .media-viewer-head{height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid #e5e7eb;font-weight:800}
+    .media-viewer-close{border:0;background:transparent;font-size:25px;cursor:pointer}.media-viewer-grid{padding:12px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+    .media-viewer-grid img,.media-viewer-grid video{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:9px;background:#e8eef5}
+  </style>
+</head>
+<body>
+<header>
+  <a class="logo" href="/" >Korea<span>Point</span></a>
+  <div class="header-right">
+    <a class="h-btn" th:href="@{/tour/all(lang=${lang})}" id="btnTour">Tourism</a>
+    <a class="h-btn active" th:href="@{/tour/food(lang=${lang})}" id="btnTaste">Taste</a>
+    <button class="h-btn" onclick="switchLang()" id="langBtn">EN</button>
+  </div>
+</header>
+
+<div class="body-row">
+  <aside class="sidebar">
+    <div class="search-wrap">
+      <form class="search-box" th:action="@{/tour/food/search}" method="get" id="searchForm">
+        <input type="hidden" name="lang" th:value="${lang}">
+        <input type="hidden" name="cafeOnly" th:value="${cafeOnly}">
+        <input type="text" name="keyword" id="searchInput" th:value="${keyword}" placeholder="검색">
+        <button type="submit" id="searchBtn">검색</button>
+      </form>
+    </div>
+    <nav class="mode-tabs" aria-label="맛집 유형">
+      <a class="mode-tab" th:classappend="${cafeOnly} ? '' : 'active'"
+         th:href="@{/tour/food(lang=${lang})}" id="tabFood">음식점</a>
+      <a class="mode-tab" th:classappend="${cafeOnly} ? 'active' : ''"
+         th:href="@{/tour/cafe(lang=${lang})}" id="tabCafe">카페</a>
+    </nav>
+    <div class="filter-wrap" th:hidden="${cafeOnly}">
+      <button class="scroll-btn left" id="scrollLeft" type="button" onclick="scrollFilter(-1)" disabled>‹</button>
+      <div class="filter-row" id="filterRow"></div>
+      <button class="scroll-btn right" id="scrollRight" type="button" onclick="scrollFilter(1)">›</button>
+    </div>
+    <div class="near-note" id="nearNote" hidden></div>
+    <div class="list-head">
+      <span class="list-count"><b id="countDisplay">0</b> <span id="countUnit">곳</span></span>
+      <div class="sort-btns">
+        <button class="sort-btn" id="sortPopular" onclick="setSort('popular')" hidden>인기 TOP 20</button>
+        <button class="sort-btn" id="sortRating" onclick="setSort('rating')" hidden>별점순</button>
+        <button class="sort-btn" id="sortReviews" onclick="setSort('reviews')" hidden>리뷰순</button>
+        <button class="sort-btn active" id="sortRec" onclick="setSort('recommended')">추천순</button>
+        <button class="sort-btn" id="sortDist" onclick="setSort('distance')">거리순</button>
+      </div>
+    </div>
+    <div class="place-list" id="placeList"></div>
+  </aside>
+
+  <div class="map-area">
+    <div id="map"></div>
+    <div class="detail-panel" id="detailPanel">
+      <div class="dp-header">
+        <button class="dp-back" onclick="closeDetail()">←</button>
+        <div class="dp-title" id="dpTitle"></div>
+        <div class="dp-header-right">
+          <button class="summary-save" id="btnSave" type="button" aria-label="장소 저장">♡</button>
+        </div>
+      </div>
+      <div class="dp-hero no-image" id="dpHero"></div>
+      <div class="dp-body">
+        <section class="dp-summary">
+          <div class="dp-badges" id="dpBadge"></div>
+          <div class="dp-name" id="dpName"></div>
+          <div class="dp-sub" id="dpSub"></div>
+          <div class="dp-rating" id="dpRating"></div>
+        </section>
+        <div class="quick-actions">
+          <button class="quick-btn" id="btnRoute" type="button">
+            <div class="qb-icon">🚊</div><span class="qb-label">길찾기</span>
+          </button>
+          <button class="quick-btn" id="btnPlan" type="button">
+            <div class="qb-icon">📅</div><span class="qb-label">일정 추가</span>
+          </button>
+          <button class="quick-btn" id="btnReservation" type="button" hidden>
+            <div class="qb-icon">📞</div><span class="qb-label">예약 문의</span>
+          </button>
+          <button class="quick-btn" id="btnShare" type="button">
+            <div class="qb-icon">🔗</div><span class="qb-label">공유</span>
+          </button>
+        </div>
+        <nav class="dp-tabs">
+          <button class="dp-tab active" type="button" data-tab="info" onclick="showDetailTab('info')">정보</button>
+          <button class="dp-tab" type="button" data-tab="reviews" onclick="showDetailTab('reviews')">리뷰</button>
+          <button class="dp-tab" type="button" data-tab="community" onclick="showDetailTab('community')">커뮤니티</button>
+        </nav>
+        <section class="tab-panel" id="tab-info">
+          <div class="dp-info-row" id="dpInfoRow"></div>
+          <div class="section-card"><div class="section-title">장소 소개</div><div class="dp-desc" id="dpDesc"></div></div>
+          <div id="dpApiInfo"></div>
+        </section>
+        <section class="tab-panel" id="tab-reviews" hidden><div id="dpReviews"></div></section>
+        <section class="tab-panel" id="tab-community" hidden><div id="dpCommunity"></div></section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="media-viewer" id="mediaViewer" role="dialog" aria-modal="true" aria-label="사진과 영상">
+  <div class="media-viewer-head"><span id="mediaViewerTitle">사진</span>
+    <button class="media-viewer-close" type="button" onclick="closeMediaViewer()" aria-label="닫기">×</button></div>
+  <div class="media-viewer-grid" id="mediaViewerGrid"></div>
+</div>
+
+<script th:inline="javascript">
+  const PLACES    = /*[[${list}]]*/ [];
+  const LANG      = /*[[${lang}]]*/ 'ko';
+  const KAKAO_KEY = /*[[${kakaoKey}]]*/ '';
+  const userLat   = /*[[${userlat}]]*/ null;
+  const userLon   = /*[[${userlon}]]*/ null;
+  const centerLat = /*[[${centerLat}]]*/ 35.1796;
+  const centerLon = /*[[${centerLon}]]*/ 129.0756;
+  const INIT_CATEGORY = /*[[${category}]]*/ null;
+  const NEAR_TITLE    = /*[[${near}]]*/ null;
+  const CAFE_ONLY     = /*[[${cafeOnly}]]*/ false;
+</script>
+
+<script>
+  // 음식 분류는 서버가 슬러그로 보내고 화면에서 언어별 라벨로 옮긴다.
+  const CATEGORIES = ['all','korean','japanese','chinese','western','fusion','foreign','snack',
+                      'cafe','teahouse','drink','etc'];
+  const LABELS = {
+    ko:{ all:'전체', korean:'한식', cafe:'카페', teahouse:'찻집', drink:'기타 음료점',
+         japanese:'일식', chinese:'중식',
+         western:'서양식', fusion:'퓨전', foreign:'기타 외국식', snack:'간이음식', bar:'주점', etc:'기타',
+         unit:'곳', search:'맛집 검색', searchCafe:'카페 검색', searchBtn:'검색', popular:'인기 TOP 20', ratingSort:'별점순', reviewSort:'리뷰순', rec:'추천순', dist:'거리순',
+         empty:'조건에 맞는 곳이 없습니다.', route:'🚊 길찾기', loading:'상세정보를 불러오는 중...',
+         failed:'상세정보를 불러오지 못했습니다.', none:'등록된 설명이 없습니다.',
+         addr:'주소', distance:'거리', category:'분류', tel:'전화', taste:'맛집', foodTab:'음식점', cafeTab:'카페' },
+    en:{ all:'All', korean:'Korean', cafe:'Cafe', teahouse:'Tea House', drink:'Other Drinks',
+         japanese:'Japanese', chinese:'Chinese',
+         western:'Western', fusion:'Fusion', foreign:'Other Foreign', snack:'Snack', bar:'Bar', etc:'Other',
+         unit:'places', search:'Search restaurants', searchCafe:'Search cafes', searchBtn:'Search',
+         popular:'Popular TOP 20', ratingSort:'Rating', reviewSort:'Most reviewed', rec:'Recommended', dist:'Distance',
+         empty:'No places match this filter.', route:'🚊 Directions', loading:'Loading details...',
+         failed:'Could not load details.', none:'No description registered.',
+         addr:'Address', distance:'Distance', category:'Category', tel:'Phone', taste:'Taste', foodTab:'Restaurants', cafeTab:'Cafe' }
+  };
+  const EMOJI = { korean:'🍚', cafe:'☕', teahouse:'🍵', drink:'🥤', japanese:'🍣', chinese:'🥟',
+                  western:'🍝', fusion:'🍲', foreign:'🌏', snack:'🍢', bar:'🍺', etc:'🍴' };
+  // Tabler Icons(MIT) SVG 경로. 지도 핀에서는 OS마다 모양이 다른 이모지 대신 동일한 선 아이콘을 쓴다.
+  const MARKER_ICONS = {
+    korean:'<path d="M4 11h16a1 1 0 0 1 1 1v.5c0 1.5-2.517 5.573-4 6.5v1a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-1c-1.687-1.054-4-5-4-6.5V12a1 1 0 0 1 1-1"/><path d="M19 7 5 8M19 2 5 5"/>',
+    japanese:'<path d="M16.69 7.44A6.973 6.973 0 0 0 15 12c0 1.747.64 3.345 1.699 4.571"/><path d="M2 9.504c7.715 8.647 14.75 10.265 20 2.498C16.75 4.241 9.715 5.86 2 14.506"/><path d="M18 11v.01M11.5 10.5c-.667 1-.667 2 0 3"/>',
+    chinese:'<path d="M4 11h16a1 1 0 0 1 1 1v.5c0 1.5-2.517 5.573-4 6.5v1a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-1c-1.687-1.054-4-5-4-6.5V12a1 1 0 0 1 1-1"/><path d="M8 4a2.4 2.4 0 0 0 0 4M12 4a2.4 2.4 0 0 0 0 4M16 4a2.4 2.4 0 0 0 0 4"/>',
+    western:'<path d="M12 21.5c-3.04 0-5.952-.714-8.5-1.983L12 3l8.5 16.517A19.09 19.09 0 0 1 12 21.5"/><path d="M5.38 15.866a14.94 14.94 0 0 0 13.317.155M13 11.01V11M11 14v-.01"/>',
+    fusion:'<path d="M12 3c1.918 0 3.52 1.35 3.91 3.151A4 4 0 0 1 18 13.874V21H6v-7.126a4 4 0 1 1 2.092-7.723A4 4 0 0 1 12 3"/><path d="M6.161 17.009 18 17"/>',
+    foreign:'<path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0M3.6 9h16.8M3.6 15h16.8M11.5 3a17 17 0 0 0 0 18M12.5 3a17 17 0 0 1 0 18"/>',
+    snack:'<path d="M4 15h16a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4M12 4c3.783 0 6.953 2.133 7.786 5H4.214C5.047 6.133 8.217 4 12 4M5 12h14"/>',
+    bar:'<path d="M8 21h8M12 15v6M5 5a7 2 0 1 0 14 0A7 2 0 1 0 5 5"/><path d="M5 5v.388c0 .432.126.853.362 1.206l5 7.509a2 2 0 0 0 3.276 0l5-7.509c.236-.353.362-.774.362-1.206V5"/>',
+    cafe:'<path d="M3 14c.83.642 2.077 1.017 3.5 1 1.423.017 2.67-.358 3.5-1 .83-.642 2.077-1.017 3.5-1 1.423-.017 2.67.358 3.5 1M8 3a2.4 2.4 0 0 0 0 4M12 3a2.4 2.4 0 0 0 0 4"/><path d="M3 10h14v5a6 6 0 0 1-6 6H9a6 6 0 0 1-6-6v-5M16.746 16.726a3 3 0 1 0 .252-5.555"/>',
+    teahouse:'<path d="M10.29 3h3.42a2 2 0 0 1 1.988 1.78l1.555 14A2 2 0 0 1 15.265 21h-6.53a2 2 0 0 1-1.988-2.22l1.555-14A2 2 0 0 1 10.29 3"/><path d="m7.47 12.5-4.257-5.019A.899.899 0 0 1 3.903 6h13.09A3 3 0 0 1 20 9v3a3 3 0 0 1-3.007 3M7 17h10"/>',
+    drink:'<path d="M10 5h4V3a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v2M14 3.5c0 1.626.507 3.212 1.45 4.537l.05.07A8.093 8.093 0 0 1 17 12.801V19a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-6.2c0-1.682.524-3.322 1.5-4.693l.05-.07A7.823 7.823 0 0 0 10 3.5"/>',
+    etc:'<path d="M19 3v12h-5c-.023-3.681.184-7.406 5-12m0 12v6h-1v-3M8 4v17M5 4v3a3 3 0 1 0 6 0V4"/>'
+  };
+  const COLOR = { korean:'#ef4444', cafe:'#8b5cf6', teahouse:'#0d9488', drink:'#6366f1',
+                  japanese:'#0ea5e9', chinese:'#f59e0b', western:'#16a34a', fusion:'#ec4899',
+                  foreign:'#14b8a6', snack:'#f97316', bar:'#a16207', etc:'#64748b' };
+
+  const isEn = String(LANG).toLowerCase() === 'en';
+  const T = isEn ? LABELS.en : LABELS.ko;
+
+  // 관광지에서 넘어왔다면 그 지점 기준이므로 거리순으로 시작한다.
+  let activeCategory = CAFE_ONLY ? 'all' : (INIT_CATEGORY || 'all');
+  let activeSort = NEAR_TITLE ? 'distance' : 'recommended';
+  let activePinId = null;
+  let currentDetailPlace = null;
+  let map = null;
+  let markerMap = [];
+
+  function label(slug) { return T[slug] ?? T.etc; }
+  // 카드에는 분류체계가 준 세부 이름(찻집·제과 등)을 우선 쓰고, 없으면 칩 라벨로 물러난다.
+  function catLabel(p) {
+    if (CAFE_ONLY) return label('cafe');
+    return (!isEn && p.typeName) ? p.typeName : label(p.foodCategory);
+  }
+  function cardColorOf(p) { return CAFE_ONLY ? COLOR.cafe : colorOf(p); }
+  function cardEmojiOf(p) { return CAFE_ONLY ? EMOJI.cafe : emojiOf(p); }
+
+  /**
+   * 상세 패널은 음식 대분류와 소분류를 서로 다른 배지로 표시한다.
+   * 한식의 '관광식당'은 음식 종류가 아니므로 숨기고 '모범음식점' 인증만 별도로 살린다.
+   */
+  function detailBadges(p) {
+    const base = label(p.foodCategory);
+    const detail = !isEn ? String(p.typeDetailName ?? '').trim() : '';
+    const badges = [
+      `<span class="dp-badge" style="background:${colorOf(p)}22;color:${colorOf(p)}">
+         ${emojiOf(p)} ${escapeHtml(base)}</span>`
+    ];
+
+    if (p.foodCategory === 'korean') {
+      if (detail === '모범음식점' || detail === '모범식당') {
+        badges.push(`<span class="dp-badge dp-badge-certified">✓ ${escapeHtml(detail)}</span>`);
+      }
+    } else if ((p.foodCategory === 'snack' || p.foodCategory === 'bar')
+        && detail && detail !== base) {
+      badges.push(`<span class="dp-badge dp-badge-detail">${escapeHtml(detail)}</span>`);
+    }
+    return badges.join('');
+  }
+  function colorOf(p) { return COLOR[p.foodCategory] ?? COLOR.etc; }
+  function emojiOf(p) { return EMOJI[p.foodCategory] ?? EMOJI.etc; }
+  // 음식점 지도는 핀을 수저 아이콘 하나로 통일해 복잡도를 낮춘다.
+  // 별도 카페 화면에서는 커피·찻집·음료 아이콘을 유지한다.
+  function markerIconOf(p) {
+    if (!CAFE_ONLY) return MARKER_ICONS.etc;
+    return MARKER_ICONS.cafe;
+  }
+
+  function applyStaticLabels() {
+    const popularButton = document.getElementById('sortPopular');
+    popularButton.textContent = T.popular;
+    document.getElementById('sortRating').textContent = T.ratingSort;
+    document.getElementById('sortReviews').textContent = T.reviewSort;
+    document.getElementById('searchInput').placeholder = CAFE_ONLY ? T.searchCafe : T.search;
+    document.getElementById('searchBtn').textContent = T.searchBtn;
+    document.getElementById('sortRec').textContent = T.rec;
+    document.getElementById('sortDist').textContent = T.dist;
+    document.getElementById('countUnit').textContent = T.unit;
+    document.getElementById('btnRoute').querySelector('.qb-label').textContent = isEn ? 'Directions' : '길찾기';
+    document.getElementById('btnTaste').textContent = T.taste;
+    document.getElementById('tabFood').textContent = T.foodTab;
+    document.getElementById('tabCafe').textContent = T.cafeTab;
+    document.getElementById('langBtn').textContent = isEn ? '한국어' : 'EN';
+    document.getElementById('sortRec').classList.toggle('active', activeSort === 'recommended');
+    document.getElementById('sortDist').classList.toggle('active', activeSort === 'distance');
+    popularButton.classList.toggle('active', activeSort === 'popular');
+    // 카페·찻집·음료점은 모두 카페로 묶으므로 카페 화면에서는 하위 필터를 숨긴다.
+    document.querySelector('.filter-wrap').hidden = CAFE_ONLY;
+    // 음식점은 데이터에 실제로 존재하는 분류만 칩으로 만든다.
+    const present = new Set(PLACES.map(p => p.foodCategory));
+    document.getElementById('filterRow').innerHTML = CATEGORIES
+      .filter(c => c === 'all' || present.has(c))
+      .map(c => `<div class="chip${c === activeCategory ? ' active' : ''}" data-cat="${c}"
+                   onclick="setCategory('${c}')">${c === 'all' ? '🍽️' : EMOJI[c]} ${label(c)}</div>`)
+      .join('');
+
+    if (NEAR_TITLE) {
+      const note = document.getElementById('nearNote');
+      note.innerHTML = isEn
+        ? `Sorted by distance from <b>${escapeHtml(NEAR_TITLE)}</b>`
+        : `<b>${escapeHtml(NEAR_TITLE)}</b> 기준 가까운 순입니다`;
+      note.hidden = false;
+    }
+  }
+
+  // 분류가 사이드바 폭을 넘겨서 잘리므로 관광 화면과 같은 좌우 이동 버튼을 둔다.
+  function scrollFilter(dir) {
+    const row = document.getElementById('filterRow');
+    row.scrollLeft += dir * 120;
+    setTimeout(updateScrollBtns, 150);
+  }
+
+  function updateScrollBtns() {
+    const row = document.getElementById('filterRow');
+    document.getElementById('scrollLeft').disabled = row.scrollLeft <= 0;
+    document.getElementById('scrollRight').disabled =
+      row.scrollLeft + row.clientWidth >= row.scrollWidth - 1;
+  }
+
+  function distStr(d) {
+    if (d == null) return '-';
+    return d < 1 ? Math.round(d * 1000) + 'm' : d.toFixed(1) + 'km';
+  }
+
+  function reviewCount(p) {
+    return Math.max(p.user_ratings_total ?? 0, Array.isArray(p.reviews) ? p.reviews.length : 0);
+  }
+
+  function getMatchingPlaces() {
+    let list = [...PLACES];
+    if (activeCategory !== 'all') list = list.filter(p => p.foodCategory === activeCategory);
+    return list;
+  }
+
+  function updateSortAvailability() {
+    const matching = getMatchingPlaces();
+    const availability = {
+      popular: matching.filter(p => p.popularRank != null).length >= 5,
+      rating: matching.filter(p => p.rating != null && reviewCount(p) >= 10).length >= 5,
+      reviews: matching.filter(p => reviewCount(p) > 0).length >= 5
+    };
+    document.getElementById('sortPopular').hidden = !availability.popular;
+    document.getElementById('sortRating').hidden = !availability.rating;
+    document.getElementById('sortReviews').hidden = !availability.reviews;
+    if (availability[activeSort] === false) activeSort = 'recommended';
+  }
+
+  function getFiltered() {
+    let list = getMatchingPlaces();
+    if (activeSort === 'distance') list.sort((a, b) => (a.distance ?? 9e9) - (b.distance ?? 9e9));
+    else if (activeSort === 'popular') {
+      list = list.filter(p => p.popularRank != null)
+        .sort((a, b) => a.popularRank - b.popularRank)
+        .slice(0, 20);
+    } else if (activeSort === 'rating') {
+      list = list.filter(p => p.rating != null && reviewCount(p) >= 10)
+        .sort((a, b) => (b.rating - a.rating) || (reviewCount(b) - reviewCount(a)));
+    } else if (activeSort === 'reviews') {
+      list = list.filter(p => reviewCount(p) > 0)
+        .sort((a, b) => reviewCount(b) - reviewCount(a));
+    } else list.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    return list;
+  }
+
+  function setCategory(c) {
+    activeCategory = c;
+    activePinId = null;
+    document.querySelectorAll('.chip').forEach(ch => ch.classList.toggle('active', ch.dataset.cat === c));
+    render();
+  }
+
+  function setSort(s) {
+    activeSort = s;
+    document.getElementById('sortRec').classList.toggle('active', s === 'recommended');
+    document.getElementById('sortDist').classList.toggle('active', s === 'distance');
+    document.getElementById('sortPopular').classList.toggle('active', s === 'popular');
+    document.getElementById('sortRating').classList.toggle('active', s === 'rating');
+    document.getElementById('sortReviews').classList.toggle('active', s === 'reviews');
+    render();
+  }
+
+  function escapeHtml(v) {
+    return String(v ?? '').replace(/[&<>"']/g, ch => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[ch]);
+  }
+
+  function render() {
+    updateSortAvailability();
+    document.getElementById('sortRec').classList.toggle('active', activeSort === 'recommended');
+    document.getElementById('sortDist').classList.toggle('active', activeSort === 'distance');
+    document.getElementById('sortPopular').classList.toggle('active', activeSort === 'popular');
+    document.getElementById('sortRating').classList.toggle('active', activeSort === 'rating');
+    document.getElementById('sortReviews').classList.toggle('active', activeSort === 'reviews');
+    const list = getFiltered();
+    window._currentList = list;
+    document.getElementById('countDisplay').textContent = list.length;
+    updateMarkerVisibility();
+    const box = document.getElementById('placeList');
+    if (list.length === 0) { box.innerHTML = `<div class="empty">${T.empty}</div>`; return; }
+    box.innerHTML = list.map((p, i) => `
+      <div class="place-card${activePinId === i ? ' active' : ''}" id="card-${i}" onclick="selectPlace(${i})">
+        <div class="thumb" style="background-image:url('${escapeHtml(p.image ?? '')}')">
+          <div class="rank" style="background:${cardColorOf(p)}">${activeSort === 'popular' ? p.popularRank : i + 1}</div>
+        </div>
+        <div class="card-info">
+          <div class="card-cat" style="color:${cardColorOf(p)}">${cardEmojiOf(p)} ${escapeHtml(catLabel(p))}</div>
+          <div class="card-name">${escapeHtml(p.title ?? '-')}</div>
+          <div class="card-meta">
+            <span>📍 ${distStr(p.distance)}</span>
+            <span>${escapeHtml((p.addr ?? '').slice(0, 24))}</span>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function markerImage(p, active) {
+    // 카카오 지도는 숫자가 클수록 멀리 보이는 축척이다.
+    const level = map?.getLevel?.() ?? 8;
+    if (!active && level >= 8) {
+      const size = 14;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 14 14">
+        <circle cx="7" cy="7" r="5" fill="#3b9eff" stroke="white" stroke-width="2"/></svg>`;
+      return new kakao.maps.MarkerImage(
+        'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+        new kakao.maps.Size(size, size),
+        { offset: new kakao.maps.Point(size / 2, size / 2) });
+    }
+
+    if (!active) {
+      const size = level >= 6 ? 22 : 26;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 22 22">
+        <circle cx="11" cy="11" r="10" fill="#3b9eff" stroke="white" stroke-width="2"/>
+        <g transform="translate(3 3) scale(.667)" fill="none" stroke="white" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round">${markerIconOf(p)}</g></svg>`;
+      return new kakao.maps.MarkerImage(
+        'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+        new kakao.maps.Size(size, size),
+        { offset: new kakao.maps.Point(size / 2, size / 2) });
+    }
+
+    const size = 44;
+    const height = size * 52 / 44;
+    const strokeWidth = active ? 3 : 2;
+    const borderColor = active ? '#0f6fcf' : 'white';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${height}" viewBox="0 0 44 52">
+      <defs>
+        <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="${active ? '.32' : '.18'}"/>
+        </filter>
+      </defs>
+      <g filter="url(#shadow)">
+        <rect x="2" y="2" width="40" height="40" rx="12" fill="#3b9eff"
+              stroke="${borderColor}" stroke-width="${strokeWidth}"/>
+        <path d="M17 40 L22 49 L27 40 Z" fill="#3b9eff" stroke="${borderColor}"
+              stroke-width="${strokeWidth}" stroke-linejoin="round"/>
+        <path d="M17 39 H27" stroke="#3b9eff" stroke-width="5"/>
+      </g>
+      <g transform="translate(10 10)" fill="none" stroke="white" stroke-width="2.2"
+         stroke-linecap="round" stroke-linejoin="round">${markerIconOf(p)}</g>
+    </svg>`;
+    return new kakao.maps.MarkerImage(
+      'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+      new kakao.maps.Size(size, height),
+      { offset: new kakao.maps.Point(size / 2, height) });
+  }
+
+  function refreshMarkerImages(selectedId = currentDetailPlace?.id) {
+    markerMap.forEach(m => {
+      const selected = m.id === selectedId;
+      m.marker.setImage(markerImage(m.place, selected));
+      m.marker.setZIndex(selected ? 1000 : 1);
+    });
+  }
+
+  function centerPlaceBesideDetail(p) {
+    if (!map || !p?.lat || !p?.lng) return;
+    map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
+    // 상세 패널이 왼쪽을 덮으므로 남은 지도 영역의 가운데로 핀을 옮긴다.
+    setTimeout(() => {
+      const panelWidth = document.getElementById('detailPanel').getBoundingClientRect().width;
+      map.panBy(-Math.round(panelWidth / 2), 0);
+    }, 280);
+  }
+
+  function updateMarkerVisibility() {
+    if (markerMap.length === 0) return;
+    const visible = new Set(getFiltered().map(p => p.id));
+    markerMap.forEach(m => m.marker.setMap(visible.has(m.id) ? map : null));
+  }
+
+  function selectPlace(idx) {
+    const list = window._currentList || PLACES;
+    const p = list[idx];
+    if (!p) return;
+    activePinId = idx;
+    render();
+    refreshMarkerImages(p.id);
+    openDetail(p);
+    centerPlaceBesideDetail(p);
+    document.getElementById('card-' + idx)?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  const DETAIL_LABELS = {
+    ko:{ firstmenu:'대표 메뉴', opentimefood:'영업시간', restdatefood:'휴무일',
+         reservationfood:'예약', treatmenu:'취급 메뉴' },
+    en:{ firstmenu:'Signature', opentimefood:'Hours', restdatefood:'Closed',
+         reservationfood:'Reservation', treatmenu:'Menu' }
+  };
+
+  function openDetail(p) {
+    currentDetailPlace = p;
+    showDetailTab('info');
+    document.getElementById('dpTitle').textContent = p.title ?? '-';
+    document.getElementById('dpName').textContent = p.title ?? '-';
+    document.getElementById('dpSub').textContent = p.addr ?? '';
+    const hero = document.getElementById('dpHero');
+    hero.classList.toggle('no-image', !p.image);
+    hero.style.backgroundImage = p.image ? `url('${escapeHtml(p.image)}')` : '';
+    document.getElementById('dpBadge').innerHTML = detailBadges(p);
+    const rc = Number(p.user_ratings_total || 0);
+    const rating = Number(p.rating || 0);
+    document.getElementById('dpRating').innerHTML = rating > 0 && rc > 0
+      ? `<span class="dp-rating-stars">★</span>
+         <span class="dp-rating-score">${rating.toFixed(1)}</span>
+         <span class="dp-rating-count">${rc.toLocaleString()}${isEn ? ' reviews' : '개 리뷰'}</span>`
+      : `<span style="color:#bbb;font-size:11px">${isEn ? 'No visitor ratings yet' : '아직 방문자 평점이 없어요'}</span>`;
+    document.getElementById('dpInfoRow').innerHTML = `
+      <div class="dp-info"><div class="dp-info-label">${T.addr}</div>
+        <div class="dp-info-val">${escapeHtml(p.addr ?? '-')}</div></div>
+      <div class="dp-info"><div class="dp-info-label">${T.distance}</div>
+        <div class="dp-info-val">${distStr(p.distance)}</div></div>`;
+    document.getElementById('dpDesc').textContent = T.loading;
+    document.getElementById('dpApiInfo').innerHTML = '';
+    const reservationButton = document.getElementById('btnReservation');
+    reservationButton.hidden = true;
+    reservationButton.dataset.tel = '';
+    renderVisitorReviews(p);
+    loadCommunityPosts(p);
+    document.getElementById('detailPanel').classList.add('open');
+    loadDetail(p);
+  }
+
+  function showDetailTab(name) {
+    ['info','reviews','community'].forEach(tab => {
+      document.getElementById('tab-' + tab).hidden = tab !== name;
+      document.querySelector(`.dp-tab[data-tab="${tab}"]`)?.classList.toggle('active', tab === name);
+    });
+  }
+
+  function renderVisitorReviews(p) {
+    const root = document.getElementById('dpReviews');
+    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
+    if (!reviews.length) {
+      root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">✎</span>
+        <strong>${isEn ? 'No visitor reviews yet' : '아직 방문자 리뷰가 없어요'}</strong>
+        ${isEn ? 'Short reviews written after a visit will appear here.' : '직접 방문한 사용자의 짧은 리뷰가 이곳에 표시돼요.'}</div>`;
+      return;
+    }
+    root.innerHTML = `<div class="section-card"><div class="section-title">${isEn ? 'Visitor reviews' : '방문자 리뷰'} <small>${reviews.length}</small></div>`
+      + reviews.map(r => `<article class="review-card">
+          <div class="review-head">
+            <span class="review-author">${escapeHtml(r.authorName || r.author_name || (isEn ? 'Visitor' : '방문자'))}</span>
+            <span class="review-star">${r.rating ? `★ ${escapeHtml(String(r.rating))}` : ''}</span>
+          </div>
+          <p class="review-text">${escapeHtml(r.text || r.content || '')}</p>
+        </article>`).join('') + `</div>`;
+  }
+
+  async function loadCommunityPosts(p) {
+    const root = document.getElementById('dpCommunity');
+    const writeUrl = `/community/post/write?placeContentId=${encodeURIComponent(p.id || '')}`
+      + `&placeContentTypeId=${encodeURIComponent(p.type || '')}&placeTitle=${encodeURIComponent(p.title || '')}`;
+    root.innerHTML = `<div class="section-card empty-state">${isEn ? 'Loading community stories…' : '커뮤니티 이야기를 불러오는 중…'}</div>`;
+    try {
+      const res = await fetch(`/tour/api/community/${encodeURIComponent(p.id)}`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const posts = await res.json();
+      if (currentDetailPlace !== p) return;
+      if (!posts.length) {
+        root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">💬</span>
+          <strong>${isEn ? 'Be the first to share this place' : '이 장소의 첫 이야기를 남겨보세요'}</strong>
+          ${isEn ? 'Long-form stories tagged in Community appear here.' : '커뮤니티에서 이 장소를 태그한 여행기와 후기가 모여요.'}<br>
+          <a class="outline-btn" href="${writeUrl}">${isEn ? 'Write a story' : '커뮤니티 글쓰기'}</a></div>`;
+        return;
+      }
+      root.innerHTML = `<div class="section-card"><div class="section-title">${isEn ? 'Community stories' : '커뮤니티 이야기'} <small>${posts.length}</small></div>`
+        + posts.map(post => `<a class="community-card" href="/community/post/${post.postId}">
+            <div class="community-meta"><span>${escapeHtml(post.authorName || '')}</span><span>조회 ${Number(post.viewCount || 0).toLocaleString()} · 댓글 ${Number(post.commentCount || 0).toLocaleString()}</span></div>
+            <div class="community-title">${escapeHtml((isEn && post.titleEn) || post.title || '')}</div>
+            <p class="community-preview">${escapeHtml((isEn && post.contentEnPreview) || post.contentPreview || '')}</p>
+          </a>`).join('') + `<a class="outline-btn" href="${writeUrl}">${isEn ? 'Write a story' : '이 장소 글쓰기'}</a></div>`;
+    } catch (e) {
+      root.innerHTML = `<div class="section-card empty-state">${isEn ? 'Could not load Community stories.' : '커뮤니티 글을 불러오지 못했어요.'}</div>`;
+      console.error('community posts error', e);
+    }
+  }
+
+  function closeDetail() {
+    document.getElementById('detailPanel').classList.remove('open');
+    currentDetailPlace = null;
+    activePinId = null;
+    refreshMarkerImages(null);
+    render();
+  }
+
+  async function loadDetail(p) {
+    const desc = document.getElementById('dpDesc');
+    try {
+      const res = await fetch(`/tour/api/detail/${encodeURIComponent(p.id)}`
+        + `?contentTypeId=${encodeURIComponent(p.type)}&lang=${isEn ? 'en' : 'ko'}`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      if (currentDetailPlace !== p) return;            // 그 사이 다른 곳을 눌렀으면 버린다
+      const labels = isEn ? DETAIL_LABELS.en : DETAIL_LABELS.ko;
+      const reservationText = stripTags(d.details?.reservationfood || '');
+      const rows = Object.entries(d.details || {})
+        .map(([k, v]) => `<div class="dp-info"><div class="dp-info-label">${labels[k] ?? k}</div>
+             <div class="dp-info-val">${escapeHtml(stripTags(v))}</div></div>`).join('');
+      const tel = d.tel ? `<p style="margin-top:10px"><b>${T.tel}:</b> ${escapeHtml(d.tel)}</p>` : '';
+      desc.innerHTML = `<p style="line-height:1.75;white-space:pre-line">${escapeHtml(stripTags(d.overview) || T.none)}</p>` + tel;
+      document.getElementById('dpApiInfo').innerHTML = rows
+        ? `<div class="section-card"><div class="section-title">${isEn ? 'Menu & hours' : '메뉴 · 이용 정보'}</div><div class="dp-info-row" style="margin:0">${rows}</div></div>` : '';
+      if (reservationText) {
+        const phone = reservationText.match(/0\d{1,2}-\d{3,4}-\d{4}/)?.[0] || '';
+        const reservationButton = document.getElementById('btnReservation');
+        reservationButton.hidden = false;
+        reservationButton.dataset.tel = phone;
+        reservationButton.querySelector('.qb-label').textContent = isEn ? '예약 문의' : '예약 문의';
+      }
+      if (d.image) {
+        const hero = document.getElementById('dpHero');
+        hero.style.backgroundImage = `url('${d.image}')`;
+        hero.classList.remove('no-image');
+      }
+    } catch (e) {
+      desc.textContent = T.failed;
+      console.error('detail error', e);
+    }
+  }
+
+  function stripTags(v) {
+    if (!v) return '';
+    const holder = document.createElement('div');
+    holder.innerHTML = String(v);
+    return (holder.textContent || '').trim();
+  }
+
+  function switchLang() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('lang', isEn ? 'ko' : 'en');
+    window.location.href = url.toString();
+  }
+
+  document.getElementById('btnRoute').onclick = function () {
+    const p = currentDetailPlace;
+    if (!p) return;
+    const end = encodeURIComponent(p.title ?? '');
+    const base = isEn ? '/en/transport/search' : '/ko/transport/search';
+    if (userLat && userLon) location.href = `${base}?startLat=${userLat}&startLng=${userLon}&end=${end}`;
+    else location.href = `${base}?end=${end}`;
+  };
+
+  document.getElementById('btnPlan').onclick = function () {
+    const p = currentDetailPlace;
+    if (!p) return;
+    const base = isEn ? '/en/trip' : '/ko/trip';
+    location.href = `${base}?place=${encodeURIComponent(p.title || '')}&contentId=${encodeURIComponent(p.id || '')}`;
+  };
+
+  document.getElementById('btnReservation').onclick = function () {
+    const tel = this.dataset.tel;
+    if (tel) location.href = `tel:${tel}`;
+    else showDetailTab('info');
+  };
+
+  document.getElementById('btnSave').onclick = function () {
+    alert(isEn ? 'Place saving will be available after the account collection is connected.'
+      : '장소 저장 기능은 마이페이지 컬렉션과 연결한 뒤 제공될 예정이에요.');
+  };
+
+  document.getElementById('btnShare').onclick = async function () {
+    const p = currentDetailPlace;
+    if (!p) return;
+    const shareData = { title:p.title || 'KoreaPoint', text:p.title || '', url:location.href };
+    try {
+      if (navigator.share) await navigator.share(shareData);
+      else {
+        await navigator.clipboard.writeText(location.href);
+        alert(isEn ? 'Link copied.' : '현재 페이지 링크를 복사했어요.');
+      }
+    } catch (e) {
+      if (e?.name !== 'AbortError') console.error('share error', e);
+    }
+  };
+
+  function initMap() {
+    const container = document.getElementById('map');
+    map = new kakao.maps.Map(container, {
+      center: new kakao.maps.LatLng(centerLat, centerLon), level: 8
+    });
+    markerMap = [];
+    PLACES.forEach(p => {
+      if (!p.lat || !p.lng) return;
+      const marker = new kakao.maps.Marker({
+        map: map, position: new kakao.maps.LatLng(p.lat, p.lng),
+        title: p.title ?? '', image: markerImage(p, false)
+      });
+      markerMap.push({ id: p.id, place: p, marker: marker });
+      kakao.maps.event.addListener(marker, 'click', () => {
+        const list = window._currentList || PLACES;
+        const idx = list.findIndex(x => x.id === p.id);
+        if (idx >= 0) selectPlace(idx);
+      });
+    });
+    kakao.maps.event.addListener(map, 'zoom_changed', refreshMarkerImages);
+    updateMarkerVisibility();
+  }
+
+  applyStaticLabels();
+  render();
+  document.getElementById('filterRow').addEventListener('scroll', updateScrollBtns);
+  updateScrollBtns();
+  if (KAKAO_KEY) {
+    const s = document.createElement('script');
+    s.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&autoload=false`;
+    s.onload = () => kakao.maps.load(initMap);
+    document.head.appendChild(s);
+  }
+</script>
+</body>
+</html>

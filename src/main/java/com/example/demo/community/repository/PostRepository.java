@@ -38,6 +38,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @EntityGraph(attributePaths = {"user", "category"})
     List<Post> findTop5ByDeletedAtIsNullOrderByCreatedAtDesc();
 
+    @EntityGraph(attributePaths = {"user", "category"})
+    List<Post> findTop10ByPlaceContentIdAndDeletedAtIsNullOrderByCreatedAtDesc(String placeContentId);
+
     // ?④굔 議고쉶 (??젣?섏? ?딆? 寃?
     @EntityGraph(attributePaths = {"user", "category"})
     Optional<Post> findByIdAndDeletedAtIsNull(Long id);
