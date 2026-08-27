@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:18
+    image: pgvector/pgvector:pg18
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-korea_point}
@@ -10,6 +10,7 @@ services:
       - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - korea_point_postgres:/var/lib/postgresql
+      - ./docker/postgres/init/01-enable-vector.sql:/docker-entrypoint-initdb.d/01-enable-vector.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s

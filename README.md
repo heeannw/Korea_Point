@@ -3,7 +3,7 @@
 
 ## Local PostgreSQL with Docker
 
-The shared development database runs on PostgreSQL 18 in Docker and is exposed
+The shared development database runs on PostgreSQL 18 with pgvector in Docker and is exposed
 on port `5433` so it does not conflict with a PostgreSQL installation using
 the default port `5432`.
 
@@ -33,3 +33,10 @@ docker compose down
 The database is stored in the named Docker volume `korea_point_postgres`.
 Do not use `docker compose down -v` unless you intentionally want to delete all
 local development data.
+
+The `vector` extension is enabled automatically when a new database volume is
+initialized. Existing volumes can enable it once with:
+
+```bash
+docker compose exec -T postgres psql -U postgres -d korea_point -c "CREATE EXTENSION IF NOT EXISTS vector;"
+```
