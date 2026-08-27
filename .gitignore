@@ -45,6 +45,7 @@ out/
 # Local env (개인 설정)
 .env
 .env.*
+!.env.example
 application-local.properties
 application-local.yml
 application-local.yaml
