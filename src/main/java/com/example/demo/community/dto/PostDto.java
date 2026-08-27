@@ -33,6 +33,9 @@ public class PostDto {
     private String titleKo;          // 한국어 번역 제목 (영어 작성 시, nullable)
     private String contentKo;        // 한국어 번역 내용 (영어 작성 시, nullable)
     private String contentKoPreview; // 한국어 번역 미리보기 (nullable)
+    private String placeContentId;
+    private String placeContentTypeId;
+    private String placeTitle;
 
     // 게시글 작성 요청 DTO
     @Getter
@@ -47,5 +50,9 @@ public class PostDto {
         private String content;
 
         private Long categoryId;
+
+        private String placeContentId;
+        private String placeContentTypeId;
+        private String placeTitle;
     }
 }

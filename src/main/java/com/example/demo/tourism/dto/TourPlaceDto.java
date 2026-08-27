@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -47,6 +48,20 @@ public class TourPlaceDto {
 
     /** 음식점일 때 채워지는 음식 분류 슬러그(korean, cafe …). 화면에서 라벨로 옮긴다. */
     private String foodCategory;
+
+    /** TourAPI 분류체계로 매긴 세부 타입명(해변. 해수욕장, 박물관 …). 없으면 null이다. */
+    private String typeName;
+
+    /** 항상 소분류 이름이다. 한식처럼 typeName이 중분류인 경우 상세에서 함께 보여준다. */
+    private String typeDetailName;
+
+    /** 카테고리 안에서의 인기 순위. 인기 데이터가 없으면 null이라 화면이 인기 표시를 감춘다. */
+    private Integer popularRank;
+    private String popularCategory;
+    private Double popularityScore;
+    /** 예약·사용자 행동·관광 빅데이터 등 순위 산정 근거. */
+    private String popularityBasis;
+    private LocalDateTime popularityCalculatedAt;
 
     // 계산 필드
     private Float  score;
@@ -98,6 +113,29 @@ public class TourPlaceDto {
 
     public String getFoodCategory() { return foodCategory; }
     public void setFoodCategory(String foodCategory) { this.foodCategory = foodCategory; }
+
+    public String getTypeName() { return typeName; }
+    public void setTypeName(String typeName) { this.typeName = typeName; }
+
+    public String getTypeDetailName() { return typeDetailName; }
+    public void setTypeDetailName(String typeDetailName) { this.typeDetailName = typeDetailName; }
+
+    public Integer getPopularRank() { return popularRank; }
+    public void setPopularRank(Integer popularRank) { this.popularRank = popularRank; }
+
+    public String getPopularCategory() { return popularCategory; }
+    public void setPopularCategory(String popularCategory) { this.popularCategory = popularCategory; }
+
+    public Double getPopularityScore() { return popularityScore; }
+    public void setPopularityScore(Double popularityScore) { this.popularityScore = popularityScore; }
+
+    public String getPopularityBasis() { return popularityBasis; }
+    public void setPopularityBasis(String popularityBasis) { this.popularityBasis = popularityBasis; }
+
+    public LocalDateTime getPopularityCalculatedAt() { return popularityCalculatedAt; }
+    public void setPopularityCalculatedAt(LocalDateTime popularityCalculatedAt) {
+        this.popularityCalculatedAt = popularityCalculatedAt;
+    }
 
     public Float getScore() { return score; }
     public void setScore(Float score) { this.score = score; }

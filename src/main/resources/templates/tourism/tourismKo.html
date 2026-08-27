@@ -7,6 +7,8 @@
   <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
   <title>Explore — KoreaPoint</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <!-- 상세 패널 공용 스타일 (tourismKo/tourismEN 공용) -->
+  <link rel="stylesheet" th:href="@{/css/tourism/detail-panel.css}">
   <style>
     :root {
       --blue:#3b9eff; --blue-dk:#1a7de0; --blue-lt:#eff6ff;
@@ -72,7 +74,8 @@
     .sort-row{padding:10px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
     .result-count{font-size:13px;color:var(--gray)}
     .result-count strong{color:var(--dark)}
-    .sort-btns{display:flex;gap:4px}
+    .sort-btns{display:flex;gap:4px;max-width:270px;overflow-x:auto;scrollbar-width:none}
+    .sort-btns::-webkit-scrollbar{display:none}
     .sort-btn{padding:4px 12px;border-radius:50px;border:1.5px solid var(--border);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--gray);transition:all .2s}
     .sort-btn.active{background:var(--blue-lt);color:var(--blue);border-color:var(--blue)}
     .place-list{flex:1;overflow-y:auto;padding:0 12px 12px}
@@ -97,95 +100,8 @@
     .mc:hover{background:var(--light)}
     .loc-btn{position:absolute;bottom:24px;right:16px;background:#fff;border:1px solid var(--border);border-radius:50px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--sh);color:var(--dark);font-family:'DM Sans',sans-serif;z-index:30;transition:all .2s}
     .loc-btn:hover{border-color:var(--blue);color:var(--blue)}
-    .detail-panel{position:absolute;top:0;right:0;bottom:0;width:min(560px,100%);background:#fff;z-index:50;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;pointer-events:none;box-shadow:-12px 0 32px rgba(15,23,42,.16)}
-    .detail-panel.open{transform:translateX(0);pointer-events:auto;}
-    .dp-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:5}
-    .dp-back{background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px;line-height:1}
-    .dp-title{font-size:16px;font-weight:700;flex:1}
-    .dp-img{width:100%;height:360px;object-fit:cover;background-size:cover;background-position:center;background-color:var(--light);position:relative}
-    .dp-img-nav{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:50%;background:rgba(15,23,42,.68);color:#fff;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
-    .dp-img-nav:hover{background:rgba(15,23,42,.9)}
-    .dp-img-prev{left:14px}.dp-img-next{right:14px}
-    .dp-img-count{position:absolute;right:16px;bottom:14px;padding:5px 10px;border-radius:50px;background:rgba(15,23,42,.72);color:#fff;font-size:12px;font-weight:700}
-    .dp-img-hidden{display:none}
-    .dp-body{padding:16px}
-    .dp-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-    .dp-badge{padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700}
-    .db-blue{background:var(--blue-lt);color:var(--blue-dk)}
-    .db-gold{background:#fef3c7;color:#92400e}
-    .db-green{background:#f0fdf4;color:#166534}
-    .dp-name{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;margin-bottom:2px}
-    .dp-sub{font-size:14px;color:var(--gray);margin-bottom:12px}
-    .dp-stars{display:flex;align-items:center;gap:6px;margin-bottom:14px}
-    .dp-stars .s{color:var(--gold);font-size:16px}
-    .dp-stars .sc{font-size:18px;font-weight:700}
-    .dp-stars .sm{font-size:13px;color:var(--gray)}
-    .dp-info-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-    .dp-info{background:var(--light);border-radius:10px;padding:12px 14px}
-    .dp-info-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
-    .dp-info-val{font-size:13px;font-weight:500;line-height:1.4}
-    .dp-desc{font-size:14px;color:var(--mid);line-height:1.7;margin-bottom:16px}
-    .dp-section-title{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--dark)}
-    .dp-course{margin-bottom:18px}
-    .dp-course-list{display:flex;flex-direction:column;gap:6px}
-    .dp-course-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;
-      background:#f8fafc;border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:left}
-    .dp-course-item:hover{background:#eef2f7}
-    .dp-course-num{flex:none;width:22px;height:22px;border-radius:50%;color:#fff;
-      font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
-    .dp-course-name{font-size:13px;color:var(--dark);line-height:1.4}
-    .rev-summary{display:flex;align-items:center;gap:16px;background:var(--light);border-radius:10px;padding:14px 16px;margin-bottom:12px}
-    .rev-score{font-size:42px;font-weight:900;font-family:'Playfair Display',serif;line-height:1}
-    .rev-right{flex:1}
-    .rev-bars{display:flex;flex-direction:column;gap:5px}
-    .rev-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gray)}
-    .rev-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
-    .rev-fill{height:100%;background:var(--gold);border-radius:3px}
-    .review-item{padding:12px 0;border-bottom:1px solid var(--border)}
-    .review-item:last-child{border-bottom:none}
-    .ri-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
-    .ri-name{font-size:13px;font-weight:600}
-    .ri-date{font-size:11px;color:var(--gray)}
-    .ri-stars{font-size:12px;color:var(--gold)}
-    .ri-text{font-size:13px;color:var(--mid);line-height:1.6}
-    .dp-action{
-      position:sticky;
-      bottom:0;
-      padding:12px 16px;
-      background:#fff;
-      border-top:1px solid var(--border);
-      display:flex;
-      gap:6px;
-    }
-    .dp-action-btn{
-      flex:1;        /* ✅ 이게 핵심 - 3등분 */
-      padding:13px 6px;
-      background:var(--blue);
-      color:#fff;
-      border:none;
-      border-radius:50px;
-      font-size:11px;  /* ✅ 3개 들어가게 작게 */
-      font-weight:700;
-      cursor:pointer;
-      font-family:'DM Sans',sans-serif;
-      transition:background .2s;
-      text-align:center;
-    }
-    .dp-action-btn:hover{background:var(--blue-dk)}
-    .food-btn:hover{background: #ed59a7;}
-    .cafe-btn:hover{background: #322012;}
-    .route-btn:hover{background:#1a7de0;}
-    .food-btn{
-      background:#F472B6FF;
-    }
-
-    .cafe-btn{
-      background:#4A3220FF;
-    }
-
-    .route-btn{
-      background:#3b9eff;
-    }
+    /* 상세 패널(.detail-panel / .dp-* / .rev-* / .review-* / .ri-*) 스타일은
+       /css/tourism/detail-panel.css 로 이동 (tourismEN.html 과 공용) */
   </style>
     <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
@@ -253,7 +169,7 @@
     <div class="filter-wrap">
       <button class="scroll-btn left" id="scrollLeft" onclick="scrollFilter(-1)" disabled>‹</button>
       <div class="filter-row" id="filterRow">
-        <div class="chip active" data-cat="All" onclick="setCategory('All')">🗺️ 전체</div>
+        <div class="chip active" data-cat="All" id="chipAll" onclick="setCategory('All')">🗺️ 전체</div>
         <div class="chip" data-cat="관광지" onclick="setCategory('관광지')">📍 관광지</div>
         <div class="chip" data-cat="문화시설" onclick="setCategory('문화시설')">🏛️ 문화시설</div>
         <div class="chip" data-cat="레저·액티비티" onclick="setCategory('레저·액티비티')">🏄 레저·액티비티</div>
@@ -267,8 +183,11 @@
     <div class="sort-row">
       <div class="result-count"><strong id="countDisplay">0</strong> places found</div>
       <div class="sort-btns">
-        <button class="sort-btn active" onclick="setSort('recommended')">⭐ Recommended</button>
-        <button class="sort-btn" onclick="setSort('distance')">📍 Distance</button>
+        <button class="sort-btn" id="sortPopular" onclick="setSort('popular')" hidden>🔥 인기 TOP 20</button>
+        <button class="sort-btn" id="sortRating" onclick="setSort('rating')" hidden>★ 별점순</button>
+        <button class="sort-btn" id="sortReviews" onclick="setSort('reviews')" hidden>💬 리뷰순</button>
+        <button class="sort-btn active" id="sortRecommended" onclick="setSort('recommended')">⭐ 추천순</button>
+        <button class="sort-btn" id="sortDistance" onclick="setSort('distance')">📍 거리순</button>
       </div>
     </div>
 
@@ -288,29 +207,49 @@
       <div class="dp-header">
         <button class="dp-back" onclick="closeDetail()">←</button>
         <div class="dp-title" id="dpTitle"></div>
-        <div style="font-size:20px;cursor:pointer">🔖</div>
+        <div class="dp-header-right">
+          <button class="summary-save" id="btnSave" type="button" aria-label="장소 저장">♡</button>
+        </div>
       </div>
-      <div class="dp-img" id="dpImg">
-        <button class="dp-img-nav dp-img-prev dp-img-hidden" id="dpImgPrev" type="button" onclick="moveDetailImage(-1)" aria-label="이전 이미지">‹</button>
-        <button class="dp-img-nav dp-img-next dp-img-hidden" id="dpImgNext" type="button" onclick="moveDetailImage(1)" aria-label="다음 이미지">›</button>
-        <div class="dp-img-count dp-img-hidden" id="dpImgCount"></div>
+      <div class="dp-hero no-image" id="dpHero">
+        <button class="dp-hero-nav dp-hero-prev dp-hero-hidden" id="dpImgPrev" type="button" onclick="moveDetailImage(-1)" aria-label="이전 이미지">‹</button>
+        <button class="dp-hero-nav dp-hero-next dp-hero-hidden" id="dpImgNext" type="button" onclick="moveDetailImage(1)" aria-label="다음 이미지">›</button>
+        <div class="dp-hero-count dp-hero-hidden" id="dpImgCount"></div>
       </div>
       <div class="dp-body">
-        <div class="dp-badge-row" id="dpBadges"></div>
-        <div class="dp-name" id="dpName"></div>
-        <div class="dp-sub" id="dpSub"></div>
-        <div class="dp-stars" id="dpStars"></div>
-        <div class="dp-info-row" id="dpInfoRow"></div>
-        <div class="dp-desc" id="dpDesc"></div>
-        <div class="dp-course" id="dpCourse"></div>
-        <div class="dp-section-title">Reviews</div>
-        <div class="rev-summary" id="dpRevSummary"></div>
-        <div id="dpReviews"></div>
-      </div>
-      <div class="dp-action">
-        <button class="dp-action-btn food-btn" id="itineraryBtn">🍽️근처 음식점</button>
-        <button class="dp-action-btn cafe-btn" id="itineraryBtn1">☕️근처 카페</button>
-        <button class="dp-action-btn route-btn" id="itineraryBtn2" type="button">🚊관광지 찾아가기</button>
+        <section class="dp-summary">
+          <div class="dp-badges" id="dpBadges"></div>
+          <div class="dp-name" id="dpName"></div>
+          <div class="dp-sub" id="dpSub"></div>
+          <div class="dp-rating" id="dpRating"></div>
+        </section>
+        <div class="quick-actions">
+          <button class="quick-btn" id="itineraryBtn2" type="button">
+            <div class="qb-icon">🚊</div><span class="qb-label">길찾기</span>
+          </button>
+          <button class="quick-btn" id="itineraryBtn" type="button">
+            <div class="qb-icon">🍽️</div><span class="qb-label">근처 맛집</span>
+          </button>
+          <button class="quick-btn" id="itineraryBtn1" type="button">
+            <div class="qb-icon">☕</div><span class="qb-label">근처 카페</span>
+          </button>
+          <button class="quick-btn" id="btnShare" type="button">
+            <div class="qb-icon">🔗</div><span class="qb-label">공유</span>
+          </button>
+        </div>
+        <nav class="dp-tabs">
+          <button class="dp-tab active" type="button" data-tab="info" onclick="showDetailTab('info')">정보</button>
+          <button class="dp-tab" type="button" data-tab="reviews" onclick="showDetailTab('reviews')">리뷰</button>
+          <button class="dp-tab" type="button" data-tab="community" onclick="showDetailTab('community')">커뮤니티</button>
+        </nav>
+        <section class="tab-panel" id="tab-info">
+          <div class="dp-info-row" id="dpInfoRow"></div>
+          <div class="section-card"><div class="section-title">장소 소개</div><div class="dp-desc" id="dpDesc"></div></div>
+          <div id="dpApiInfo"></div>
+          <div class="dp-course" id="dpCourse" hidden></div>
+        </section>
+        <section class="tab-panel" id="tab-reviews" hidden><div id="dpReviews"></div></section>
+        <section class="tab-panel" id="tab-community" hidden><div id="dpCommunity"></div></section>
       </div>
     </div>
   </div>
@@ -327,15 +266,65 @@
 
 <script>
   let lang = /*[[${lang}]]*/ 'KO';
+  /** 부산 전역이 한 화면에 들어오는 축척. */
+  const BUSAN_MAP_LEVEL = 8;
+  /** 이 축척보다 넓게 보면 마커를 묶는다. 더 당기면 개별 핀으로 펼쳐진다. */
+  const CLUSTER_MIN_LEVEL = 5;
+  let clusterer = null;
+
+  // ── 인기 관광지 강조 ────────────────────────────────
+  // 전체 보기에서는 카테고리별 TOP 3만 띄운다. 부산은 관광지가 몰려 있어
+  // 카테고리마다 5개씩 띄우면 초기 축척에서 핀이 서로 포개진다.
+  const POPULAR_TOP_OVERVIEW = 3;
+  // 카테고리를 고르거나 지도를 당기면 TOP 5까지 펼친다.
+  const POPULAR_TOP_FOCUSED = 5;
+  /** 이 축척보다 당겨 보면 전체 보기에서도 TOP 5까지 보여준다. */
+  const POPULAR_EXPAND_LEVEL = 6;
+
+  function popularLimit() {
+    if (activeCategory !== 'All') return POPULAR_TOP_FOCUSED;
+    if (map && map.getLevel() <= POPULAR_EXPAND_LEVEL) return POPULAR_TOP_FOCUSED;
+    return POPULAR_TOP_OVERVIEW;
+  }
+
+  /** 지금 강조해야 할 인기 장소들. 인기 데이터가 없으면 빈 배열이라 아무것도 강조되지 않는다. */
+  function popularPlaces() {
+    const limit = popularLimit();
+    return getFiltered().filter(p => p.popularRank != null && p.popularRank <= limit);
+  }
+
+  function hasPopularityData() {
+    return PLACES.some(p => p.popularRank != null);
+  }
+
+  /**
+   * 첫 칩은 인기 자리로 둔다.
+   * 인기 데이터가 들어오기 전까지는 이 탭이 전체 목록을 보여주므로 라벨과 내용이 일치하지 않는다.
+   */
+  function applyAllChipLabel() {
+    const chip = document.getElementById('chipAll');
+    if (chip) chip.textContent = hasPopularityData() ? '🔥 인기' : '🗺️ 전체';
+  }
+
+  /**
+   * 전체 보기는 인기 추천지만 띄우고 클러스터를 쓰지 않는다.
+   * 다만 인기 데이터가 아직 없으면 지도가 통째로 비어버리므로 클러스터로 되돌린다.
+   */
+  function isPopularOnlyView() {
+    return activeCategory === 'All' && hasPopularityData();
+  }
+
+  /** 목록에서 고른 항목은 인기가 아니어도 핀을 띄운다. 카드만 뜨고 핀이 없으면 위치를 알 수 없다. */
+  function selectedPlaceTitle() {
+    const list = window._currentList || PLACES;
+    return (activePinId != null && list[activePinId]) ? list[activePinId].title : null;
+  }
   let activeCategory = 'All';
   let activeSort = 'recommended';
   let activePinId = null;
-  let popupOverlay = null;
-  let currentPopupPlace = null;
   let map;
   let markerMap = [];
   let selectedMarker = null;
-  let _markerJustClicked = false;
   let detailImages = [];
   let detailImageIndex = 0;
 
@@ -347,35 +336,81 @@
     '12': '📍', '14': '🏛️', '15': '🎉',
     '25': '🗺️', '28': '🏄', '38': '🛍️',
   };
+  // Tabler Icons(MIT): 해변·박물관·축제·경로·카약·쇼핑백을 관광 유형에 맞춰 사용한다.
+  const CATEGORY_MARKER_ICONS = {
+    '12':'<path d="M17.553 16.75a7.5 7.5 0 0 0-10.606 0M18 3.804A6 6 0 0 0 9.804 6l10.392 6A6 6 0 0 0 18 3.804"/><path d="M16.732 10C18.39 7.13 18.957 4.356 18 3.804c-.957-.552-3.075 1.326-4.732 4.196M15 9l-3 5.196M3 19.25A2.4 2.4 0 0 1 4 19a2.4 2.4 0 0 1 2 1 2.4 2.4 0 0 0 4 0 2.4 2.4 0 0 1 4 0 2.4 2.4 0 0 0 4 0 2.4 2.4 0 0 1 3-.75"/>',
+    '14':'<path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/>',
+    '15':'<path d="M4 5h2M5 4v2M11.5 4 11 6M18 5h2M19 4v2M15 9l-1 1M18 13l2-.5M18 19h2M19 18v2"/><path d="m14 16.518-6.518-6.518-4.39 9.58a1 1 0 0 0 1.329 1.329L14 16.519"/>',
+    '25':'<path d="M3 19a2 2 0 1 0 4 0 2 2 0 0 0-4 0M19 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4M11 19h5.5a3.5 3.5 0 0 0 0-7h-8a3.5 3.5 0 0 1 0-7H13"/>',
+    '28':'<path d="M6.414 6.414a2 2 0 0 0 0-2.828L5 2.172 2.172 5l1.414 1.414a2 2 0 0 0 2.828 0M17.586 17.586a2 2 0 0 0 0 2.828L19 21.828 21.828 19l-1.414-1.414a2 2 0 0 0-2.828 0M6.5 6.5l11 11"/><path d="M22 2.5C12.017 5.101 4.373 10.452 2 22c9.983-2.601 17.627-7.952 20-19.5M6.5 12.5l5 5M12.5 6.5l5 5"/>',
+    '38':'<path d="M6.331 8H17.67a2 2 0 0 1 1.977 2.304l-1.255 8.152A3 3 0 0 1 15.426 21H8.574a3 3 0 0 1-2.965-2.544l-1.255-8.152A2 2 0 0 1 6.331 8M9 11V6a3 3 0 0 1 6 0v5"/>'
+  };
 
 
 
   function createMarkerImage(color, emoji) {
-    const em = emoji ?? '📍';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 36 48">
-      <path d="M18 0 C8.1 0 0 8.1 0 18 C0 31.5 18 48 18 48 C18 48 36 31.5 36 18 C36 8.1 27.9 0 18 0Z" fill="${color}" stroke="white" stroke-width="2"/>
-      <circle cx="18" cy="17" r="11" fill="white" opacity="0.95"/>
-      <text x="18" y="22" text-anchor="middle" font-size="13" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${em}</text>
-    </svg>`;
+    const icon = CATEGORY_MARKER_ICONS[Object.keys(CATEGORY_COLOR).find(key => CATEGORY_COLOR[key] === color)]
+      ?? CATEGORY_MARKER_ICONS['12'];
+    const level = map?.getLevel?.() ?? 8;
+    if (level >= 8) {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
+        <circle cx="7" cy="7" r="5" fill="#3b9eff" stroke="white" stroke-width="2"/></svg>`;
+      return new kakao.maps.MarkerImage(
+              'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+              new kakao.maps.Size(14, 14),
+              { offset: new kakao.maps.Point(7, 7) }
+      );
+    }
+    {
+      const size = level >= 6 ? 22 : 26;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 22 22">
+        <circle cx="11" cy="11" r="10" fill="#3b9eff" stroke="white" stroke-width="2"/>
+        <g transform="translate(3 3) scale(.667)" fill="none" stroke="white" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round">${icon}</g></svg>`;
+      return new kakao.maps.MarkerImage(
+              'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+              new kakao.maps.Size(size, size),
+              { offset: new kakao.maps.Point(size / 2, size / 2) }
+      );
+    }
+  }
+
+  /**
+   * 인기 핀은 순위 숫자를 그대로 박는다. 홈의 순위와 눈으로 바로 이어지게 하기 위해서다.
+   * 4위 이하는 숫자 대신 금색 테두리만 둘러 덜 강조한다.
+   */
+  function createPopularMarkerImage(color, rank) {
+    const level = map?.getLevel?.() ?? 8;
+    const size = level >= 8 ? 24 : (level >= 6 ? 28 : 30);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 28 28">
+      <circle cx="14" cy="14" r="12" fill="#3b9eff" stroke="#f59e0b" stroke-width="3"/>
+      <text x="14" y="18" text-anchor="middle" font-size="11" font-weight="800" fill="white"
+            font-family="system-ui,-apple-system,sans-serif">${rank}</text></svg>`;
     return new kakao.maps.MarkerImage(
             'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
-            new kakao.maps.Size(36, 48),
-            { offset: new kakao.maps.Point(18, 48) }
+            new kakao.maps.Size(size, size),
+            { offset: new kakao.maps.Point(size / 2, size / 2) }
     );
   }
 
   function createActiveMarkerImage(color, emoji) {
-    const em = emoji ?? '📍';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="46" height="60" viewBox="0 0 46 60">
-      <ellipse cx="23" cy="58" rx="10" ry="3" fill="rgba(0,0,0,0.18)"/>
-      <path d="M23 0 C10.3 0 0 10.3 0 23 C0 40.25 23 60 23 60 C23 60 46 40.25 46 23 C46 10.3 35.7 0 23 0Z" fill="${color}" stroke="white" stroke-width="2.5"/>
-      <circle cx="23" cy="22" r="14" fill="white" opacity="0.97"/>
-      <text x="23" y="29" text-anchor="middle" font-size="17" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${em}</text>
-    </svg>`;
+    const icon = CATEGORY_MARKER_ICONS[Object.keys(CATEGORY_COLOR).find(key => CATEGORY_COLOR[key] === color)]
+      ?? CATEGORY_MARKER_ICONS['12'];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="52" viewBox="0 0 44 52">
+      <defs><filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity=".32"/>
+      </filter></defs>
+      <g filter="url(#shadow)">
+        <rect x="2" y="2" width="40" height="40" rx="12" fill="#3b9eff" stroke="#0f6fcf" stroke-width="3"/>
+        <path d="M17 40 L22 49 L27 40 Z" fill="#3b9eff" stroke="#0f6fcf" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M17 39 H27" stroke="#3b9eff" stroke-width="5"/>
+      </g>
+      <g transform="translate(10 10)" fill="none" stroke="white" stroke-width="2.2"
+         stroke-linecap="round" stroke-linejoin="round">${icon}</g></svg>`;
     return new kakao.maps.MarkerImage(
             'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
-            new kakao.maps.Size(46, 60),
-            { offset: new kakao.maps.Point(23, 60) }
+            new kakao.maps.Size(44, 52),
+            { offset: new kakao.maps.Point(22, 52) }
     );
   }
 
@@ -413,7 +448,9 @@
     exitCourseMode();
     if (!map || !isCourse(p)) return;
 
-    // 경유지 번호가 일반 핀에 묻히지 않도록 코스를 볼 때는 나머지를 감춘다.
+    // 경유지 번호가 묻히지 않도록 코스를 볼 때는 나머지를 모두 감춘다.
+    // 인기 핀은 클러스터 밖에 직접 붙어 있어 clear()만으로는 안 사라진다.
+    if (clusterer) clusterer.clear();
     markerMap.forEach(item => item.marker.setMap(null));
 
     const bounds = new kakao.maps.LatLngBounds();
@@ -429,6 +466,27 @@
       bounds.extend(position);
     });
     map.setBounds(bounds, 60, 60, 60, 60);
+  }
+
+  /**
+   * 홈에서 인기 관광지를 눌러 넘어온 경우(?focus=contentId)
+   * 지도 이동·핀 선택·미니 카드·상세 패널까지 한 번에 열어 준다.
+   */
+  function focusInitialPlace() {
+    const focusId = new URLSearchParams(location.search).get('focus');
+    if (!focusId) return;
+
+    const list = window._currentList || PLACES;
+    const idx = list.findIndex(p => String(p.id) === String(focusId));
+    if (idx < 0) return;
+
+    selectPlace(idx);
+    const target = list[idx];
+    if (map && target.lat && target.lng) {
+      map.setLevel(Math.min(map.getLevel(), POPULAR_EXPAND_LEVEL));
+      map.panTo(new kakao.maps.LatLng(target.lat, target.lng));
+    }
+    openDetail(target);
   }
 
   function scrollFilter(dir) {
@@ -448,6 +506,11 @@
     const m = { '12':'관광지','14':'문화시설','15':'축제·행사','25':'여행코스','28':'레저·액티비티','38':'쇼핑' };
     return m[String(type)] ?? '기타';
   }
+  // 카드에는 대분류(관광지) 대신 TourAPI 분류체계의 세부 타입명을 쓴다.
+  // 카테고리 칩 필터는 그대로 콘텐츠 유형(typeName) 기준이다.
+  function catLabel(p) {
+    return p.typeName ?? typeName(p.type);
+  }
   function distStr(d) {
     if (d == null) return '-';
     return d < 1 ? (d * 1000).toFixed(0) + 'm' : d.toFixed(1) + 'km';
@@ -458,29 +521,34 @@
 
   function highlightMarkerByTitle(title) {
     if (courseMarkers.length > 0) return; // 코스 모드에서는 일반 핀을 건드리지 않는다
-    const visibleTitles = new Set(getFiltered().map(p => p.title));
     markerMap.forEach(item => {
-      if (!visibleTitles.has(item.title)) {
-        item.marker.setMap(null);
-        return;
-      }
       const color = CATEGORY_COLOR[String(item.type)] ?? '#64748b';
       const emoji = CATEGORY_EMOJI[String(item.type)] ?? '📍';
       item.marker.setImage(createMarkerImage(color, emoji));
-      item.marker.setMap(map);
       item.marker.setZIndex(1);
     });
+    syncClusteredMarkers();
     const target = markerMap.find(item => item.title === title);
     if (target) {
       const color = CATEGORY_COLOR[String(target.type)] ?? '#64748b';
       const emoji = CATEGORY_EMOJI[String(target.type)] ?? '📍';
       target.marker.setImage(createActiveMarkerImage(color, emoji));
-      target.marker.setZIndex(10);
+      target.marker.setZIndex(1000);
       selectedMarker = target.marker;
     }
   }
 
-  function getFiltered() {
+  function centerPlaceBesideTourDetail(p) {
+    if (!map || !p?.lat || !p?.lng || isCourse(p)) return;
+    map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
+    // 음식점 화면과 같이 상세 패널이 왼쪽을 덮으므로 남은 지도 영역 가운데로 옮긴다.
+    setTimeout(() => {
+      const panelWidth = document.getElementById('detailPanel').getBoundingClientRect().width;
+      map.panBy(-Math.round(panelWidth / 2), 0);
+    }, 330);
+  }
+
+  function getMatchingPlaces() {
     let list = [...PLACES];
     const q = document.getElementById('searchInput').value.toLowerCase();
     if (activeCategory !== 'All') {
@@ -492,8 +560,48 @@
               p.addr?.toLowerCase().includes(q)
       );
     }
+    return list;
+  }
+
+  function reviewCount(p) {
+    return Math.max(p.user_ratings_total ?? 0, Array.isArray(p.reviews) ? p.reviews.length : 0);
+  }
+
+  function updateSortAvailability() {
+    const matching = getMatchingPlaces();
+    const availability = {
+      popular: matching.filter(p => p.popularRank != null).length >= 5,
+      rating: matching.filter(p => p.rating != null && reviewCount(p) >= 10).length >= 5,
+      reviews: matching.filter(p => reviewCount(p) > 0).length >= 5
+    };
+    document.getElementById('sortPopular').hidden = !availability.popular;
+    document.getElementById('sortRating').hidden = !availability.rating;
+    document.getElementById('sortReviews').hidden = !availability.reviews;
+    if (availability[activeSort] === false) activeSort = 'recommended';
+    document.querySelectorAll('.sort-btn').forEach(button =>
+      button.classList.toggle('active', button.id === {
+        popular:'sortPopular', rating:'sortRating', reviews:'sortReviews',
+        recommended:'sortRecommended', distance:'sortDistance'
+      }[activeSort])
+    );
+  }
+
+  function getFiltered() {
+    let list = getMatchingPlaces();
     if (activeSort === 'recommended') {
       list.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    } else if (activeSort === 'popular') {
+      list = list.filter(p => p.popularRank != null)
+        .sort((a, b) => activeCategory === 'All'
+          ? (b.popularityScore ?? 0) - (a.popularityScore ?? 0)
+          : a.popularRank - b.popularRank)
+        .slice(0, 20);
+    } else if (activeSort === 'rating') {
+      list = list.filter(p => p.rating != null && reviewCount(p) >= 10)
+        .sort((a, b) => (b.rating - a.rating) || (reviewCount(b) - reviewCount(a)));
+    } else if (activeSort === 'reviews') {
+      list = list.filter(p => reviewCount(p) > 0)
+        .sort((a, b) => reviewCount(b) - reviewCount(a));
     } else {
       list.sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
     }
@@ -511,29 +619,55 @@
 
   function setSort(s) {
     activeSort = s;
-    document.querySelectorAll('.sort-btn').forEach(b =>
-            b.classList.toggle('active',
-                    (s === 'recommended' && b.textContent.includes('Recommended')) ||
-                    (s === 'distance' && b.textContent.includes('Distance'))
-            )
-    );
     render();
+  }
+
+  /**
+   * 클러스터러를 쓰면 마커 표시 여부가 setMap이 아니라 클러스터 소속으로 결정된다.
+   * 현재 필터에 걸리는 마커만 다시 담아 준다.
+   */
+  function syncClusteredMarkers() {
+    if (!clusterer) return;
+    const visibleTitles = new Set(getFiltered().map(p => p.title));
+    // 인기 핀은 클러스터에 넣지 않고 지도에 직접 띄운다. 묶여 버리면 순위 숫자가 묻힌다.
+    const popularTitles = new Set(popularPlaces().map(p => p.title));
+
+    const popularOnly = isPopularOnlyView();
+    const chosen = selectedPlaceTitle();
+
+    const clustered = [];
+    markerMap.forEach(item => {
+      const visible = visibleTitles.has(item.title);
+      const popular = visible && popularTitles.has(item.title);
+      const chosenPin = visible && item.title === chosen;
+      const color = CATEGORY_COLOR[String(item.type)] ?? '#64748b';
+
+      item.isPopular = popular;
+      item.marker.setMap(popular || chosenPin ? map : null);
+
+      if (chosenPin) {
+        item.marker.setImage(createActiveMarkerImage(color, CATEGORY_EMOJI[String(item.type)] ?? '📍'));
+        item.marker.setZIndex(1000);
+      } else if (popular) {
+        item.marker.setImage(createPopularMarkerImage(color, item.rank ?? 1));
+        item.marker.setZIndex(5);
+      } else if (visible && !popularOnly) {
+        clustered.push(item.marker);
+      }
+    });
+
+    clusterer.clear();
+    clusterer.addMarkers(clustered);
   }
 
   function updateMarkerVisibility() {
     if (!markerMap || markerMap.length === 0) return;
     if (courseMarkers.length > 0) return; // 코스 모드에서는 일반 핀을 건드리지 않는다
-    const visibleTitles = new Set(getFiltered().map(p => p.title));
-    markerMap.forEach(item => {
-      if (visibleTitles.has(item.title)) {
-        item.marker.setMap(map);
-      } else {
-        item.marker.setMap(null);
-      }
-    });
+    syncClusteredMarkers();
   }
 
   function render() {
+    updateSortAvailability();
     const list = getFiltered();
     window._currentList = list;
     document.getElementById('countDisplay').textContent = list.length;
@@ -547,7 +681,7 @@
           <div class="rank" style="background:${getCatColor(p.type)}">${i + 1}</div>
         </div>
         <div class="card-info">
-          <div class="card-cat" style="color:${getCatColor(p.type)}">${typeName(p.type)}</div>
+          <div class="card-cat" style="color:${getCatColor(p.type)}">${catLabel(p)}</div>
           <div class="card-name">${p.title ?? '-'}</div>
           <div class="card-meta">
             <span class="stars-s">★</span>${p.rating ?? '-'}
@@ -576,45 +710,7 @@
       const card = document.getElementById('card-' + idx);
       if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 60);
-    showPopup(p);
-    if (document.getElementById('detailPanel').classList.contains('open')) {
-      openDetail(p);
-    }
-  }
-
-  function showPopup(p) {
-    if (!p || !map) return;
-    currentPopupPlace = p;
-    const color = getCatColor(p.type);
-    const content = `
-      <div style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.22);width:240px;overflow:hidden;border:1.5px solid ${color}40;position:relative;">
-        <div style="height:110px;background-image:url('${p.image ?? ''}');background-size:cover;background-position:center;background-color:#f0f7ff;position:relative;">
-          <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.3) 100%);"></div>
-          <button onclick="closePopup()" style="position:absolute;top:6px;right:8px;background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>
-        </div>
-        <div style="padding:12px">
-          <div style="font-size:11px;font-weight:700;color:${color};margin-bottom:3px;">${typeName(p.type)}</div>
-          <div style="font-size:14px;font-weight:700;margin-bottom:3px;color:#0f172a">${p.title ?? '-'}</div>
-          <div style="font-size:12px;color:#64748b;margin-bottom:8px;">★ ${p.rating ?? '-'} · ${distStr(p.distance)} away</div>
-          <a href="#" onclick="openDetailFromPopup(event)" style="display:block;width:100%;padding:8px;background:${color};color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;text-align:center;text-decoration:none;cursor:pointer;">View Details →</a>
-        </div>
-      </div>`;
-    if (popupOverlay) popupOverlay.setMap(null);
-    popupOverlay = new kakao.maps.CustomOverlay({
-      map: map,
-      position: new kakao.maps.LatLng(p.lat, p.lng),
-      content: content,
-      yAnchor: 1.45,
-      zIndex: 10
-    });
-  }
-
-  function closePopup() {
-    if (popupOverlay) { popupOverlay.setMap(null); popupOverlay = null; }
-    currentPopupPlace = null;
-    activePinId = null;
-    exitCourseMode();
-    render();
+    openDetail(p);
   }
 
   function detailText(value) {
@@ -637,15 +733,16 @@
   }
 
   function renderDetailImage() {
-    const imageBox = document.getElementById('dpImg');
+    const hero = document.getElementById('dpHero');
     const hasImage = detailImages.length > 0;
     const current = hasImage ? detailImages[detailImageIndex] : '';
-    imageBox.style.backgroundImage = current ? `url("${String(current).replace(/"/g, '%22')}")` : 'none';
+    hero.style.backgroundImage = current ? `url("${String(current).replace(/"/g, '%22')}")` : '';
+    hero.classList.toggle('no-image', !hasImage);
     const multiple = detailImages.length > 1;
-    document.getElementById('dpImgPrev').classList.toggle('dp-img-hidden', !multiple);
-    document.getElementById('dpImgNext').classList.toggle('dp-img-hidden', !multiple);
+    document.getElementById('dpImgPrev').classList.toggle('dp-hero-hidden', !multiple);
+    document.getElementById('dpImgNext').classList.toggle('dp-hero-hidden', !multiple);
     const counter = document.getElementById('dpImgCount');
-    counter.classList.toggle('dp-img-hidden', !multiple);
+    counter.classList.toggle('dp-hero-hidden', !multiple);
     counter.textContent = multiple ? `${detailImageIndex + 1} / ${detailImages.length}` : '';
   }
 
@@ -674,13 +771,14 @@
     restdatefood:'휴무일', reservationfood:'예약', treatmenu:'취급 메뉴'
   };
 
-  // 코스는 경유지가 핵심 정보라 상세 패널에 순서대로 펼쳐준다.
+  // 코스는 경유지가 핵심 정보라 상세 패널 '정보' 탭에 순서대로 펼쳐준다.
   function renderCourseSection(p) {
     const box = document.getElementById('dpCourse');
-    if (!isCourse(p)) { box.innerHTML = ''; return; }
+    if (!isCourse(p)) { box.hidden = true; box.innerHTML = ''; return; }
+    box.hidden = false;
     const color = getCatColor(p.type);
     box.innerHTML = `
-      <div class="dp-section-title">경유지 ${p.coursePoints.length}곳</div>
+      <div class="section-title">경유지 ${p.coursePoints.length}곳</div>
       <div class="dp-course-list">
         ${p.coursePoints.map(pt => `
           <button type="button" class="dp-course-item" onclick="focusCoursePoint(${pt.order - 1})">
@@ -701,36 +799,117 @@
 
   async function loadTourApiDetail(p) {
     const desc = document.getElementById('dpDesc');
+    const apiInfo = document.getElementById('dpApiInfo');
     if (!p.id || !p.type) {
-      desc.innerHTML = '<p>상세정보 식별자가 없습니다.</p>';
+      desc.textContent = '상세정보 식별자가 없습니다.';
       return;
     }
-    desc.innerHTML = '<p style="color:#64748b">한국관광공사 상세정보를 불러오는 중...</p>';
+    desc.textContent = '한국관광공사 상세정보를 불러오는 중...';
     try {
       const response = await fetch(`/tour/api/detail/${encodeURIComponent(p.id)}?contentTypeId=${encodeURIComponent(p.type)}&lang=ko`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const detail = await response.json();
+      if (currentDetailPlace !== p) return;   // 그 사이 다른 곳을 눌렀으면 버린다
       const rows = Object.entries(detail.details || {}).map(([key, value]) => {
         const shown = key.includes('date') ? detailDate(value) : detailText(value);
         return `<div class="dp-info"><div class="dp-info-label">${escapeDetail(DETAIL_LABELS_KO[key] || key)}</div><div class="dp-info-val">${escapeDetail(shown)}</div></div>`;
       }).join('');
       const overview = escapeDetail(detail.overview || '등록된 관광지 설명이 없습니다.');
-      const tel = detail.tel ? `<p style="margin-top:12px"><b>전화:</b> ${escapeDetail(detail.tel)}</p>` : '';
-      desc.innerHTML = `<p style="line-height:1.75;white-space:pre-line">${overview}</p>${tel}${rows ? `<div class="dp-info-row" style="margin-top:18px">${rows}</div>` : ''}`;
+      const tel = detail.tel ? `<p style="margin-top:10px"><b>전화:</b> ${escapeDetail(detail.tel)}</p>` : '';
+      desc.innerHTML = `<p style="line-height:1.75;white-space:pre-line">${overview}</p>${tel}`;
+      apiInfo.innerHTML = rows
+        ? `<div class="section-card"><div class="section-title">이용 정보</div><div class="dp-info-row" style="margin:0">${rows}</div></div>` : '';
       setDetailImages(detail.images?.length ? detail.images : [detail.image || p.image]);
     } catch (error) {
-      desc.innerHTML = '<p style="color:#b91c1c">상세정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>';
+      desc.textContent = '상세정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
       console.error('TourAPI detail error', error);
     }
+  }
+
+  function showDetailTab(name) {
+    ['info', 'reviews', 'community'].forEach(tab => {
+      const panel = document.getElementById('tab-' + tab);
+      if (panel) panel.hidden = tab !== name;
+      document.querySelector(`.dp-tab[data-tab="${tab}"]`)?.classList.toggle('active', tab === name);
+    });
+  }
+
+  // 관광지 리뷰(있으면)를 방문자 리뷰 카드로 보여준다.
+  function renderReviews(p) {
+    const root = document.getElementById('dpReviews');
+    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
+    if (!reviews.length) {
+      root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">✎</span>
+        <strong>아직 방문자 리뷰가 없어요</strong>직접 방문한 사용자의 짧은 리뷰가 이곳에 표시돼요.</div>`;
+      return;
+    }
+    root.innerHTML = `<div class="section-card"><div class="section-title">방문자 리뷰 <small>${reviews.length}</small></div>`
+      + reviews.slice(0, 10).map(r => `<article class="review-card">
+          <div class="review-head">
+            <span class="review-author">${escapeDetail(r.author_name || r.authorName || '방문자')}</span>
+            <span class="review-star">${r.rating ? `★ ${escapeDetail(String(r.rating))}` : ''}</span>
+          </div>
+          <p class="review-text">${escapeDetail(r.text || r.content || '')}</p>
+        </article>`).join('') + `</div>`;
+  }
+
+  // 이 장소를 태그한 커뮤니티 글을 불러온다.
+  async function loadCommunityPosts(p) {
+    const root = document.getElementById('dpCommunity');
+    const writeUrl = `/community/post/write?placeContentId=${encodeURIComponent(p.id || '')}`
+      + `&placeContentTypeId=${encodeURIComponent(p.type || '')}&placeTitle=${encodeURIComponent(p.title || '')}`;
+    root.innerHTML = `<div class="section-card empty-state">커뮤니티 이야기를 불러오는 중…</div>`;
+    try {
+      const res = await fetch(`/tour/api/community/${encodeURIComponent(p.id)}`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const posts = await res.json();
+      if (currentDetailPlace !== p) return;
+      if (!posts.length) {
+        root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">💬</span>
+          <strong>이 장소의 첫 이야기를 남겨보세요</strong>
+          커뮤니티에서 이 장소를 태그한 여행기와 후기가 모여요.<br>
+          <a class="outline-btn" href="${writeUrl}">커뮤니티 글쓰기</a></div>`;
+        return;
+      }
+      root.innerHTML = `<div class="section-card"><div class="section-title">커뮤니티 이야기 <small>${posts.length}</small></div>`
+        + posts.map(post => `<a class="community-card" href="/community/post/${post.postId}">
+            <div class="community-meta"><span>${escapeDetail(post.authorName || '')}</span><span>조회 ${Number(post.viewCount || 0).toLocaleString()} · 댓글 ${Number(post.commentCount || 0).toLocaleString()}</span></div>
+            <div class="community-title">${escapeDetail(post.title || '')}</div>
+            <p class="community-preview">${escapeDetail(post.contentPreview || '')}</p>
+          </a>`).join('') + `<a class="outline-btn" href="${writeUrl}">이 장소 글쓰기</a></div>`;
+    } catch (e) {
+      root.innerHTML = `<div class="section-card empty-state">커뮤니티 글을 불러오지 못했어요.</div>`;
+      console.error('community posts error', e);
+    }
+  }
+
+  // 저장(찜)은 로그인 연동 전까지 브라우저에만 담아둔다.
+  const SAVED_KEY = 'tourSavedPlaces';
+  function savedSet() {
+    try { return new Set(JSON.parse(localStorage.getItem(SAVED_KEY) || '[]')); }
+    catch (e) { return new Set(); }
+  }
+  function updateSaveButton(p) {
+    const btn = document.getElementById('btnSave');
+    const on = p && p.id != null && savedSet().has(String(p.id));
+    btn.classList.toggle('saved', on);
+    btn.textContent = on ? '♥' : '♡';
+  }
+  function toggleSave(p) {
+    if (!p || p.id == null) return;
+    const set = savedSet();
+    const key = String(p.id);
+    set.has(key) ? set.delete(key) : set.add(key);
+    try { localStorage.setItem(SAVED_KEY, JSON.stringify([...set])); } catch (e) {}
+    updateSaveButton(p);
   }
 
   function openDetail(p) {
 
     if (!p) return;
     currentDetailPlace = p;
+    showDetailTab('info');
     const color = getCatColor(p.type);
-    const _keyword = (p.title && p.title.length < 20) ? p.title : p.google_name;
-    const _visitUrl = `https://korean.visitkorea.or.kr/search/search_list.do?keyword=${encodeURIComponent(_keyword)}`;
     document.getElementById('dpTitle').textContent = p.title ?? '-';
     setDetailImages([p.image]);
     document.getElementById('dpName').textContent = p.title ?? '-';
@@ -738,52 +917,45 @@
     document.getElementById('dpBadges').innerHTML =
             `<span class="dp-badge" style="background:${color}22;color:${color}">${typeName(p.type)}</span>
        <span class="dp-badge db-gold">🏆 ${p.score?.toFixed(1) ?? '-'}점</span>`;
-    document.getElementById('dpStars').innerHTML =
-            `<span class="s">★★★★★</span>
-       <span class="sc">${p.rating ?? '-'}</span>
-       <span class="sm">/ 5.0 &nbsp;·&nbsp; ${p.user_ratings_total?.toLocaleString() ?? '-'} reviews</span>`;
+    const rc = Number(p.user_ratings_total || 0);
+    const rating = Number(p.rating || 0);
+    document.getElementById('dpRating').innerHTML = rating > 0
+            ? `<span class="dp-rating-stars">★</span>
+       <span class="dp-rating-score">${rating.toFixed(1)}</span>
+       <span class="dp-rating-count">${rc.toLocaleString()}개 리뷰</span>`
+            : `<span style="color:#bbb;font-size:11px">아직 방문자 평점이 없어요</span>`;
     document.getElementById('dpInfoRow').innerHTML = `
-      <div class="dp-info"><div class="dp-info-label">Address</div><div class="dp-info-val">${p.addr ?? '-'}</div></div>
-      <div class="dp-info"><div class="dp-info-label">Distance</div><div class="dp-info-val">${distStr(p.distance)} away</div></div>
-      <div class="dp-info"><div class="dp-info-label">Score</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
-      <div class="dp-info"><div class="dp-info-label">Category</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
-    document.getElementById('dpDesc').innerHTML = '<p style="color:#64748b">상세정보를 준비하는 중...</p>';
-    const reviews = p.reviews ?? [];
-    const avg = p.rating ?? 0;
-    document.getElementById('dpRevSummary').innerHTML = `
-      <div>
-        <div class="rev-score">${avg}</div>
-        <div style="color:var(--gold);font-size:14px;margin-top:4px">${'★'.repeat(Math.round(avg))}</div>
-      </div>
-      <div class="rev-right"><div class="rev-bars">
-        ${[5,4,3,2,1].map(s => {
-      const cnt = reviews.filter(r => Math.round(r.rating ?? 0) === s).length;
-      const pct = reviews.length ? Math.round(cnt / reviews.length * 100) : 0;
-      return `<div class="rev-row"><span>${s}</span><div class="rev-track"><div class="rev-fill" style="width:${pct}%"></div></div><span>${pct}%</span></div>`;
-    }).join('')}
-      </div></div>`;
-    document.getElementById('dpReviews').innerHTML = reviews.slice(0, 5).map(r => `
-      <div class="review-item">
-        <div class="ri-top">
-          <div><div class="ri-name">${r.author_name ?? '익명'}</div><div class="ri-date">${r.relative_time_description ?? ''}</div></div>
-          <div class="ri-stars">${'★'.repeat(Math.round(r.rating ?? 0))}</div>
-        </div>
-        <div class="ri-text">${r.text ?? ''}</div>
-      </div>`).join('');
-
+      <div class="dp-info"><div class="dp-info-label">주소</div><div class="dp-info-val">${escapeDetail(p.addr ?? '-')}</div></div>
+      <div class="dp-info"><div class="dp-info-label">거리</div><div class="dp-info-val">${distStr(p.distance)}</div></div>
+      <div class="dp-info"><div class="dp-info-label">점수</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
+      <div class="dp-info"><div class="dp-info-label">분류</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
+    document.getElementById('dpDesc').textContent = '상세정보를 준비하는 중...';
+    document.getElementById('dpApiInfo').innerHTML = '';
+    renderReviews(p);
+    loadCommunityPosts(p);
+    updateSaveButton(p);
 
     // 이 관광지를 기준점으로 삼아 새 맛집 화면으로 넘긴다.
-    function goFood(category) {
+    function goTaste(path) {
       if (!(p.lat && p.lng)) return;
       const params = new URLSearchParams({
         lang: 'ko', lat: p.lat, lon: p.lng, near: p.title ?? ''
       });
-      if (category) params.set('category', category);
-      location.href = '/tour/food?' + params.toString();
+      location.href = path + '?' + params.toString();
     }
 
-    document.getElementById('itineraryBtn').onclick  = () => goFood(null);
-    document.getElementById('itineraryBtn1').onclick = () => goFood('cafe');
+    document.getElementById('itineraryBtn').onclick  = () => goTaste('/tour/food');
+    document.getElementById('itineraryBtn1').onclick = () => goTaste('/tour/cafe');
+    document.getElementById('btnSave').onclick = () => toggleSave(p);
+    document.getElementById('btnShare').onclick = async function () {
+      const shareData = { title: p.title || 'KoreaPoint', text: p.title || '', url: location.href };
+      try {
+        if (navigator.share) await navigator.share(shareData);
+        else { await navigator.clipboard.writeText(location.href); alert('현재 페이지 링크를 복사했어요.'); }
+      } catch (e) {
+        if (e?.name !== 'AbortError') console.error('share error', e);
+      }
+    };
 
     // ✅ 중복 없이 한 번만 선언
     document.getElementById('itineraryBtn2').onclick = function() {
@@ -809,27 +981,24 @@
 
     renderCourseSection(p);
     document.getElementById('detailPanel').classList.add('open');
+    centerPlaceBesideTourDetail(p);
     loadTourApiDetail(p);
   }
 
   function closeDetail() {
     document.getElementById('detailPanel').classList.remove('open');
+    currentDetailPlace = null;
+    activePinId = null;
+    exitCourseMode();
+    markerMap.forEach(item => {
+      const color = CATEGORY_COLOR[String(item.type)] ?? '#64748b';
+      const emoji = CATEGORY_EMOJI[String(item.type)] ?? '📍';
+      item.marker.setImage(createMarkerImage(color, emoji));
+      item.marker.setZIndex(1);
+    });
+    selectedMarker = null;
+    render();
   }
-
-  function openDetailFromPopup(e) {
-    e.preventDefault();
-    if (currentPopupPlace) openDetail(currentPopupPlace);
-  }
-
-  document.getElementById('mapArea').addEventListener('click', function(e) {
-    if (_markerJustClicked) { _markerJustClicked = false; return; }
-    if (!e.target.closest('.detail-panel') &&
-            !e.target.closest('.place-card') &&
-            !e.target.closest('.loc-btn') &&
-            !e.target.closest('.map-controls')) {
-      closePopup();
-    }
-  });
 
   function getLocation() {
     const options = { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 };
@@ -939,62 +1108,72 @@
             });
   }
 
+  applyAllChipLabel();
   render();
 </script>
 
-<script th:src="'//dapi.kakao.com/v2/maps/sdk.js?appkey=' + ${kakaoKey} + '&autoload=false'"></script>
+<script th:src="'//dapi.kakao.com/v2/maps/sdk.js?appkey=' + ${kakaoKey} + '&autoload=false&libraries=clusterer'"></script>
 <script>
   kakao.maps.load(function() {
+    // 지도는 항상 부산을 보여준다. 현위치 값은 거리 계산에만 쓰고 지도에는 찍지 않는다.
     map = new kakao.maps.Map(document.getElementById('kakaoMap'), {
       center: new kakao.maps.LatLng(centerLat, centerLon),
-      level: 5
+      level: BUSAN_MAP_LEVEL
     });
-    const myLocationImage = new kakao.maps.MarkerImage(
-            'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
-            new kakao.maps.Size(36, 48)
-    );
+    // 관광지가 600곳이 넘어 그대로 찍으면 지도가 핀으로 덮인다. 가까운 것끼리 묶어 보여준다.
+    clusterer = new kakao.maps.MarkerClusterer({
+      map: map,
+      averageCenter: true,
+      minLevel: CLUSTER_MIN_LEVEL,
+      disableClickZoom: false,
+      styles: [{
+        width: '38px', height: '38px', background: 'rgba(59,158,255,.85)',
+        border: '2.5px solid #1a7de0', borderRadius: '50%', color: '#fff',
+        textAlign: 'center', lineHeight: '38px', fontSize: '12px', fontWeight: '700'
+      }]
+    });
+
     markerMap = [];
-    if (userLat && userLon) {
-      new kakao.maps.Marker({
-        map: map,
-        position: new kakao.maps.LatLng(userLat, userLon),
-        title: spotName,
-        image: myLocationImage
-      });
-    }
     PLACES.forEach(p => {
       if (!p.lat || !p.lng) return;
       const color = CATEGORY_COLOR[String(p.type)] ?? '#64748b';
       const emoji = CATEGORY_EMOJI[String(p.type)] ?? '📍';
+      // map을 지정하지 않는다. 표시 여부는 클러스터러가 관리한다.
       const marker = new kakao.maps.Marker({
-        map: map,
         position: new kakao.maps.LatLng(p.lat, p.lng),
         title: p.title ?? '',
         image: createMarkerImage(color, emoji),
         zIndex: 1
       });
-      markerMap.push({ title: p.title, type: p.type, marker: marker });
+      markerMap.push({ title: p.title, type: p.type, marker: marker, rank: p.popularRank ?? null });
       kakao.maps.event.addListener(marker, 'click', () => {
-        _markerJustClicked = true;
-        setTimeout(() => { _markerJustClicked = false; }, 300);
         const list = window._currentList || PLACES;
         let listIdx = list.findIndex(x => x.title === p.title);
         if (listIdx < 0) {
           highlightMarkerByTitle(p.title);
-          map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
-          showPopup(p);
+          openDetail(p);
           return;
         }
         selectPlace(listIdx);
       });
     });
-    if (markerMap.length > 0) {
-      const bounds = new kakao.maps.LatLngBounds();
-      markerMap.forEach(item => bounds.extend(item.marker.getPosition()));
-      map.setBounds(bounds, 48, 48, 48, 48);
-    }
+    // setBounds로 마커 전체를 맞추면 현위치나 외곽 항목까지 끌려들어가 화면이 부산을 벗어난다.
     // 마커 등록 완료 후 현재 카테고리에 맞게 핀 표시
     updateMarkerVisibility();
+
+    // 축척이 바뀌면 강조할 인기 개수(TOP 3 ↔ TOP 5)가 달라진다.
+    kakao.maps.event.addListener(map, 'zoom_changed', () => {
+      if (courseMarkers.length === 0) {
+        markerMap.forEach(item => {
+          const color = CATEGORY_COLOR[String(item.type)] ?? '#64748b';
+          const emoji = CATEGORY_EMOJI[String(item.type)] ?? '📍';
+          item.marker.setImage(createMarkerImage(color, emoji));
+        });
+        syncClusteredMarkers();
+      }
+    });
+
+    focusInitialPlace();
   });
 </script>
 

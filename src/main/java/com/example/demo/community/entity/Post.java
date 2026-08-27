@@ -59,6 +59,16 @@ public class Post {
     @Lob
     private String contentKo;
 
+    /** TourAPI 장소 태그. 외부 장소 원문 대신 식별값과 표시용 최소 정보만 저장한다. */
+    @Column(length = 40)
+    private String placeContentId;
+
+    @Column(length = 20)
+    private String placeContentTypeId;
+
+    @Column(length = 200)
+    private String placeTitle;
+
     // 조회수
     @Column(nullable = false)
     @Builder.Default
