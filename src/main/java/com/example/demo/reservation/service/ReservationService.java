@@ -45,6 +45,26 @@ public class ReservationService {
                 .orElseThrow(() -> new IllegalArgumentException("예약 정보를 찾을 수 없습니다."));
     }
 
+    @Transactional
+    public TourReservation update(Long id, Long userId, ReservationFormDto form) {
+        TourReservation reservation = findMine(id, userId);
+        if ("예약 취소".equals(reservation.getStatus())) {
+            throw new IllegalStateException("취소된 예약은 수정할 수 없습니다.");
+        }
+        reservation.setReservationDate(form.getReservationDate());
+        reservation.setReservationTime(form.getReservationTime());
+        reservation.setPeopleCount(form.getPeopleCount());
+        reservation.setMemo(form.getMemo());
+        return reservation;
+    }
+
+    @Transactional
+    public TourReservation cancel(Long id, Long userId) {
+        TourReservation reservation = findMine(id, userId);
+        reservation.setStatus("예약 취소");
+        return reservation;
+    }
+
     private String createReservationNo(Long userId, ReservationFormDto form) {
         String date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
         String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();

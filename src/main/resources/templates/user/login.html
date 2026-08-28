@@ -23,7 +23,9 @@
         .signup-choice-card{min-height:430px}
         .signup-choice-bottom{width:100%;min-height:142px}
         .social-login-link{display:flex;flex-direction:column;align-items:center;gap:8px;color:#64748b;text-decoration:none;font-size:12px}
-        .social-login-icon{width:44px;height:44px;border-radius:9999px;display:flex;align-items:center;justify-content:center;border:1px solid #dbeafe;background:#fff;font-weight:800}
+        .social-login-icon{width:44px;height:44px;border-radius:9999px;display:flex;align-items:center;justify-content:center;border:1px solid #dbeafe;background:#fff;font-weight:800;overflow:hidden}
+        .social-login-icon.provider-icon{border:0;background:transparent}
+        .social-login-icon.provider-icon img{width:44px;height:44px;display:block;object-fit:contain}
         .signup-header{display:none}
         .signup-mode .signup-header{display:flex}
         .signup-mode .auth-logo-block{display:none}
@@ -102,12 +104,16 @@
 
                 <div class="mt-5 border-t border-gray-100 pt-5">
                     <div class="flex items-center justify-center gap-4">
-                        <a href="#" onclick="return false;" class="social-login-link" aria-label="네이버 로그인 자리">
-                            <span class="social-login-icon bg-[#03C75A] text-white">N</span>
+                        <a th:href="@{/oauth2/authorization/naver}" class="social-login-link" aria-label="네이버 로그인">
+                            <span class="social-login-icon provider-icon">
+                                <img th:src="@{/images/auth/naver-login-icon.png}" alt="" aria-hidden="true">
+                            </span>
                             <span>네이버</span>
                         </a>
-                        <a href="#" onclick="return false;" class="social-login-link" aria-label="카카오 로그인 자리">
-                            <span class="social-login-icon bg-[#FEE500] text-gray-900">K</span>
+                        <a th:href="@{/oauth2/authorization/kakao}" class="social-login-link" aria-label="카카오 로그인">
+                            <span class="social-login-icon provider-icon">
+                                <img th:src="@{/images/auth/kakao-login-icon.png}" alt="" aria-hidden="true">
+                            </span>
                             <span>카카오</span>
                         </a>
                         <a th:href="@{/oauth2/authorization/google}" class="social-login-link" aria-label="Google 로그인">
@@ -208,11 +214,15 @@
                                         style="font-weight:800;">개인으로 가입하기</button>
                                 <div class="mt-4 w-full rounded-xl bg-gray-50 px-5 py-4">
                                     <div class="flex items-center justify-center gap-5">
-                                    <a href="#" onclick="return false;" class="social-login-link" aria-label="네이버 회원가입 자리">
-                                        <span class="social-login-icon bg-[#03C75A] text-white">N</span>
+                                    <a th:href="@{/oauth2/authorization/naver}" class="social-login-link" aria-label="네이버 회원가입">
+                                        <span class="social-login-icon provider-icon">
+                                            <img th:src="@{/images/auth/naver-login-icon.png}" alt="" aria-hidden="true">
+                                        </span>
                                     </a>
-                                    <a href="#" onclick="return false;" class="social-login-link" aria-label="카카오 회원가입 자리">
-                                        <span class="social-login-icon bg-[#FEE500] text-gray-900">K</span>
+                                    <a th:href="@{/oauth2/authorization/kakao}" class="social-login-link" aria-label="카카오 회원가입">
+                                        <span class="social-login-icon provider-icon">
+                                            <img th:src="@{/images/auth/kakao-login-icon.png}" alt="" aria-hidden="true">
+                                        </span>
                                     </a>
                                     <a th:href="@{/oauth2/authorization/google}" class="social-login-link" aria-label="Google 회원가입">
                                         <span class="social-login-icon">

@@ -18,12 +18,18 @@ public class CustomOAuth2User implements OAuth2User {
     private final OAuth2User delegate;  // Google?먯꽌 諛쏆? ?먮낯 OAuth2User
     private final Long userId;          // DB????λ맂 users.id
     private final String role;
+    private final String displayName;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public CustomOAuth2User(OAuth2User delegate, Long userId, String role) {
+        this(delegate, userId, role, null);
+    }
+
+    public CustomOAuth2User(OAuth2User delegate, Long userId, String role, String displayName) {
         this.delegate = delegate;
         this.userId = userId;
         this.role = role;
+        this.displayName = displayName;
 
         Collection<GrantedAuthority> mappedAuthorities = new ArrayList<>(delegate.getAuthorities());
         if (role != null && !role.isBlank()) {
@@ -42,6 +48,10 @@ public class CustomOAuth2User implements OAuth2User {
 
     public String getRole() {
         return role;
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 
     @Override

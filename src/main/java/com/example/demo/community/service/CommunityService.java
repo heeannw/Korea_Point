@@ -41,10 +41,15 @@ public class CommunityService {
     }
 
     @Transactional(readOnly = true)
-    public CommunityDto getMyCommunityPageData(Long userId, String keyword, Pageable pageable) {
+    public CommunityDto getMyCommunityPageData(Long userId, Long categoryId, String keyword, Pageable pageable) {
+        boolean hasCategory = categoryId != null;
         boolean hasKeyword = keyword != null && !keyword.isBlank();
 
-        var posts = hasKeyword
+        var posts = hasCategory && hasKeyword
+                ? postService.searchPostsByUserAndCategory(userId, categoryId, keyword, pageable)
+                : hasCategory
+                ? postService.getPostsByUserAndCategory(userId, categoryId, pageable)
+                : hasKeyword
                 ? postService.searchPostsByUser(userId, keyword, pageable)
                 : postService.getPostsByUser(userId, pageable);
 

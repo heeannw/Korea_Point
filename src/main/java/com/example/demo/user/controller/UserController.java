@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpSession;
 import com.example.demo.user.entity.User;
 import com.example.demo.user.service.OwnerRequestService;
 import com.example.demo.user.service.UserService;
+import com.example.demo.user.util.SecurityUtil;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequiredArgsConstructor
@@ -54,6 +56,49 @@ public class UserController {
                 : ("ko".equals(selected) ? "/ko" : "/");
         model.addAttribute("targetUrl", targetUrl);
         return "user/login-success";
+    }
+
+    @GetMapping("/ko/settings")
+    public String settings(Model model) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        User user = userService.findById(userId);
+        model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
+        model.addAttribute("currentUserName", user.getName());
+        model.addAttribute("user", user);
+        model.addAttribute("hasProvidedEmail", userService.hasProvidedEmail(user));
+        model.addAttribute("isLocalAccount", "local".equals(user.getProvider()));
+        return "user/settings";
+    }
+
+    @PostMapping("/ko/settings/profile")
+    public String updateProfile(@RequestParam String name,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            userService.updateProfile(SecurityUtil.getCurrentUserId(), name);
+            redirectAttributes.addFlashAttribute("settingsMessage", "프로필 정보가 저장됐어요.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("settingsError", ex.getMessage());
+        }
+        return "redirect:/ko/settings";
+    }
+
+    @PostMapping("/ko/settings/password")
+    public String changePassword(@RequestParam String currentPassword,
+                                 @RequestParam String newPassword,
+                                 @RequestParam String passwordConfirm,
+                                 RedirectAttributes redirectAttributes) {
+        try {
+            userService.changeLocalPassword(
+                    SecurityUtil.getCurrentUserId(),
+                    currentPassword,
+                    newPassword,
+                    passwordConfirm
+            );
+            redirectAttributes.addFlashAttribute("settingsMessage", "비밀번호가 변경됐어요.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("settingsError", ex.getMessage());
+        }
+        return "redirect:/ko/settings";
     }
 
     @PostMapping("/signup")
