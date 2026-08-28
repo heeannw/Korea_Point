@@ -491,6 +491,7 @@ public class TripRecommendService {
 
     private double calculateScore(PlaceData p, TripRecommendRequest req) {
         double s = p.score();
+        if (isSaved(p, req)) s += 0.5;
         if (req.getMustVisit() != null && req.getMustVisit().stream().anyMatch(mv -> p.name().contains(mv) || mv.contains(p.name()))) s += 0.35;
         if (req.getPreferredAreas() != null && req.getPreferredAreas().stream().anyMatch(a -> p.area().contains(a) || p.name().contains(a) || a.contains(p.name()))) s += 0.18;
         if (req.getCategories() != null) {
@@ -511,9 +512,17 @@ public class TripRecommendService {
         return Math.max(0, s);
     }
 
+    /** p가 사용자의 저장 목록(savedPlaceNames)에 있는 장소인지. */
+    private boolean isSaved(PlaceData p, TripRecommendRequest req) {
+        return req.getSavedPlaceNames() != null
+                && req.getSavedPlaceNames().stream().anyMatch(sn -> p.name().contains(sn) || sn.contains(p.name()));
+    }
+
     private String buildReason(PlaceData p, TripRecommendRequest req) {
         boolean isEn = "en".equalsIgnoreCase(req.getLang());
         List<String> r = new ArrayList<>();
+        if (isSaved(p, req))
+            r.add(isEn ? "From your saved list" : "저장한 장소 우선 반영");
         if (req.getMustVisit() != null && req.getMustVisit().stream().anyMatch(mv -> p.name().contains(mv) || mv.contains(p.name())))
             r.add(isEn ? "Matches your must-visit list" : "꼭 가고 싶은 장소 반영");
         if (req.getPreferredAreas() != null && req.getPreferredAreas().stream().anyMatch(a -> p.area().contains(a) || p.name().contains(a) || a.contains(p.name())))
@@ -552,6 +561,8 @@ public class TripRecommendService {
 
         List<DayScheduleDto> result = new ArrayList<>();
         Set<String> used = new HashSet<>();
+        // 저장 목록: 점수/거리 경쟁 없이 해당 유형 슬롯에 최우선 배치, 남는 슬롯만 기존 로직으로 채움
+        List<String> savedNames = req.getSavedPlaceNames() != null ? req.getSavedPlaceNames() : List.of();
         double anchorLat = 35.1796, anchorLng = 129.0756;
         if (req.getPreferredAreas() != null && !req.getPreferredAreas().isEmpty()) {
             for (String area : req.getPreferredAreas()) {
@@ -622,7 +633,9 @@ public class TripRecommendService {
                             weather = Optional.of(new WeatherForecast(slotAt, 25, 80, "RAIN", 5, 10, "OVERCAST"));
                         }
                         Optional<WeatherForecast> slotWeather = weather;
-                        ScoredPlace p = pickNext(tourism, used, anchorLat, anchorLng, 10.0, slotWeather, airQuality, healthRisk);
+                        ScoredPlace saved = pickSaved(tourism, used, savedNames);
+                        ScoredPlace p = saved != null ? saved
+                                : pickNext(tourism, used, anchorLat, anchorLng, 10.0, slotWeather, airQuality, healthRisk);
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "tourism", p.place);
                             if (currentMinutes + duration > endMinutes) break;
@@ -641,7 +654,8 @@ public class TripRecommendService {
                     case "food" -> {
                         String fc = order.getFoodCategory();
                         List<ScoredPlace> pool = (fc != null && !fc.isBlank() && foodByCat.containsKey(fc)) ? foodByCat.get(fc) : food;
-                        ScoredPlace p = pickNext(pool, used, anchorLat, anchorLng, 8.0);
+                        ScoredPlace saved = pickSaved(pool, used, savedNames);
+                        ScoredPlace p = saved != null ? saved : pickNext(pool, used, anchorLat, anchorLng, 8.0);
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "food", p.place);
                             if (currentMinutes + duration > endMinutes) break;
@@ -654,7 +668,8 @@ public class TripRecommendService {
                         }
                     }
                     case "cafe" -> {
-                        ScoredPlace p = pickNext(cafe, used, anchorLat, anchorLng, 8.0);
+                        ScoredPlace saved = pickSaved(cafe, used, savedNames);
+                        ScoredPlace p = saved != null ? saved : pickNext(cafe, used, anchorLat, anchorLng, 8.0);
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "cafe", p.place);
                             if (currentMinutes + duration > endMinutes) break;
@@ -662,7 +677,8 @@ public class TripRecommendService {
                         }
                     }
                     case "bar" -> {
-                        ScoredPlace p = pickNext(bar, used, anchorLat, anchorLng, 8.0);
+                        ScoredPlace saved = pickSaved(bar, used, savedNames);
+                        ScoredPlace p = saved != null ? saved : pickNext(bar, used, anchorLat, anchorLng, 8.0);
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "bar", p.place);
                             if (currentMinutes + duration > endMinutes) break;
@@ -718,6 +734,18 @@ public class TripRecommendService {
 
     private boolean containsAny(String text, String... keywords) {
         return Arrays.stream(keywords).anyMatch(text::contains);
+    }
+
+    /**
+     * 저장 목록에 있는 장소를 이 풀(pool)에서 찾아 최우선으로 돌려준다. 점수/거리는 보지 않는다.
+     * 없으면 null을 반환해서 호출부가 기존 pickNext로 폴백하게 한다.
+     */
+    private ScoredPlace pickSaved(List<ScoredPlace> list, Set<String> used, List<String> savedNames) {
+        if (savedNames.isEmpty()) return null;
+        return list.stream()
+                .filter(sp -> !used.contains(sp.place.name()))
+                .filter(sp -> savedNames.stream().anyMatch(sn -> sp.place.name().contains(sn) || sn.contains(sp.place.name())))
+                .findFirst().orElse(null);
     }
 
     private ScoredPlace pickNext(List<ScoredPlace> list, Set<String> used,
@@ -848,8 +876,14 @@ public class TripRecommendService {
         }
 
         // 대체 후보 — EN이면 영어 이름 사용
-        List<AlternativeDto> alts = pool.stream()
-                .filter(sp -> !sp.place.name().equals(pl.name()))
+        s.setAlternatives(buildAlternatives(pl.name(), pl.lat(), pl.lng(), pool));
+        return s;
+    }
+
+    /** self(현재 장소) 기준으로 같은 풀(pool)에서 대체 후보 최대 5개를 뽑는다. */
+    private List<AlternativeDto> buildAlternatives(String selfName, double selfLat, double selfLng, List<ScoredPlace> pool) {
+        return pool.stream()
+                .filter(sp -> !sp.place.name().equals(selfName))
                 .limit(5)
                 .map(sp -> {
                     AlternativeDto a = new AlternativeDto();
@@ -857,11 +891,49 @@ public class TripRecommendService {
                     a.setPlaceName(spHasEn ? sp.place.nameEn() : sp.place.name());
                     a.setScore(Math.round(sp.score * 10000.0) / 10000.0);
                     a.setLat(sp.place.lat()); a.setLng(sp.place.lng());
-                    a.setDistanceKm(Math.round(haversine(pl.lat(), pl.lng(), sp.place.lat(), sp.place.lng()) * 100.0) / 100.0);
+                    a.setDistanceKm(Math.round(haversine(selfLat, selfLng, sp.place.lat(), sp.place.lng()) * 100.0) / 100.0);
                     return a;
                 }).collect(Collectors.toList());
-        s.setAlternatives(alts);
-        return s;
+    }
+
+    /**
+     * 저장된 일정을 상세 페이지("상세 페이지에서 보기")에서 다시 열 때 쓸 응답을 만든다.
+     * 실제로 저장된 스케줄(슬롯 순서/장소)은 그대로 두고, 저장 당시 취향 조건(req)으로
+     * 관광/음식/카페 추천 리스트와 슬롯별 대체 후보만 실시간 생성 때와 같은 방식으로 다시 채운다.
+     * (대체 후보/추천 리스트는 저장 시 DB에 남기지 않기 때문에 매번 다시 계산해야 한다.)
+     */
+    public TripRecommendResponse hydrateForResultView(TripRecommendRequest req, List<DayScheduleDto> savedSchedule) {
+        boolean isEn = "en".equalsIgnoreCase(req.getLang());
+        List<PlaceData> tourismPlaces = isEn ? tourismPlacesEn : tourismPlacesKo;
+        List<PlaceData> foodSource    = isEn ? foodPlacesEn    : foodPlacesKo;
+        List<PlaceData> cafeSource    = isEn ? cafePlacesEn    : cafePlacesKo;
+
+        List<ScoredPlace> tourism = scoreAll(tourismPlaces, req);
+        List<ScoredPlace> food    = scoreAll(foodSource.stream().filter(p -> !"bar".equals(p.category())).collect(Collectors.toList()), req);
+        List<ScoredPlace> cafe    = scoreAll(cafeSource, req);
+        List<ScoredPlace> bar     = scoreAll(foodSource.stream().filter(p -> "bar".equals(p.category())).collect(Collectors.toList()), req);
+
+        for (DayScheduleDto day : savedSchedule) {
+            if (day.getSlots() == null) continue;
+            for (SlotDto slot : day.getSlots()) {
+                List<ScoredPlace> pool = switch (slot.getCategory() == null ? "" : slot.getCategory()) {
+                    case "food" -> food;
+                    case "cafe" -> cafe;
+                    case "bar"  -> bar;
+                    default     -> tourism;
+                };
+                double lat = slot.getLat() != null ? slot.getLat() : 0;
+                double lng = slot.getLng() != null ? slot.getLng() : 0;
+                slot.setAlternatives(buildAlternatives(slot.getPlaceName(), lat, lng, pool));
+            }
+        }
+
+        TripRecommendResponse resp = new TripRecommendResponse();
+        resp.setTourismList(toRecList(tourism, 10));
+        resp.setFoodList(toRecList(food, 10));
+        resp.setCafeList(toRecList(cafe, 10));
+        resp.setSchedule(savedSchedule);
+        return resp;
     }
 
     private List<RecommendedPlace> toRecList(List<ScoredPlace> scored, int limit) {

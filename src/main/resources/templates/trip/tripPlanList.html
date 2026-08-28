@@ -32,41 +32,150 @@
 <main class="page">
     <h1 class="page-title">내 여행 일정</h1>
     <p class="page-subtitle">저장한 일정을 다시 확인하거나 삭제할 수 있습니다.</p>
-    <div id="planGrid" class="plan-grid"><div class="loading">일정을 불러오는 중입니다...</div></div>
-    <section id="detail" class="detail"><div class="detail-head"><h2 id="detailTitle" class="detail-title"></h2><div class="detail-head-actions"><button class="edit-btn" onclick="editCurrentPlan()">이 일정으로 다시 만들기</button><button class="close-btn" onclick="closeDetail()">닫기</button></div></div><div id="detailMeta" class="plan-meta"></div><div id="savedPlanMap" class="saved-plan-map"></div><div id="detailDays"></div></section>
+    <div class="plan-layout">
+        <aside class="plan-list-panel">
+            <div id="planGrid" class="plan-list"><div class="loading">일정을 불러오는 중입니다...</div></div>
+            <div id="dayListPanel" class="day-list-panel" style="display:none">
+                <div class="day-list-title">일자별 보기</div>
+                <div id="dayList" class="day-list"></div>
+            </div>
+        </aside>
+        <section class="detail-panel">
+            <div id="detailEmpty" class="detail-empty">왼쪽 목록에서 일정을 선택해주세요.</div>
+            <div id="detailBody" class="detail-body" style="display:none">
+                <div class="detail-head">
+                    <h2 id="detailTitle" class="detail-title"></h2>
+                    <div class="detail-head-actions">
+                        <button class="view-btn" onclick="viewInResultPage()">상세 페이지에서 보기</button>
+                        <button class="edit-btn" onclick="editCurrentPlan()">이 일정으로 다시 만들기</button>
+                    </div>
+                </div>
+                <div id="detailMeta" class="plan-meta"></div>
+                <div id="savedPlanMap" class="saved-plan-map"></div>
+                <div id="detailDays"></div>
+            </div>
+        </section>
+    </div>
 </main>
 <div class="toast" id="toast"></div>
 <script>
     const grid = document.getElementById('planGrid');
     let currentDetailPlan = null;
+    let currentPlans = [];
+    let currentDay = null;
     let savedPlanMap = null;
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
     const esc = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    // 카테고리별 아이콘/색상 — tripResult.html과 동일한 표기로 통일
+    const CAT = {
+        tourism:{ color:'#3b9eff', icon:'🏛️' },
+        food:   { color:'#f59e0b', icon:'🍽️' },
+        cafe:   { color:'#10b981', icon:'☕'  },
+        bar:    { color:'#8b5cf6', icon:'🍺'  }
+    };
+    // tripMain.html의 동행 유형 선택지와 동일한 라벨로 통일
+    const COMPANION_LABEL = { solo:'혼자 🙋', friend:'친구와 👫', couple:'커플 💑', family:'가족 👨‍👩‍👧' };
     function toast(message){const el=document.getElementById('toast');el.textContent=message;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2200)}
     function formatDate(value){return value ? new Date(value).toLocaleDateString('ko-KR') : '-'}
     async function loadPlans(){
         const response=await fetch('/api/trip/plan/list');
         if(!response.ok){grid.innerHTML='<div class="empty">일정을 불러오지 못했습니다.</div>';return}
         const plans=await response.json();
+        currentPlans=plans;
         if(!plans.length){location.replace('/ko/trip');return}
-        grid.innerHTML=plans.map(p=>`<article class="plan-card"><div class="plan-title">${esc(p.title)}</div><div class="plan-meta">${esc(p.preferredAreas||'지역 미정')}<br>${p.travelDays}일 · ${esc(p.companion||'동행 미정')}<br>${formatDate(p.createdAt)}</div><div class="plan-actions"><button class="action-btn detail-btn" onclick="showDetail(${p.id})">상세보기</button><button class="action-btn delete-btn" onclick="deletePlan(${p.id})">삭제</button></div></article>`).join('');
+        grid.innerHTML=plans.map(p=>`<article class="plan-list-item" id="planItem-${p.id}" onclick="showDetail(${p.id})"><div class="plan-title">🗺️ ${esc(p.title)}</div><div class="plan-pill-row"><span class="meta-pill">${p.travelDays}일</span><span class="meta-pill">${esc(COMPANION_LABEL[p.companion] || p.companion || '동행 미정')}</span></div><div class="plan-sub">${esc(p.preferredAreas||'지역 미정')} · ${formatDate(p.createdAt)}</div><button class="action-btn delete-btn" onclick="event.stopPropagation();deletePlan(${p.id})">삭제</button></article>`).join('');
+        // 처음 들어왔을 때, 또는 삭제 후 선택 중이던 일정이 사라졌을 때 왼쪽 첫 번째 일정을 자동으로 보여준다.
+        if (!currentDetailPlan || !plans.some(p => p.id === currentDetailPlan.id)) showDetail(plans[0].id);
+        else highlightSelected(currentDetailPlan.id);
+    }
+    function highlightSelected(id){
+        document.querySelectorAll('.plan-list-item.selected').forEach(el => el.classList.remove('selected'));
+        document.getElementById(`planItem-${id}`)?.classList.add('selected');
     }
     async function showDetail(id){
         const response=await fetch(`/api/trip/plan/${id}`); if(!response.ok){toast('일정을 불러오지 못했습니다.');return}
-        const p=await response.json(); currentDetailPlan=p; document.getElementById('detailTitle').textContent=p.title;
+        const p=await response.json(); currentDetailPlan=p;
+        highlightSelected(id);
+        document.getElementById('detailEmpty').style.display='none';
+        document.getElementById('detailBody').style.display='block';
+        document.getElementById('detailTitle').textContent=p.title;
         document.getElementById('detailMeta').textContent=`${p.preferredAreas||'지역 미정'} · ${p.travelDays}일 · ${formatDate(p.createdAt)}`;
-        document.getElementById('detailDays').innerHTML=(p.days||[]).map(day=>`<div class="day"><div class="day-title">Day ${day.day}</div>${(day.slots||[]).map(s=>`<div class="slot"><div class="slot-time">${esc(s.time)}</div><div><div class="slot-name">${esc(s.placeName)}</div><div class="slot-reason">${esc(s.reason)}</div></div><div class="slot-duration">${s.durationMinutes ? `${s.durationMinutes}분` : ''}</div></div>`).join('')}</div>`).join('');
-        renderSavedMap(p); const detail=document.getElementById('detail');detail.classList.add('open');detail.scrollIntoView({behavior:'smooth'});
+        renderDayTabs(p);
+        selectDay((p.days && p.days[0] && p.days[0].day) || 1);
     }
-    function renderSavedMap(plan){
-        const container=document.getElementById('savedPlanMap'),slots=(plan.days||[]).flatMap(day=>day.slots||[]).filter(s=>s.lat&&s.lng);if(!slots.length||!window.kakao){container.style.display='none';return}container.style.display='block';savedPlanMap=new kakao.maps.Map(container,{center:new kakao.maps.LatLng(slots[0].lat,slots[0].lng),level:7});const bounds=new kakao.maps.LatLngBounds();slots.forEach(s=>{const position=new kakao.maps.LatLng(s.lat,s.lng);new kakao.maps.Marker({map:savedPlanMap,position,title:s.placeName});bounds.extend(position)});new kakao.maps.Polyline({map:savedPlanMap,path:slots.map(s=>new kakao.maps.LatLng(s.lat,s.lng)),strokeWeight:4,strokeColor:'#3b82f6',strokeOpacity:.8});savedPlanMap.setBounds(bounds);setTimeout(()=>savedPlanMap.relayout(),100)
+    /** 왼쪽에 Day 1, Day 2... 목록을 만든다. 하나 고르면 오른쪽 지도/일정이 그 날짜 것만 보인다. */
+    function renderDayTabs(plan){
+        const panel=document.getElementById('dayListPanel'), list=document.getElementById('dayList');
+        const days=plan.days||[];
+        if(!days.length){panel.style.display='none';return}
+        panel.style.display='block';
+        list.innerHTML=days.map(d=>`<button type="button" class="day-tab" id="dayTab-${d.day}" onclick="selectDay(${d.day})">Day ${d.day}<span class="day-tab-count">${(d.slots||[]).length}곳</span></button>`).join('');
+    }
+    function selectDay(day){
+        if(!currentDetailPlan) return;
+        currentDay=day;
+        document.querySelectorAll('.day-tab.selected').forEach(el=>el.classList.remove('selected'));
+        document.getElementById(`dayTab-${day}`)?.classList.add('selected');
+        const dayData=(currentDetailPlan.days||[]).find(d=>d.day===day);
+        renderDaySlots(dayData);
+        renderSavedMap(dayData);
+    }
+    function renderDaySlots(dayData){
+        const slots=(dayData && dayData.slots) || [];
+        document.getElementById('detailDays').innerHTML=`<div class="day-card"><div class="day-card-head"><span class="day-badge">Day ${dayData ? dayData.day : ''}</span><span class="day-stop-count">${slots.length}곳</span></div>${slots.map(s=>{const cfg=CAT[s.category]||CAT.tourism;return `<div class="slot"><div class="slot-dot" style="background:${cfg.color}">${cfg.icon}</div><div class="slot-body"><div class="slot-top-row"><span class="slot-time">${esc(s.time)}</span>${s.durationMinutes ? `<span class="slot-duration-pill">${s.durationMinutes}분</span>` : ''}</div><div class="slot-name">${esc(s.placeName)}</div><div class="slot-reason">${esc(s.reason)}</div></div>${s.imageUrl ? `<img class="slot-thumb" src="${esc(s.imageUrl)}" alt="" onerror="this.remove()">` : ''}</div>`}).join('')}</div>`;
+    }
+    // 날짜마다 동선 범위가 다르면 setBounds가 확대/축소를 극단으로 튀게 만들어서
+    // "지도 크기가 커졌다 작아졌다" 하는 것처럼 느껴진다. 줌 레벨을 이 범위 안으로 고정해서
+    // 컨테이너 크기(330px, 고정)는 물론 체감 확대율도 날짜 간에 크게 안 튀게 한다.
+    const MAP_MIN_LEVEL = 4, MAP_MAX_LEVEL = 9;
+    function renderSavedMap(dayData){
+        const container=document.getElementById('savedPlanMap'),slots=((dayData && dayData.slots) || []).filter(s=>s.lat&&s.lng);if(!slots.length||!window.kakao){container.style.display='none';return}container.style.display='block';savedPlanMap=new kakao.maps.Map(container,{center:new kakao.maps.LatLng(slots[0].lat,slots[0].lng),level:7});const bounds=new kakao.maps.LatLngBounds();slots.forEach(s=>{const position=new kakao.maps.LatLng(s.lat,s.lng);new kakao.maps.Marker({map:savedPlanMap,position,title:s.placeName});bounds.extend(position)});new kakao.maps.Polyline({map:savedPlanMap,path:slots.map(s=>new kakao.maps.LatLng(s.lat,s.lng)),strokeWeight:4,strokeColor:'#3b82f6',strokeOpacity:.8});savedPlanMap.setBounds(bounds);const lvl=savedPlanMap.getLevel();const clamped=Math.min(Math.max(lvl,MAP_MIN_LEVEL),MAP_MAX_LEVEL);if(clamped!==lvl)savedPlanMap.setLevel(clamped);setTimeout(()=>savedPlanMap.relayout(),100)
     }
     function editCurrentPlan(){if(!currentDetailPlan)return;sessionStorage.setItem('tripEditRequest',JSON.stringify(currentDetailPlan));location.href='/ko/trip'}
-    function closeDetail(){document.getElementById('detail').classList.remove('open')}
+    /** 일정 생성 후 보게 되는 그 상세 페이지(/ko/trip/result)를 이 저장된 일정 데이터로 그대로 연다.
+     *  그 페이지는 열리면 자동으로 일정을 저장하려고 하는데, 이미 저장된 걸 또 저장하지 않도록
+     *  savedTripPlanKey를 미리 맞춰서 넣어준다(그 페이지의 자동저장 중복 방지 로직 재사용). */
+    async function viewInResultPage(){
+        if(!currentDetailPlan) return;
+        const p = currentDetailPlan;
+        const reqObj = {
+            age: p.age, companion: p.companion, budget: p.budget,
+            travelDays: p.travelDays, startDate: p.startDate,
+            startHour: p.startHour, endHour: p.endHour,
+            arrivalAirport: p.arrivalAirport, arrivalTime: p.arrivalTime, arrivalReadyMinutes: p.arrivalReadyMinutes,
+            departureAirport: p.departureAirport, departureTime: p.departureTime, departureLeadMinutes: p.departureLeadMinutes,
+            intensity: p.intensity, preferredAreas: p.preferredAreas || [], mustVisit: p.mustVisit || [],
+            categories: p.categories || [], styleDescription: p.styleDescription || '', lang: 'ko'
+        };
+
+        // 관광/음식/카페 추천 리스트와 슬롯별 대체 후보(생성 당시처럼 5개씩)는 저장 시 DB에
+        // 안 남기기 때문에, 저장 당시 조건으로 서버에서 다시 계산해서 받아온다.
+        let respObj;
+        try {
+            const r = await fetch(`/api/trip/plan/${p.id}/for-result-view`);
+            respObj = r.ok ? await r.json() : null;
+        } catch (e) { respObj = null; }
+        if (!respObj) {
+            // 서버 계산이 실패해도 최소한 저장된 일정 자체는 보여준다 (후보/추천 리스트만 빠짐)
+            respObj = {
+                schedule: p.days || [], tourismList: [], foodList: [], cafeList: [],
+                aiSummary: '', weatherWarning: '', airQuality: null, healthRisk: null, forecastIssuedAt: ''
+            };
+            toast('추천 후보를 불러오지 못해 일정만 표시합니다.');
+        }
+
+        sessionStorage.setItem('tripRequest', JSON.stringify(reqObj));
+        sessionStorage.setItem('tripResult', JSON.stringify(respObj));
+        sessionStorage.setItem('savedTripPlanKey', JSON.stringify({ request: reqObj, schedule: respObj.schedule || [] }));
+        sessionStorage.setItem('savedTripPlanId', p.id);
+        location.href = '/ko/trip/result';
+    }
     async function deletePlan(id){
         if(!confirm('이 일정을 삭제할까요?'))return; const headers={}; if(csrfToken&&csrfHeader)headers[csrfHeader]=csrfToken;
-        const response=await fetch(`/api/trip/plan/${id}`,{method:'DELETE',headers}); if(!response.ok){toast('삭제하지 못했습니다.');return} closeDetail();toast('일정이 삭제되었습니다.');loadPlans();
+        const response=await fetch(`/api/trip/plan/${id}`,{method:'DELETE',headers}); if(!response.ok){toast('삭제하지 못했습니다.');return}
+        if(currentDetailPlan && currentDetailPlan.id===id) currentDetailPlan=null;
+        toast('일정이 삭제되었습니다.');loadPlans();
     }
     loadPlans().catch(()=>grid.innerHTML='<div class="empty">일정을 불러오지 못했습니다.</div>');
 </script>

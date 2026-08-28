@@ -30,10 +30,16 @@ public class BusanStorySourceTextResolver implements SourceTextResolver {
         String text = String.join("\n",
                 nullToEmpty(story.getSubtitle()),
                 nullToEmpty(story.getContents()));
-        return new ResolvedSource(story.getTitle(), text);
+        return new ResolvedSource(story.getTitle(), text, normalizeImageUrl(story.getImgUrl()));
     }
 
     private String nullToEmpty(String value) {
         return value == null ? "" : value;
+    }
+
+    /** 채팅창은 https라 http 이미지가 섞이면 브라우저가 막을 수 있어 https로 맞춘다. */
+    private String normalizeImageUrl(String url) {
+        if (url == null || url.isBlank()) return null;
+        return url.startsWith("http://") ? "https://" + url.substring(7) : url;
     }
 }

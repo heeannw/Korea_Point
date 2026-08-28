@@ -15,5 +15,5 @@ public interface SourceTextResolver {
     /** source_id로 원문을 다시 조회한다. 삭제됐거나 API 실패면 빈 값. */
     Optional<ResolvedSource> resolve(String sourceId);
 
-    record ResolvedSource(String title, String text) {}
+    record ResolvedSource(String title, String text, String imgUrl) {}
 }

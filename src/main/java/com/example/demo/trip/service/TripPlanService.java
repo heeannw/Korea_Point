@@ -1,6 +1,8 @@
 package com.example.demo.trip.service;
 
 import com.example.demo.trip.dto.TripPlanDto;
+import com.example.demo.trip.dto.TripRecommendRequest;
+import com.example.demo.trip.dto.TripRecommendResponse;
 import com.example.demo.trip.entity.ReservationStatus;
 import com.example.demo.trip.dto.TripRecommendResponse.DayScheduleDto;
 import com.example.demo.trip.dto.TripRecommendResponse.SlotDto;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 public class TripPlanService {
 
     private final TripPlanRepository tripPlanRepository;
+    private final TripRecommendService tripRecommendService;
 
     // ────────────────────────────────────────────
     //  저장
@@ -202,6 +205,44 @@ public class TripPlanService {
             copied.getDays().add(copiedDay);
         }
         return tripPlanRepository.save(copied).getId();
+    }
+
+    // ────────────────────────────────────────────
+    //  "상세 페이지에서 보기" — 저장된 일정 + 실시간 추천 리스트/대체 후보
+    // ────────────────────────────────────────────
+    @Transactional(readOnly = true)
+    public TripRecommendResponse buildResultView(String userId, Long planId) {
+        TripPlan plan = tripPlanRepository.findWithDaysAndSlots(planId, userId).orElse(null);
+        if (plan == null) return null;
+
+        TripRecommendRequest req = new TripRecommendRequest();
+        req.setAge(plan.getAge());
+        req.setCompanion(plan.getCompanion());
+        req.setBudget(plan.getBudget());
+        req.setMustVisit(strToList(plan.getMustVisit()));
+        req.setCategories(strToList(plan.getCategories()));
+        req.setPreferredAreas(strToList(plan.getPreferredAreas()));
+        req.setStyleDescription(plan.getStyleDescription());
+        req.setLang("ko");
+
+        List<DayScheduleDto> schedule = new ArrayList<>();
+        for (TripPlanDay day : plan.getDays()) {
+            DayScheduleDto dd = new DayScheduleDto();
+            dd.setDay(day.getDay());
+            dd.setSlots(day.getSlots().stream().map(sl -> {
+                SlotDto sd = new SlotDto();
+                sd.setTime(sl.getTime()); sd.setCategory(sl.getCategory());
+                sd.setPlaceName(sl.getPlaceName()); sd.setReason(sl.getReason());
+                sd.setScore(sl.getScore()); sd.setLat(sl.getLat()); sd.setLng(sl.getLng());
+                sd.setAddress(sl.getAddress()); sd.setImageUrl(sl.getImageUrl());
+                sd.setAvgRating(sl.getAvgRating()); sd.setReviewCount(sl.getReviewCount());
+                sd.setDurationMinutes(sl.getDurationMinutes());
+                return sd;
+            }).collect(Collectors.toList()));
+            schedule.add(dd);
+        }
+
+        return tripRecommendService.hydrateForResultView(req, schedule);
     }
 
     // ────────────────────────────────────────────

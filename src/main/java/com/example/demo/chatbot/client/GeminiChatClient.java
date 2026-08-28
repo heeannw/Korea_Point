@@ -27,7 +27,7 @@ public class GeminiChatClient {
     private static final Logger log = LoggerFactory.getLogger(GeminiChatClient.class);
     private static final String ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent";
     /** 503(일시적 과부하)은 구글 측이 "잠시 후 재시도"를 권장하는 케이스라 자동 재시도한다. */
-    private static final int MAX_RETRIES = 2;
+    private static final int MAX_RETRIES = 4;
     private static final long INITIAL_BACKOFF_MS = 2000;
 
     private final RestTemplate restTemplate;
@@ -39,8 +39,8 @@ public class GeminiChatClient {
     private String model;
 
     public GeminiChatClient() {
-        // 여러 이야기 원문을 근거로 답변을 생성하다 보니 응답이 느릴 때가 있어 read timeout을 넉넉히 잡는다.
-        this.restTemplate = ExternalApiClient.create(3000, 45000);
+        // 무료 등급이라 응답이 느릴 때가 있어 read timeout을 넉넉히 잡는다.
+        this.restTemplate = ExternalApiClient.create(3000, 60000);
     }
 
     public boolean isConfigured() {
@@ -55,9 +55,11 @@ public class GeminiChatClient {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("x-goog-api-key", apiKey);
 
+        // gemini-3.6-flash는 "생각(thinking)" 과정도 maxOutputTokens 예산을 같이 쓰는 모델이라
+        // 최종 답변 전에 예산이 소진되면 문장이 끊긴다. 여유 있게 넉넉히 잡는다.
         Map<String, Object> body = Map.of(
                 "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
-                "generationConfig", Map.of("temperature", 0.3, "maxOutputTokens", 2048));
+                "generationConfig", Map.of("temperature", 0.3, "maxOutputTokens", 4096));
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
         String url = String.format(ENDPOINT, model);
 

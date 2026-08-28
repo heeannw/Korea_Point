@@ -217,6 +217,18 @@
         return `${areas} ${Math.max(0, days - 1)}박 ${days}일`;
     }
 
+    function hideSaveButton() {
+        const button = document.getElementById('savePlanBtn');
+        if (button) button.style.display = 'none';
+    }
+    function showSaveButton() {
+        const button = document.getElementById('savePlanBtn');
+        if (!button) return;
+        button.style.display = '';
+        button.disabled = false;
+        button.textContent = '일정 저장';
+    }
+
     async function autoSaveTripPlan() {
         if (!isLoggedIn || !tripResult || !tripRequest) return;
         const saveKey = JSON.stringify({
@@ -224,11 +236,10 @@
             schedule: tripResult.schedule || []
         });
         if (sessionStorage.getItem('savedTripPlanKey') === saveKey) {
-            const button = document.getElementById('savePlanBtn');
-            if (button) {
-                button.textContent = '저장 완료';
-                button.disabled = true;
-            }
+            // 이미 저장된 일정을 보러 들어온 것뿐이라 버튼을 눌러도 할 일이 없다.
+            // "저장 완료"로 비활성화만 해두면 왜 안 눌리는지 헷갈리니 숨긴다.
+            // (장소를 바꾸는 등 내용이 달라지면 showSaveButton()이 다시 보여준다)
+            hideSaveButton();
             return;
         }
         const planId = await persistTripPlan(defaultTripPlanTitle(), {silent: true});
@@ -679,6 +690,9 @@
             avgRating: altSlot.avgRating, reviewCount: altSlot.reviewCount,
             reviews: altSlot.reviews, alternatives: orig.alternatives
         };
+        // 이미 저장된 일정을 보다가 장소를 바꾼 거라 저장 버튼을 숨겨뒀을 수 있는데,
+        // 바뀐 내용을 저장할 수 있게 다시 보여준다.
+        showSaveButton();
         if (dayCache[dayIdx]?.[slotIdx]) {
             dayCache[dayIdx][slotIdx].slot = dayData.slots[slotIdx];
             // alt 좌표 없으면 kakaoSearch로 보완
