@@ -100,6 +100,37 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
     }
 
+    public boolean hasProvidedEmail(User user) {
+        return user != null
+                && StringUtils.hasText(user.getEmail())
+                && !user.getEmail().endsWith(".oauth.local");
+    }
+
+    @Transactional
+    public void updateProfile(Long userId, String name) {
+        User user = findById(userId);
+        user.setName(requireText(name, "이름을 입력해 주세요."));
+    }
+
+    @Transactional
+    public void changeLocalPassword(Long userId, String currentPassword,
+                                    String newPassword, String passwordConfirm) {
+        User user = findById(userId);
+        if (!"local".equals(user.getProvider())) {
+            throw new IllegalArgumentException("소셜 로그인 계정은 비밀번호를 변경할 수 없습니다.");
+        }
+        String normalizedCurrentPassword = requireText(currentPassword, "현재 비밀번호를 입력해 주세요.");
+        String normalizedNewPassword = requireText(newPassword, "새 비밀번호를 입력해 주세요.");
+        if (!passwordEncoder.matches(normalizedCurrentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
+        if (!normalizedNewPassword.equals(passwordConfirm)) {
+            throw new IllegalArgumentException("새 비밀번호가 일치하지 않습니다.");
+        }
+        validatePassword(normalizedNewPassword);
+        user.setPassword(passwordEncoder.encode(normalizedNewPassword));
+    }
+
     @Transactional(readOnly = true)
     public boolean isCommunitySuspended(Long userId) {
         return findById(userId).getAccountStatus() == AccountStatus.SUSPENDED;

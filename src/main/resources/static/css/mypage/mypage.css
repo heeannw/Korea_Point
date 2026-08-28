@@ -2,6 +2,10 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     margin: 0;
     font-family: "Sora", "Noto Sans KR", sans-serif;
@@ -326,6 +330,7 @@ h2 {
 .box.wide {
     grid-column: 2;
     min-width: 0;
+    scroll-margin-top: 94px;
 }
 
 .account-box {
@@ -341,9 +346,21 @@ h2 {
 }
 
 .text-link {
+    border: 0;
+    background: transparent;
     color: #1a7de0;
     font-size: 13px;
     font-weight: 800;
+}
+
+.text-button {
+    padding: 0;
+    cursor: pointer;
+}
+
+.text-button:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .item-list,
@@ -358,6 +375,80 @@ h2 {
     gap: 12px;
 }
 
+.saved-filter,
+.reservation-filter {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+}
+
+.reservation-filter {
+    margin-top: 2px;
+    margin-bottom: 22px;
+}
+
+.saved-filter-btn {
+    min-height: 34px;
+    padding: 0 13px;
+    border: 1px solid #dbeafe;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.saved-filter-btn:hover,
+.saved-filter-btn.active {
+    border-color: #3b9eff;
+    background: #eff6ff;
+    color: #1a7de0;
+}
+
+.saved-place-list {
+    display: grid;
+    gap: 10px;
+}
+
+.saved-place-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 15px;
+    border: 1px solid #e7edf5;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.saved-place-card:hover {
+    border-color: #bae6fd;
+    background: #f8fbff;
+}
+
+.saved-place-card > div {
+    min-width: 0;
+}
+
+.saved-place-card strong {
+    display: block;
+    overflow: hidden;
+    color: #0f172a;
+    font-size: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.saved-place-card p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
 .trip-plan-card {
     display: grid;
     gap: 12px;
@@ -365,6 +456,7 @@ h2 {
     border: 1px solid #e7edf5;
     border-radius: 8px;
     background: #ffffff;
+    cursor: pointer;
 }
 
 .trip-plan-card:hover {
@@ -420,6 +512,65 @@ h2 {
 .trip-actions {
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.kebab-wrap {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.kebab-btn {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #64748b;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.kebab-btn:hover {
+    border-color: #bae6fd;
+    background: #f8fbff;
+    color: #0f172a;
+}
+
+.action-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 5;
+    width: 132px;
+    padding: 6px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.14);
+}
+
+.action-menu button {
+    width: 100%;
+    min-height: 34px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: left;
+    cursor: pointer;
+}
+
+.action-menu button:hover {
+    background: #f1f5f9;
+}
+
+.action-menu button.danger {
+    color: #dc2626;
 }
 
 .mini-btn {
@@ -561,7 +712,18 @@ h2 {
     border-radius: 8px;
     background: #ffffff;
     box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
-    padding: 22px;
+    padding: 28px;
+}
+
+.reservation-side {
+    display: grid;
+    justify-items: end;
+    gap: 10px;
+}
+
+.owner-modal {
+    width: min(820px, 100%);
+    padding: 28px;
 }
 
 .modal-head,
@@ -570,6 +732,10 @@ h2 {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+}
+
+.modal-head {
+    margin-bottom: 18px;
 }
 
 .modal-close {
@@ -653,6 +819,66 @@ h2 {
     justify-content: flex-end;
 }
 
+.modal-list {
+    margin-top: 18px;
+}
+
+.field {
+    display: grid;
+    gap: 6px;
+}
+
+.field.full {
+    grid-column: 1 / -1;
+}
+
+.label {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.input,
+.select,
+.textarea {
+    width: 100%;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #0f172a;
+    font: inherit;
+    outline: none;
+}
+
+.input,
+.select {
+    min-height: 42px;
+    padding: 0 12px;
+}
+
+.textarea {
+    min-height: 92px;
+    padding: 12px;
+    resize: vertical;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+    border-color: #3b9eff;
+}
+
+.reservation-edit-modal {
+    width: min(680px, 100%);
+}
+
+.reservation-edit-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+}
+
 .menu-btn {
     width: 100%;
     min-height: 42px;
@@ -661,20 +887,28 @@ h2 {
     justify-content: center;
     border: 1px solid #dbeafe;
     border-radius: 8px;
-    background: #f8fafc;
-    color: #1a7de0;
+    background: #ffffff;
+    color: #334155;
     font-size: 13px;
     font-weight: 800;
     cursor: pointer;
 }
 
 .menu-btn.logout {
-    color: #64748b;
+    border-color: #fecaca;
+    color: #dc2626;
 }
 
 .menu-btn:hover {
     border-color: #bae6fd;
-    background: #ffffff;
+    background: #f8fbff;
+    color: #1a7de0;
+}
+
+.menu-btn.logout:hover {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #b91c1c;
 }
 
 .menu-list form {
@@ -694,7 +928,13 @@ h2 {
 
 .owner-form {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+}
+
+.owner-form label,
+.owner-form .btn {
+    grid-column: 1 / -1;
 }
 
 .owner-form input[type="text"] {
@@ -776,7 +1016,24 @@ h2 {
     }
 
     .trip-plan-main,
-    .reservation-card {
+    .reservation-card,
+    .saved-place-card {
         display: grid;
+    }
+
+    .reservation-side {
+        justify-items: start;
+    }
+
+    .owner-modal {
+        padding: 22px;
+    }
+
+    .owner-form {
+        grid-template-columns: 1fr;
+    }
+
+    .reservation-edit-form {
+        grid-template-columns: 1fr;
     }
 }

@@ -59,6 +59,7 @@ public class TourismController {
         model.addAttribute("recentKeywords", getRecentKeywords(session));
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());               // ✅ 추가
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
+        model.addAttribute("currentUserId", SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserId() : null);
 
         return "en".equalsIgnoreCase(lang) ? "tourism/tourismEN" : "tourism/tourismKo";
     }
@@ -115,6 +116,7 @@ public class TourismController {
         model.addAttribute("recentKeywords", getRecentKeywords(session));
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());               // ✅ 추가
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
+        model.addAttribute("currentUserId", SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserId() : null);
 
         return "en".equalsIgnoreCase(lang) ? "tourism/tourismEN" : "tourism/tourismKo";
     }
@@ -152,6 +154,7 @@ public class TourismController {
         model.addAttribute("recentKeywords", getRecentKeywords(session));
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());               // ✅ 추가
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
+        model.addAttribute("currentUserId", SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserId() : null);
 
         return "en".equalsIgnoreCase(lang) ? "tourism/tourismEN" : "tourism/tourismKo";
     }

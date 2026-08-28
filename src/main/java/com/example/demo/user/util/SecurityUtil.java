@@ -33,6 +33,9 @@ public class SecurityUtil {
     public static String getCurrentUserName() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomOAuth2User user) {
+            if (user.getDisplayName() != null && !user.getDisplayName().isBlank()) {
+                return user.getDisplayName();
+            }
             Object name = user.getAttributes().get("name");
             return name != null ? name.toString() : auth.getName();
         }
