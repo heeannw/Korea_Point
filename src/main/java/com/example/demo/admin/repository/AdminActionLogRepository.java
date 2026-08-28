@@ -23,21 +23,21 @@ public interface AdminActionLogRepository extends JpaRepository<AdminActionLog, 
 
     @Query(value = """
         SELECT l FROM AdminActionLog l
-        WHERE (:adminId IS NULL OR l.adminUserId = :adminId)
-          AND (:targetType IS NULL OR l.targetType = :targetType)
-          AND (:actionType IS NULL OR l.actionType = :actionType)
-          AND (:reasonCode IS NULL OR l.reasonCode = :reasonCode)
-          AND (:createdFrom IS NULL OR l.createdAt >= :createdFrom)
-          AND (:createdTo IS NULL OR l.createdAt < :createdTo)
+        WHERE (CAST(:adminId AS Long) IS NULL OR l.adminUserId = :adminId)
+          AND (CAST(:targetType AS String) IS NULL OR l.targetType = :targetType)
+          AND (CAST(:actionType AS String) IS NULL OR l.actionType = :actionType)
+          AND (CAST(:reasonCode AS String) IS NULL OR l.reasonCode = :reasonCode)
+          AND (CAST(:createdFrom AS LocalDateTime) IS NULL OR l.createdAt >= :createdFrom)
+          AND (CAST(:createdTo AS LocalDateTime) IS NULL OR l.createdAt < :createdTo)
         """,
         countQuery = """
         SELECT COUNT(l) FROM AdminActionLog l
-        WHERE (:adminId IS NULL OR l.adminUserId = :adminId)
-          AND (:targetType IS NULL OR l.targetType = :targetType)
-          AND (:actionType IS NULL OR l.actionType = :actionType)
-          AND (:reasonCode IS NULL OR l.reasonCode = :reasonCode)
-          AND (:createdFrom IS NULL OR l.createdAt >= :createdFrom)
-          AND (:createdTo IS NULL OR l.createdAt < :createdTo)
+        WHERE (CAST(:adminId AS Long) IS NULL OR l.adminUserId = :adminId)
+          AND (CAST(:targetType AS String) IS NULL OR l.targetType = :targetType)
+          AND (CAST(:actionType AS String) IS NULL OR l.actionType = :actionType)
+          AND (CAST(:reasonCode AS String) IS NULL OR l.reasonCode = :reasonCode)
+          AND (CAST(:createdFrom AS LocalDateTime) IS NULL OR l.createdAt >= :createdFrom)
+          AND (CAST(:createdTo AS LocalDateTime) IS NULL OR l.createdAt < :createdTo)
         """)
     Page<AdminActionLog> searchForAdmin(@Param("adminId") Long adminId,
                                         @Param("targetType") AdminTargetType targetType,
