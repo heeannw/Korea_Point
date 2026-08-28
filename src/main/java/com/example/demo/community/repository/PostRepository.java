@@ -66,13 +66,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         SELECT p FROM Post p
         JOIN p.user u
         LEFT JOIN p.category c
-        WHERE (:categoryId IS NULL OR c.id = :categoryId)
-          AND (:authorId IS NULL OR u.id = :authorId)
-          AND (:keyword IS NULL OR :keyword = '' OR
+        WHERE (CAST(:categoryId AS Long) IS NULL OR c.id = :categoryId)
+          AND (CAST(:authorId AS Long) IS NULL OR u.id = :authorId)
+          AND (CAST(:keyword AS String) IS NULL OR :keyword = '' OR
                LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-          AND (:createdFrom IS NULL OR p.createdAt >= :createdFrom)
-          AND (:createdTo IS NULL OR p.createdAt < :createdTo)
+          AND (CAST(:createdFrom AS LocalDateTime) IS NULL OR p.createdAt >= :createdFrom)
+          AND (CAST(:createdTo AS LocalDateTime) IS NULL OR p.createdAt < :createdTo)
           AND (
                :status = 'all' OR
                (:status = 'active' AND p.deletedAt IS NULL) OR
@@ -84,13 +84,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         SELECT COUNT(p) FROM Post p
         JOIN p.user u
         LEFT JOIN p.category c
-        WHERE (:categoryId IS NULL OR c.id = :categoryId)
-          AND (:authorId IS NULL OR u.id = :authorId)
-          AND (:keyword IS NULL OR :keyword = '' OR
+        WHERE (CAST(:categoryId AS Long) IS NULL OR c.id = :categoryId)
+          AND (CAST(:authorId AS Long) IS NULL OR u.id = :authorId)
+          AND (CAST(:keyword AS String) IS NULL OR :keyword = '' OR
                LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-          AND (:createdFrom IS NULL OR p.createdAt >= :createdFrom)
-          AND (:createdTo IS NULL OR p.createdAt < :createdTo)
+          AND (CAST(:createdFrom AS LocalDateTime) IS NULL OR p.createdAt >= :createdFrom)
+          AND (CAST(:createdTo AS LocalDateTime) IS NULL OR p.createdAt < :createdTo)
           AND (
                :status = 'all' OR
                (:status = 'active' AND p.deletedAt IS NULL) OR

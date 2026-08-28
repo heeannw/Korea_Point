@@ -32,21 +32,21 @@ public interface ContentReportRepository extends JpaRepository<ContentReport, Lo
 
     @Query(value = """
         SELECT r FROM ContentReport r
-        WHERE (:reporterUserId IS NULL OR r.reporterUserId = :reporterUserId)
-          AND (:targetType IS NULL OR r.targetType = :targetType)
-          AND (:status IS NULL OR r.status = :status)
-          AND (:reasonCode IS NULL OR r.reasonCode = :reasonCode)
-          AND (:createdFrom IS NULL OR r.createdAt >= :createdFrom)
-          AND (:createdTo IS NULL OR r.createdAt < :createdTo)
+        WHERE (CAST(:reporterUserId AS Long) IS NULL OR r.reporterUserId = :reporterUserId)
+          AND (CAST(:targetType AS String) IS NULL OR r.targetType = :targetType)
+          AND (CAST(:status AS String) IS NULL OR r.status = :status)
+          AND (CAST(:reasonCode AS String) IS NULL OR r.reasonCode = :reasonCode)
+          AND (CAST(:createdFrom AS LocalDateTime) IS NULL OR r.createdAt >= :createdFrom)
+          AND (CAST(:createdTo AS LocalDateTime) IS NULL OR r.createdAt < :createdTo)
         """,
         countQuery = """
         SELECT COUNT(r) FROM ContentReport r
-        WHERE (:reporterUserId IS NULL OR r.reporterUserId = :reporterUserId)
-          AND (:targetType IS NULL OR r.targetType = :targetType)
-          AND (:status IS NULL OR r.status = :status)
-          AND (:reasonCode IS NULL OR r.reasonCode = :reasonCode)
-          AND (:createdFrom IS NULL OR r.createdAt >= :createdFrom)
-          AND (:createdTo IS NULL OR r.createdAt < :createdTo)
+        WHERE (CAST(:reporterUserId AS Long) IS NULL OR r.reporterUserId = :reporterUserId)
+          AND (CAST(:targetType AS String) IS NULL OR r.targetType = :targetType)
+          AND (CAST(:status AS String) IS NULL OR r.status = :status)
+          AND (CAST(:reasonCode AS String) IS NULL OR r.reasonCode = :reasonCode)
+          AND (CAST(:createdFrom AS LocalDateTime) IS NULL OR r.createdAt >= :createdFrom)
+          AND (CAST(:createdTo AS LocalDateTime) IS NULL OR r.createdAt < :createdTo)
         """)
     Page<ContentReport> searchForAdmin(@Param("reporterUserId") Long reporterUserId,
                                        @Param("targetType") ReportTargetType targetType,
