@@ -33,7 +33,7 @@
         </div>
     </section>
 
-    <section class="profile">
+    <a class="profile profile-link" th:href="@{/ko/settings}" aria-label="계정 설정으로 이동">
         <div class="user-info">
             <div class="avatar" th:text="${currentUserName != null and !#strings.isEmpty(currentUserName) ? #strings.substring(currentUserName, 0, 1) : 'U'}">U</div>
             <div>
@@ -44,6 +44,7 @@
                     <span th:unless="${isOwner}" class="user-mark">개인 여행자</span>
                 </div>
                 <p th:if="${hasProvidedEmail}" th:text="${user.email}">user@koreapoint.com</p>
+                <p class="login-provider" th:text="${loginProviderName}">Google 로그인</p>
             </div>
         </div>
         <div class="point-box" th:if="${isOwner}">
@@ -54,7 +55,7 @@
             <span>활동 상태</span>
             <strong>ACTIVE</strong>
         </div>
-    </section>
+    </a>
 
     <div th:if="${ownerRequestMessage}" class="notice success" th:text="${ownerRequestMessage}">신청이 접수됐어요.</div>
     <div th:if="${ownerRequestError}" class="notice error" th:text="${ownerRequestError}">신청 정보를 확인해 주세요.</div>

@@ -7,3 +7,8 @@ DB_PASSWORD=korea_point_local
 NAVER_CLIENT_ID=
 NAVER_CLIENT_SECRET=
 KAKAO_REST_API_KEY=
+KAKAO_CLIENT_SECRET=
+
+# Gmail SMTP app password for email verification.
+MAIL_USERNAME=
+MAIL_APP_PASSWORD=

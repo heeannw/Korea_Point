@@ -19,17 +19,23 @@ public class CustomOAuth2User implements OAuth2User {
     private final Long userId;          // DB????λ맂 users.id
     private final String role;
     private final String displayName;
+    private final String provider;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public CustomOAuth2User(OAuth2User delegate, Long userId, String role) {
-        this(delegate, userId, role, null);
+        this(delegate, userId, role, null, null);
     }
 
     public CustomOAuth2User(OAuth2User delegate, Long userId, String role, String displayName) {
+        this(delegate, userId, role, displayName, null);
+    }
+
+    public CustomOAuth2User(OAuth2User delegate, Long userId, String role, String displayName, String provider) {
         this.delegate = delegate;
         this.userId = userId;
         this.role = role;
         this.displayName = displayName;
+        this.provider = provider;
 
         Collection<GrantedAuthority> mappedAuthorities = new ArrayList<>(delegate.getAuthorities());
         if (role != null && !role.isBlank()) {
@@ -52,6 +58,10 @@ public class CustomOAuth2User implements OAuth2User {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public String getProvider() {
+        return provider;
     }
 
     @Override

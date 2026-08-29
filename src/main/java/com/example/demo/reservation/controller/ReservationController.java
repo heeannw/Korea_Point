@@ -138,6 +138,7 @@ public class ReservationController {
         model.addAttribute("today", LocalDate.now());
         model.addAttribute("user", user);
         model.addAttribute("hasProvidedEmail", userService.hasProvidedEmail(user));
+        model.addAttribute("loginProviderName", userService.loginProviderName(user));
         model.addAttribute("isOwner", "OWNER".equals(user.getRole()));
         model.addAttribute("ownerRequest", latestOwnerRequest.orElse(null));
         model.addAttribute("ownerStatus", latestOwnerRequest
