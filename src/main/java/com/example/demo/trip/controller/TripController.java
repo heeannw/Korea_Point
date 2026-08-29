@@ -1,5 +1,6 @@
 package com.example.demo.trip.controller;
 
+import com.example.demo.trip.ai.GeminiTripSummaryService;
 import com.example.demo.trip.dto.PlaceDetailDto;
 import com.example.demo.trip.dto.TripRecommendRequest;
 import com.example.demo.trip.dto.TripRecommendResponse;
@@ -20,6 +21,7 @@ import java.util.Map;
 public class TripController {
 
     private final TripRecommendService tripRecommendService;
+    private final GeminiTripSummaryService geminiTripSummaryService;
 
     // ── 공통 세션 세팅 (SecurityUtil로 교체) ──
     private void session(Model model, HttpSession session) {
@@ -94,5 +96,17 @@ public class TripController {
     public ResponseEntity<PlaceDetailDto> placeDetail(@PathVariable Long placeId) {
         PlaceDetailDto detail = tripRecommendService.getPlaceDetail(placeId);
         return detail == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(detail);
+    }
+
+    /**
+     * 장소 상세 패널의 "이 장소는 이런 곳이에요" 한 줄 개요.
+     * 큐레이션 장소든 TourAPI 장소든 원문 소개글이 다 있는 게 아니라서 Gemini에게 즉석에서 물어본다.
+     */
+    @GetMapping("/api/trip/place/description")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> placeDescription(@RequestParam String name,
+                                                                  @RequestParam(required = false) String address) {
+        String description = geminiTripSummaryService.describePlace(name, address);
+        return ResponseEntity.ok(Map.of("description", description));
     }
 }

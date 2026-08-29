@@ -6,6 +6,10 @@ import com.example.demo.trip.dto.TripRecommendRequest.SlotOrder;
 import com.example.demo.trip.dto.TripRecommendResponse;
 import com.example.demo.trip.dto.TripRecommendResponse.*;
 import com.example.demo.tourism.service.UnsplashImageService;
+import com.example.demo.tourism.service.TourismService;
+import com.example.demo.tourism.dto.TourPlaceDto;
+import com.example.demo.trip.client.BusanFestivalClient;
+import com.example.demo.trip.client.BusanFestivalDto;
 import com.example.demo.trip.weather.WeatherForecast;
 import com.example.demo.trip.weather.WeatherForecastService;
 import com.example.demo.trip.weather.WeatherWarningService;
@@ -35,6 +39,8 @@ public class TripRecommendService {
 
     private final ObjectMapper objectMapper;
     private final UnsplashImageService unsplashImageService;
+    private final TourismService tourismService;
+    private final BusanFestivalClient busanFestivalClient;
     private final WeatherForecastService weatherForecastService;
     private final WeatherWarningService weatherWarningService;
     private final GeminiTripSummaryService geminiTripSummaryService;
@@ -82,7 +88,9 @@ public class TripRecommendService {
             String address,   // 한국어 주소
             String imageUrl,  // 대표 이미지 URL
             String nameEn,    // 로마자 변환 이름 (EN용)
-            String categoryEn // 영어 카테고리 (EN용)
+            String categoryEn, // 영어 카테고리 (EN용)
+            boolean adventure, // TourAPI 레포츠(contentTypeId=28) — "액티비티" 취향 가산에 사용
+            String typeName   // 세부 유형(해수욕장/시장/공원 …) — 같은 유형 연속 배치 방지에 사용
     ) {}
 
     private enum PlaceEnvironment { INDOOR, OUTDOOR, MIXED, WEATHER_SENSITIVE }
@@ -106,6 +114,19 @@ public class TripRecommendService {
         AREA_COORDS.put("송정", new double[]{35.1786, 129.1997});
         AREA_COORDS.put("다대포", new double[]{35.0465, 128.9667});
         AREA_COORDS.put("부산역", new double[]{35.1151, 129.0414});
+        // ── 부산 나머지 행정구 (선호 지역 목록을 관광지 몇 군데 이름만이 아니라
+        //    부산 16개 구/군 단위로 넓히기 위해 추가) ──
+        AREA_COORDS.put("수영구", new double[]{35.1454, 129.1132});
+        AREA_COORDS.put("연제구", new double[]{35.1763, 129.0797});
+        AREA_COORDS.put("부산진구", new double[]{35.1629, 129.0531});
+        AREA_COORDS.put("중구", new double[]{35.1000, 129.0325});
+        AREA_COORDS.put("서구", new double[]{35.0975, 129.0244});
+        AREA_COORDS.put("사하구", new double[]{35.1044, 128.9747});
+        AREA_COORDS.put("사상구", new double[]{35.1524, 128.9910});
+        AREA_COORDS.put("북구", new double[]{35.1972, 128.9903});
+        AREA_COORDS.put("금정구", new double[]{35.2429, 129.0921});
+        AREA_COORDS.put("강서구", new double[]{35.2122, 128.9805});
+        AREA_COORDS.put("남구", new double[]{35.1365, 129.0839});
         // ── 한국어 키 ──
         AREA_COORDS.put("종로",   new double[]{37.5704, 126.9920});
         AREA_COORDS.put("명동",   new double[]{37.5636, 126.9827});
@@ -177,11 +198,25 @@ public class TripRecommendService {
             tourismPlacesKo = buildBusanTourismPlaces();
             foodPlacesKo = buildBusanFoodPlaces();
             cafePlacesKo = buildBusanCafePlaces();
+
+            // 손으로 고른 기본 목록(40여 곳) 위에, tourism 모듈이 실시간으로 받아오는
+            // 실제 TourAPI 데이터를 더해서 추천 풀을 넓힌다. tourism 쪽이 잠깐 느리거나
+            // 실패해도 여기서만 막고 큐레이션 목록으로 정상 동작하게 한다.
+            try {
+                tourismPlacesKo = mergeByName(tourismPlacesKo, fetchLiveTourism());
+                foodPlacesKo = mergeByName(foodPlacesKo, fetchLiveFood());
+                cafePlacesKo = mergeByName(cafePlacesKo, fetchLiveCafe());
+            } catch (Exception e) {
+                log.warn("[TripService] TourAPI 실시간 데이터 병합 실패 — 큐레이션 목록만 사용", e);
+            }
+
             tourismPlacesEn = tourismPlacesKo;
             foodPlacesEn = foodPlacesKo;
             cafePlacesEn = cafePlacesKo;
             popularAreaList = new ArrayList<>(List.of("해운대", "광안리", "감천문화마을", "남포동", "영도", "송도", "기장", "서면"));
-            allAreaList = new ArrayList<>(List.of("해운대", "광안리", "감천문화마을", "남포동", "영도", "송도", "기장", "서면", "동래", "송정", "다대포", "부산역"));
+            allAreaList = new ArrayList<>(List.of(
+                    "해운대", "광안리", "감천문화마을", "남포동", "영도", "송도", "기장", "서면", "동래", "송정", "다대포", "부산역",
+                    "수영구", "연제구", "부산진구", "중구", "서구", "사하구", "사상구", "북구", "금정구", "강서구", "남구"));
             log.info("[TripService] 로드 완료 | 관광KO:{} 관광EN:{} 음식KO:{} 음식EN:{} 카페KO:{} 카페EN:{} | 리뷰캐시:{} | 지역:{}",
                     tourismPlacesKo.size(), tourismPlacesEn.size(),
                     foodPlacesKo.size(), foodPlacesEn.size(),
@@ -249,20 +284,127 @@ public class TripRecommendService {
         );
     }
 
+    // ────────────────────────────────────────────
+    //  tourism 모듈(TourApiClient 기반)의 실시간 부산 데이터를 읽어와
+    //  trip의 PlaceData로 변환한다. tourism 쪽 코드는 건드리지 않고 TourismService만 재사용.
+    // ────────────────────────────────────────────
+    private List<PlaceData> fetchLiveTourism() {
+        return tourismService.allList("ko").stream()
+                .map(p -> toPlaceData(p, "tourism"))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    /** food/bar가 섞여 오는 tourism의 foodList를 그대로 받아, bar만 trip의 "bar" 카테고리로 갈라낸다. */
+    private List<PlaceData> fetchLiveFood() {
+        return tourismService.foodList("ko").stream()
+                .map(p -> toPlaceData(p, "bar".equals(p.getFoodCategory()) ? "bar" : "food"))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private List<PlaceData> fetchLiveCafe() {
+        return tourismService.cafeList("ko").stream()
+                .map(p -> toPlaceData(p, "cafe"))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 사용자의 실제 여행 기간과 겹치는 부산 축제(드론쇼·불꽃축제 등)를 가져와 관광 후보 풀에 얹는다.
+     * 날짜 의존적이라 앱 시작 시 한 번 캐시하는 tourismPlacesKo 자체는 건드리지 않고,
+     * 이번 요청에서만 쓸 새 리스트를 만든다. 실패해도 원래 목록 그대로 진행한다.
+     */
+    private List<PlaceData> withFestivals(List<PlaceData> tourismPlaces, TripRecommendRequest req) {
+        java.time.LocalDate startDate = req.getStartDate() != null
+                ? req.getStartDate() : java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"));
+        java.time.LocalDate endDate = startDate.plusDays(Math.max(1, req.getTravelDays()) - 1L);
+
+        List<BusanFestivalDto> festivals;
+        try {
+            festivals = busanFestivalClient.findOverlapping(startDate, endDate);
+        } catch (Exception e) {
+            log.warn("[TripService] 축제 조회 실패 — 축제 없이 진행", e);
+            return tourismPlaces;
+        }
+        if (festivals.isEmpty()) return tourismPlaces;
+
+        Set<String> existingNames = tourismPlaces.stream().map(PlaceData::name).collect(Collectors.toSet());
+        List<PlaceData> merged = new ArrayList<>(tourismPlaces);
+        for (BusanFestivalDto f : festivals) {
+            if (f.title() == null || f.title().isBlank() || !existingNames.add(f.title())) continue;
+            merged.add(new PlaceData(f.title(), "tourism", f.lat(), f.lng(), 4.3, 4.3, 0,
+                    areaFromCoord(f.lat(), f.lng()), "", f.address(), f.imageUrl(), "", "", false, "축제"));
+        }
+        return merged;
+    }
+
+    private PlaceData toPlaceData(TourPlaceDto p, String category) {
+        if (p.getTitle() == null || p.getTitle().isBlank() || p.getLat() == null || p.getLng() == null) return null;
+        double lat = p.getLat(), lng = p.getLng();
+        double rating = p.getRating() != null ? p.getRating() : 4.0;
+        String address = (p.getGoogle_addr() != null && !p.getGoogle_addr().isBlank()) ? p.getGoogle_addr() : p.getAddr();
+        String foodCategory = "food".equals(category) ? mapFoodCategory(p.getFoodCategory()) : "";
+        // TourAPI 레포츠(contentTypeId=28) — 짚라인·서핑·낚시투어 등 "액티비티" 취향 가산 대상
+        boolean adventure = "28".equals(p.getType());
+        String typeName = resolveTypeLabel(p.getTitle(), p.getTypeName());
+        return new PlaceData(p.getTitle(), category, lat, lng, rating, rating, p.getUser_ratings_total(),
+                areaFromCoord(lat, lng), foodCategory, address == null ? "" : address,
+                p.getImage() == null ? "" : p.getImage(), "", "", adventure, typeName);
+    }
+
+    /** 같은 유형(해수욕장/시장/공원 …)이 연속 배치되지 않게 쓸 세부 유형 라벨.
+     *  TourAPI typeName이 있으면 그대로 쓰고, 없으면(큐레이션 목록) 이름에서 대략 추론한다. */
+    private String resolveTypeLabel(String name, String tourApiTypeName) {
+        if (tourApiTypeName != null && !tourApiTypeName.isBlank()) return tourApiTypeName;
+        if (name == null) return "";
+        if (name.contains("해수욕장") || name.contains("해변")) return "해수욕장";
+        if (name.contains("시장")) return "시장";
+        if (name.contains("공원")) return "공원";
+        if (name.contains("사찰") || name.contains("절") || name.endsWith("사")) return "사찰";
+        if (name.contains("박물관") || name.contains("미술관")) return "전시관";
+        if (name.contains("케이블카")) return "케이블카";
+        return "";
+    }
+
+    /** TourAPI의 영문 분류 슬러그를 trip이 쓰는 한글 음식 분류로 옮긴다. */
+    private String mapFoodCategory(String tourFoodCategory) {
+        if (tourFoodCategory == null) return "기타";
+        return switch (tourFoodCategory) {
+            case "korean" -> "한식";
+            case "chinese" -> "중식";
+            case "japanese" -> "일식";
+            case "western" -> "양식";
+            default -> "기타";
+        };
+    }
+
+    /** curated(손으로 고른 목록)를 우선하고, 이름이 겹치지 않는 live 항목만 뒤에 더한다. */
+    private List<PlaceData> mergeByName(List<PlaceData> curated, List<PlaceData> live) {
+        Set<String> existingNames = curated.stream().map(PlaceData::name).collect(Collectors.toSet());
+        List<PlaceData> merged = new ArrayList<>(curated);
+        for (PlaceData p : live) {
+            if (p.name() != null && !p.name().isBlank() && existingNames.add(p.name())) {
+                merged.add(p);
+            }
+        }
+        return merged;
+    }
+
     private PlaceData busanFood(String name, double lat, double lng, String area, String foodCategory) {
         return new PlaceData(name, "food", lat, lng, 4.5, 4.5, 0, area, foodCategory,
-                "부산 " + area, "", "", "");
+                "부산 " + area, "", "", "", false, resolveTypeLabel(name, null));
     }
 
     private PlaceData busanBar(String name, double lat, double lng, String area) {
         return new PlaceData(name, "bar", lat, lng, 4.4, 4.4, 0, area, "",
-                "부산 " + area, "", "", "");
+                "부산 " + area, "", "", "", false, resolveTypeLabel(name, null));
     }
 
     private PlaceData busanPlace(String name, String category, double lat, double lng,
                                  String area, String address, double rating) {
         return new PlaceData(name, category, lat, lng, rating, rating, 0, area, "",
-                address, "", "", "");
+                address, "", "", "", false, resolveTypeLabel(name, null));
     }
 
     // ────────────────────────────────────────────
@@ -364,7 +506,7 @@ public class TripRecommendService {
             String nameEn    = firstStr(m, "nameEn");    // EN JSON에만 존재
             String catEn     = firstStr(m, "categoryEn"); // EN JSON에만 존재
             if (name.isBlank() || lat == 0) continue;
-            list.add(new PlaceData(name, cat, lat, lng, score, star, cnt, areaFromCoord(lat, lng), foodCat, "", "", nameEn, catEn));
+            list.add(new PlaceData(name, cat, lat, lng, score, star, cnt, areaFromCoord(lat, lng), foodCat, "", "", nameEn, catEn, false, ""));
         }
         return list;
     }
@@ -410,13 +552,13 @@ public class TripRecommendService {
             if (name.isBlank()) continue;
             if (lat == 0 && lng == 0) { lat = 35.1796; lng = 129.0756; }
             list.add(new PlaceData(name, "tourism", lat, lng,
-                    score > 0 ? score : 1.0, star, cnt, areaFromCoord(lat, lng), "", addr, img, "", ""));
+                    score > 0 ? score : 1.0, star, cnt, areaFromCoord(lat, lng), "", addr, img, "", "", false, ""));
         }
 
         if (list.isEmpty()) {
             foreignCoverage.forEach((name, cov) -> {
                 double[] coord = AREA_COORDS.getOrDefault(name, new double[]{35.1796, 129.0756});
-                list.add(new PlaceData(name, "tourism", coord[0], coord[1], cov, 4.0, 0, areaFromCoord(coord[0], coord[1]), "", "", "", "", ""));
+                list.add(new PlaceData(name, "tourism", coord[0], coord[1], cov, 4.0, 0, areaFromCoord(coord[0], coord[1]), "", "", "", "", "", false, ""));
             });
         }
         return list;
@@ -457,6 +599,10 @@ public class TripRecommendService {
         List<PlaceData> foodSource    = isEn ? foodPlacesEn    : foodPlacesKo;
         List<PlaceData> cafeSource    = isEn ? cafePlacesEn    : cafePlacesKo;
 
+        // 여행 기간과 겹치는 축제(드론쇼·불꽃축제 등)는 캐시된 공용 목록이 아니라
+        // 요청마다(사용자 여행 날짜 기준으로) 새로 조회해서 이번 요청에서만 후보 풀에 더한다.
+        tourismPlaces = withFestivals(tourismPlaces, req);
+
         List<ScoredPlace> tourism = scoreAll(tourismPlaces, req);
         List<ScoredPlace> food    = scoreAll(foodSource.stream().filter(p -> !"bar".equals(p.category())).collect(Collectors.toList()), req);
         List<ScoredPlace> cafe    = scoreAll(cafeSource, req);
@@ -492,6 +638,8 @@ public class TripRecommendService {
     private double calculateScore(PlaceData p, TripRecommendRequest req) {
         double s = p.score();
         if (isSaved(p, req)) s += 0.5;
+        // 여행 기간에 딱 맞물려 열리는 축제는 흔치 않은 기회라 항상 눈에 띄게 우대한다.
+        if ("축제".equals(p.typeName())) s += 0.3;
         if (req.getMustVisit() != null && req.getMustVisit().stream().anyMatch(mv -> p.name().contains(mv) || mv.contains(p.name()))) s += 0.35;
         if (req.getPreferredAreas() != null && req.getPreferredAreas().stream().anyMatch(a -> p.area().contains(a) || p.name().contains(a) || a.contains(p.name()))) s += 0.18;
         if (req.getCategories() != null) {
@@ -505,6 +653,9 @@ public class TripRecommendService {
             if (cats.contains("culture")  && "tourism".equals(p.category())) s += 0.06;
             if (cats.contains("nature")   && "tourism".equals(p.category())) s += 0.06;
             if (cats.contains("shopping") && "tourism".equals(p.category())) s += 0.04;
+            // 액티비티(짚라인·서핑·낚시투어 등 TourAPI 레포츠) — 다른 취향 가산보다 눈에 띄게 강하게 줘서
+            // 선택했을 때 실제로 우선순위에서 밀리지 않게 한다.
+            if (cats.contains("adventure") && p.adventure())                 s += 0.25;
         }
         s *= foreignCoverage.getOrDefault(p.name(), 1.0);
         if ("high".equals(req.getBudget())) s += 0.03;
@@ -521,6 +672,8 @@ public class TripRecommendService {
     private String buildReason(PlaceData p, TripRecommendRequest req) {
         boolean isEn = "en".equalsIgnoreCase(req.getLang());
         List<String> r = new ArrayList<>();
+        if ("축제".equals(p.typeName()))
+            r.add(isEn ? "Festival during your trip" : "여행 기간 중 열리는 축제");
         if (isSaved(p, req))
             r.add(isEn ? "From your saved list" : "저장한 장소 우선 반영");
         if (req.getMustVisit() != null && req.getMustVisit().stream().anyMatch(mv -> p.name().contains(mv) || mv.contains(p.name())))
@@ -538,6 +691,7 @@ public class TripRecommendService {
             if (cats.contains("night"))   r.add(isEn ? "Nightlife pick"      : "나이트라이프 반영");
             if (cats.contains("food"))    r.add(isEn ? "Food adventure"      : "맛집 탐방");
             if (cats.contains("cafe"))    r.add(isEn ? "Café hopping"        : "카페 투어");
+            if (cats.contains("adventure") && p.adventure()) r.add(isEn ? "Activity pick" : "액티비티 반영");
         }
         if (r.isEmpty()) r.add(isEn ? "Highly rated" : "기본 점수 우수");
         return String.join(", ", r);
@@ -607,6 +761,9 @@ public class TripRecommendService {
                 d.setWeather(summary);
             });
             List<SlotDto> slots = new ArrayList<>();
+            // 바로 앞 관광 슬롯과 같은 세부 유형(해수욕장/시장/공원 …)은 되도록 연달아 배치하지 않는다.
+            // 하루가 바뀌면 초기화 — 다른 날에 비슷한 유형을 또 가는 건 자연스럽다.
+            String lastTourismType = "";
             int currentMinutes = (req.getStartHour() > 0 ? req.getStartHour() : 10) * 60;
             int endMinutes = (req.getEndHour() > 0 ? req.getEndHour() : 21) * 60;
             if (day == 1 && req.getArrivalTime() != null) {
@@ -634,13 +791,23 @@ public class TripRecommendService {
                         }
                         Optional<WeatherForecast> slotWeather = weather;
                         ScoredPlace saved = pickSaved(tourism, used, savedNames);
+                        // 바로 전 슬롯과 같은 세부 유형은 후보 풀에서 우선 제외 — 다 걸러지면(그 유형밖에 안 남으면) 원래 풀로 되돌아간다.
+                        List<ScoredPlace> tourismPool = tourism;
+                        if (saved == null && !lastTourismType.isBlank()) {
+                            final String avoidType = lastTourismType;
+                            List<ScoredPlace> diversified = tourism.stream()
+                                    .filter(sp -> !avoidType.equals(sp.place.typeName()))
+                                    .collect(Collectors.toList());
+                            if (!diversified.isEmpty()) tourismPool = diversified;
+                        }
                         ScoredPlace p = saved != null ? saved
-                                : pickNext(tourism, used, anchorLat, anchorLng, 10.0, slotWeather, airQuality, healthRisk);
+                                : pickNext(tourismPool, used, anchorLat, anchorLng, 10.0, slotWeather, airQuality, healthRisk);
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "tourism", p.place);
                             if (currentMinutes + duration > endMinutes) break;
                             used.add(p.place.name());
-                            SlotDto slot = makeSlot(currentMinutes, duration, "tourism", p, tourism);
+                            lastTourismType = p.place.typeName() == null ? "" : p.place.typeName();
+                            SlotDto slot = makeSlot(currentMinutes, duration, "tourism", p, tourism, used);
                             slotWeather.ifPresent(w -> slot.setReason(weatherReason(w, isIndoor(p.place)) + slot.getReason()));
                             airQuality.filter(AirQuality::bad).ifPresent(a -> slot.setReason(
                                     (isIndoor(p.place) ? "대기질을 고려한 실내 일정 · " : "미세먼지 주의 · ") + slot.getReason()));
@@ -660,7 +827,7 @@ public class TripRecommendService {
                             int duration = resolveDurationMinutes(order, "food", p.place);
                             if (currentMinutes + duration > endMinutes) break;
                             used.add(p.place.name());
-                            SlotDto slot = makeSlot(currentMinutes, duration, "food", p, pool);
+                            SlotDto slot = makeSlot(currentMinutes, duration, "food", p, pool, used);
                             if (fc != null && !fc.isBlank()) slot.setReason("[" + fc + "] " + slot.getReason());
                             slots.add(slot);
                             if (p.place.lat() != 0) { anchorLat = p.place.lat(); anchorLng = p.place.lng(); }
@@ -673,7 +840,7 @@ public class TripRecommendService {
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "cafe", p.place);
                             if (currentMinutes + duration > endMinutes) break;
-                            used.add(p.place.name()); slots.add(makeSlot(currentMinutes, duration, "cafe", p, cafe)); currentMinutes += duration;
+                            used.add(p.place.name()); slots.add(makeSlot(currentMinutes, duration, "cafe", p, cafe, used)); currentMinutes += duration;
                         }
                     }
                     case "bar" -> {
@@ -682,7 +849,7 @@ public class TripRecommendService {
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "bar", p.place);
                             if (currentMinutes + duration > endMinutes) break;
-                            used.add(p.place.name()); slots.add(makeSlot(currentMinutes, duration, "bar", p, bar)); currentMinutes += duration;
+                            used.add(p.place.name()); slots.add(makeSlot(currentMinutes, duration, "bar", p, bar, used)); currentMinutes += duration;
                         }
                     }
                 }
@@ -826,7 +993,7 @@ public class TripRecommendService {
     }
 
     /** SlotDto 생성 — 주소/이미지/별점/리뷰 포함 */
-    private SlotDto makeSlot(int startMinutes, int durationMinutes, String cat, ScoredPlace pick, List<ScoredPlace> pool) {
+    private SlotDto makeSlot(int startMinutes, int durationMinutes, String cat, ScoredPlace pick, List<ScoredPlace> pool, Set<String> used) {
         PlaceData pl = pick.place;
         boolean hasEn = pl.nameEn() != null && !pl.nameEn().isBlank();
         SlotDto s = new SlotDto();
@@ -876,7 +1043,9 @@ public class TripRecommendService {
         }
 
         // 대체 후보 — EN이면 영어 이름 사용
-        s.setAlternatives(buildAlternatives(pl.name(), pl.lat(), pl.lng(), pool));
+        // 대체 후보에 이미 이 일정 다른 슬롯에 확정된 장소가 섞여 나오지 않게 used로 걸러낸다.
+        List<ScoredPlace> altPool = pool.stream().filter(sp -> !used.contains(sp.place.name())).collect(Collectors.toList());
+        s.setAlternatives(buildAlternatives(pl.name(), pl.lat(), pl.lng(), altPool));
         return s;
     }
 
@@ -907,6 +1076,7 @@ public class TripRecommendService {
         List<PlaceData> tourismPlaces = isEn ? tourismPlacesEn : tourismPlacesKo;
         List<PlaceData> foodSource    = isEn ? foodPlacesEn    : foodPlacesKo;
         List<PlaceData> cafeSource    = isEn ? cafePlacesEn    : cafePlacesKo;
+        tourismPlaces = withFestivals(tourismPlaces, req);
 
         List<ScoredPlace> tourism = scoreAll(tourismPlaces, req);
         List<ScoredPlace> food    = scoreAll(foodSource.stream().filter(p -> !"bar".equals(p.category())).collect(Collectors.toList()), req);
