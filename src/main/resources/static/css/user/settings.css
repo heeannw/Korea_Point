@@ -161,6 +161,34 @@ h2 {
     color: #1a7de0;
 }
 
+.btn.secondary:hover {
+    border-color: #3b9eff;
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.email-code-btn {
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.email-code-btn:hover {
+    transform: translateY(-1px);
+}
+
+.email-code-btn:active {
+    transform: translateY(0);
+}
+
+.btn.danger {
+    border-color: #ef4444;
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.btn.danger:hover {
+    background: #dc2626;
+}
+
 .notice,
 .settings-nav,
 .box {
@@ -187,6 +215,11 @@ h2 {
     border-color: #fecaca;
     background: #fef2f2;
     color: #dc2626;
+}
+
+.inline-notice {
+    margin-bottom: 14px;
+    box-shadow: none;
 }
 
 .settings-layout {
@@ -218,7 +251,8 @@ h2 {
 }
 
 .menu-list,
-.settings-form {
+.settings-form,
+.email-settings {
     display: grid;
     gap: 10px;
 }
@@ -256,6 +290,19 @@ h2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.verify-form {
+    margin-top: 2px;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.email-hint {
+    padding: 10px 12px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    background: #f8fbff;
+}
+
 .field {
     display: grid;
     gap: 6px;
@@ -264,6 +311,14 @@ h2 {
 .field:nth-last-of-type(1):nth-child(3),
 .settings-form .hint,
 .settings-form .btn {
+    grid-column: 1 / -1;
+}
+
+.field.full {
+    grid-column: 1 / -1;
+}
+
+.empty.full {
     grid-column: 1 / -1;
 }
 
@@ -293,6 +348,42 @@ h2 {
     color: #64748b;
 }
 
+.password-field {
+    position: relative;
+    display: block;
+}
+
+.password-field .input {
+    padding-right: 46px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.password-toggle:hover {
+    color: #2563eb;
+    background: #eff6ff;
+}
+
+.password-toggle i {
+    width: 18px;
+    height: 18px;
+}
+
 .status-badge {
     display: inline-flex;
     align-items: center;
@@ -304,6 +395,12 @@ h2 {
     color: #64748b;
     font-size: 12px;
     font-weight: 800;
+}
+
+.status-badge.danger {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #dc2626;
 }
 
 .empty {
@@ -318,6 +415,14 @@ h2 {
 
 .danger-box {
     background: #fffafa;
+}
+
+.danger-form .hint {
+    padding: 14px 16px;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background: #fff7f7;
+    color: #7f1d1d;
 }
 
 @media (max-width: 900px) {

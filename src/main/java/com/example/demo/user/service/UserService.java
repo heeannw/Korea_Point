@@ -50,6 +50,7 @@ public class UserService {
         if (userRepository.existsByProviderAndProviderId("local", normalizedLoginId)) {
             throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
         }
+        validateEmailAvailableForLocalSignup(requireText(email, "이메일을 입력해 주세요."));
 
         return userRepository.save(User.builder()
                 .provider("local")
@@ -64,7 +65,8 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public Optional<User> findLocalUserByLoginId(String loginId) {
-        return userRepository.findByProviderAndProviderId("local", loginId);
+        return userRepository.findByProviderAndProviderId("local", loginId)
+                .filter(user -> user.getAccountStatus() != AccountStatus.WITHDRAWN);
     }
 
     @Transactional(readOnly = true)
@@ -106,6 +108,19 @@ public class UserService {
                 && !user.getEmail().endsWith(".oauth.local");
     }
 
+    public String loginProviderName(User user) {
+        if (user == null || !StringUtils.hasText(user.getProvider())) {
+            return "알 수 없음";
+        }
+        return switch (user.getProvider()) {
+            case "local" -> "아이디 로그인";
+            case "google" -> "Google 로그인";
+            case "naver" -> "네이버 로그인";
+            case "kakao" -> "카카오 로그인";
+            default -> "소셜 로그인";
+        };
+    }
+
     @Transactional
     public void updateProfile(Long userId, String name) {
         User user = findById(userId);
@@ -127,8 +142,49 @@ public class UserService {
         if (!normalizedNewPassword.equals(passwordConfirm)) {
             throw new IllegalArgumentException("새 비밀번호가 일치하지 않습니다.");
         }
+        if (passwordEncoder.matches(normalizedNewPassword, user.getPassword())) {
+            throw new IllegalArgumentException("기존 비밀번호와 같은 비밀번호는 사용할 수 없습니다.");
+        }
         validatePassword(normalizedNewPassword);
         user.setPassword(passwordEncoder.encode(normalizedNewPassword));
+    }
+
+    @Transactional
+    public void updateLocalEmail(Long userId, String email) {
+        User user = findById(userId);
+        if (!"local".equals(user.getProvider())) {
+            throw new IllegalArgumentException("소셜 로그인 계정은 이메일을 직접 변경할 수 없습니다.");
+        }
+        String normalizedEmail = requireText(email, "이메일을 입력해 주세요.");
+        validateEmailAvailableForLocalSignup(normalizedEmail);
+        user.setEmail(normalizedEmail);
+    }
+
+    @Transactional
+    public void withdrawAccount(Long userId, String currentPassword, String confirmationText) {
+        User user = findById(userId);
+        if (user.getAccountStatus() == AccountStatus.WITHDRAWN) {
+            throw new IllegalArgumentException("이미 탈퇴한 계정입니다.");
+        }
+
+        if ("local".equals(user.getProvider())) {
+            String normalizedCurrentPassword = requireText(currentPassword, "현재 비밀번호를 입력해 주세요.");
+            if (!passwordEncoder.matches(normalizedCurrentPassword, user.getPassword())) {
+                throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+            }
+        } else if (!"탈퇴합니다".equals(requireText(confirmationText, "확인 문구를 입력해 주세요."))) {
+            throw new IllegalArgumentException("확인 문구가 일치하지 않습니다.");
+        }
+
+        user.setAccountStatus(AccountStatus.WITHDRAWN);
+        user.setProvider("withdrawn");
+        user.setProviderId("withdrawn:" + user.getId());
+        user.setName("탈퇴한 사용자");
+        user.setEmail("withdrawn:" + user.getId() + "@koreapoint.local");
+        user.setPassword(null);
+        user.setProfileImage(null);
+        user.setRole("USER");
+        user.setPoint(0);
     }
 
     @Transactional(readOnly = true)
@@ -146,6 +202,17 @@ public class UserService {
         if (!PASSWORD_PATTERN.matcher(password).matches()) {
             throw new IllegalArgumentException("비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자로 입력해 주세요.");
         }
+    }
+
+    private void validateEmailAvailableForLocalSignup(String email) {
+        userRepository.findByEmail(email).stream()
+                .filter(user -> user.getAccountStatus() != AccountStatus.WITHDRAWN)
+                .findFirst()
+                .ifPresent(user -> {
+                    throw new IllegalArgumentException(
+                            "이미 " + loginProviderName(user) + "으로 가입된 이메일입니다."
+                    );
+                });
     }
 
     private String requireText(String value, String message) {
