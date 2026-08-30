@@ -1,0 +1,32 @@
+package com.example.demo.home.dto;
+
+import lombok.Builder;
+import lombok.Getter;
+
+/**
+ * 홈 "가볼 만한 곳" 카드 하나에 들어갈 데이터.
+ *
+ * <p>별점·리뷰 수 같은 항목은 담지 않는다. 관광공사 API에 없는 값이라
+ * 화면에 띄우려면 지어내야 하기 때문이다. 우리가 실제로 가진 것만 담는다.
+ */
+@Getter
+@Builder
+public class PlaceCardDto {
+
+    /** 관광공사 콘텐츠 ID — 관광 페이지로 넘길 때 쓴다 */
+    private final String contentId;
+
+    private final String title;
+
+    /** 주소 (예: 부산광역시 해운대구 …) */
+    private final String address;
+
+    /** 대표 이미지 (https 로 맞춰둔 주소) */
+    private final String imageUrl;
+
+    /**
+     * 이미지를 잘라내도 되는지.
+     * 관광공사 이미지의 상당수가 "변경금지"라 크롭이 위반이 된다.
+     */
+    private final boolean imageModifiable;
+}

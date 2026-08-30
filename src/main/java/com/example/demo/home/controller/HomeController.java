@@ -1,6 +1,7 @@
 package com.example.demo.home.controller;
 
 import com.example.demo.home.service.HomeFestivalService;
+import com.example.demo.home.service.HomePlaceService;
 import com.example.demo.home.service.HomeService;
 import com.example.demo.user.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ public class HomeController {
 
     private final HomeService homeService;
     private final HomeFestivalService homeFestivalService;
+    private final HomePlaceService homePlaceService;
 
 
     // @GetMapping: 브라우저에서 GET 방식으로 "/" 또는 "/en" 에 접속했을 때 이 메서드 실행
@@ -74,18 +76,10 @@ public class HomeController {
                 Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/d/d4/Gwanghwamun_%28Main_gate_of_Gyeongbokgung_Palace%29.jpg")
         ));
 
-        // ── 추천 관광지 카드 리스트 ────────────────────────────────────────────
-        // attraction() 헬퍼 메서드를 호출하여 각 관광지 Map 을 생성
-        // 총 3개의 관광지 데이터를 리스트로 묶어서 "attractions" 이름으로 Model에 추가
-        // Thymeleaf에서 th:each 로 반복하며 각 attraction.title, attraction.rating 등을 꺼내 씀
-        model.addAttribute("attractions", List.of(
-                attraction("1", "Gyeongbokgung Palace", "경복궁", "Jongno-gu, Seoul", "서울 종로구", "4.9", "2.3k",
-                        "https://upload.wikimedia.org/wikipedia/commons/4/46/%EA%B2%BD%EB%B3%B5%EA%B6%81_%ED%9D%A5%EB%A1%80%EB%AC%B8_%EC%A0%84%EC%B2%B4_%EC%A0%84%EA%B2%BD%28%EA%B6%81%EB%8A%A5%EC%9C%A0%EC%A0%81%EB%B3%B8%EB%B6%80%29-min.jpg"),
-                attraction("2", "Bukchon Hanok Village", "북촌한옥마을", "Jongno-gu, Seoul", "서울 종로구", "4.8", "1.8k",
-                        "https://upload.wikimedia.org/wikipedia/commons/a/a5/Bukchon-ro_11-gil_street_with_hanok_houses_and_wooden_gate_in_Bukchon_Hanok_Village_Seoul.jpg"),
-                attraction("3", "Namsan Seoul Tower", "남산서울타워", "Yongsan-gu, Seoul", "서울 용산구", "4.7", "3.1k",
-                        "https://images.pexels.com/photos/2848492/pexels-photo-2848492.jpeg?cs=srgb&dl=pexels-pixabay-2848492.jpg&fm=jpg")
-        ));
+        // ── 가볼 만한 곳 ─────────────────────────────────────────────────
+        // 부산 관광지를 관광공사 API에서 받아온다. 예전에는 서울 3곳이 코드에
+        // 박혀 있었고 별점·리뷰 수도 지어낸 값이었다. 둘 다 걷어냈다.
+        model.addAttribute("places", homePlaceService.getRecommendedPlaces(lang, 6));
 
         // ── 커뮤니티 게시글 리스트 ────────────────────────────────────────────
         // post() 헬퍼 메서드를 호출하여 각 게시글 Map 을 생성
@@ -97,25 +91,6 @@ public class HomeController {
         // 관광공사 데이터 중 유일하게 기간이 있는 자료라, 접속 시점에 따라 화면이 바뀐다.
         // 대표이미지 보유율이 100%라 카드가 비지 않는다.
         model.addAttribute("festivals", homeFestivalService.getUpcomingFestivals(lang, 4));
-    }
-
-    // ── attraction 헬퍼 메서드 ──────────────────────────────────────────────────
-    // 관광지 데이터 하나를 Map<String, String> 형태로 만들어 반환
-    // Map.of()의 최대 인자 쌍은 10개 → 딱 8쌍 사용 중 (rank, title, titleKo, location, locationKo, rating, reviews, imageUrl)
-    // 반환된 Map 하나 = 관광지 카드 하나
-    private Map<String, String> attraction(String rank, String title, String titleKo,
-                                           String location, String locationKo,
-                                           String rating, String reviews, String imageUrl) {
-        return Map.of(
-                "rank", rank,           // 순위 번호 (1, 2, 3)
-                "title", title,         // 영어 관광지 이름
-                "titleKo", titleKo,     // 한국어 관광지 이름
-                "location", location,   // 영어 위치
-                "locationKo", locationKo, // 한국어 위치
-                "rating", rating,       // 별점 (예: "4.9")
-                "reviews", reviews,     // 리뷰 수 (예: "2.3k")
-                "imageUrl", imageUrl    // 관광지 이미지 URL
-        );
     }
 
     // ── post 헬퍼 메서드 ────────────────────────────────────────────────────────

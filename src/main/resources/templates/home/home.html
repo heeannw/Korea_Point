@@ -11,7 +11,7 @@
         2. header: logo / language buttons / login button
         3. hero: main slider and headline
         4. categories: service shortcuts
-        5. popular-section: top attraction cards
+        5. place-section: Busan attraction cards
         6. community-section: latest posts
         7. footer: policy links and social links
         8. script: hero slider behavior
@@ -449,7 +449,9 @@
         }
 
         /* ===== 5. Popular Attractions ===== */
-        .popular-section .section-header {
+        .popular-section .section-header,
+        .festival-section .section-header,
+        .place-section .section-header {
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
@@ -465,7 +467,8 @@
             gap: 20px;
         }
 
-        .festival-card {
+        .festival-card,
+        .place-card {
             display: flex;
             flex-direction: column;
             border-radius: var(--radius);
@@ -478,12 +481,14 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .festival-card:hover {
+        .festival-card:hover,
+        .place-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 12px 40px rgba(59, 158, 255, 0.20);
         }
 
-        .festival-media {
+        .festival-media,
+        .place-media {
             position: relative;
             height: 190px;
             background: #f4f6f8;
@@ -493,14 +498,16 @@
            관광공사 이미지의 62%가 저작권 "변경금지"(Type3)라 크롭이 위반이 된다.
            기본은 원본 비율 유지(contain)로 두고, 변경이 허용된 항목만 cover 로 채운다.
         */
-        .festival-image {
+        .festival-image,
+        .place-image {
             width: 100%;
             height: 100%;
             display: block;
             object-fit: contain;
         }
 
-        .festival-image.can-crop {
+        .festival-image.can-crop,
+        .place-image.can-crop {
             object-fit: cover;
         }
 
@@ -521,7 +528,8 @@
             background: #ef4444;
         }
 
-        .festival-body {
+        .festival-body,
+        .place-body {
             padding: 16px 18px 20px;
         }
 
@@ -532,7 +540,8 @@
             margin-bottom: 6px;
         }
 
-        .festival-title {
+        .festival-title,
+        .place-title {
             font-size: 16px;
             font-weight: 700;
             line-height: 1.35;
@@ -540,7 +549,8 @@
             margin-bottom: 6px;
         }
 
-        .festival-address {
+        .festival-address,
+        .place-address {
             font-size: 13px;
             color: var(--gray);
         }
@@ -551,6 +561,17 @@
 
         @media (max-width: 520px) {
             .festival-grid { grid-template-columns: 1fr; }
+        }
+
+
+        .place-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .place-media {
+            height: 200px;
         }
 
         .popular-grid {
@@ -1205,67 +1226,37 @@
     </div>
 </section>
 
-<!-- Popular attractions: each card opens the matching tour search -->
-<section class="section popular-section">
+<!-- Places to visit: each card opens that place in the tour page -->
+<!-- Places to visit in Busan (KTO areaBasedList2) -->
+<section class="section place-section" th:if="${!#lists.isEmpty(places)}">
     <div class="section-header">
         <div>
-            <h2 class="section-title">Popular Attractions</h2>
-            <p class="section-sub">Top 3 places visitors love most</p>
+            <h2 class="section-title">Places to visit</h2>
+            <p class="section-sub">Handpicked attractions around Busan</p>
         </div>
         <a class="see-all" th:href="@{/tour/all(lang='en')}" href="/tour/all?lang=en">See all</a>
-
     </div>
 
-    <div class="popular-grid">
-        <!-- Featured card: the first attraction in the list -->
-        <a class="popular-card featured"
-           th:if="${!#lists.isEmpty(attractions)}"
-           th:with="attraction=${attractions[0]}, tourKeyword=${attraction.title == 'Namsan Seoul Tower' ? 'N Seoul Tower' : attraction.title}"
-           th:href="@{/tour/search/(keyword=${tourKeyword},lang='en')}"
-           href="/tour/search/?keyword=Gyeongbokgung%20Palace">
-            <div class="popular-media">
-                <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 1</div>
-                <div class="popular-image"
-                     th:style="|background-image:url('${attraction.imageUrl}')|"
-                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/4/46/%EA%B2%BD%EB%B3%B5%EA%B6%81_%ED%9D%A5%EB%A1%80%EB%AC%B8_%EC%A0%84%EC%B2%B4_%EC%A0%84%EA%B2%BD%28%EA%B6%81%EB%8A%A5%EC%9C%A0%EC%A0%81%EB%B3%B8%EB%B6%80%29-min.jpg')"></div>
+    <div class="place-grid">
+        <a class="place-card"
+           th:each="place : ${places}"
+           th:href="@{/tour/all(lang='en',focus=${place.contentId})}"
+           href="/tour/all?lang=en">
+            <div class="place-media">
+                <img class="place-image"
+                     th:classappend="${place.imageModifiable} ? ' can-crop'"
+                     th:src="${place.imageUrl}"
+                     th:alt="${place.title}"
+                     loading="lazy" alt="">
             </div>
-            <div class="popular-body">
-                <div class="popular-title" th:text="${attraction.title}">Gyeongbokgung Palace</div>
-                <div class="popular-location" th:text="${attraction.location}">Jongno-gu, Seoul</div>
-                <div class="popular-rating">
-                    <span th:text="${attraction.rating}">4.9</span>
-                    <span class="popular-reviews" th:text="|(${attraction.reviews})|">(2.3k)</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- Remaining cards: render the rest of the attractions -->
-        <a class="popular-card"
-           th:each="attraction, iter : ${attractions}"
-           th:if="${!iter.first}"
-           th:classappend="${attraction.title == 'Namsan Seoul Tower'} ? ' namsan-card'"
-           th:with="tourKeyword=${attraction.title == 'Namsan Seoul Tower' ? 'N Seoul Tower' : attraction.title}"
-           th:href="@{/tour/search/(keyword=${tourKeyword},lang='en')}"
-           href="/tour/search/?keyword=Bukchon%20Hanok%20Village">
-            <div class="popular-media">
-                <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 2</div>
-                <div class="popular-image"
-                     th:style="|background-image:url('${attraction.imageUrl}')|"
-                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/4/46/%EA%B2%BD%EB%B3%B5%EA%B6%81_%ED%9D%A5%EB%A1%80%EB%AC%B8_%EC%A0%84%EC%B2%B4_%EC%A0%84%EA%B2%BD%28%EA%B6%81%EB%8A%A5%EC%9C%A0%EC%A0%81%EB%B3%B8%EB%B6%80%29-min.jpg')"></div>
-            </div>
-            <div class="popular-body">
-                <div class="popular-title" th:text="${attraction.title}">Bukchon Hanok Village</div>
-                <div class="popular-location" th:text="${attraction.location}">Jongno-gu, Seoul</div>
-                <div class="popular-rating">
-                    <span th:text="${attraction.rating}">4.8</span>
-                    <span class="popular-reviews" th:text="|(${attraction.reviews})|">(1.8k)</span>
-                </div>
+            <div class="place-body">
+                <div class="place-title" th:text="${place.title}">Busan attraction</div>
+                <div class="place-address" th:text="${place.address}">Busan</div>
             </div>
         </a>
     </div>
 </section>
 
-<!-- Community preview: latest posts from the board -->
 <section class="community-section">
     <div class="community-inner">
         <div class="section-header-row">

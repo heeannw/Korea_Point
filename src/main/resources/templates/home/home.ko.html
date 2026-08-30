@@ -12,7 +12,7 @@
         2. header: 로고 / 언어 버튼 / 로그인 버튼
         3. hero: 메인 슬라이더와 대표 문구
         4. categories: 주요 서비스 바로가기
-        5. popular-section: 인기 관광지 카드
+        5. place-section: 부산 관광지 카드
         6. community-section: 최신 게시글 목록
         7. footer: 정책 링크와 소셜 링크
         8. script: 히어로 슬라이더 동작
@@ -443,7 +443,9 @@
         }
 
         /* ===== 5. 인기 관광지 ===== */
-        .popular-section .section-header {
+        .popular-section .section-header,
+        .festival-section .section-header,
+        .place-section .section-header {
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
@@ -459,7 +461,8 @@
             gap: 20px;
         }
 
-        .festival-card {
+        .festival-card,
+        .place-card {
             display: flex;
             flex-direction: column;
             border-radius: var(--radius);
@@ -472,12 +475,14 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .festival-card:hover {
+        .festival-card:hover,
+        .place-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 12px 40px rgba(59, 158, 255, 0.20);
         }
 
-        .festival-media {
+        .festival-media,
+        .place-media {
             position: relative;
             height: 190px;
             background: #f4f6f8;
@@ -487,14 +492,16 @@
            관광공사 이미지의 62%가 저작권 "변경금지"(Type3)라 크롭이 위반이 된다.
            기본은 원본 비율 유지(contain)로 두고, 변경이 허용된 항목만 cover 로 채운다.
         */
-        .festival-image {
+        .festival-image,
+        .place-image {
             width: 100%;
             height: 100%;
             display: block;
             object-fit: contain;
         }
 
-        .festival-image.can-crop {
+        .festival-image.can-crop,
+        .place-image.can-crop {
             object-fit: cover;
         }
 
@@ -515,7 +522,8 @@
             background: #ef4444;
         }
 
-        .festival-body {
+        .festival-body,
+        .place-body {
             padding: 16px 18px 20px;
         }
 
@@ -526,7 +534,8 @@
             margin-bottom: 6px;
         }
 
-        .festival-title {
+        .festival-title,
+        .place-title {
             font-size: 16px;
             font-weight: 700;
             line-height: 1.35;
@@ -534,7 +543,8 @@
             margin-bottom: 6px;
         }
 
-        .festival-address {
+        .festival-address,
+        .place-address {
             font-size: 13px;
             color: var(--gray);
         }
@@ -545,6 +555,17 @@
 
         @media (max-width: 520px) {
             .festival-grid { grid-template-columns: 1fr; }
+        }
+
+
+        .place-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .place-media {
+            height: 200px;
         }
 
         .popular-grid {
@@ -1189,67 +1210,36 @@
 </section>
 
 <!-- 인기 관광지: 한국어 홈에서 보여주는 상위 3개 관광지 카드 -->
-<section class="section popular-section">
+<!-- 가볼 만한 곳: 부산 관광지 (한국관광공사 지역기반 관광정보조회) -->
+<section class="section place-section" th:if="${!#lists.isEmpty(places)}">
     <div class="section-header">
         <div>
-            <h2 class="section-title">인기 명소</h2>
-            <p class="section-sub">방문객들이 가장 많이 찾는 명소 3곳</p>
+            <h2 class="section-title">가볼 만한 곳</h2>
+            <p class="section-sub">부산의 관광지를 골라 담았습니다</p>
         </div>
         <a class="see-all" th:href="@{/tour/all(lang='ko')}" href="/tour/all?lang=ko">전체보기</a>
-
     </div>
 
-    <div class="popular-grid">
-        <!--
-            핵심 수정: keyword를 영어 title 대신 한국어 titleKo로 전달
-            KR JSON의 title 필드가 한국어이므로 searchKeyword()에서 정상 매칭됨
-        -->
-        <a class="popular-card featured"
-           th:if="${!#lists.isEmpty(attractions)}"
-           th:with="attraction=${attractions[0]}"
-           th:href="@{/tour/search/(keyword=${attraction.titleKo},lang='ko')}"
-           href="/tour/search/?keyword=경복궁&lang=ko">
-            <div class="popular-media">
-                <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 1</div>
-                <div class="popular-image"
-                     th:style="|background-image:url('${attraction.imageUrl}')|"
-                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/4/46/%EA%B2%BD%EB%B3%B5%EA%B6%81_%ED%9D%A5%EB%A1%80%EB%AC%B8_%EC%A0%84%EC%B2%B4_%EC%A0%84%EA%B2%BD%28%EA%B6%81%EB%8A%A5%EC%9C%A0%EC%A0%81%EB%B3%B8%EB%B6%80%29-min.jpg')"></div>
+    <div class="place-grid">
+        <a class="place-card"
+           th:each="place : ${places}"
+           th:href="@{/tour/all(lang='ko',focus=${place.contentId})}"
+           href="/tour/all?lang=ko">
+            <div class="place-media">
+                <img class="place-image"
+                     th:classappend="${place.imageModifiable} ? ' can-crop'"
+                     th:src="${place.imageUrl}"
+                     th:alt="${place.title}"
+                     loading="lazy" alt="">
             </div>
-            <div class="popular-body">
-                <div class="popular-title" th:text="${attraction.titleKo}">경복궁</div>
-                <div class="popular-location" th:text="${attraction.locationKo}">서울 종로구</div>
-                <div class="popular-rating">
-                    <span th:text="${attraction.rating}">4.9</span>
-                    <span class="popular-reviews" th:text="|(${attraction.reviews})|">(2.3k)</span>
-                </div>
-            </div>
-        </a>
-
-        <a class="popular-card"
-           th:each="attraction, iter : ${attractions}"
-           th:if="${!iter.first}"
-           th:classappend="${attraction.titleKo == '남산서울타워'} ? ' namsan-card'"
-           th:href="@{/tour/search/(keyword=${attraction.titleKo},lang='ko')}"
-           href="/tour/search/?keyword=북촌한옥마을&lang=ko">
-            <div class="popular-media">
-                <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 2</div>
-                <div class="popular-image"
-                     th:style="|background-image:url('${attraction.imageUrl}')|"
-                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/4/46/%EA%B2%BD%EB%B3%B5%EA%B6%81_%ED%9D%A5%EB%A1%80%EB%AC%B8_%EC%A0%84%EC%B2%B4_%EC%A0%84%EA%B2%BD%28%EA%B6%81%EB%8A%A5%EC%9C%A0%EC%A0%81%EB%B3%B8%EB%B6%80%29-min.jpg')"></div>
-            </div>
-            <div class="popular-body">
-                <div class="popular-title" th:text="${attraction.titleKo}">북촌한옥마을</div>
-                <div class="popular-location" th:text="${attraction.locationKo}">서울 종로구</div>
-                <div class="popular-rating">
-                    <span th:text="${attraction.rating}">4.8</span>
-                    <span class="popular-reviews" th:text="|(${attraction.reviews})|">(1.8k)</span>
-                </div>
+            <div class="place-body">
+                <div class="place-title" th:text="${place.title}">부산 관광지</div>
+                <div class="place-address" th:text="${place.address}">부산광역시</div>
             </div>
         </a>
     </div>
 </section>
 
-<!-- 커뮤니티 미리보기: 게시판 최신 글 목록 -->
 <section class="community-section">
     <div class="community-inner">
         <div class="section-header-row">
