@@ -66,7 +66,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public Optional<User> findLocalUserByLoginId(String loginId) {
         return userRepository.findByProviderAndProviderId("local", loginId)
-                .filter(user -> user.getAccountStatus() != AccountStatus.WITHDRAWN);
+                .filter(user -> !isWithdrawn(user));
     }
 
     @Transactional(readOnly = true)
@@ -163,7 +163,7 @@ public class UserService {
     @Transactional
     public void withdrawAccount(Long userId, String currentPassword, String confirmationText) {
         User user = findById(userId);
-        if (user.getAccountStatus() == AccountStatus.WITHDRAWN) {
+        if (isWithdrawn(user)) {
             throw new IllegalArgumentException("이미 탈퇴한 계정입니다.");
         }
 
@@ -176,7 +176,7 @@ public class UserService {
             throw new IllegalArgumentException("확인 문구가 일치하지 않습니다.");
         }
 
-        user.setAccountStatus(AccountStatus.WITHDRAWN);
+        user.setAccountStatus(AccountStatus.SUSPENDED);
         user.setProvider("withdrawn");
         user.setProviderId("withdrawn:" + user.getId());
         user.setName("탈퇴한 사용자");
@@ -206,13 +206,17 @@ public class UserService {
 
     private void validateEmailAvailableForLocalSignup(String email) {
         userRepository.findByEmail(email).stream()
-                .filter(user -> user.getAccountStatus() != AccountStatus.WITHDRAWN)
+                .filter(user -> !isWithdrawn(user))
                 .findFirst()
                 .ifPresent(user -> {
                     throw new IllegalArgumentException(
                             "이미 " + loginProviderName(user) + "으로 가입된 이메일입니다."
                     );
                 });
+    }
+
+    private boolean isWithdrawn(User user) {
+        return user != null && "withdrawn".equals(user.getProvider());
     }
 
     private String requireText(String value, String message) {

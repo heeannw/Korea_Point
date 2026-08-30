@@ -461,6 +461,8 @@
 <script th:inline="javascript">
     const currentUserId = /*[[${currentUserId}]]*/ null;
     const savedPlacesKey = currentUserId ? `tourSavedPlaces:${currentUserId}` : 'tourSavedPlaces:guest';
+    const legacySavedPlaceKeys = ['tourSavedPlaces', 'tourSavedPlaces:guest', 'tourSavedPlaces:null', 'tourSavedPlaces:undefined']
+        .filter(key => key !== savedPlacesKey);
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
     const jsonHeaders = {'Content-Type': 'application/json'};
@@ -775,6 +777,32 @@
         }
     }
 
+    function migrateLegacySavedPlaces() {
+        const current = readSavedPlaces(savedPlacesKey);
+        const merged = [...current];
+        const seen = new Set(current.map(place => String(place.id)));
+        let migrated = false;
+
+        legacySavedPlaceKeys.forEach(key => {
+            const places = readSavedPlaces(key);
+            places.forEach(place => {
+                const id = String(place.id);
+                if (!seen.has(id)) {
+                    seen.add(id);
+                    merged.push(place);
+                    migrated = true;
+                }
+            });
+            if (places.length > 0) {
+                localStorage.removeItem(key);
+            }
+        });
+
+        if (migrated) {
+            localStorage.setItem(savedPlacesKey, JSON.stringify(merged));
+        }
+    }
+
     async function fillLegacyTourPlace(place) {
         if (place.title && !/^저장한 관광지/.test(place.title)) return place;
         try {
@@ -793,6 +821,7 @@
     }
 
     async function buildSavedPlaceItems() {
+        migrateLegacySavedPlaces();
         const tourPlaces = readSavedPlaces(savedPlacesKey);
         const items = await Promise.all(tourPlaces.map(async (place, index) => {
             const filled = await fillLegacyTourPlace(place);
