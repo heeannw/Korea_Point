@@ -357,6 +357,11 @@
             transform: translateY(-3px);
         }
 
+        .category-icon svg {
+            width: 28px;
+            height: 28px;
+        }
+
         .category-icon {
             width: 64px;
             height: 64px;
@@ -1206,42 +1211,6 @@
     </div>
 </section>
 
-<section class="categories" id="categorySection">
-    <div class="category-grid">
-        <a class="category-item" th:href="@{/en/foodmap/all(category='ALL',lang='en')}" href="/en/foodmap/all?category=ALL&lang=en">
-            <span class="category-icon">🍴</span>
-            <span>Food</span>
-        </a>
-        <a class="category-item" th:href="@{/en/cafe/all(lang='en')}" href="/en/cafe/all?lang=en">
-            <span class="category-icon">☕</span>
-            <span>Cafe</span>
-        </a>
-        <a class="category-item" th:href="@{/tour/location(lang=EN)}" href="/tour/location?lang=en">
-            <span class="category-icon">📷</span>
-            <span>Tour</span>
-        </a>
-        <a class="category-item" th:href="@{/en/transport/search}" href="/transport/search">
-            <span class="category-icon">🚆</span>
-            <span>Transport</span>
-        </a>
-        <a class="category-item" th:href="@{/community/post-list(lang='en')}" href="/community/post-list?lang='en'">
-            <span class="category-icon">💬</span>
-            <span>Community</span>
-        </a>
-        <a class="category-item" th:href="@{/ko/trip}" href="/ko/trip" aria-label="Custom Trip">
-            <span class="category-icon">🧳</span>
-            <span>Custom Trip</span>
-        </a>
-        <a class="category-item" th:href="@{/ko/reservation}" href="/ko/reservation" aria-label="Reservation">
-            <span class="category-icon">🎫</span>
-            <span>Reservation</span>
-        </a>
-        <a class="category-item" th:href="@{/chatbot}" href="/chatbot" aria-label="Chatbot">
-            <span class="category-icon">🤖</span>
-            <span>Chatbot</span>
-        </a>
-    </div>
-</section>
 
 <!-- Places to visit: each card opens that place in the tour page -->
 <!-- Places to visit in Busan (KTO areaBasedList2) -->
@@ -1305,6 +1274,61 @@
     </div>
 </section>
 
+
+<!-- Categories: shown after the content, as a jump-off point -->
+<section class="categories" id="categorySection">
+    <div class="category-grid">
+        <a class="category-item" th:href="@{/tour/food(lang='en')}" href="/tour/food?lang=en">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6a2 2 0 0 0 4 0V3"/><path d="M8 11v10"/><path d="M17 3c1.5 2 1.5 6 0 8v10"/></svg>
+            </span>
+            <span>Food &amp; Cafe</span>
+        </a>
+        <a class="category-item" th:href="@{/tour/all(lang='en')}" href="/tour/all?lang=en">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="17" cy="6" r="3"/><path d="M3 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M3 19c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/></svg>
+            </span>
+            <span>Tour</span>
+        </a>
+        <a class="category-item" th:href="@{/en/transport/search}" href="/en/transport/search">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="12" rx="2"/><path d="M4 10h16"/><path d="M7 16v2M17 16v2"/><circle cx="8" cy="19" r="1.2"/><circle cx="16" cy="19" r="1.2"/></svg>
+            </span>
+            <span>Transport</span>
+        </a>
+        <a class="category-item" th:href="@{/community/post-list(lang='en')}" href="/community/post-list?lang=en">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 16v4l5-4"/><path d="M8 9h8M8 12h5"/></svg>
+            </span>
+            <span>Community</span>
+        </a>
+        <a class="category-item" th:href="@{/en/trip}" href="/en/trip">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>
+            </span>
+            <span>Custom Trip</span>
+        </a>
+        <a class="category-item" th:href="@{/ko/reservation}" href="/ko/reservation">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M15 6v12"/></svg>
+            </span>
+            <span>Reservation</span>
+        </a>
+        <a class="category-item" th:href="@{/chatbot}" href="/chatbot">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="4" r="1"/><path d="M9 13h.01M15 13h.01"/><path d="M9 17h6"/></svg>
+            </span>
+            <span>Chatbot</span>
+        </a>
+    </div>
+</section>
 
 <section class="community-section">
     <div class="community-inner">
