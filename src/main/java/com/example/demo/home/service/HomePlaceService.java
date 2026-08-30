@@ -43,6 +43,30 @@ public class HomePlaceService {
                 .toList();
     }
 
+    /**
+     * 히어로 배경으로 쓸 부산 관광지 사진.
+     *
+     * <p>히어로는 화면을 꽉 채우는 배경이라 이미지가 잘린다.
+     * 관광공사 사진의 상당수가 "변경금지"(Type3)이고 크롭이 그 위반에 해당하므로,
+     * <b>변경이 허용된 사진만</b> 골라 쓴다.
+     */
+    public List<PlaceCardDto> getHeroImages(String lang, int limit) {
+        List<TourItem> items = tourApiClient.areaBasedList(
+                TourApiQuery.of()
+                        .lang(lang)
+                        .contentTypeId(TourApiLang.contentTypeId(lang, TourApiLang.TOURIST_SPOT))
+                        .numOfRows(100)      // 변경 허용 사진이 3건 중 1건꼴이라 넉넉히 받는다
+                        .build()
+                        .withImageOnly());
+
+        return items.stream()
+                .filter(TourItem::hasImage)
+                .filter(TourItem::isImageModifiable)
+                .map(this::toDto)
+                .limit(limit)
+                .toList();
+    }
+
     private PlaceCardDto toDto(TourItem item) {
         return PlaceCardDto.builder()
                 .contentId(item.getContentId())

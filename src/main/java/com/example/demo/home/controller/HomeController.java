@@ -51,30 +51,26 @@ public class HomeController {
 
         // ── 히어로 섹션 텍스트 (영어) ──────────────────────────────────────────
         // Thymeleaf에서 ${heroTitle} 로 꺼내 쓸 수 있음
-        model.addAttribute("heroTitle", "Discover Korea");
+        model.addAttribute("heroTitle", "Discover Busan");
 
         // 히어로 서브타이틀 (영어)
-        model.addAttribute("heroSubTitle", "Korea");
+        model.addAttribute("heroSubTitle", "Busan");
 
         // 히어로 설명 문구 (영어)
         model.addAttribute("heroDescription",
-                "Curated guides to the best attractions, food, and local experiences.");
+                "Festivals, beaches, and local food - everything you need for a trip to Busan.");
 
         // ── 히어로 섹션 텍스트 (한국어) ───────────────────────────────────────
-        model.addAttribute("heroTitleKo", "한국을");
+        model.addAttribute("heroTitleKo", "부산을");
         model.addAttribute("heroSubTitleKo", "만나보세요");
         model.addAttribute("heroDescriptionKo",
-                "대표 관광지부터 맛집, 현지 정보까지 한국 여행에 필요한 정보를 한곳에 담았습니다.");
+                "지금 열리는 축제부터 바다와 맛집까지, 부산 여행에 필요한 정보를 한곳에 담았습니다.");
 
-        // ── 히어로 슬라이더 이미지 리스트 ────────────────────────────────────
-        // List.of(): 수정 불가능한 리스트 생성 (3개 슬라이드)
-        // 각 슬라이드는 "imageUrl" 키 하나만 가진 Map으로 구성
-        // Thymeleaf에서 th:each 로 반복하며 각 slide.imageUrl 을 꺼내 씀
-        model.addAttribute("slides", List.of(
-                Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/c/cc/N_Seoul_Tower_%2813952097192%29.jpg"),
-                Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/a/ab/Bukchon-ro_11-gil_street_with_hanok_houses_and_blue_sky_in_Bukchon_Hanok_Village_Seoul.jpg"),
-                Map.of("imageUrl", "https://upload.wikimedia.org/wikipedia/commons/d/d4/Gwanghwamun_%28Main_gate_of_Gyeongbokgung_Palace%29.jpg")
-        ));
+        // ── 히어로 슬라이더 이미지 ────────────────────────────────────────
+        // 예전에는 서울 사진 3장(남산타워·북촌·광화문)이 위키미디어 주소로 박혀 있었다.
+        // 부산 관광지 사진으로 바꾸되, 히어로는 배경이 잘리므로 저작권상
+        // 변경이 허용된 사진만 쓴다(HomePlaceService 참고).
+        model.addAttribute("slides", homePlaceService.getHeroImages(lang, 3));
 
         // ── 가볼 만한 곳 ─────────────────────────────────────────────────
         // 부산 관광지를 관광공사 API에서 받아온다. 예전에는 서울 3곳이 코드에
