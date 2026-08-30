@@ -451,6 +451,102 @@
             margin-bottom: 28px;
         }
 
+
+        /* ── 지금 부산에서: 축제 카드 ──────────────────────────────── */
+        .festival-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .festival-card {
+            display: flex;
+            flex-direction: column;
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: var(--white);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            color: inherit;
+            text-decoration: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .festival-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(59, 158, 255, 0.20);
+        }
+
+        .festival-media {
+            position: relative;
+            height: 190px;
+            background: #f4f6f8;
+        }
+
+        /*
+           관광공사 이미지의 62%가 저작권 "변경금지"(Type3)라 크롭이 위반이 된다.
+           기본은 원본 비율 유지(contain)로 두고, 변경이 허용된 항목만 cover 로 채운다.
+        */
+        .festival-image {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        .festival-image.can-crop {
+            object-fit: cover;
+        }
+
+        .festival-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 1;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.72);
+        }
+
+        .festival-badge.is-on {
+            background: #ef4444;
+        }
+
+        .festival-body {
+            padding: 16px 18px 20px;
+        }
+
+        .festival-period {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+
+        .festival-title {
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.35;
+            color: var(--dark);
+            margin-bottom: 6px;
+        }
+
+        .festival-address {
+            font-size: 13px;
+            color: var(--gray);
+        }
+
+        @media (max-width: 900px) {
+            .festival-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 520px) {
+            .festival-grid { grid-template-columns: 1fr; }
+        }
+
         .popular-grid {
             display: grid;
             grid-template-columns: 1.45fr 1fr;
@@ -1021,6 +1117,40 @@
 </section>
 
 <!-- 카테고리: 주요 서비스 페이지로 이동하는 바로가기 -->
+<!-- 지금 부산에서: 진행중·예정 축제 (한국관광공사 행사정보조회) -->
+<section class="section festival-section" th:if="${!#lists.isEmpty(festivals)}">
+    <div class="section-header">
+        <div>
+            <h2 class="section-title">지금 부산에서</h2>
+            <p class="section-sub">진행 중이거나 곧 열리는 축제와 행사</p>
+        </div>
+        <a class="see-all" th:href="@{/tour/all(lang='ko')}" href="/tour/all?lang=ko">전체보기</a>
+    </div>
+
+    <div class="festival-grid">
+        <a class="festival-card"
+           th:each="festival : ${festivals}"
+           th:href="@{/tour/search/(keyword=${festival.title},lang='ko')}"
+           href="/tour/search/?lang=ko">
+            <div class="festival-media">
+                <span class="festival-badge"
+                      th:classappend="${festival.ongoing} ? ' is-on'"
+                      th:text="${festival.badge}">진행중</span>
+                <img class="festival-image"
+                     th:classappend="${festival.imageModifiable} ? ' can-crop'"
+                     th:src="${festival.imageUrl}"
+                     th:alt="${festival.title}"
+                     loading="lazy" alt="">
+            </div>
+            <div class="festival-body">
+                <div class="festival-period" th:text="${festival.period}">9.4 ~ 9.5</div>
+                <div class="festival-title" th:text="${festival.title}">부산 축제</div>
+                <div class="festival-address" th:text="${festival.address}">부산광역시</div>
+            </div>
+        </a>
+    </div>
+</section>
+
 <section class="categories" id="categorySection">
     <div class="category-grid">
         <a class="category-item" th:href="@{/tour/food(lang='ko')}" href="/tour/food?lang=ko">

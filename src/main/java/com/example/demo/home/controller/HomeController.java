@@ -1,5 +1,6 @@
 package com.example.demo.home.controller;
 
+import com.example.demo.home.service.HomeFestivalService;
 import com.example.demo.home.service.HomeService;
 import com.example.demo.user.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import java.util.Map;
 public class HomeController {
 
     private final HomeService homeService;
+    private final HomeFestivalService homeFestivalService;
 
 
     // @GetMapping: 브라우저에서 GET 방식으로 "/" 또는 "/en" 에 접속했을 때 이 메서드 실행
@@ -22,7 +24,7 @@ public class HomeController {
     @GetMapping({"/", "/en"})
     public String homeEn(Model model) {
         session(model);
-        populateModel(model);       // 공통 데이터 세팅 메서드 호출
+        populateModel(model, "en");  // 공통 데이터 세팅 (영문 축제)
         return "home/home";         // templates/home/home.html 을 찾아서 렌더링
     }
 
@@ -30,7 +32,7 @@ public class HomeController {
     @GetMapping({"/ko", "/kr"})
     public String homeKo(Model model) {
         session(model);
-        populateModel(model);       // 공통 데이터 세팅 메서드 호출 (영어와 동일한 데이터)
+        populateModel(model, "ko");  // 공통 데이터 세팅 (국문 축제)
         return "home/home.ko";      // templates/home/home.ko.html 을 찾아서 렌더링
     }
 
@@ -42,7 +44,7 @@ public class HomeController {
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
     }
 
-    private void populateModel(Model model) {
+    private void populateModel(Model model, String lang) {
 
 
         // ── 히어로 섹션 텍스트 (영어) ──────────────────────────────────────────
@@ -90,6 +92,11 @@ public class HomeController {
         // 총 5개의 게시글 데이터를 리스트로 묶어서 "posts" 이름으로 Model에 추가
         // Thymeleaf에서 th:each 로 반복하며 각 post.title, post.author 등을 꺼내 씀
         model.addAttribute("trendingPosts", homeService.getTrendingPosts());
+
+        // ── 지금 부산에서 열리는 축제 ────────────────────────────────────────
+        // 관광공사 데이터 중 유일하게 기간이 있는 자료라, 접속 시점에 따라 화면이 바뀐다.
+        // 대표이미지 보유율이 100%라 카드가 비지 않는다.
+        model.addAttribute("festivals", homeFestivalService.getUpcomingFestivals(lang, 4));
     }
 
     // ── attraction 헬퍼 메서드 ──────────────────────────────────────────────────
