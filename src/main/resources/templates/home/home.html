@@ -1147,8 +1147,8 @@
     <div class="festival-grid">
         <a class="festival-card"
            th:each="festival : ${festivals}"
-           th:href="@{/tour/search/(keyword=${festival.title},lang='en')}"
-           href="/tour/search/?lang=en">
+           th:href="@{/tour/all(lang='en',focus=${festival.contentId})}"
+           href="/tour/all?lang=en">
             <div class="festival-media">
                 <span class="festival-badge"
                       th:classappend="${festival.ongoing} ? ' is-on'"
