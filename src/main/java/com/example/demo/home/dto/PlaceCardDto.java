@@ -21,6 +21,9 @@ public class PlaceCardDto {
     /** 주소 (예: 부산광역시 해운대구 …) */
     private final String address;
 
+    /** 분류 이름 (예: 한식, 카페). 없으면 null — 카드에서 배지를 숨긴다 */
+    private final String category;
+
     /** 대표 이미지 (https 로 맞춰둔 주소) */
     private final String imageUrl;
 

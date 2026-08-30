@@ -558,6 +558,19 @@
         }
 
 
+        .place-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 1;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.72);
+        }
+
         .place-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1243,6 +1256,38 @@
         </a>
     </div>
 </section>
+
+<!-- 부산 맛집: 음식점 + 카페 (한국관광공사 지역기반 관광정보조회) -->
+<section class="section place-section" th:if="${!#lists.isEmpty(foods)}">
+    <div class="section-header">
+        <div>
+            <h2 class="section-title">부산 맛집</h2>
+            <p class="section-sub">현지 음식점과 카페를 함께 담았습니다</p>
+        </div>
+        <a class="see-all" th:href="@{/tour/food(lang='ko')}" href="/tour/food?lang=ko">전체보기</a>
+    </div>
+
+    <div class="place-grid">
+        <a class="place-card"
+           th:each="food : ${foods}"
+           th:href="@{/tour/food(lang='ko',focus=${food.contentId})}"
+           href="/tour/food?lang=ko">
+            <div class="place-media">
+                <span class="place-badge" th:if="${food.category}" th:text="${food.category}">한식</span>
+                <img class="place-image"
+                     th:classappend="${food.imageModifiable} ? ' can-crop'"
+                     th:src="${food.imageUrl}"
+                     th:alt="${food.title}"
+                     loading="lazy" alt="">
+            </div>
+            <div class="place-body">
+                <div class="place-title" th:text="${food.title}">부산 맛집</div>
+                <div class="place-address" th:text="${food.address}">부산광역시</div>
+            </div>
+        </a>
+    </div>
+</section>
+
 
 <section class="community-section">
     <div class="community-inner">

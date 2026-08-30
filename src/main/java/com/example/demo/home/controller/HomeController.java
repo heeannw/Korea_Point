@@ -1,6 +1,7 @@
 package com.example.demo.home.controller;
 
 import com.example.demo.home.service.HomeFestivalService;
+import com.example.demo.home.service.HomeFoodService;
 import com.example.demo.home.service.HomePlaceService;
 import com.example.demo.home.service.HomeService;
 import com.example.demo.user.util.SecurityUtil;
@@ -19,6 +20,7 @@ public class HomeController {
     private final HomeService homeService;
     private final HomeFestivalService homeFestivalService;
     private final HomePlaceService homePlaceService;
+    private final HomeFoodService homeFoodService;
 
 
     // @GetMapping: 브라우저에서 GET 방식으로 "/" 또는 "/en" 에 접속했을 때 이 메서드 실행
@@ -76,6 +78,11 @@ public class HomeController {
         // 부산 관광지를 관광공사 API에서 받아온다. 예전에는 서울 3곳이 코드에
         // 박혀 있었고 별점·리뷰 수도 지어낸 값이었다. 둘 다 걷어냈다.
         model.addAttribute("places", homePlaceService.getRecommendedPlaces(lang, 6));
+
+        // ── 부산 맛집 ────────────────────────────────────────────────────
+        // 관광 탭이 음식점과 카페를 한 화면에서 탭으로 나누고 있어 홈도 한 섹션으로 묶는다.
+        // 대신 카드가 한쪽으로 쏠리지 않게 음식점과 카페를 번갈아 담는다.
+        model.addAttribute("foods", homeFoodService.getFoodPlaces(lang, 6));
 
         // ── 커뮤니티 게시글 리스트 ────────────────────────────────────────────
         // post() 헬퍼 메서드를 호출하여 각 게시글 Map 을 생성

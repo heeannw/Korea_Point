@@ -564,6 +564,19 @@
         }
 
 
+        .place-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 1;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.72);
+        }
+
         .place-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1260,6 +1273,38 @@
         </a>
     </div>
 </section>
+
+<!-- Where to eat in Busan: restaurants and cafes (KTO areaBasedList2) -->
+<section class="section place-section" th:if="${!#lists.isEmpty(foods)}">
+    <div class="section-header">
+        <div>
+            <h2 class="section-title">Where to eat</h2>
+            <p class="section-sub">Local restaurants and cafes in Busan</p>
+        </div>
+        <a class="see-all" th:href="@{/tour/food(lang='en')}" href="/tour/food?lang=en">See all</a>
+    </div>
+
+    <div class="place-grid">
+        <a class="place-card"
+           th:each="food : ${foods}"
+           th:href="@{/tour/food(lang='en',focus=${food.contentId})}"
+           href="/tour/food?lang=en">
+            <div class="place-media">
+                <span class="place-badge" th:if="${food.category}" th:text="${food.category}">Restaurant</span>
+                <img class="place-image"
+                     th:classappend="${food.imageModifiable} ? ' can-crop'"
+                     th:src="${food.imageUrl}"
+                     th:alt="${food.title}"
+                     loading="lazy" alt="">
+            </div>
+            <div class="place-body">
+                <div class="place-title" th:text="${food.title}">Busan restaurant</div>
+                <div class="place-address" th:text="${food.address}">Busan</div>
+            </div>
+        </a>
+    </div>
+</section>
+
 
 <section class="community-section">
     <div class="community-inner">
