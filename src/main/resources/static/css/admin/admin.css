@@ -426,6 +426,33 @@ body[data-page="logs"] #logsPanel {
 
 .filters .primary-button { align-self: end; }
 
+/* ── Tabs ── */
+.admin-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.admin-tab {
+    min-height: 38px;
+    padding: 0 16px;
+    border: 1px solid var(--al);
+    border-radius: 999px;
+    background: var(--ap);
+    color: var(--am);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.admin-tab:hover,
+.admin-tab.active {
+    border-color: var(--ac);
+    background: rgba(59,158,255,0.10);
+    color: var(--acd);
+}
+
 /* ── Data Shell ── */
 .data-shell {
     padding: 0;

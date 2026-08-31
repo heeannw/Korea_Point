@@ -43,6 +43,14 @@ public class OwnerRequestService {
     }
 
     @Transactional(readOnly = true)
+    public List<OwnerRequest> findRequestsByStatus(OwnerRequestStatus status) {
+        if (status == OwnerRequestStatus.PENDING) {
+            return findPendingRequests();
+        }
+        return ownerRequestRepository.findByStatusOrderByReviewedAtDescCreatedAtDesc(status);
+    }
+
+    @Transactional(readOnly = true)
     public Path findDocumentPath(Long requestId, String documentType) {
         OwnerRequest request = ownerRequestRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사업자 신청입니다."));

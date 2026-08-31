@@ -5,6 +5,7 @@ import com.example.demo.reservation.dto.TourApiPlaceDto;
 import com.example.demo.reservation.entity.TourReservation;
 import com.example.demo.reservation.service.ReservationService;
 import com.example.demo.reservation.service.TourApiReservationService;
+import com.example.demo.community.repository.CategoryRepository;
 import com.example.demo.community.repository.PostRepository;
 import com.example.demo.trip.dto.TripPlanDto;
 import com.example.demo.trip.service.TripPlanService;
@@ -44,6 +45,7 @@ public class ReservationController {
     private final OwnerRequestService ownerRequestService;
     private final TripPlanService tripPlanService;
     private final PostRepository postRepository;
+    private final CategoryRepository categoryRepository;
 
     @GetMapping("/ko/reservation")
     public String reservationHome(Model model,
@@ -134,6 +136,10 @@ public class ReservationController {
                 .toList();
         List<TripPlanDto.Summary> tripPlans = tripPlanService.listByUser(String.valueOf(userId));
         long postCount = postRepository.countByUser_IdAndDeletedAtIsNull(userId);
+        long promoPostCount = postRepository.countByUser_IdAndCategory_NameAndDeletedAtIsNull(userId, "홍보");
+        Long promoCategoryId = categoryRepository.findByName("홍보")
+                .map(category -> category.getId())
+                .orElse(null);
 
         model.addAttribute("today", LocalDate.now());
         model.addAttribute("user", user);
@@ -152,6 +158,8 @@ public class ReservationController {
         model.addAttribute("tripPlanCount", tripPlans.size());
         model.addAttribute("reservationCount", reservations.size());
         model.addAttribute("postCount", postCount);
+        model.addAttribute("promoPostCount", promoPostCount);
+        model.addAttribute("promoCategoryId", promoCategoryId);
         model.addAttribute("reservations", reservations);
         model.addAttribute("activeReservations", activeReservations);
         model.addAttribute("hasReservation", !reservations.isEmpty());

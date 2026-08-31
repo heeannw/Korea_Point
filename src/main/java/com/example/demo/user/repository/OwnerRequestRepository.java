@@ -16,4 +16,7 @@ public interface OwnerRequestRepository extends JpaRepository<OwnerRequest, Long
 
     @EntityGraph(attributePaths = "user")
     List<OwnerRequest> findByStatusOrderByCreatedAtAsc(OwnerRequestStatus status);
+
+    @EntityGraph(attributePaths = "user")
+    List<OwnerRequest> findByStatusOrderByReviewedAtDescCreatedAtDesc(OwnerRequestStatus status);
 }

@@ -11,6 +11,7 @@ import com.example.demo.community.entity.ContentReportStatus;
 import com.example.demo.community.entity.ReportTargetType;
 import com.example.demo.user.entity.AccountStatus;
 import com.example.demo.user.entity.OwnerRequest;
+import com.example.demo.user.entity.OwnerRequestStatus;
 import com.example.demo.user.service.OwnerRequestService;
 import com.example.demo.user.util.SecurityUtil;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
@@ -87,6 +88,13 @@ public class AdminApiController {
     @GetMapping("/owner-applications/pending")
     public List<Map<String, Object>> pendingOwnerRequests() {
         return ownerRequestService.findPendingRequests().stream()
+                .map(this::toOwnerRequestItem)
+                .toList();
+    }
+
+    @GetMapping("/owner-applications")
+    public List<Map<String, Object>> ownerRequests(@RequestParam(defaultValue = "PENDING") OwnerRequestStatus status) {
+        return ownerRequestService.findRequestsByStatus(status).stream()
                 .map(this::toOwnerRequestItem)
                 .toList();
     }
@@ -256,12 +264,16 @@ public class AdminApiController {
         item.put("userId", request.getUser().getId());
         item.put("userName", request.getUser().getName());
         item.put("userEmail", request.getUser().getEmail());
+        item.put("userRole", request.getUser().getRole());
+        item.put("userPoint", request.getUser().getPoint());
         item.put("storeName", request.getStoreName());
         item.put("businessRegistrationNumber", request.getBusinessRegistrationNumber());
         item.put("businessRegistrationFilePath", request.getBusinessRegistrationFilePath());
         item.put("businessLicenseFilePath", request.getBusinessLicenseFilePath());
         item.put("menuFilePath", request.getMenuFilePath());
         item.put("status", request.getStatus().name());
+        item.put("reviewComment", request.getReviewComment());
+        item.put("reviewedAt", request.getReviewedAt());
         item.put("createdAt", request.getCreatedAt());
         return item;
     }

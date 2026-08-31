@@ -207,6 +207,12 @@
                 <button type="button" class="primary-button" id="refreshOwnerApplicationsButton">새로고침</button>
             </div>
 
+            <div class="admin-tabs" role="tablist" aria-label="사업자 신청 상태">
+                <button type="button" class="admin-tab active" data-owner-status="PENDING">검토 대기</button>
+                <button type="button" class="admin-tab" data-owner-status="APPROVED">승인 완료</button>
+                <button type="button" class="admin-tab" data-owner-status="REJECTED">반려</button>
+            </div>
+
             <div class="data-shell">
                 <div class="table-wrap">
                     <table>
@@ -439,15 +445,15 @@
 
         <form id="actionModalForm" class="modal-form">
             <div id="modalExtraFields"></div>
-            <label>
+            <label id="modalReasonCodeGroup">
                 사유 코드
                 <select id="modalReasonCode">
                     <option value="">선택해 주세요</option>
                 </select>
                 <span id="modalReasonCodeError" class="field-error"></span>
             </label>
-            <label>
-                상세 메모
+            <label id="modalReasonDetailGroup">
+                <span id="modalReasonDetailLabel">상세 메모</span>
                 <textarea id="modalReasonDetail" rows="4" placeholder="필요 시 조치 사유를 추가로 남겨 주세요. OTHER 선택 시 필수입니다."></textarea>
                 <span id="modalReasonDetailError" class="field-error"></span>
             </label>
