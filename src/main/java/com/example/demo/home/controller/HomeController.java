@@ -93,7 +93,7 @@ public class HomeController {
         // ── 지금 부산에서 열리는 축제 ────────────────────────────────────────
         // 관광공사 데이터 중 유일하게 기간이 있는 자료라, 접속 시점에 따라 화면이 바뀐다.
         // 대표이미지 보유율이 100%라 카드가 비지 않는다.
-        model.addAttribute("festivals", homeFestivalService.getUpcomingFestivals(lang, 4));
+        model.addAttribute("festivals", homeFestivalService.getUpcomingFestivals(lang, 12));
     }
 
     // ── post 헬퍼 메서드 ────────────────────────────────────────────────────────
