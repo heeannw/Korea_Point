@@ -289,6 +289,7 @@
   const centerLon = /*[[${centerLon}]]*/ 129.0756;
   const INIT_CATEGORY = /*[[${category}]]*/ null;
   const NEAR_TITLE    = /*[[${near}]]*/ null;
+  const LOGGED_IN     = /*[[${isLoggedIn}]]*/ false;
   const CAFE_ONLY     = /*[[${cafeOnly}]]*/ false;
 </script>
 
@@ -711,6 +712,30 @@
     document.getElementById('card-' + idx)?.scrollIntoView({ behavior:'smooth', block:'nearest' });
   }
 
+  /**
+   * 홈이나 관광 상세에서 특정 음식점을 눌러 넘어온 경우(?focus=contentId)
+   * 그 장소의 상세 패널을 바로 연다. 필터에 걸려 목록에서 빠졌으면 전체로 되돌린다.
+   */
+  function focusInitialPlace() {
+    const focusId = new URLSearchParams(location.search).get('focus');
+    if (!focusId) return;
+    const target = PLACES.find(p => String(p.id) === String(focusId));
+    if (!target) return;
+    if (activeCategory !== 'all' && target.foodCategory !== activeCategory) {
+      activeCategory = 'all';
+      document.querySelectorAll('.chip').forEach(ch => ch.classList.toggle('active', ch.dataset.cat === 'all'));
+      render();
+    }
+    const list = window._currentList || PLACES;
+    const idx = list.findIndex(p => String(p.id) === String(focusId));
+    if (idx >= 0) {
+      selectPlace(idx);
+    } else {
+      openDetail(target);
+      centerPlaceBesideDetail(target);
+    }
+  }
+
   const DETAIL_LABELS = {
     ko:{ firstmenu:'대표 메뉴', opentimefood:'영업시간', restdatefood:'휴무일',
          reservationfood:'예약', treatmenu:'취급 메뉴' },
@@ -751,6 +776,7 @@
     const reservationButton = document.getElementById('btnReservation');
     reservationButton.hidden = true;
     reservationButton.dataset.tel = '';
+    updateSaveButton(p);
     renderVisitorReviews(p);
     loadCommunityPosts(p);
     document.getElementById('detailPanel').classList.add('open');
@@ -890,9 +916,53 @@
     else showDetailTab('info');
   };
 
-  document.getElementById('btnSave').onclick = function () {
-    alert(T.saveAlert);
-  };
+  // ── 저장(찜) ── 로그인 시 서버(saved_place), 아니면 안내만.
+  let savedIds = new Set();
+  async function csrfFetch(url, method, jsonBody) {
+    const token  = document.querySelector('meta[name="_csrf"]')?.content ?? '';
+    const header = document.querySelector('meta[name="_csrf_header"]')?.content ?? 'X-CSRF-TOKEN';
+    const opts = { method, headers: { [header]: token } };
+    if (jsonBody !== undefined) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(jsonBody);
+    }
+    const res = await fetch(url, opts);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res;
+  }
+  async function loadSavedIds() {
+    if (!LOGGED_IN) return;
+    try {
+      const res = await fetch('/tour/api/saved-places/ids');
+      savedIds = new Set((await res.json()).map(String));
+    } catch (e) { savedIds = new Set(); }
+  }
+  function updateSaveButton(p) {
+    const btn = document.getElementById('btnSave');
+    const on = p && p.id != null && savedIds.has(String(p.id));
+    btn.classList.toggle('saved', on);
+    btn.textContent = on ? '♥' : '♡';
+  }
+  async function toggleSave(p) {
+    if (!p || p.id == null) return;
+    if (!LOGGED_IN) { alert(T.saveAlert); return; }
+    const key = String(p.id);
+    const wasOn = savedIds.has(key);
+    if (wasOn) savedIds.delete(key); else savedIds.add(key);
+    updateSaveButton(p);
+    try {
+      if (wasOn) {
+        await csrfFetch(`/tour/api/saved-places/${encodeURIComponent(key)}`, 'DELETE');
+      } else {
+        await csrfFetch('/tour/api/saved-places', 'POST',
+          { contentId: key, contentTypeId: p.type ?? '39' });
+      }
+    } catch (e) {
+      if (wasOn) savedIds.add(key); else savedIds.delete(key);
+      updateSaveButton(p);
+    }
+  }
+  document.getElementById('btnSave').onclick = () => toggleSave(currentDetailPlace);
 
   document.getElementById('btnShare').onclick = async function () {
     const p = currentDetailPlace;
@@ -930,10 +1000,12 @@
     });
     kakao.maps.event.addListener(map, 'zoom_changed', refreshMarkerImages);
     updateMarkerVisibility();
+    focusInitialPlace();
   }
 
   applyStaticLabels();
   render();
+  loadSavedIds().then(() => { if (currentDetailPlace) updateSaveButton(currentDetailPlace); });
   document.getElementById('filterRow').addEventListener('scroll', updateScrollBtns);
   updateScrollBtns();
   if (KAKAO_KEY) {
@@ -941,6 +1013,9 @@
     s.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&autoload=false`;
     s.onload = () => kakao.maps.load(initMap);
     document.head.appendChild(s);
+  } else {
+    // 지도 키가 없어도 홈에서 넘어온 상세는 열어 준다.
+    focusInitialPlace();
   }
 </script>
 </body>
