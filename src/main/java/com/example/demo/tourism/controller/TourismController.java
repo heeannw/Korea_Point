@@ -18,6 +18,17 @@ public class TourismController {
     private static final double BUSAN_CENTER_LAT = 35.1796;
     private static final double BUSAN_CENTER_LON = 129.0756;
 
+    /** 관광 화면이 지원하는 언어. 그 밖의 값은 국문으로 되돌린다. TourApiProperties.baseUrlFor와 맞춰 둔다. */
+    private static final Set<String> SUPPORTED_LANGS = Set.of("ko", "en", "ja", "zh", "fr");
+    /** 관광 목록·검색·내위치 화면은 언어와 무관하게 이 단일 템플릿을 쓴다. */
+    private static final String EXPLORE_VIEW = "tourism/tourism";
+
+    private static String normalizeLang(String lang) {
+        if (lang == null) return "ko";
+        String lower = lang.toLowerCase();
+        return SUPPORTED_LANGS.contains(lower) ? lower : "ko";
+    }
+
     @Autowired
     TourismService tourismService;
 
@@ -34,7 +45,7 @@ public class TourismController {
                             @RequestParam(value = "lat", required = false) Double lat,
                             @RequestParam(value = "lon", required = false) Double lon,
                             @RequestParam(value = "lang") String lang) {
-        lang = lang.toLowerCase();
+        lang = normalizeLang(lang);
         List<TourPlaceDto> displayList = tourismService.allList(lang);
         session.setAttribute("userlat", lat);
         session.setAttribute("userlon", lon);
@@ -61,7 +72,7 @@ public class TourismController {
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
         model.addAttribute("currentUserId", SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserId() : null);
 
-        return "en".equalsIgnoreCase(lang) ? "tourism/tourismEN" : "tourism/tourismKo";
+        return EXPLORE_VIEW;
     }
 
     // ─────────────────────────────────────────────────────────
@@ -76,7 +87,7 @@ public class TourismController {
             HttpSession session) {
 
 
-        lang = lang.toLowerCase();
+        lang = normalizeLang(lang);
         if (spotname == null || spotname.isBlank()) {
             spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
         }
@@ -118,7 +129,7 @@ public class TourismController {
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
         model.addAttribute("currentUserId", SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserId() : null);
 
-        return "en".equalsIgnoreCase(lang) ? "tourism/tourismEN" : "tourism/tourismKo";
+        return EXPLORE_VIEW;
     }
 
     // ─────────────────────────────────────────────────────────
@@ -131,7 +142,7 @@ public class TourismController {
             @RequestParam("lang") String lang,
             Model model,
             HttpSession session) {
-        lang = lang.toLowerCase();
+        lang = normalizeLang(lang);
         session.setAttribute("userlat", lat);
         session.setAttribute("userlon", lon);
 
@@ -156,7 +167,7 @@ public class TourismController {
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
         model.addAttribute("currentUserId", SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserId() : null);
 
-        return "en".equalsIgnoreCase(lang) ? "tourism/tourismEN" : "tourism/tourismKo";
+        return EXPLORE_VIEW;
     }
 
     // ─────────────────────────────────────────────────────────

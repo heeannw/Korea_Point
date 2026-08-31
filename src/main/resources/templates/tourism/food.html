@@ -175,11 +175,17 @@
 </head>
 <body>
 <header>
-  <a class="logo" href="/" >Korea<span>Point</span></a>
+  <a class="logo" translate="no" th:href="${lang == 'en'} ? @{/en} : @{/ko}">Korea<span>Point</span></a>
   <div class="header-right">
     <a class="h-btn" th:href="@{/tour/all(lang=${lang})}" id="btnTour">Tourism</a>
     <a class="h-btn active" th:href="@{/tour/food(lang=${lang})}" id="btnTaste">Taste</a>
-    <button class="h-btn" onclick="switchLang()" id="langBtn">EN</button>
+    <select class="h-btn" translate="no" onchange="switchLang(this.value)" aria-label="Language" id="langSelect">
+      <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
+      <option value="en" th:selected="${lang == 'en'}">English</option>
+      <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
+      <option value="zh" th:selected="${lang == 'zh'}">中文</option>
+      <option value="fr" th:selected="${lang == 'fr'}">Français</option>
+    </select>
   </div>
 </header>
 
@@ -257,7 +263,7 @@
         </nav>
         <section class="tab-panel" id="tab-info">
           <div class="dp-info-row" id="dpInfoRow"></div>
-          <div class="section-card"><div class="section-title">장소 소개</div><div class="dp-desc" id="dpDesc"></div></div>
+          <div class="section-card"><div class="section-title" id="aboutTitle">장소 소개</div><div class="dp-desc" id="dpDesc"></div></div>
           <div id="dpApiInfo"></div>
         </section>
         <section class="tab-panel" id="tab-reviews" hidden><div id="dpReviews"></div></section>
@@ -290,6 +296,7 @@
   // 음식 분류는 서버가 슬러그로 보내고 화면에서 언어별 라벨로 옮긴다.
   const CATEGORIES = ['all','korean','japanese','chinese','western','fusion','foreign','snack',
                       'cafe','teahouse','drink','etc'];
+  // ja/zh/fr 은 기계번역 — 원어민 검수 권장. TourAPI 다국어 응답과 섞이지 않도록 화면 문자열만 담는다.
   const LABELS = {
     ko:{ all:'전체', korean:'한식', cafe:'카페', teahouse:'찻집', drink:'기타 음료점',
          japanese:'일식', chinese:'중식',
@@ -297,7 +304,18 @@
          unit:'곳', search:'맛집 검색', searchCafe:'카페 검색', searchBtn:'검색', popular:'인기 TOP 20', ratingSort:'별점순', reviewSort:'리뷰순', rec:'추천순', dist:'거리순',
          empty:'조건에 맞는 곳이 없습니다.', route:'🚊 길찾기', loading:'상세정보를 불러오는 중...',
          failed:'상세정보를 불러오지 못했습니다.', none:'등록된 설명이 없습니다.',
-         addr:'주소', distance:'거리', category:'분류', tel:'전화', taste:'맛집', foodTab:'음식점', cafeTab:'카페' },
+         addr:'주소', distance:'거리', category:'분류', tel:'전화', taste:'맛집', foodTab:'음식점', cafeTab:'카페',
+         routeLabel:'길찾기', planLabel:'일정 추가', reservationLabel:'예약 문의', shareLabel:'공유', saveAria:'장소 저장',
+         infoTab:'정보', reviewsTab:'리뷰', communityTab:'커뮤니티', about:'장소 소개', menuHours:'메뉴 · 이용 정보',
+         reviewsSuffix:'개 리뷰', noRating:'아직 방문자 평점이 없어요',
+         reviewsEmptyTitle:'아직 방문자 리뷰가 없어요', reviewsEmptyBody:'직접 방문한 사용자의 짧은 리뷰가 이곳에 표시돼요.',
+         reviewsTitle:'방문자 리뷰', visitor:'방문자',
+         communityLoading:'커뮤니티 이야기를 불러오는 중…', communityEmptyTitle:'이 장소의 첫 이야기를 남겨보세요',
+         communityEmptyBody:'커뮤니티에서 이 장소를 태그한 여행기와 후기가 모여요.', communityWrite:'커뮤니티 글쓰기',
+         communityTitle:'커뮤니티 이야기', communityWriteThis:'이 장소 글쓰기', communityLoadFail:'커뮤니티 글을 불러오지 못했어요.',
+         views:'조회', comments:'댓글', linkCopied:'현재 페이지 링크를 복사했어요.',
+         saveAlert:'장소 저장 기능은 마이페이지 컬렉션과 연결한 뒤 제공될 예정이에요.',
+         nearNoteFmt:'<b>{0}</b> 기준 가까운 순입니다', photos:'사진', close:'닫기' },
     en:{ all:'All', korean:'Korean', cafe:'Cafe', teahouse:'Tea House', drink:'Other Drinks',
          japanese:'Japanese', chinese:'Chinese',
          western:'Western', fusion:'Fusion', foreign:'Other Foreign', snack:'Snack', bar:'Bar', etc:'Other',
@@ -305,7 +323,75 @@
          popular:'Popular TOP 20', ratingSort:'Rating', reviewSort:'Most reviewed', rec:'Recommended', dist:'Distance',
          empty:'No places match this filter.', route:'🚊 Directions', loading:'Loading details...',
          failed:'Could not load details.', none:'No description registered.',
-         addr:'Address', distance:'Distance', category:'Category', tel:'Phone', taste:'Taste', foodTab:'Restaurants', cafeTab:'Cafe' }
+         addr:'Address', distance:'Distance', category:'Category', tel:'Phone', taste:'Taste', foodTab:'Restaurants', cafeTab:'Cafe',
+         routeLabel:'Directions', planLabel:'Add to plan', reservationLabel:'Reserve', shareLabel:'Share', saveAria:'Save place',
+         infoTab:'Info', reviewsTab:'Reviews', communityTab:'Community', about:'About', menuHours:'Menu & hours',
+         reviewsSuffix:' reviews', noRating:'No visitor ratings yet',
+         reviewsEmptyTitle:'No visitor reviews yet', reviewsEmptyBody:'Short reviews written after a visit will appear here.',
+         reviewsTitle:'Visitor reviews', visitor:'Visitor',
+         communityLoading:'Loading community stories…', communityEmptyTitle:'Be the first to share this place',
+         communityEmptyBody:'Long-form stories tagged in Community appear here.', communityWrite:'Write a story',
+         communityTitle:'Community stories', communityWriteThis:'Write a story', communityLoadFail:'Could not load Community stories.',
+         views:'views', comments:'comments', linkCopied:'Link copied.',
+         saveAlert:'Place saving will be available after the account collection is connected.',
+         nearNoteFmt:'Sorted by distance from <b>{0}</b>', photos:'Photos', close:'Close' },
+    ja:{ all:'すべて', korean:'韓国料理', cafe:'カフェ', teahouse:'茶屋', drink:'その他の飲み物店',
+         japanese:'日本料理', chinese:'中華料理',
+         western:'洋食', fusion:'フュージョン', foreign:'その他の外国料理', snack:'軽食', bar:'居酒屋', etc:'その他',
+         unit:'件', search:'グルメを検索', searchCafe:'カフェを検索', searchBtn:'検索',
+         popular:'人気 TOP 20', ratingSort:'評価順', reviewSort:'レビュー順', rec:'おすすめ順', dist:'距離順',
+         empty:'条件に合う店がありません。', route:'🚊 ルート', loading:'詳細情報を読み込み中...',
+         failed:'詳細情報を読み込めませんでした。', none:'登録された説明がありません。',
+         addr:'住所', distance:'距離', category:'分類', tel:'電話', taste:'グルメ', foodTab:'飲食店', cafeTab:'カフェ',
+         routeLabel:'ルート', planLabel:'日程に追加', reservationLabel:'予約問い合わせ', shareLabel:'シェア', saveAria:'場所を保存',
+         infoTab:'情報', reviewsTab:'レビュー', communityTab:'コミュニティ', about:'場所の紹介', menuHours:'メニュー・利用案内',
+         reviewsSuffix:'件のレビュー', noRating:'まだ訪問者の評価がありません',
+         reviewsEmptyTitle:'まだ訪問者のレビューがありません', reviewsEmptyBody:'実際に訪れたユーザーの短いレビューがここに表示されます。',
+         reviewsTitle:'訪問者レビュー', visitor:'訪問者',
+         communityLoading:'コミュニティの投稿を読み込み中…', communityEmptyTitle:'この場所の最初の投稿を残してみましょう',
+         communityEmptyBody:'コミュニティでこの場所をタグ付けした旅行記やレビューがここに集まります。', communityWrite:'コミュニティに投稿',
+         communityTitle:'コミュニティの投稿', communityWriteThis:'この場所について投稿', communityLoadFail:'コミュニティの投稿を読み込めませんでした。',
+         views:'閲覧', comments:'コメント', linkCopied:'現在のページのリンクをコピーしました。',
+         saveAlert:'場所の保存機能は、マイページのコレクションと連携後に提供予定です。',
+         nearNoteFmt:'<b>{0}</b> からの近い順です', photos:'写真', close:'閉じる' },
+    zh:{ all:'全部', korean:'韩餐', cafe:'咖啡馆', teahouse:'茶馆', drink:'其他饮品店',
+         japanese:'日料', chinese:'中餐',
+         western:'西餐', fusion:'融合菜', foreign:'其他外国菜', snack:'简餐', bar:'酒馆', etc:'其他',
+         unit:'个', search:'搜索美食', searchCafe:'搜索咖啡馆', searchBtn:'搜索',
+         popular:'热门 TOP 20', ratingSort:'按评分', reviewSort:'按评论', rec:'推荐', dist:'按距离',
+         empty:'没有符合条件的地点。', route:'🚊 路线', loading:'正在加载详细信息...',
+         failed:'无法加载详细信息。', none:'暂无相关介绍。',
+         addr:'地址', distance:'距离', category:'分类', tel:'电话', taste:'美食', foodTab:'餐厅', cafeTab:'咖啡馆',
+         routeLabel:'路线', planLabel:'加入行程', reservationLabel:'预约咨询', shareLabel:'分享', saveAria:'收藏地点',
+         infoTab:'信息', reviewsTab:'评论', communityTab:'社区', about:'地点介绍', menuHours:'菜单 · 使用信息',
+         reviewsSuffix:'条评论', noRating:'暂无访客评分',
+         reviewsEmptyTitle:'暂无访客评论', reviewsEmptyBody:'到访用户的简短评论将显示在这里。',
+         reviewsTitle:'访客评论', visitor:'访客',
+         communityLoading:'正在加载社区动态…', communityEmptyTitle:'来发布这个地点的第一条动态吧',
+         communityEmptyBody:'在社区中标记此地点的游记和点评会汇集在这里。', communityWrite:'发布动态',
+         communityTitle:'社区动态', communityWriteThis:'发布关于此地点的动态', communityLoadFail:'无法加载社区动态。',
+         views:'浏览', comments:'评论', linkCopied:'已复制当前页面链接。',
+         saveAlert:'地点收藏功能将在与我的页面收藏夹连接后提供。',
+         nearNoteFmt:'按距离 <b>{0}</b> 由近到远排序', photos:'照片', close:'关闭' },
+    fr:{ all:'Tout', korean:'Cuisine coréenne', cafe:'Café', teahouse:'Maison de thé', drink:'Autres boissons',
+         japanese:'Cuisine japonaise', chinese:'Cuisine chinoise',
+         western:'Cuisine occidentale', fusion:'Fusion', foreign:'Autre cuisine étrangère', snack:'Snack', bar:'Bar', etc:'Autre',
+         unit:'lieux', search:'Rechercher des restaurants', searchCafe:'Rechercher des cafés', searchBtn:'Rechercher',
+         popular:'Populaires TOP 20', ratingSort:'Par note', reviewSort:'Par avis', rec:'Recommandés', dist:'Par distance',
+         empty:'Aucun lieu ne correspond à ce filtre.', route:'🚊 Itinéraire', loading:'Chargement des détails...',
+         failed:'Impossible de charger les détails.', none:'Aucune description enregistrée.',
+         addr:'Adresse', distance:'Distance', category:'Catégorie', tel:'Téléphone', taste:'Goûter', foodTab:'Restaurants', cafeTab:'Café',
+         routeLabel:'Itinéraire', planLabel:'Ajouter au programme', reservationLabel:'Réserver', shareLabel:'Partager', saveAria:'Enregistrer le lieu',
+         infoTab:'Infos', reviewsTab:'Avis', communityTab:'Communauté', about:'Présentation du lieu', menuHours:'Menu et horaires',
+         reviewsSuffix:' avis', noRating:'Pas encore d\'avis de visiteurs',
+         reviewsEmptyTitle:'Pas encore d\'avis de visiteurs', reviewsEmptyBody:'Les courts avis rédigés après une visite apparaîtront ici.',
+         reviewsTitle:'Avis des visiteurs', visitor:'Visiteur',
+         communityLoading:'Chargement des publications de la communauté…', communityEmptyTitle:'Soyez le premier à partager ce lieu',
+         communityEmptyBody:'Les récits qui taguent ce lieu dans la communauté apparaissent ici.', communityWrite:'Rédiger une publication',
+         communityTitle:'Publications de la communauté', communityWriteThis:'Écrire sur ce lieu', communityLoadFail:'Impossible de charger les publications de la communauté.',
+         views:'vues', comments:'commentaires', linkCopied:'Lien de la page copié.',
+         saveAlert:'L\'enregistrement de lieux sera disponible après la connexion à la collection du compte.',
+         nearNoteFmt:'Trié par distance depuis <b>{0}</b>', photos:'Photos', close:'Fermer' }
   };
   const EMOJI = { korean:'🍚', cafe:'☕', teahouse:'🍵', drink:'🥤', japanese:'🍣', chinese:'🥟',
                   western:'🍝', fusion:'🍲', foreign:'🌏', snack:'🍢', bar:'🍺', etc:'🍴' };
@@ -328,8 +414,10 @@
                   japanese:'#0ea5e9', chinese:'#f59e0b', western:'#16a34a', fusion:'#ec4899',
                   foreign:'#14b8a6', snack:'#f97316', bar:'#a16207', etc:'#64748b' };
 
-  const isEn = String(LANG).toLowerCase() === 'en';
-  const T = isEn ? LABELS.en : LABELS.ko;
+  const LANG_KEY = String(LANG || 'ko').toLowerCase();
+  const isEn = LANG_KEY === 'en';
+  const T = LABELS[LANG_KEY] || LABELS.en;
+  function fmt(tpl, v) { return String(tpl).replace('{0}', v); }
 
   // 관광지에서 넘어왔다면 그 지점 기준이므로 거리순으로 시작한다.
   let activeCategory = CAFE_ONLY ? 'all' : (INIT_CATEGORY || 'all');
@@ -343,7 +431,7 @@
   // 카드에는 분류체계가 준 세부 이름(찻집·제과 등)을 우선 쓰고, 없으면 칩 라벨로 물러난다.
   function catLabel(p) {
     if (CAFE_ONLY) return label('cafe');
-    return (!isEn && p.typeName) ? p.typeName : label(p.foodCategory);
+    return p.typeName ? p.typeName : label(p.foodCategory);
   }
   function cardColorOf(p) { return CAFE_ONLY ? COLOR.cafe : colorOf(p); }
   function cardEmojiOf(p) { return CAFE_ONLY ? EMOJI.cafe : emojiOf(p); }
@@ -354,7 +442,7 @@
    */
   function detailBadges(p) {
     const base = label(p.foodCategory);
-    const detail = !isEn ? String(p.typeDetailName ?? '').trim() : '';
+    const detail = String(p.typeDetailName ?? "").trim();
     const badges = [
       `<span class="dp-badge" style="background:${colorOf(p)}22;color:${colorOf(p)}">
          ${emojiOf(p)} ${escapeHtml(base)}</span>`
@@ -389,11 +477,22 @@
     document.getElementById('sortRec').textContent = T.rec;
     document.getElementById('sortDist').textContent = T.dist;
     document.getElementById('countUnit').textContent = T.unit;
-    document.getElementById('btnRoute').querySelector('.qb-label').textContent = isEn ? 'Directions' : '길찾기';
+    document.getElementById('btnRoute').querySelector('.qb-label').textContent = T.routeLabel;
+    document.getElementById('btnPlan').querySelector('.qb-label').textContent = T.planLabel;
+    document.getElementById('btnReservation').querySelector('.qb-label').textContent = T.reservationLabel;
+    document.getElementById('btnShare').querySelector('.qb-label').textContent = T.shareLabel;
+    document.getElementById('btnSave').setAttribute('aria-label', T.saveAria);
+    document.querySelectorAll('.dp-tab').forEach(tab => {
+      const k = { info:'infoTab', reviews:'reviewsTab', community:'communityTab' }[tab.dataset.tab];
+      if (k) tab.textContent = T[k];
+    });
+    const aboutTitle = document.getElementById('aboutTitle');
+    if (aboutTitle) aboutTitle.textContent = T.about;
+    const mediaTitle = document.getElementById('mediaViewerTitle');
+    if (mediaTitle) mediaTitle.textContent = T.photos;
     document.getElementById('btnTaste').textContent = T.taste;
     document.getElementById('tabFood').textContent = T.foodTab;
     document.getElementById('tabCafe').textContent = T.cafeTab;
-    document.getElementById('langBtn').textContent = isEn ? '한국어' : 'EN';
     document.getElementById('sortRec').classList.toggle('active', activeSort === 'recommended');
     document.getElementById('sortDist').classList.toggle('active', activeSort === 'distance');
     popularButton.classList.toggle('active', activeSort === 'popular');
@@ -409,9 +508,7 @@
 
     if (NEAR_TITLE) {
       const note = document.getElementById('nearNote');
-      note.innerHTML = isEn
-        ? `Sorted by distance from <b>${escapeHtml(NEAR_TITLE)}</b>`
-        : `<b>${escapeHtml(NEAR_TITLE)}</b> 기준 가까운 순입니다`;
+      note.innerHTML = fmt(T.nearNoteFmt, escapeHtml(NEAR_TITLE));
       note.hidden = false;
     }
   }
@@ -618,7 +715,13 @@
     ko:{ firstmenu:'대표 메뉴', opentimefood:'영업시간', restdatefood:'휴무일',
          reservationfood:'예약', treatmenu:'취급 메뉴' },
     en:{ firstmenu:'Signature', opentimefood:'Hours', restdatefood:'Closed',
-         reservationfood:'Reservation', treatmenu:'Menu' }
+         reservationfood:'Reservation', treatmenu:'Menu' },
+    ja:{ firstmenu:'代表メニュー', opentimefood:'営業時間', restdatefood:'休業日',
+         reservationfood:'予約', treatmenu:'取扱メニュー' },
+    zh:{ firstmenu:'招牌菜', opentimefood:'营业时间', restdatefood:'休息日',
+         reservationfood:'预约', treatmenu:'经营菜品' },
+    fr:{ firstmenu:'Plat signature', opentimefood:'Horaires', restdatefood:'Jour de fermeture',
+         reservationfood:'Réservation', treatmenu:'Menu proposé' }
   };
 
   function openDetail(p) {
@@ -636,8 +739,8 @@
     document.getElementById('dpRating').innerHTML = rating > 0 && rc > 0
       ? `<span class="dp-rating-stars">★</span>
          <span class="dp-rating-score">${rating.toFixed(1)}</span>
-         <span class="dp-rating-count">${rc.toLocaleString()}${isEn ? ' reviews' : '개 리뷰'}</span>`
-      : `<span style="color:#bbb;font-size:11px">${isEn ? 'No visitor ratings yet' : '아직 방문자 평점이 없어요'}</span>`;
+         <span class="dp-rating-count">${rc.toLocaleString()}${T.reviewsSuffix}</span>`
+      : `<span style="color:#bbb;font-size:11px">${T.noRating}</span>`;
     document.getElementById('dpInfoRow').innerHTML = `
       <div class="dp-info"><div class="dp-info-label">${T.addr}</div>
         <div class="dp-info-val">${escapeHtml(p.addr ?? '-')}</div></div>
@@ -666,14 +769,14 @@
     const reviews = Array.isArray(p.reviews) ? p.reviews : [];
     if (!reviews.length) {
       root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">✎</span>
-        <strong>${isEn ? 'No visitor reviews yet' : '아직 방문자 리뷰가 없어요'}</strong>
-        ${isEn ? 'Short reviews written after a visit will appear here.' : '직접 방문한 사용자의 짧은 리뷰가 이곳에 표시돼요.'}</div>`;
+        <strong>${T.reviewsEmptyTitle}</strong>
+        ${T.reviewsEmptyBody}</div>`;
       return;
     }
-    root.innerHTML = `<div class="section-card"><div class="section-title">${isEn ? 'Visitor reviews' : '방문자 리뷰'} <small>${reviews.length}</small></div>`
+    root.innerHTML = `<div class="section-card"><div class="section-title">${T.reviewsTitle} <small>${reviews.length}</small></div>`
       + reviews.map(r => `<article class="review-card">
           <div class="review-head">
-            <span class="review-author">${escapeHtml(r.authorName || r.author_name || (isEn ? 'Visitor' : '방문자'))}</span>
+            <span class="review-author">${escapeHtml(r.authorName || r.author_name || T.visitor)}</span>
             <span class="review-star">${r.rating ? `★ ${escapeHtml(String(r.rating))}` : ''}</span>
           </div>
           <p class="review-text">${escapeHtml(r.text || r.content || '')}</p>
@@ -684,7 +787,7 @@
     const root = document.getElementById('dpCommunity');
     const writeUrl = `/community/post/write?placeContentId=${encodeURIComponent(p.id || '')}`
       + `&placeContentTypeId=${encodeURIComponent(p.type || '')}&placeTitle=${encodeURIComponent(p.title || '')}`;
-    root.innerHTML = `<div class="section-card empty-state">${isEn ? 'Loading community stories…' : '커뮤니티 이야기를 불러오는 중…'}</div>`;
+    root.innerHTML = `<div class="section-card empty-state">${T.communityLoading}</div>`;
     try {
       const res = await fetch(`/tour/api/community/${encodeURIComponent(p.id)}`);
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -692,19 +795,19 @@
       if (currentDetailPlace !== p) return;
       if (!posts.length) {
         root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">💬</span>
-          <strong>${isEn ? 'Be the first to share this place' : '이 장소의 첫 이야기를 남겨보세요'}</strong>
-          ${isEn ? 'Long-form stories tagged in Community appear here.' : '커뮤니티에서 이 장소를 태그한 여행기와 후기가 모여요.'}<br>
-          <a class="outline-btn" href="${writeUrl}">${isEn ? 'Write a story' : '커뮤니티 글쓰기'}</a></div>`;
+          <strong>${T.communityEmptyTitle}</strong>
+          ${T.communityEmptyBody}<br>
+          <a class="outline-btn" href="${writeUrl}">${T.communityWrite}</a></div>`;
         return;
       }
-      root.innerHTML = `<div class="section-card"><div class="section-title">${isEn ? 'Community stories' : '커뮤니티 이야기'} <small>${posts.length}</small></div>`
+      root.innerHTML = `<div class="section-card"><div class="section-title">${T.communityTitle} <small>${posts.length}</small></div>`
         + posts.map(post => `<a class="community-card" href="/community/post/${post.postId}">
-            <div class="community-meta"><span>${escapeHtml(post.authorName || '')}</span><span>조회 ${Number(post.viewCount || 0).toLocaleString()} · 댓글 ${Number(post.commentCount || 0).toLocaleString()}</span></div>
+            <div class="community-meta"><span>${escapeHtml(post.authorName || '')}</span><span>${T.views} ${Number(post.viewCount || 0).toLocaleString()} · ${T.comments} ${Number(post.commentCount || 0).toLocaleString()}</span></div>
             <div class="community-title">${escapeHtml((isEn && post.titleEn) || post.title || '')}</div>
             <p class="community-preview">${escapeHtml((isEn && post.contentEnPreview) || post.contentPreview || '')}</p>
-          </a>`).join('') + `<a class="outline-btn" href="${writeUrl}">${isEn ? 'Write a story' : '이 장소 글쓰기'}</a></div>`;
+          </a>`).join('') + `<a class="outline-btn" href="${writeUrl}">${T.communityWriteThis}</a></div>`;
     } catch (e) {
-      root.innerHTML = `<div class="section-card empty-state">${isEn ? 'Could not load Community stories.' : '커뮤니티 글을 불러오지 못했어요.'}</div>`;
+      root.innerHTML = `<div class="section-card empty-state">${T.communityLoadFail}</div>`;
       console.error('community posts error', e);
     }
   }
@@ -721,11 +824,11 @@
     const desc = document.getElementById('dpDesc');
     try {
       const res = await fetch(`/tour/api/detail/${encodeURIComponent(p.id)}`
-        + `?contentTypeId=${encodeURIComponent(p.type)}&lang=${isEn ? 'en' : 'ko'}`);
+        + `?contentTypeId=${encodeURIComponent(p.type)}&lang=${encodeURIComponent(LANG_KEY)}`);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const d = await res.json();
       if (currentDetailPlace !== p) return;            // 그 사이 다른 곳을 눌렀으면 버린다
-      const labels = isEn ? DETAIL_LABELS.en : DETAIL_LABELS.ko;
+      const labels = DETAIL_LABELS[LANG_KEY] || DETAIL_LABELS.en;
       const reservationText = stripTags(d.details?.reservationfood || '');
       const rows = Object.entries(d.details || {})
         .map(([k, v]) => `<div class="dp-info"><div class="dp-info-label">${labels[k] ?? k}</div>
@@ -733,13 +836,13 @@
       const tel = d.tel ? `<p style="margin-top:10px"><b>${T.tel}:</b> ${escapeHtml(d.tel)}</p>` : '';
       desc.innerHTML = `<p style="line-height:1.75;white-space:pre-line">${escapeHtml(stripTags(d.overview) || T.none)}</p>` + tel;
       document.getElementById('dpApiInfo').innerHTML = rows
-        ? `<div class="section-card"><div class="section-title">${isEn ? 'Menu & hours' : '메뉴 · 이용 정보'}</div><div class="dp-info-row" style="margin:0">${rows}</div></div>` : '';
+        ? `<div class="section-card"><div class="section-title">${T.menuHours}</div><div class="dp-info-row" style="margin:0">${rows}</div></div>` : '';
       if (reservationText) {
         const phone = reservationText.match(/0\d{1,2}-\d{3,4}-\d{4}/)?.[0] || '';
         const reservationButton = document.getElementById('btnReservation');
         reservationButton.hidden = false;
         reservationButton.dataset.tel = phone;
-        reservationButton.querySelector('.qb-label').textContent = isEn ? '예약 문의' : '예약 문의';
+        reservationButton.querySelector('.qb-label').textContent = T.reservationLabel;
       }
       if (d.image) {
         const hero = document.getElementById('dpHero');
@@ -759,9 +862,9 @@
     return (holder.textContent || '').trim();
   }
 
-  function switchLang() {
+  function switchLang(newLang) {
     const url = new URL(window.location.href);
-    url.searchParams.set('lang', isEn ? 'ko' : 'en');
+    url.searchParams.set('lang', newLang || (isEn ? 'ko' : 'en'));
     window.location.href = url.toString();
   }
 
@@ -788,8 +891,7 @@
   };
 
   document.getElementById('btnSave').onclick = function () {
-    alert(isEn ? 'Place saving will be available after the account collection is connected.'
-      : '장소 저장 기능은 마이페이지 컬렉션과 연결한 뒤 제공될 예정이에요.');
+    alert(T.saveAlert);
   };
 
   document.getElementById('btnShare').onclick = async function () {
@@ -800,7 +902,7 @@
       if (navigator.share) await navigator.share(shareData);
       else {
         await navigator.clipboard.writeText(location.href);
-        alert(isEn ? 'Link copied.' : '현재 페이지 링크를 복사했어요.');
+        alert(T.linkCopied);
       }
     } catch (e) {
       if (e?.name !== 'AbortError') console.error('share error', e);
