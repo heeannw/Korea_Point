@@ -780,6 +780,29 @@
             color: #ffffff;
         }
 
+        .post-empty {
+            padding: 44px 20px;
+            text-align: center;
+            color: var(--gray);
+            font-size: 14px;
+            line-height: 1.7;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--white);
+        }
+
+        .post-empty-btn {
+            display: inline-block;
+            margin-top: 14px;
+            padding: 10px 20px;
+            border-radius: 50px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
         .post-list {
             display: flex;
             flex-direction: column;
@@ -1420,7 +1443,15 @@
             <a class="see-all" th:href="@{/community/post-list(lang='en')}">See all</a>
         </div>
 
-        <div class="post-list">
+        <!-- Nothing posted yet: invite a first post instead of leaving a blank -->
+        <div class="post-empty" th:if="${#lists.isEmpty(trendingPosts)}">
+            No travel stories yet.<br>
+            Be the first to share what you found in Busan.
+            <a class="post-empty-btn" th:href="@{/community/post-list(lang='en')}"
+               href="/community/post-list?lang=en">Go to community</a>
+        </div>
+
+        <div class="post-list" th:unless="${#lists.isEmpty(trendingPosts)}">
             <a class="post-item"
                th:each="post, iter : ${trendingPosts}"
                th:href="@{/community/post/{id}(id=${post.postId},lang='en')}"
