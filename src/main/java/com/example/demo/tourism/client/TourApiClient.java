@@ -252,6 +252,30 @@ public class TourApiClient {
         return dropEndedFestivals(request(uri, lang), lang);
     }
 
+    /**
+     * 저장(찜) 스냅샷용. detailCommon2에서 국문 이름·주소·좌표·이미지를 그대로 담는다.
+     * 번역 오버레이는 적용하지 않는다(플래너가 국문 이름으로 매칭하기 때문).
+     * 조회 실패 시 null.
+     */
+    public TourPlaceDto findKoreanSnapshot(String contentId) {
+        JsonNode item = firstItem(requestRoot(
+                commonUri("ko", "detailCommon2").queryParam("contentId", contentId)));
+        TourPlaceDto place = new TourPlaceDto();
+        place.setId(text(item, "contentid"));
+        if (place.getId() == null) return null;
+        place.setType(text(item, "contenttypeid"));
+        place.setTitle(text(item, "title"));
+        place.setAddr(joinAddress(text(item, "addr1"), text(item, "addr2")));
+        place.setLat(coordinate(item, "mapy"));
+        place.setLng(coordinate(item, "mapx"));
+        place.setImage(normalizeImageUrl(
+                firstNonBlank(text(item, "firstimage"), text(item, "firstimage2"))));
+        if (FOOD_CONTENT_TYPE.equals(place.getType())) {
+            place.setFoodCategory(resolveFoodCategory(item));
+        }
+        return place;
+    }
+
     /** 상세 패널에서 사용할 설명과 콘텐츠 유형별 운영정보를 조회한다. */
     public Map<String, Object> findDetail(String contentId, String contentTypeId, String lang) {
         UriComponentsBuilder commonUri = commonUri(lang, "detailCommon2")

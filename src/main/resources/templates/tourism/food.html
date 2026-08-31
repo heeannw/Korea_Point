@@ -289,6 +289,7 @@
   const centerLon = /*[[${centerLon}]]*/ 129.0756;
   const INIT_CATEGORY = /*[[${category}]]*/ null;
   const NEAR_TITLE    = /*[[${near}]]*/ null;
+  const LOGGED_IN     = /*[[${isLoggedIn}]]*/ false;
   const CAFE_ONLY     = /*[[${cafeOnly}]]*/ false;
 </script>
 
@@ -775,6 +776,7 @@
     const reservationButton = document.getElementById('btnReservation');
     reservationButton.hidden = true;
     reservationButton.dataset.tel = '';
+    updateSaveButton(p);
     renderVisitorReviews(p);
     loadCommunityPosts(p);
     document.getElementById('detailPanel').classList.add('open');
@@ -914,9 +916,53 @@
     else showDetailTab('info');
   };
 
-  document.getElementById('btnSave').onclick = function () {
-    alert(T.saveAlert);
-  };
+  // ── 저장(찜) ── 로그인 시 서버(saved_place), 아니면 안내만.
+  let savedIds = new Set();
+  async function csrfFetch(url, method, jsonBody) {
+    const token  = document.querySelector('meta[name="_csrf"]')?.content ?? '';
+    const header = document.querySelector('meta[name="_csrf_header"]')?.content ?? 'X-CSRF-TOKEN';
+    const opts = { method, headers: { [header]: token } };
+    if (jsonBody !== undefined) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(jsonBody);
+    }
+    const res = await fetch(url, opts);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res;
+  }
+  async function loadSavedIds() {
+    if (!LOGGED_IN) return;
+    try {
+      const res = await fetch('/tour/api/saved-places/ids');
+      savedIds = new Set((await res.json()).map(String));
+    } catch (e) { savedIds = new Set(); }
+  }
+  function updateSaveButton(p) {
+    const btn = document.getElementById('btnSave');
+    const on = p && p.id != null && savedIds.has(String(p.id));
+    btn.classList.toggle('saved', on);
+    btn.textContent = on ? '♥' : '♡';
+  }
+  async function toggleSave(p) {
+    if (!p || p.id == null) return;
+    if (!LOGGED_IN) { alert(T.saveAlert); return; }
+    const key = String(p.id);
+    const wasOn = savedIds.has(key);
+    if (wasOn) savedIds.delete(key); else savedIds.add(key);
+    updateSaveButton(p);
+    try {
+      if (wasOn) {
+        await csrfFetch(`/tour/api/saved-places/${encodeURIComponent(key)}`, 'DELETE');
+      } else {
+        await csrfFetch('/tour/api/saved-places', 'POST',
+          { contentId: key, contentTypeId: p.type ?? '39' });
+      }
+    } catch (e) {
+      if (wasOn) savedIds.add(key); else savedIds.delete(key);
+      updateSaveButton(p);
+    }
+  }
+  document.getElementById('btnSave').onclick = () => toggleSave(currentDetailPlace);
 
   document.getElementById('btnShare').onclick = async function () {
     const p = currentDetailPlace;
@@ -959,6 +1005,7 @@
 
   applyStaticLabels();
   render();
+  loadSavedIds().then(() => { if (currentDetailPlace) updateSaveButton(currentDetailPlace); });
   document.getElementById('filterRow').addEventListener('scroll', updateScrollBtns);
   updateScrollBtns();
   if (KAKAO_KEY) {

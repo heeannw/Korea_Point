@@ -970,47 +970,63 @@
     }
   }
 
+  // 로그인 사용자는 서버(saved_place)에 저장한다. 비로그인은 기존처럼 localStorage.
+  const LOGGED_IN = currentUserId != null;
   const SAVED_KEY = currentUserId ? `tourSavedPlaces:${currentUserId}` : 'tourSavedPlaces:guest';
-  function savedPlaces() {
+  let savedIds = new Set();
+
+  function localSavedIds() {
     try {
       const value = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
-      if (!Array.isArray(value)) return [];
-      return value.map(item => typeof item === 'object' && item !== null ? item : { id: String(item) })
-        .filter(item => item.id != null);
-    } catch (e) {
-      return [];
-    }
+      return new Set((Array.isArray(value) ? value : [])
+        .map(item => String(typeof item === 'object' && item ? item.id : item))
+        .filter(id => id && id !== 'undefined'));
+    } catch (e) { return new Set(); }
   }
-  function savedSet() {
-    return new Set(savedPlaces().map(item => String(item.id)));
+  async function loadSavedIds() {
+    if (!LOGGED_IN) { savedIds = localSavedIds(); return; }
+    try {
+      const res = await fetch('/tour/api/saved-places/ids');
+      savedIds = new Set((await res.json()).map(String));
+    } catch (e) { savedIds = new Set(); }
   }
-  function savePayload(p) {
-    return {
-      id: String(p.id),
-      title: p.title ?? p.google_name ?? I18N.untitled,
-      addr: p.addr ?? p.google_addr ?? '',
-      type: p.type ?? '',
-      lat: p.lat ?? null,
-      lng: p.lng ?? null
-    };
-  }
+  function savedSet() { return savedIds; }
   function updateSaveButton(p) {
     const btn = document.getElementById('btnSave');
-    const on = p && p.id != null && savedSet().has(String(p.id));
+    const on = p && p.id != null && savedIds.has(String(p.id));
     btn.classList.toggle('saved', on);
     btn.textContent = on ? '♥' : '♡';
   }
-  function toggleSave(p) {
+  async function toggleSave(p) {
     if (!p || p.id == null) return;
-    let places = savedPlaces();
     const key = String(p.id);
-    if (places.some(item => String(item.id) === key)) {
-      places = places.filter(item => String(item.id) !== key);
+    const wasOn = savedIds.has(key);
+    if (wasOn) savedIds.delete(key); else savedIds.add(key);
+    updateSaveButton(p);   // 낙관적 반영
+
+    if (LOGGED_IN) {
+      try {
+        if (wasOn) {
+          await csrfFetch(`/tour/api/saved-places/${encodeURIComponent(key)}`, 'DELETE');
+        } else {
+          await csrfFetch('/tour/api/saved-places', 'POST',
+            { contentId: key, contentTypeId: p.type ?? '' });
+        }
+      } catch (e) {
+        if (wasOn) savedIds.add(key); else savedIds.delete(key);  // 실패 시 롤백
+        updateSaveButton(p);
+      }
     } else {
-      places.unshift(savePayload(p));
+      // 비로그인: 기존 항목의 이름·주소는 보존하고 이 장소만 넣고 뺀다.
+      let stored = [];
+      try { stored = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); } catch (e) {}
+      stored = (Array.isArray(stored) ? stored : []).filter(it => String(it && it.id ? it.id : it) !== key);
+      if (!wasOn) {
+        stored.unshift({ id: key, title: p.title ?? I18N.untitled, addr: p.addr ?? '',
+          contentTypeId: p.type ?? '', lat: p.lat ?? null, lng: p.lng ?? null });
+      }
+      try { localStorage.setItem(SAVED_KEY, JSON.stringify(stored)); } catch (e) {}
     }
-    try { localStorage.setItem(SAVED_KEY, JSON.stringify(places)); } catch (e) {}
-    updateSaveButton(p);
   }
 
   function openDetail(p) {
@@ -1193,6 +1209,19 @@
       body: body
     });
   }
+  /** JSON 본문 + CSRF 헤더로 fetch. 2xx 아니면 throw. */
+  async function csrfFetch(url, method, jsonBody) {
+    const token  = document.querySelector('meta[name="_csrf"]')?.content ?? '';
+    const header = document.querySelector('meta[name="_csrf_header"]')?.content ?? 'X-CSRF-TOKEN';
+    const opts = { method, headers: { [header]: token } };
+    if (jsonBody !== undefined) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(jsonBody);
+    }
+    const res = await fetch(url, opts);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res;
+  }
   function deleteKeyword(kw, event) {
     event.preventDefault();
     event.stopPropagation();
@@ -1219,6 +1248,7 @@
 
   applyAllChipLabel();
   render();
+  loadSavedIds().then(() => { if (currentDetailPlace) updateSaveButton(currentDetailPlace); });
 </script>
 
 <script th:src="'//dapi.kakao.com/v2/maps/sdk.js?appkey=' + ${kakaoKey} + '&autoload=false&libraries=clusterer'"></script>
