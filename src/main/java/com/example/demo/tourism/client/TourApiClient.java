@@ -2,6 +2,7 @@ package com.example.demo.tourism.client;
 
 import com.example.demo.tourism.config.TourApiProperties;
 import com.example.demo.tourism.config.TourCategoryNames;
+import com.example.demo.tourism.config.TourPlaceI18n;
 import com.example.demo.tourism.dto.TourCoursePointDto;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -63,42 +64,30 @@ public class TourApiClient {
     private static final int MAX_PAGES = 20;
 
     /**
-     * 국문 외 서비스(Eng/Jpn/Chs/Fre …)는 KorService2와 다른 콘텐츠 유형 코드를 쓴다
-     * (관광지 76, 음식점 82 …). 네 언어 모두 영문과 같은 코드 체계라 한 매핑으로 처리한다.
-     * 화면과 상세 조회는 국문 코드 기준이므로 API 경계에서만 변환한다.
+     * 목록·상세 조회는 항상 KorService2(국문)에서 받는다.
+     * 국문 외 서비스(Eng/Jpn/Chs/Fre)는 부산 데이터가 국문의 1/6~1/20 수준이라
+     * (예: 음식점 519 → 19), 목록이 언어별로 크게 어긋난다.
+     * 대신 국문 목록을 기준으로 두고 {@link TourPlaceI18n} 번역 오버레이(공식 번역 + 기계번역)로
+     * 이름·주소를 언어별로 바꿔 끼운다.
      */
-    private static final Map<String, String> FOREIGN_TO_KOREAN_TYPE = Map.of(
-            "76", "12",  // 관광지
-            "78", "14",  // 문화시설
-            "85", "15",  // 행사/공연/축제
-            "77", "25",  // 여행코스
-            "75", "28",  // 레포츠
-            "80", "32",  // 숙박
-            "79", "38",  // 쇼핑
-            "82", "39"); // 음식점
-
-    private static final Map<String, String> KOREAN_TO_FOREIGN_TYPE = FOREIGN_TO_KOREAN_TYPE
-            .entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
-
-    /** 국문(KorService2)이 아닌, 영문식 코드 체계를 쓰는 서비스로 나가는 언어들. */
-    private static final Set<String> FOREIGN_LANGS = Set.of("en", "ja", "zh", "fr");
-
     private final RestClient restClient;
     private final TourApiProperties properties;
     private final ObjectMapper objectMapper;
     private final TourCategoryNames categoryNames;
+    private final TourPlaceI18n placeI18n;
     /** 경유지는 거의 바뀌지 않는데 조회 비용이 커서 애플리케이션 수명 동안 재사용한다. */
     private final Map<String, List<TourCoursePointDto>> courseWaypointCache = new ConcurrentHashMap<>();
 
     public TourApiClient(RestClient.Builder restClientBuilder,
                          TourApiProperties properties,
                          ObjectMapper objectMapper,
-                         TourCategoryNames categoryNames) {
+                         TourCategoryNames categoryNames,
+                         TourPlaceI18n placeI18n) {
         this.restClient = restClientBuilder.build();
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.categoryNames = categoryNames;
+        this.placeI18n = placeI18n;
     }
 
     /**
@@ -165,7 +154,7 @@ public class TourApiClient {
     private List<TourCoursePointDto> loadCourseWaypoints(String contentId, String lang) {
         UriComponentsBuilder uri = commonUri(lang, "detailInfo2")
                 .queryParam("contentId", contentId)
-                .queryParam("contentTypeId", toApiType(COURSE_CONTENT_TYPE, lang))
+                .queryParam("contentTypeId", COURSE_CONTENT_TYPE)
                 .queryParam("numOfRows", COURSE_MAX_WAYPOINTS)
                 .queryParam("pageNo", 1);
 
@@ -228,7 +217,7 @@ public class TourApiClient {
     public List<TourPlaceDto> findBusanFoodPlaces(String lang) {
         UriComponentsBuilder uri = commonUri(lang, "areaBasedList2")
                 .queryParam("lDongRegnCd", properties.getBusanLegalDongCode())
-                .queryParam("contentTypeId", toApiType(FOOD_CONTENT_TYPE, lang))
+                .queryParam("contentTypeId", FOOD_CONTENT_TYPE)
                 .queryParam("arrange", "Q")
                 .queryParam("numOfRows", properties.getDefaultRows())
                 .queryParam("pageNo", 1);
@@ -258,7 +247,7 @@ public class TourApiClient {
                 .queryParam("numOfRows", properties.getDefaultRows())
                 .queryParam("pageNo", 1);
         if (contentTypeId != null && !contentTypeId.isBlank()) {
-            uri.queryParam("contentTypeId", toApiType(contentTypeId, lang));
+            uri.queryParam("contentTypeId", contentTypeId);
         }
         return dropEndedFestivals(request(uri, lang), lang);
     }
@@ -270,7 +259,7 @@ public class TourApiClient {
 
         UriComponentsBuilder introUri = commonUri(lang, "detailIntro2")
                 .queryParam("contentId", contentId)
-                .queryParam("contentTypeId", toApiType(contentTypeId, lang));
+                .queryParam("contentTypeId", contentTypeId);
 
         UriComponentsBuilder imageUri = commonUri(lang, "detailImage2")
                 .queryParam("contentId", contentId)
@@ -285,7 +274,9 @@ public class TourApiClient {
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("contentId", contentId);
         detail.put("contentTypeId", contentTypeId);
-        detail.put("title", text(common, "title"));
+        // 상세도 KorService2에서 받으므로 제목은 번역 오버레이로 맞춘다. 개요는 v1에서 국문 유지.
+        String koreanTitle = text(common, "title");
+        detail.put("title", placeI18n.translateTitle(lang, contentId, koreanTitle));
         detail.put("overview", text(common, "overview"));
         detail.put("homepage", text(common, "homepage"));
         detail.put("tel", text(common, "tel"));
@@ -299,7 +290,8 @@ public class TourApiClient {
 
     private UriComponentsBuilder commonUri(String lang, String operation) {
         requireServiceKey();
-        String baseUrl = properties.baseUrlFor(lang);
+        // lang 과 무관하게 KorService2 만 쓴다. 번역은 TourPlaceI18n 오버레이가 담당한다.
+        String baseUrl = properties.getKoreanBaseUrl();
         return UriComponentsBuilder.fromUriString(baseUrl + "/" + operation)
                 .queryParam("serviceKey", properties.getServiceKey())
                 .queryParam("MobileOS", properties.getMobileOs())
@@ -347,23 +339,6 @@ public class TourApiClient {
         List<TourPlaceDto> filtered = new ArrayList<>(places);
         filtered.removeIf(place -> isFestival(place) && !ongoing.contains(place.getId()));
         return filtered;
-    }
-
-    /** 국문 외 서비스로 나가는 요청인지. 이때만 콘텐츠 유형 코드를 영문식으로 변환한다. */
-    private boolean usesForeignService(String lang) {
-        return lang != null && FOREIGN_LANGS.contains(lang.toLowerCase());
-    }
-
-    /** 국문 코드를 요청 대상 서비스가 이해하는 코드로 바꾼다. */
-    private String toApiType(String koreanType, String lang) {
-        if (koreanType == null || !usesForeignService(lang)) return koreanType;
-        return KOREAN_TO_FOREIGN_TYPE.getOrDefault(koreanType, koreanType);
-    }
-
-    /** 응답의 콘텐츠 유형 코드를 화면이 기대하는 국문 코드로 통일한다. */
-    private String toKoreanType(String apiType, String lang) {
-        if (apiType == null || !usesForeignService(lang)) return apiType;
-        return FOREIGN_TO_KOREAN_TYPE.getOrDefault(apiType, apiType);
     }
 
     private JsonNode requestRoot(UriComponentsBuilder uriBuilder) {
@@ -441,7 +416,7 @@ public class TourApiClient {
     private void addMappedItem(List<TourPlaceDto> result, JsonNode item, String lang) {
         Double lat = coordinate(item, "mapy");
         Double lng = coordinate(item, "mapx");
-        String type = toKoreanType(text(item, "contenttypeid"), lang);
+        String type = text(item, "contenttypeid");
 
         // 여행코스는 대표 좌표가 없으므로 경유지로 채울 수 있게 일단 통과시킨다.
         if ((lat == null || lng == null) && !COURSE_CONTENT_TYPE.equals(type)) return;
@@ -455,8 +430,8 @@ public class TourApiClient {
         place.setLat(lat);
         place.setLng(lng);
         place.setImage(normalizeImageUrl(firstNonBlank(text(item, "firstimage"), text(item, "firstimage2"))));
-        place.setTypeName(resolveTypeName(item));
-        place.setTypeDetailName(categoryNames.resolve(
+        place.setTypeName(resolveTypeName(item, lang));
+        place.setTypeDetailName(categoryNames.resolve(lang,
                 text(item, "lclsSystm3"), text(item, "lclsSystm2"), text(item, "lclsSystm1")));
         if (FOOD_CONTENT_TYPE.equals(type)) {
             place.setFoodCategory(resolveFoodCategory(item));
@@ -464,6 +439,10 @@ public class TourApiClient {
         place.setRating(null);
         place.setUser_ratings_total(0);
         place.setReviews(List.of());
+
+        // 국문 목록을 기준으로 받았으므로, 국문 외 언어는 이름·주소를 번역 오버레이로 바꿔 끼운다.
+        placeI18n.apply(lang, place);
+
         result.add(place);
     }
 
@@ -493,19 +472,25 @@ public class TourApiClient {
      * 화면에 띄울 세부 타입명이다.
      * 한식은 소분류가 '관광식당'·'모범음식점' 같은 인증 구분이라 중분류('한식')를 쓴다.
      */
-    private String resolveTypeName(JsonNode item) {
+    private String resolveTypeName(JsonNode item, String lang) {
         String medium = text(item, "lclsSystm2");
         String small = "FD01".equals(medium) ? null : text(item, "lclsSystm3");
-        return categoryNames.resolve(small, medium, text(item, "lclsSystm1"));
+        return categoryNames.resolve(lang, small, medium, text(item, "lclsSystm1"));
     }
 
     /**
-     * 쇼핑에는 편의점·체인점까지 등록돼 있어 그대로 실으면 목록이 잡화점으로 덮인다.
-     * 관광 분류코드(cat3)가 붙은 항목만 관광 목적으로 등록된 곳이라 전통시장·아울렛만 남긴다.
+     * 분류 정보가 전혀 없는 쇼핑 항목만 걸러낸다.
+     * 예전에는 구 분류코드(cat3)로 판단해 cat3가 붙은 곳만 남겼으나,
+     * 국문 외 서비스에는 cat3가 거의 비어 있어 면세점·전통시장까지 통째로 사라졌다.
+     * 이제 lclsSystm(분류체계, 100% 채워짐)이 있으면 통과시켜 언어별 목록을 맞춘다.
      * 다른 유형은 분류코드가 비어도 정상 콘텐츠이므로(해수욕장이 대표적) 이 규칙을 적용하지 않는다.
      */
     private boolean isUntaggedShop(String type, JsonNode item) {
-        return SHOPPING_CONTENT_TYPE.equals(type) && text(item, "cat3") == null;
+        if (!SHOPPING_CONTENT_TYPE.equals(type)) return false;
+        boolean classified = text(item, "cat3") != null
+                || text(item, "lclsSystm2") != null
+                || text(item, "lclsSystm3") != null;
+        return !classified;
     }
 
     /** TourAPI는 좌표가 없는 항목에 빈 값이 아니라 0을 넣어 보낸다. */
