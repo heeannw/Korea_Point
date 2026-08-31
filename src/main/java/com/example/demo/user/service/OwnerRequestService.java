@@ -42,6 +42,28 @@ public class OwnerRequestService {
         return ownerRequestRepository.findByStatusOrderByCreatedAtAsc(OwnerRequestStatus.PENDING);
     }
 
+    @Transactional(readOnly = true)
+    public Path findDocumentPath(Long requestId, String documentType) {
+        OwnerRequest request = ownerRequestRepository.findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사업자 신청입니다."));
+        String storedPath = switch (documentType) {
+            case "registration" -> request.getBusinessRegistrationFilePath();
+            case "license" -> request.getBusinessLicenseFilePath();
+            case "menu" -> request.getMenuFilePath();
+            default -> throw new IllegalArgumentException("지원하지 않는 사업자 서류입니다.");
+        };
+        if (!StringUtils.hasText(storedPath)) {
+            throw new IllegalArgumentException("등록된 사업자 서류가 없습니다.");
+        }
+
+        Path uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
+        Path documentPath = Paths.get(storedPath).toAbsolutePath().normalize();
+        if (!documentPath.startsWith(uploadRoot) || !Files.isRegularFile(documentPath)) {
+            throw new IllegalArgumentException("사업자 서류를 찾을 수 없습니다.");
+        }
+        return documentPath;
+    }
+
     @Transactional
     public OwnerRequest apply(Long userId,
                               String storeName,

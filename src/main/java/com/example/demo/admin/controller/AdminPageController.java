@@ -19,6 +19,11 @@ public class AdminPageController {
         return adminPage(model, "users", "사용자 관리");
     }
 
+    @GetMapping("/owner-applications")
+    public String ownerApplications(Model model) {
+        return adminPage(model, "ownerApplications", "사업자 신청 관리");
+    }
+
     @GetMapping("/posts")
     public String posts(Model model) {
         return adminPage(model, "posts", "게시글 관리");

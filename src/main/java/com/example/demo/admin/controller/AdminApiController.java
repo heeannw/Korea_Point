@@ -16,7 +16,11 @@ import com.example.demo.user.util.SecurityUtil;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -32,6 +36,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +89,18 @@ public class AdminApiController {
         return ownerRequestService.findPendingRequests().stream()
                 .map(this::toOwnerRequestItem)
                 .toList();
+    }
+
+    @GetMapping("/owner-applications/{id}/documents/{type}")
+    public ResponseEntity<Resource> ownerRequestDocument(@PathVariable Long id,
+                                                         @PathVariable String type) {
+        Path documentPath = ownerRequestService.findDocumentPath(id, type);
+        Resource resource = new FileSystemResource(documentPath);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + documentPath.getFileName() + "\"")
+                .body(resource);
     }
 
     @PostMapping("/owner-applications/{id}/approve")

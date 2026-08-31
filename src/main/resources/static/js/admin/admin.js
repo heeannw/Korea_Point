@@ -162,6 +162,9 @@ function bindStaticEvents() {
     document.getElementById("refreshDashboardButton")?.addEventListener("click", () => {
         loadDashboard().catch((error) => showAlert(error.message, "error"));
     });
+    document.getElementById("refreshOwnerApplicationsButton")?.addEventListener("click", () => {
+        loadOwnerApplications().catch((error) => showAlert(error.message, "error"));
+    });
 
     document.getElementById("modalCloseButton")?.addEventListener("click", closeActionModal);
     document.getElementById("modalCancelButton")?.addEventListener("click", closeActionModal);
@@ -189,6 +192,9 @@ async function initializePage() {
             break;
         case "users":
             await loadUsers();
+            break;
+        case "ownerApplications":
+            await loadOwnerApplications();
             break;
         case "posts":
             await populateCategoryFilter();
@@ -306,7 +312,7 @@ async function loadUsers() {
                         <span class="muted">${escapeHtml(item.provider)} · ID ${item.id}</span>
                     </div>
                 </td>
-                <td><span class="badge ${item.role === "ADMIN" ? "admin" : "user"}">${escapeHtml(item.role)}</span></td>
+                <td><span class="badge ${classForRole(item.role)}">${escapeHtml(item.role)}</span></td>
                 <td><span class="badge ${item.accountStatus === "SUSPENDED" ? "danger" : "success"}">${escapeHtml(labelForAccountStatus(item.accountStatus))}</span></td>
                 <td><strong>${numberFormat(item.point)}P</strong></td>
                 <td class="muted">${formatDate(item.createdAt)}</td>
@@ -347,6 +353,7 @@ function openUserRoleModal(userId, userName, currentRole) {
             <label>변경할 역할
                 <select id="modalRoleValue">
                     <option value="USER" ${currentRole === "USER" ? "selected" : ""}>USER — 일반 사용자</option>
+                    <option value="OWNER" ${currentRole === "OWNER" ? "selected" : ""}>OWNER — 사업자</option>
                     <option value="ADMIN" ${currentRole === "ADMIN" ? "selected" : ""}>ADMIN — 관리자</option>
                 </select>
             </label>
@@ -359,6 +366,85 @@ function openUserRoleModal(userId, userName, currentRole) {
             });
             await loadUsers();
             return `권한이 ${response.role}로 변경되었습니다.`;
+        }
+    });
+}
+
+async function loadOwnerApplications() {
+    const data = await apiRequest("/admin/api/owner-applications/pending");
+    const body = document.getElementById("ownerApplicationsTableBody");
+    if (!body) {
+        return;
+    }
+
+    if (!data.length) {
+        body.innerHTML = `<tr><td colspan="5"><div class="empty-state">검토 대기 중인 사업자 신청이 없습니다.</div></td></tr>`;
+        return;
+    }
+
+    body.innerHTML = data.map((item) => `
+        <tr>
+            <td>
+                <div class="stack">
+                    <strong>${escapeHtml(item.userName)}</strong>
+                    <span class="muted">${escapeHtml(item.userEmail || "이메일 없음")}</span>
+                    <span class="muted">사용자 ID ${item.userId} · 신청 ID ${item.id}</span>
+                </div>
+            </td>
+            <td>
+                <div class="stack">
+                    <strong>${escapeHtml(item.storeName)}</strong>
+                    <span class="muted">${escapeHtml(item.businessRegistrationNumber)}</span>
+                    <span class="badge warning">${escapeHtml(item.status)}</span>
+                </div>
+            </td>
+            <td>
+                <div class="stack">
+                    ${documentLink(item.id, item.businessRegistrationFilePath, "registration", "사업자등록증")}
+                    ${documentLink(item.id, item.businessLicenseFilePath, "license", "영업신고증")}
+                    ${documentLink(item.id, item.menuFilePath, "menu", "메뉴 정보")}
+                </div>
+            </td>
+            <td class="muted">${formatDate(item.createdAt)}</td>
+            <td>
+                <div class="action-group">
+                    <button type="button" class="primary-button" data-owner-approve="${item.id}" data-store-name="${escapeHtml(item.storeName)}">승인</button>
+                    <button type="button" class="danger-button" data-owner-reject="${item.id}" data-store-name="${escapeHtml(item.storeName)}">반려</button>
+                </div>
+            </td>
+        </tr>
+    `).join("");
+
+    body.querySelectorAll("[data-owner-approve]").forEach((button) => {
+        button.addEventListener("click", () => openOwnerApplicationModal(button.dataset.ownerApprove, button.dataset.storeName, "approve"));
+    });
+    body.querySelectorAll("[data-owner-reject]").forEach((button) => {
+        button.addEventListener("click", () => openOwnerApplicationModal(button.dataset.ownerReject, button.dataset.storeName, "reject"));
+    });
+}
+
+function documentLink(requestId, path, type, label) {
+    if (!path) {
+        return `<span class="muted">${escapeHtml(label)} 없음</span>`;
+    }
+    return `<a class="content-link" href="/admin/api/owner-applications/${requestId}/documents/${type}" target="_blank" rel="noopener">${escapeHtml(label)}</a>`;
+}
+
+function openOwnerApplicationModal(requestId, storeName, mode) {
+    const isApprove = mode === "approve";
+    openActionModal({
+        title: isApprove ? "사업자 신청 승인" : "사업자 신청 반려",
+        summary: `${storeName} 사업자 신청을 ${isApprove ? "승인" : "반려"}합니다.`,
+        confirmText: isApprove ? "승인" : "반려",
+        reasonOptions: toReasonOptions(["ROLE_POLICY", "POLICY", "OTHER"]),
+        submit: async (reasonPayload) => {
+            await apiRequest(`/admin/api/owner-applications/${requestId}/${mode}`, {
+                method: "POST",
+                body: JSON.stringify({ reviewComment: reasonPayload.reasonDetail })
+            });
+            await loadOwnerApplications();
+            await refreshDashboardSilently();
+            return isApprove ? "사업자 신청을 승인했습니다." : "사업자 신청을 반려했습니다.";
         }
     });
 }
@@ -939,6 +1025,16 @@ function labelForAction(value) {
 
 function labelForAccountStatus(value) {
     return ACCOUNT_STATUS_LABELS[value] || value || "-";
+}
+
+function classForRole(role) {
+    if (role === "ADMIN") {
+        return "admin";
+    }
+    if (role === "OWNER") {
+        return "warning";
+    }
+    return "user";
 }
 
 function labelForReportReason(value) {

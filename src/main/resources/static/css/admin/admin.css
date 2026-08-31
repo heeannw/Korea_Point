@@ -281,6 +281,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled {
 
 body[data-page="dashboard"] #dashboardPanel,
 body[data-page="users"] #usersPanel,
+body[data-page="ownerApplications"] #ownerApplicationsPanel,
 body[data-page="posts"] #postsPanel,
 body[data-page="comments"] #commentsPanel,
 body[data-page="categories"] #categoriesPanel,
