@@ -1,9 +1,13 @@
 package com.example.demo.reservation.controller;
 
 import com.example.demo.reservation.dto.ReservationFormDto;
+import com.example.demo.reservation.dto.ReservationPaymentRequest;
 import com.example.demo.reservation.dto.TourApiPlaceDto;
+import com.example.demo.reservation.entity.PaymentMethod;
+import com.example.demo.reservation.entity.PaymentStatus;
 import com.example.demo.reservation.entity.TourReservation;
 import com.example.demo.reservation.service.ReservationService;
+import com.example.demo.reservation.service.ReservationPaymentService;
 import com.example.demo.reservation.service.TourApiReservationService;
 import com.example.demo.community.repository.CategoryRepository;
 import com.example.demo.community.repository.PostRepository;
@@ -41,6 +45,7 @@ public class ReservationController {
 
     private final TourApiReservationService tourApiReservationService;
     private final ReservationService reservationService;
+    private final ReservationPaymentService reservationPaymentService;
     private final UserService userService;
     private final OwnerRequestService ownerRequestService;
     private final TripPlanService tripPlanService;
@@ -90,18 +95,62 @@ public class ReservationController {
         }
 
         TourReservation savedReservation = reservationService.create(SecurityUtil.getCurrentUserId(), form);
-        return "redirect:/ko/reservation/complete/" + savedReservation.getId();
+        return "redirect:/ko/reservation/payment/" + savedReservation.getId();
+    }
+
+    @GetMapping("/ko/reservation/payment/{reservationId}")
+    public String reservationPayment(@PathVariable Long reservationId, Model model) {
+        TourReservation reservation = reservationService.findMine(reservationId, SecurityUtil.getCurrentUserId());
+        if (reservation.getPayment() == null) {
+            return "redirect:/ko/reservation/complete/" + reservationId;
+        }
+        if (reservation.getPayment().getStatus() == PaymentStatus.PAID) {
+            return "redirect:/ko/reservation/complete/" + reservationId;
+        }
+        addSessionModel(model);
+        model.addAttribute("reservation", reservation);
+        model.addAttribute("payment", reservation.getPayment());
+        model.addAttribute("paymentMethods", PaymentMethod.values());
+        model.addAttribute("paymentRequest", new ReservationPaymentRequest());
+        return "reservation/reservationPayment";
+    }
+
+    @PostMapping("/ko/reservation/payment/{reservationId}")
+    public String processReservationPayment(@PathVariable Long reservationId,
+                                            @Valid @ModelAttribute("paymentRequest") ReservationPaymentRequest request,
+                                            BindingResult bindingResult,
+                                            Model model) {
+        TourReservation reservation = reservationService.findMine(reservationId, SecurityUtil.getCurrentUserId());
+        if (bindingResult.hasErrors()) {
+            addSessionModel(model);
+            model.addAttribute("reservation", reservation);
+            model.addAttribute("payment", reservation.getPayment());
+            model.addAttribute("paymentMethods", PaymentMethod.values());
+            return "reservation/reservationPayment";
+        }
+
+        reservationPaymentService.process(reservationId, SecurityUtil.getCurrentUserId(), request);
+        return "redirect:/ko/reservation/complete/" + reservationId;
     }
 
     @GetMapping("/ko/reservation/complete/{reservationId}")
     public String reservationCompleteView(@PathVariable Long reservationId, Model model) {
         TourReservation reservation = reservationService.findMine(reservationId, SecurityUtil.getCurrentUserId());
+        if (reservation.getPayment() != null
+                && (reservation.getPayment().getStatus() == PaymentStatus.READY
+                || reservation.getPayment().getStatus() == PaymentStatus.FAILED)) {
+            return "redirect:/ko/reservation/payment/" + reservationId;
+        }
+        if (reservation.getPayment() != null && reservation.getPayment().getStatus() != PaymentStatus.PAID) {
+            return "redirect:/ko/mypage#reservations";
+        }
         TourApiPlaceDto place = tourApiReservationService.findDetail(reservation.getContentId(), reservation.getContentTypeId());
 
         addSessionModel(model);
         model.addAttribute("place", place);
         model.addAttribute("reservation", reservation);
         model.addAttribute("reservationNo", reservation.getReservationNo());
+        model.addAttribute("payment", reservation.getPayment());
         return "reservation/reservationComplete";
     }
 

@@ -57,11 +57,31 @@
                 <dt>상태</dt>
                 <dd th:text="${reservation.status}">예약 완료</dd>
             </div>
+            <div class="summary-row" th:if="${payment != null}">
+                <dt>예약금</dt>
+                <dd th:text="|${#numbers.formatInteger(payment.amount, 3, 'COMMA')}원|">10,000원</dd>
+            </div>
+            <div class="summary-row" th:if="${payment != null}">
+                <dt>결제 상태</dt>
+                <dd th:text="${payment.status.label}">예약금 결제 완료</dd>
+            </div>
+            <div class="summary-row" th:if="${payment != null and payment.method != null}">
+                <dt>결제수단</dt>
+                <dd th:text="${payment.method.label}">신용·체크카드</dd>
+            </div>
+            <div class="summary-row" th:if="${payment != null and payment.approvalNo != null}">
+                <dt>승인번호</dt>
+                <dd th:text="${payment.approvalNo}">KPAY-000000</dd>
+            </div>
             <div class="summary-row" th:if="${reservation.memo != null && !reservation.memo.isBlank()}">
                 <dt>메모</dt>
                 <dd th:text="${reservation.memo}">메모</dd>
             </div>
         </dl>
+
+        <div class="notice payment-policy" th:if="${payment != null}">
+            방문 시 예약금은 현장 이용금액에서 차감됩니다. 방문 24시간 전까지 취소하면 전액 환불됩니다.
+        </div>
 
         <div class="card-actions">
             <a class="btn" th:href="@{/ko/reservation}">다른 관광지 예약</a>

@@ -90,18 +90,30 @@
             .replaceAll("'", "&#039;");
     }
 
-    function imageMarkup(place) {
-        if (!place.imageUrl) {
-            return `<div class="place-image image-missing"><span>BUSAN</span></div>`;
-        }
+    function defaultImageUrl(contentTypeId) {
+        const images = {
+            "12": "/images/reservation/defaults/tourist-attraction.jpg",
+            "14": "/images/reservation/defaults/culture.jpg",
+            "15": "/images/reservation/defaults/festival.jpg",
+            "25": "/images/reservation/defaults/travel-course.jpg",
+            "28": "/images/reservation/defaults/leports.jpg",
+            "32": "/images/reservation/defaults/lodging.jpg",
+            "38": "/images/reservation/defaults/shopping.jpg",
+            "39": "/images/reservation/defaults/food.jpg"
+        };
+        return images[String(contentTypeId || "")] || images["12"];
+    }
 
+    function imageMarkup(place) {
+        const fallbackUrl = defaultImageUrl(place.contentTypeId);
+        const imageUrl = place.imageUrl || fallbackUrl;
         return `
             <div class="place-image">
-                <img src="${escapeHtml(place.imageUrl)}"
+                <img src="${escapeHtml(imageUrl)}"
+                     data-fallback="${escapeHtml(fallbackUrl)}"
                      alt="${escapeHtml(place.title || "부산 관광지")}"
                      loading="lazy"
-                     onerror="this.parentElement.classList.add('image-missing'); this.remove();">
-                <span>BUSAN</span>
+                     onerror="this.onerror=null; this.src=this.dataset.fallback;">
             </div>
         `;
     }

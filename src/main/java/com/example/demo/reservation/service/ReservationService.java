@@ -2,12 +2,17 @@ package com.example.demo.reservation.service;
 
 import com.example.demo.reservation.dto.ReservationFormDto;
 import com.example.demo.reservation.entity.TourReservation;
+import com.example.demo.reservation.entity.PaymentStatus;
+import com.example.demo.reservation.entity.ReservationPayment;
+import com.example.demo.reservation.repository.ReservationPaymentRepository;
 import com.example.demo.reservation.repository.TourReservationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +23,9 @@ import java.util.UUID;
 public class ReservationService {
 
     private final TourReservationRepository tourReservationRepository;
+    private final ReservationPaymentRepository reservationPaymentRepository;
+
+    public static final int DEPOSIT_PER_PERSON = 5_000;
 
     @Transactional
     public TourReservation create(Long userId, ReservationFormDto form) {
@@ -33,7 +41,13 @@ public class ReservationService {
                 .memo(form.getMemo())
                 .build();
 
-        return tourReservationRepository.save(reservation);
+        TourReservation saved = tourReservationRepository.save(reservation);
+        ReservationPayment payment = ReservationPayment.builder()
+                .reservation(saved)
+                .amount(form.getPeopleCount() * DEPOSIT_PER_PERSON)
+                .build();
+        saved.setPayment(reservationPaymentRepository.save(payment));
+        return saved;
     }
 
     public List<TourReservation> findMyReservations(Long userId) {
@@ -55,6 +69,9 @@ public class ReservationService {
         reservation.setReservationTime(form.getReservationTime());
         reservation.setPeopleCount(form.getPeopleCount());
         reservation.setMemo(form.getMemo());
+        if (reservation.getPayment() != null && reservation.getPayment().getStatus() == PaymentStatus.READY) {
+            reservation.getPayment().setAmount(form.getPeopleCount() * DEPOSIT_PER_PERSON);
+        }
         return reservation;
     }
 
@@ -62,7 +79,25 @@ public class ReservationService {
     public TourReservation cancel(Long id, Long userId) {
         TourReservation reservation = findMine(id, userId);
         reservation.setStatus("예약 취소");
+        ReservationPayment payment = reservation.getPayment();
+        if (payment != null && payment.getStatus() == PaymentStatus.PAID) {
+            if (isBeforeFreeCancellationDeadline(reservation)) {
+                payment.setStatus(PaymentStatus.REFUNDED);
+                payment.setRefundedAt(LocalDateTime.now());
+            } else {
+                payment.setStatus(PaymentStatus.FORFEITED);
+            }
+        } else if (payment != null) {
+            payment.setStatus(PaymentStatus.CANCELED);
+        }
         return reservation;
+    }
+
+    private boolean isBeforeFreeCancellationDeadline(TourReservation reservation) {
+        LocalDateTime visitAt = LocalDateTime.of(
+                reservation.getReservationDate(),
+                LocalTime.parse(reservation.getReservationTime()));
+        return LocalDateTime.now().isBefore(visitAt.minusHours(24));
     }
 
     private String createReservationNo(Long userId, ReservationFormDto form) {

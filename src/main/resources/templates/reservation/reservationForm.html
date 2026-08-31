@@ -77,11 +77,29 @@
             </label>
         </div>
 
+        <div class="deposit-preview">
+            <div>
+                <strong>결제할 예약금</strong>
+                <p>전체 이용금액이 아닌 노쇼 방지용 예약금입니다. 현장 이용금액은 별도입니다.</p>
+            </div>
+            <strong id="depositAmount">5,000원</strong>
+        </div>
+
         <div class="card-actions">
-            <button class="btn" type="submit">예약 완료</button>
+            <button class="btn" type="submit">예약금 결제로 이동</button>
             <a class="btn secondary" th:href="@{/ko/reservation}">취소</a>
         </div>
     </form>
 </main>
+<script>
+    const peopleInput = document.querySelector('[name="peopleCount"]');
+    const depositAmount = document.getElementById('depositAmount');
+    function updateDeposit() {
+        const people = Math.max(1, Number(peopleInput.value) || 1);
+        depositAmount.textContent = new Intl.NumberFormat('ko-KR').format(people * 5000) + '원';
+    }
+    peopleInput.addEventListener('input', updateDeposit);
+    updateDeposit();
+</script>
 </body>
 </html>
