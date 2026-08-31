@@ -11,7 +11,7 @@
         2. header: logo / language buttons / login button
         3. hero: main slider and headline
         4. categories: service shortcuts
-        5. popular-section: top attraction cards
+        5. place-section: Busan attraction cards
         6. community-section: latest posts
         7. footer: policy links and social links
         8. script: hero slider behavior
@@ -334,18 +334,25 @@
             max-width: 980px;
             margin: 0 auto;
             display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 18px;
+            justify-content: space-between;
+            flex-wrap: nowrap;          /* 한 줄로 유지한다 */
+            gap: 8px;
+            overflow-x: auto;           /* 화면이 좁으면 줄바꿈 대신 옆으로 넘긴다 */
+            scrollbar-width: none;
+        }
+
+        .category-grid::-webkit-scrollbar {
+            display: none;
         }
 
         .category-item {
-            width: 128px;
-            padding: 10px 8px;
+            flex: 1 0 auto;
+            min-width: 84px;
+            padding: 10px 4px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             color: var(--dark);
             text-decoration: none;
             border-radius: 18px;
@@ -357,9 +364,14 @@
             transform: translateY(-3px);
         }
 
+        .category-icon svg {
+            width: 26px;
+            height: 26px;
+        }
+
         .category-icon {
-            width: 64px;
-            height: 64px;
+            width: 56px;
+            height: 56px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -371,7 +383,8 @@
         }
 
         .category-item span:last-child {
-            font-size: 15px;
+            font-size: 13px;
+            white-space: nowrap;
             font-weight: 600;
             color: var(--gray);
             text-align: center;
@@ -449,12 +462,142 @@
         }
 
         /* ===== 5. Popular Attractions ===== */
-        .popular-section .section-header {
+        .popular-section .section-header,
+        .festival-section .section-header,
+        .place-section .section-header {
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
             gap: 24px;
             margin-bottom: 28px;
+        }
+
+
+        /* ── 지금 부산에서: 축제 카드 ──────────────────────────────── */
+        .festival-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .festival-card,
+        .place-card {
+            display: flex;
+            flex-direction: column;
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: var(--white);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            color: inherit;
+            text-decoration: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .festival-card:hover,
+        .place-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(59, 158, 255, 0.20);
+        }
+
+        .festival-media,
+        .place-media {
+            position: relative;
+            height: 190px;
+            background: #f4f6f8;
+        }
+
+        /*
+           관광공사 이미지의 62%가 저작권 "변경금지"(Type3)라 크롭이 위반이 된다.
+           기본은 원본 비율 유지(contain)로 두고, 변경이 허용된 항목만 cover 로 채운다.
+        */
+        .festival-image,
+        .place-image {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        .festival-image.can-crop,
+        .place-image.can-crop {
+            object-fit: cover;
+        }
+
+        .festival-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 1;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.72);
+        }
+
+        .festival-badge.is-on {
+            background: #ef4444;
+        }
+
+        .festival-body,
+        .place-body {
+            padding: 16px 18px 20px;
+        }
+
+        .festival-period {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+
+        .festival-title,
+        .place-title {
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.35;
+            color: var(--dark);
+            margin-bottom: 6px;
+        }
+
+        .festival-address,
+        .place-address {
+            font-size: 13px;
+            color: var(--gray);
+        }
+
+        @media (max-width: 900px) {
+            .festival-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 520px) {
+            .festival-grid { grid-template-columns: 1fr; }
+        }
+
+
+        .place-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 1;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.72);
+        }
+
+        .place-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .place-media {
+            height: 200px;
         }
 
         .popular-grid {
@@ -732,6 +875,10 @@
             font-weight: 400;
         }
 
+        .footer-credit {
+            margin-top: 6px;
+        }
+
         .footer-info {
             margin-bottom: 14px;
             font-size: 12px;
@@ -962,7 +1109,7 @@
             }
 
             .category-item {
-                width: calc(50% - 10px);
+                min-width: 76px;
             }
         }
     </style>
@@ -1038,104 +1185,159 @@
 </section>
 
 <!-- Categories: shortcuts to each major service page -->
+<!-- Categories: shown after the content, as a jump-off point -->
 <section class="categories" id="categorySection">
     <div class="category-grid">
-        <a class="category-item" th:href="@{/en/foodmap/all(category='ALL',lang='en')}" href="/en/foodmap/all?category=ALL&lang=en">
-            <span class="category-icon">🍴</span>
-            <span>Food</span>
+        <a class="category-item" th:href="@{/tour/food(lang='en')}" href="/tour/food?lang=en">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6a2 2 0 0 0 4 0V3"/><path d="M8 11v10"/><path d="M17 3c1.5 2 1.5 6 0 8v10"/></svg>
+            </span>
+            <span>Food &amp; Cafe</span>
         </a>
-        <a class="category-item" th:href="@{/en/cafe/all(lang='en')}" href="/en/cafe/all?lang=en">
-            <span class="category-icon">☕</span>
-            <span>Cafe</span>
-        </a>
-        <a class="category-item" th:href="@{/tour/location(lang=EN)}" href="/tour/location?lang=en">
-            <span class="category-icon">📷</span>
+        <a class="category-item" th:href="@{/tour/all(lang='en')}" href="/tour/all?lang=en">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="17" cy="6" r="3"/><path d="M3 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M3 19c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/></svg>
+            </span>
             <span>Tour</span>
         </a>
-        <a class="category-item" th:href="@{/en/transport/search}" href="/transport/search">
-            <span class="category-icon">🚆</span>
+        <a class="category-item" th:href="@{/en/transport/search}" href="/en/transport/search">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="12" rx="2"/><path d="M4 10h16"/><path d="M7 16v2M17 16v2"/><circle cx="8" cy="19" r="1.2"/><circle cx="16" cy="19" r="1.2"/></svg>
+            </span>
             <span>Transport</span>
         </a>
-        <a class="category-item" th:href="@{/community/post-list(lang='en')}" href="/community/post-list?lang='en'">
-            <span class="category-icon">💬</span>
+        <a class="category-item" th:href="@{/community/post-list(lang='en')}" href="/community/post-list?lang=en">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 16v4l5-4"/><path d="M8 9h8M8 12h5"/></svg>
+            </span>
             <span>Community</span>
         </a>
-        <a class="category-item" th:href="@{/ko/trip}" href="/ko/trip" aria-label="Custom Trip">
-            <span class="category-icon">🧳</span>
+        <a class="category-item" th:href="@{/en/trip}" href="/en/trip">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>
+            </span>
             <span>Custom Trip</span>
         </a>
-        <a class="category-item" th:href="@{/ko/reservation}" href="/ko/reservation" aria-label="Reservation">
-            <span class="category-icon">🎫</span>
+        <a class="category-item" th:href="@{/ko/reservation}" href="/ko/reservation">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M15 6v12"/></svg>
+            </span>
             <span>Reservation</span>
         </a>
-        <a class="category-item" th:href="@{/chatbot}" href="/chatbot" aria-label="Chatbot">
-            <span class="category-icon">🤖</span>
+        <a class="category-item" th:href="@{/chatbot}" href="/chatbot">
+            <span class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="4" r="1"/><path d="M9 13h.01M15 13h.01"/><path d="M9 17h6"/></svg>
+            </span>
             <span>Chatbot</span>
         </a>
     </div>
 </section>
 
-<!-- Popular attractions: each card opens the matching tour search -->
-<section class="section popular-section">
+<!-- Happening in Busan: ongoing & upcoming festivals (KTO searchFestival2) -->
+<section class="section festival-section" th:if="${!#lists.isEmpty(festivals)}">
     <div class="section-header">
         <div>
-            <h2 class="section-title">Popular Attractions</h2>
-            <p class="section-sub">Top 3 places visitors love most</p>
+            <h2 class="section-title">Happening in Busan</h2>
+            <p class="section-sub">Festivals and events running now or starting soon</p>
         </div>
         <a class="see-all" th:href="@{/tour/all(lang='en')}" href="/tour/all?lang=en">See all</a>
-
     </div>
 
-    <div class="popular-grid">
-        <!-- Featured card: the first attraction in the list -->
-        <a class="popular-card featured"
-           th:if="${!#lists.isEmpty(attractions)}"
-           th:with="attraction=${attractions[0]}, tourKeyword=${attraction.title == 'Namsan Seoul Tower' ? 'N Seoul Tower' : attraction.title}"
-           th:href="@{/tour/search/(keyword=${tourKeyword},lang='en')}"
-           href="/tour/search/?keyword=Gyeongbokgung%20Palace">
-            <div class="popular-media">
-                <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 1</div>
-                <div class="popular-image"
-                     th:style="|background-image:url('${attraction.imageUrl}')|"
-                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/4/46/%EA%B2%BD%EB%B3%B5%EA%B6%81_%ED%9D%A5%EB%A1%80%EB%AC%B8_%EC%A0%84%EC%B2%B4_%EC%A0%84%EA%B2%BD%28%EA%B6%81%EB%8A%A5%EC%9C%A0%EC%A0%81%EB%B3%B8%EB%B6%80%29-min.jpg')"></div>
+    <div class="festival-grid">
+        <a class="festival-card"
+           th:each="festival : ${festivals}"
+           th:href="@{/tour/all(lang='en',focus=${festival.contentId})}"
+           href="/tour/all?lang=en">
+            <div class="festival-media">
+                <span class="festival-badge"
+                      th:classappend="${festival.ongoing} ? ' is-on'"
+                      th:text="${festival.badgeEn}">Now on</span>
+                <img class="festival-image"
+                     th:classappend="${festival.imageModifiable} ? ' can-crop'"
+                     th:src="${festival.imageUrl}"
+                     th:alt="${festival.title}"
+                     loading="lazy" alt="">
             </div>
-            <div class="popular-body">
-                <div class="popular-title" th:text="${attraction.title}">Gyeongbokgung Palace</div>
-                <div class="popular-location" th:text="${attraction.location}">Jongno-gu, Seoul</div>
-                <div class="popular-rating">
-                    <span th:text="${attraction.rating}">4.9</span>
-                    <span class="popular-reviews" th:text="|(${attraction.reviews})|">(2.3k)</span>
-                </div>
-            </div>
-        </a>
-
-        <!-- Remaining cards: render the rest of the attractions -->
-        <a class="popular-card"
-           th:each="attraction, iter : ${attractions}"
-           th:if="${!iter.first}"
-           th:classappend="${attraction.title == 'Namsan Seoul Tower'} ? ' namsan-card'"
-           th:with="tourKeyword=${attraction.title == 'Namsan Seoul Tower' ? 'N Seoul Tower' : attraction.title}"
-           th:href="@{/tour/search/(keyword=${tourKeyword},lang='en')}"
-           href="/tour/search/?keyword=Bukchon%20Hanok%20Village">
-            <div class="popular-media">
-                <div class="popular-rank-badge" th:text="|TOP ${attraction.rank}|">TOP 2</div>
-                <div class="popular-image"
-                     th:style="|background-image:url('${attraction.imageUrl}')|"
-                     style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/4/46/%EA%B2%BD%EB%B3%B5%EA%B6%81_%ED%9D%A5%EB%A1%80%EB%AC%B8_%EC%A0%84%EC%B2%B4_%EC%A0%84%EA%B2%BD%28%EA%B6%81%EB%8A%A5%EC%9C%A0%EC%A0%81%EB%B3%B8%EB%B6%80%29-min.jpg')"></div>
-            </div>
-            <div class="popular-body">
-                <div class="popular-title" th:text="${attraction.title}">Bukchon Hanok Village</div>
-                <div class="popular-location" th:text="${attraction.location}">Jongno-gu, Seoul</div>
-                <div class="popular-rating">
-                    <span th:text="${attraction.rating}">4.8</span>
-                    <span class="popular-reviews" th:text="|(${attraction.reviews})|">(1.8k)</span>
-                </div>
+            <div class="festival-body">
+                <div class="festival-period" th:text="${festival.period}">9.4 ~ 9.5</div>
+                <div class="festival-title" th:text="${festival.title}">Busan Festival</div>
+                <div class="festival-address" th:text="${festival.address}">Busan</div>
             </div>
         </a>
     </div>
 </section>
 
-<!-- Community preview: latest posts from the board -->
+
+<!-- Places to visit: each card opens that place in the tour page -->
+<!-- Places to visit in Busan (KTO areaBasedList2) -->
+<section class="section place-section" th:if="${!#lists.isEmpty(places)}">
+    <div class="section-header">
+        <div>
+            <h2 class="section-title">Places to visit</h2>
+            <p class="section-sub">Handpicked attractions around Busan</p>
+        </div>
+        <a class="see-all" th:href="@{/tour/all(lang='en')}" href="/tour/all?lang=en">See all</a>
+    </div>
+
+    <div class="place-grid">
+        <a class="place-card"
+           th:each="place : ${places}"
+           th:href="@{/tour/all(lang='en',focus=${place.contentId})}"
+           href="/tour/all?lang=en">
+            <div class="place-media">
+                <img class="place-image"
+                     th:classappend="${place.imageModifiable} ? ' can-crop'"
+                     th:src="${place.imageUrl}"
+                     th:alt="${place.title}"
+                     loading="lazy" alt="">
+            </div>
+            <div class="place-body">
+                <div class="place-title" th:text="${place.title}">Busan attraction</div>
+                <div class="place-address" th:text="${place.address}">Busan</div>
+            </div>
+        </a>
+    </div>
+</section>
+
+<!-- Where to eat in Busan: restaurants and cafes (KTO areaBasedList2) -->
+<section class="section place-section" th:if="${!#lists.isEmpty(foods)}">
+    <div class="section-header">
+        <div>
+            <h2 class="section-title">Where to eat</h2>
+            <p class="section-sub">Local restaurants and cafes in Busan</p>
+        </div>
+        <a class="see-all" th:href="@{/tour/food(lang='en')}" href="/tour/food?lang=en">See all</a>
+    </div>
+
+    <div class="place-grid">
+        <a class="place-card"
+           th:each="food : ${foods}"
+           th:href="@{/tour/food(lang='en',focus=${food.contentId})}"
+           href="/tour/food?lang=en">
+            <div class="place-media">
+                <span class="place-badge" th:if="${food.category}" th:text="${food.category}">Restaurant</span>
+                <img class="place-image"
+                     th:classappend="${food.imageModifiable} ? ' can-crop'"
+                     th:src="${food.imageUrl}"
+                     th:alt="${food.title}"
+                     loading="lazy" alt="">
+            </div>
+            <div class="place-body">
+                <div class="place-title" th:text="${food.title}">Busan restaurant</div>
+                <div class="place-address" th:text="${food.address}">Busan</div>
+            </div>
+        </a>
+    </div>
+</section>
+
+
 <section class="community-section">
     <div class="community-inner">
         <div class="section-header-row">
@@ -1192,6 +1394,7 @@
 
         <div class="footer-info">
             <p>KoreaPoint Travel Guide Platform · Email: help@koreapoint.com · Customer Center: 1644-0000</p>
+            <p class="footer-credit">Tourism data and photos provided by the Korea Tourism Organization (KOGL Type 1 &amp; Type 3)</p>
         </div>
 
         <div class="footer-policy-links" aria-label="Footer policies">
