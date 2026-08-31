@@ -711,6 +711,30 @@
     document.getElementById('card-' + idx)?.scrollIntoView({ behavior:'smooth', block:'nearest' });
   }
 
+  /**
+   * 홈이나 관광 상세에서 특정 음식점을 눌러 넘어온 경우(?focus=contentId)
+   * 그 장소의 상세 패널을 바로 연다. 필터에 걸려 목록에서 빠졌으면 전체로 되돌린다.
+   */
+  function focusInitialPlace() {
+    const focusId = new URLSearchParams(location.search).get('focus');
+    if (!focusId) return;
+    const target = PLACES.find(p => String(p.id) === String(focusId));
+    if (!target) return;
+    if (activeCategory !== 'all' && target.foodCategory !== activeCategory) {
+      activeCategory = 'all';
+      document.querySelectorAll('.chip').forEach(ch => ch.classList.toggle('active', ch.dataset.cat === 'all'));
+      render();
+    }
+    const list = window._currentList || PLACES;
+    const idx = list.findIndex(p => String(p.id) === String(focusId));
+    if (idx >= 0) {
+      selectPlace(idx);
+    } else {
+      openDetail(target);
+      centerPlaceBesideDetail(target);
+    }
+  }
+
   const DETAIL_LABELS = {
     ko:{ firstmenu:'대표 메뉴', opentimefood:'영업시간', restdatefood:'휴무일',
          reservationfood:'예약', treatmenu:'취급 메뉴' },
@@ -930,6 +954,7 @@
     });
     kakao.maps.event.addListener(map, 'zoom_changed', refreshMarkerImages);
     updateMarkerVisibility();
+    focusInitialPlace();
   }
 
   applyStaticLabels();
@@ -941,6 +966,9 @@
     s.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&autoload=false`;
     s.onload = () => kakao.maps.load(initMap);
     document.head.appendChild(s);
+  } else {
+    // 지도 키가 없어도 홈에서 넘어온 상세는 열어 준다.
+    focusInitialPlace();
   }
 </script>
 </body>
