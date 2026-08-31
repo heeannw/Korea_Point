@@ -23,7 +23,17 @@
         .signup-choice-card{min-height:430px}
         .signup-choice-bottom{width:100%;min-height:142px}
         .social-login-link{display:flex;flex-direction:column;align-items:center;gap:8px;color:#64748b;text-decoration:none;font-size:12px}
-        .social-login-icon{width:44px;height:44px;border-radius:9999px;display:flex;align-items:center;justify-content:center;border:1px solid #dbeafe;background:#fff;font-weight:800}
+        .social-login-link.last-used .social-login-icon{box-shadow:0 0 0 3px #dbeafe,0 10px 22px rgba(37,99,235,.16)}
+        .last-social-note{display:none;width:max-content;max-width:100%;margin:0 auto 14px;padding:8px 12px;border-radius:999px;background:#eff6ff;color:#1a7de0;font-size:12px;font-weight:800}
+        .last-social-note.active{display:block}
+        .password-field{position:relative}
+        .password-field input{padding-right:46px}
+        .password-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;border:0;background:transparent;color:#64748b;cursor:pointer}
+        .password-toggle:hover{color:#2563eb}
+        .password-toggle i{width:18px;height:18px}
+        .social-login-icon{width:44px;height:44px;border-radius:9999px;display:flex;align-items:center;justify-content:center;border:1px solid #dbeafe;background:#fff;font-weight:800;overflow:hidden}
+        .social-login-icon.provider-icon{border:0;background:transparent}
+        .social-login-icon.provider-icon img{width:44px;height:44px;display:block;object-fit:contain}
         .signup-header{display:none}
         .signup-mode .signup-header{display:flex}
         .signup-mode .auth-logo-block{display:none}
@@ -71,6 +81,11 @@
                  class="mb-5 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg text-[13px] text-blue-700">
                 회원가입이 완료됐어요. 아이디로 로그인해 주세요.
             </div>
+            <div th:if="${withdrawMessage}"
+                 th:text="${withdrawMessage}"
+                 class="mb-5 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg text-[13px] text-blue-700">
+                계정 탈퇴가 완료됐어요.
+            </div>
 
             <section id="loginPanel" class="auth-panel" th:classappend="${signupMode} ? '' : ' active'">
                 <div class="mb-4 text-center">
@@ -81,8 +96,13 @@
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <input id="loginIdInput" name="loginId" type="text" autocomplete="username" placeholder="아이디"
                            class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                    <input name="password" type="password" autocomplete="current-password" placeholder="비밀번호"
-                           class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                    <div class="password-field">
+                        <input name="password" type="password" autocomplete="current-password" placeholder="비밀번호"
+                               class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                        <button type="button" class="password-toggle" aria-label="비밀번호 보기" title="비밀번호 보기">
+                            <i data-lucide="eye"></i>
+                        </button>
+                    </div>
                     <label class="flex items-center gap-2 text-[13px] text-gray-600">
                         <input id="rememberLoginId" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-[#2563EB] focus:ring-blue-500"/>
                         아이디 저장
@@ -101,16 +121,21 @@
                 </div>
 
                 <div class="mt-5 border-t border-gray-100 pt-5">
+                    <p id="lastSocialLoginNote" class="last-social-note" aria-live="polite"></p>
                     <div class="flex items-center justify-center gap-4">
-                        <a href="#" onclick="return false;" class="social-login-link" aria-label="네이버 로그인 자리">
-                            <span class="social-login-icon bg-[#03C75A] text-white">N</span>
+                        <a th:href="@{/oauth2/authorization/naver}" class="social-login-link" data-social-provider="naver" aria-label="네이버 로그인">
+                            <span class="social-login-icon provider-icon">
+                                <img th:src="@{/images/auth/naver-login-icon.png}" alt="" aria-hidden="true">
+                            </span>
                             <span>네이버</span>
                         </a>
-                        <a href="#" onclick="return false;" class="social-login-link" aria-label="카카오 로그인 자리">
-                            <span class="social-login-icon bg-[#FEE500] text-gray-900">K</span>
+                        <a th:href="@{/oauth2/authorization/kakao}" class="social-login-link" data-social-provider="kakao" aria-label="카카오 로그인">
+                            <span class="social-login-icon provider-icon">
+                                <img th:src="@{/images/auth/kakao-login-icon.png}" alt="" aria-hidden="true">
+                            </span>
                             <span>카카오</span>
                         </a>
-                        <a th:href="@{/oauth2/authorization/google}" class="social-login-link" aria-label="Google 로그인">
+                        <a th:href="@{/oauth2/authorization/google}" class="social-login-link" data-social-provider="google" aria-label="Google 로그인">
                             <span class="social-login-icon">
                                 <svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -173,12 +198,22 @@
                            class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
                     <input name="email" type="email" placeholder="이메일"
                            class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                    <input name="newPassword" type="password" placeholder="새 비밀번호" autocomplete="new-password"
-                           pattern="(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,20}"
-                           title="비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자로 입력해 주세요."
-                           class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                    <input name="passwordConfirm" type="password" placeholder="새 비밀번호 확인" autocomplete="new-password"
-                           class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                    <div class="password-field">
+                        <input name="newPassword" type="password" placeholder="새 비밀번호" autocomplete="new-password"
+                               pattern="(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,20}"
+                               title="비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자로 입력해 주세요."
+                               class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                        <button type="button" class="password-toggle" aria-label="비밀번호 보기" title="비밀번호 보기">
+                            <i data-lucide="eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-field">
+                        <input name="passwordConfirm" type="password" placeholder="새 비밀번호 확인" autocomplete="new-password"
+                               class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                        <button type="button" class="password-toggle" aria-label="비밀번호 보기" title="비밀번호 보기">
+                            <i data-lucide="eye"></i>
+                        </button>
+                    </div>
                     <p class="text-[12px] text-gray-400 -mt-1">영문, 숫자, 특수문자를 포함해 8~20자로 입력해 주세요.</p>
                     <button type="submit"
                             class="w-full h-11 rounded-xl bg-[#2563EB] text-white text-[15px] hover:bg-blue-700 transition-colors"
@@ -208,13 +243,17 @@
                                         style="font-weight:800;">개인으로 가입하기</button>
                                 <div class="mt-4 w-full rounded-xl bg-gray-50 px-5 py-4">
                                     <div class="flex items-center justify-center gap-5">
-                                    <a href="#" onclick="return false;" class="social-login-link" aria-label="네이버 회원가입 자리">
-                                        <span class="social-login-icon bg-[#03C75A] text-white">N</span>
+                                    <a th:href="@{/oauth2/authorization/naver}" class="social-login-link" data-social-provider="naver" aria-label="네이버 회원가입">
+                                        <span class="social-login-icon provider-icon">
+                                            <img th:src="@{/images/auth/naver-login-icon.png}" alt="" aria-hidden="true">
+                                        </span>
                                     </a>
-                                    <a href="#" onclick="return false;" class="social-login-link" aria-label="카카오 회원가입 자리">
-                                        <span class="social-login-icon bg-[#FEE500] text-gray-900">K</span>
+                                    <a th:href="@{/oauth2/authorization/kakao}" class="social-login-link" data-social-provider="kakao" aria-label="카카오 회원가입">
+                                        <span class="social-login-icon provider-icon">
+                                            <img th:src="@{/images/auth/kakao-login-icon.png}" alt="" aria-hidden="true">
+                                        </span>
                                     </a>
-                                    <a th:href="@{/oauth2/authorization/google}" class="social-login-link" aria-label="Google 회원가입">
+                                    <a th:href="@{/oauth2/authorization/google}" class="social-login-link" data-social-provider="google" aria-label="Google 회원가입">
                                         <span class="social-login-icon">
                                             <svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                                 <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -276,13 +315,23 @@
                                title="아이디는 영문과 숫자를 포함한 4~20자로 입력해 주세요."
                                class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
                         <p class="text-[12px] text-gray-400 -mt-1">영문과 숫자를 포함해 4~20자로 입력해 주세요.</p>
-                        <input id="signupPassword" name="password" type="password" placeholder="비밀번호" autocomplete="new-password"
-                               pattern="(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,20}"
-                               title="비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자로 입력해 주세요."
-                               class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                        <div class="password-field">
+                            <input id="signupPassword" name="password" type="password" placeholder="비밀번호" autocomplete="new-password"
+                                   pattern="(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,20}"
+                                   title="비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자로 입력해 주세요."
+                                   class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                            <button type="button" class="password-toggle" aria-label="비밀번호 보기" title="비밀번호 보기">
+                                <i data-lucide="eye"></i>
+                            </button>
+                        </div>
                         <p class="text-[12px] text-gray-400 -mt-1">영문, 숫자, 특수문자를 포함해 8~20자로 입력해 주세요.</p>
-                        <input id="signupPasswordConfirm" name="passwordConfirm" type="password" placeholder="비밀번호 확인" autocomplete="new-password"
-                               class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                        <div class="password-field">
+                            <input id="signupPasswordConfirm" name="passwordConfirm" type="password" placeholder="비밀번호 확인" autocomplete="new-password"
+                                   class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
+                            <button type="button" class="password-toggle" aria-label="비밀번호 보기" title="비밀번호 보기">
+                                <i data-lucide="eye"></i>
+                            </button>
+                        </div>
                         <input name="email" type="email" placeholder="이메일"
                                class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
 
@@ -441,6 +490,32 @@
                 } else {
                     localStorage.removeItem('koreaPointLoginId');
                 }
+            });
+        }
+        document.querySelectorAll('.password-toggle').forEach(button => {
+            button.addEventListener('click', () => {
+                const input = button.closest('.password-field')?.querySelector('input');
+                if (!input) return;
+                const willShow = input.type === 'password';
+                input.type = willShow ? 'text' : 'password';
+                button.setAttribute('aria-label', willShow ? '비밀번호 숨기기' : '비밀번호 보기');
+                button.setAttribute('title', willShow ? '비밀번호 숨기기' : '비밀번호 보기');
+                button.innerHTML = `<i data-lucide="${willShow ? 'eye-off' : 'eye'}"></i>`;
+                lucide.createIcons();
+            });
+        });
+        const providerLabels = {
+            google: 'Google',
+            naver: '네이버',
+            kakao: '카카오'
+        };
+        const lastSocialProvider = localStorage.getItem('koreaPointLastSocialLogin');
+        const lastSocialNote = document.getElementById('lastSocialLoginNote');
+        if (lastSocialProvider && providerLabels[lastSocialProvider] && lastSocialNote) {
+            lastSocialNote.textContent = `마지막 로그인은 ${providerLabels[lastSocialProvider]} 계정입니다.`;
+            lastSocialNote.classList.add('active');
+            document.querySelectorAll(`[data-social-provider="${lastSocialProvider}"]`).forEach(link => {
+                link.classList.add('last-used');
             });
         }
         lucide.createIcons();

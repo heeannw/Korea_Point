@@ -18,8 +18,6 @@
             <option value="ja">日本語</option>
             <option value="zh-CN">中文</option>
         </select>
-        <a th:href="@{/ko/reservation}" class="h-btn active">예약</a>
-        <a th:href="@{/ko/mypage}" class="h-btn">마이페이지</a>
         <th:block th:if="${isLoggedIn}">
             <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}">User</a>
             <form th:action="@{/logout}" method="post">
@@ -37,7 +35,6 @@
             <h1>관광지 예약</h1>
             <p class="sub">부산의 관광지를 둘러보고 방문 일정을 예약해보세요.</p>
         </div>
-        <a class="btn secondary" th:href="@{/ko/mypage}">마이페이지</a>
     </section>
 
     <div class="notice warning" th:unless="${hasTourApiKey}">
@@ -45,19 +42,22 @@
     </div>
 
     <form class="toolbar" id="searchForm">
-        <input class="input" id="keyword" name="keyword" th:value="${keyword}" placeholder="관광지명 또는 주소로 검색">
-        <select class="select" id="contentTypeId" name="contentTypeId" aria-label="카테고리">
-            <option value="">전체</option>
-            <option value="12">관광지</option>
-            <option value="14">문화시설</option>
-            <option value="15">행사/공연/축제</option>
-            <option value="25">여행코스</option>
-            <option value="28">레포츠</option>
-            <option value="32">숙박</option>
-            <option value="38">쇼핑</option>
-            <option value="39">음식점</option>
-        </select>
-        <button class="btn" type="submit">검색</button>
+        <div class="search-row">
+            <input class="input" id="keyword" name="keyword" th:value="${keyword}" placeholder="관광지명 또는 주소로 검색">
+            <button class="btn" type="submit">검색</button>
+        </div>
+        <input type="hidden" id="contentTypeId" name="contentTypeId" th:value="${contentTypeId}">
+        <div class="category-buttons" role="group" aria-label="카테고리 선택">
+            <button type="button" class="category-btn" data-content-type="">전체</button>
+            <button type="button" class="category-btn" data-content-type="12">관광지</button>
+            <button type="button" class="category-btn" data-content-type="14">문화시설</button>
+            <button type="button" class="category-btn" data-content-type="15">행사/공연/축제</button>
+            <button type="button" class="category-btn" data-content-type="25">여행코스</button>
+            <button type="button" class="category-btn" data-content-type="28">레포츠</button>
+            <button type="button" class="category-btn" data-content-type="32">숙박</button>
+            <button type="button" class="category-btn" data-content-type="38">쇼핑</button>
+            <button type="button" class="category-btn" data-content-type="39">음식점</button>
+        </div>
     </form>
 
     <section id="placeGrid" class="grid" aria-live="polite"></section>
@@ -73,12 +73,13 @@
     const form = document.getElementById("searchForm");
     const keywordInput = document.getElementById("keyword");
     const contentTypeInput = document.getElementById("contentTypeId");
+    const categoryButtons = document.querySelectorAll(".category-btn");
     const loadMoreBtn = document.getElementById("loadMoreBtn");
     const pageSize = 30;
     let currentPage = 1;
     let currentKeyword = "";
     let currentContentTypeId = "";
-    let isLoading = false;
+    let activeRequestController = null;
 
     function escapeHtml(value) {
         return String(value || "")
@@ -139,8 +140,11 @@
     }
 
     async function loadPlaces(keyword = "", contentTypeId = "", pageNo = 1, append = false) {
-        if (isLoading) return;
-        isLoading = true;
+        if (activeRequestController) {
+            activeRequestController.abort();
+        }
+        const requestController = new AbortController();
+        activeRequestController = requestController;
         emptyState.style.display = "block";
         emptyState.textContent = append ? "다음 관광지 목록을 불러오는 중입니다." : "부산 관광지 목록을 불러오는 중입니다.";
         loadMoreBtn.disabled = true;
@@ -157,18 +161,23 @@
         }
 
         try {
-            const response = await fetch(`/api/tourapi/places?${params.toString()}`);
+            const response = await fetch(`/api/tourapi/places?${params.toString()}`, {
+                signal: requestController.signal
+            });
             if (!response.ok) throw new Error("request failed");
             const places = await response.json();
             renderPlaces(places, append);
             currentPage = pageNo;
         } catch (error) {
+            if (error.name === "AbortError") return;
             emptyState.style.display = "block";
             emptyState.textContent = "관광지 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.";
             loadMoreBtn.style.display = "none";
         } finally {
-            isLoading = false;
-            loadMoreBtn.disabled = false;
+            if (activeRequestController === requestController) {
+                activeRequestController = null;
+                loadMoreBtn.disabled = false;
+            }
         }
     }
 
@@ -177,6 +186,24 @@
         currentKeyword = keywordInput.value;
         currentContentTypeId = contentTypeInput.value;
         loadPlaces(currentKeyword, currentContentTypeId, 1, false);
+    });
+
+    categoryButtons.forEach(button => {
+        const isSelected = button.dataset.contentType === contentTypeInput.value;
+        button.classList.toggle("active", isSelected);
+        button.setAttribute("aria-pressed", String(isSelected));
+
+        button.addEventListener("click", () => {
+            contentTypeInput.value = button.dataset.contentType;
+            categoryButtons.forEach(categoryButton => {
+                const isActive = categoryButton === button;
+                categoryButton.classList.toggle("active", isActive);
+                categoryButton.setAttribute("aria-pressed", String(isActive));
+            });
+            currentKeyword = keywordInput.value;
+            currentContentTypeId = contentTypeInput.value;
+            loadPlaces(currentKeyword, currentContentTypeId, 1, false);
+        });
     });
 
     loadMoreBtn.addEventListener("click", () => {

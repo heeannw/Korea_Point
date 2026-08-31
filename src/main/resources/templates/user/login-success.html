@@ -11,6 +11,15 @@
     </p>
     <script th:inline="javascript">
         const targetUrl = /*[[${targetUrl}]]*/ "/ko";
+        const loginProvider = /*[[${provider}]]*/ null;
+        const providerLabels = {
+            google: 'Google',
+            naver: '네이버',
+            kakao: '카카오'
+        };
+        if (loginProvider && providerLabels[loginProvider]) {
+            localStorage.setItem('koreaPointLastSocialLogin', loginProvider);
+        }
         if (window.opener && !window.opener.closed) {
             window.opener.location.href = targetUrl;
             window.close();

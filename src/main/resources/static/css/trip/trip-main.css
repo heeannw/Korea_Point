@@ -154,6 +154,11 @@ body{font-family:'DM Sans',sans-serif;color:var(--dark);background:#f8fafc}
 .field-textarea::placeholder{color:#c0ccda}
 .field-hint{font-size:11px;color:var(--gray);margin-top:5px}
 
+/* 시간+분 듀레이션 입력(도착 후 일정 시작까지 등) */
+.duration-input{display:flex;align-items:center;gap:6px}
+.duration-input .field-input{width:60px;flex:none;padding:11px 6px;text-align:center}
+.duration-unit{font-size:13px;color:var(--gray);white-space:nowrap}
+
 /* ─── 구분선 ─── */
 .divider{height:1px;background:var(--border);margin:20px 0}
 

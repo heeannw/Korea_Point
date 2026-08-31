@@ -1,6 +1,7 @@
 package com.example.demo.trip.controller;
 
 import com.example.demo.trip.dto.TripPlanDto;
+import com.example.demo.trip.dto.TripRecommendResponse;
 import com.example.demo.trip.service.TripPlanService;
 import com.example.demo.user.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
@@ -86,6 +87,17 @@ public class TripPlanController {
         if (uid == null) return ResponseEntity.status(401).body(Map.of("error", "로그인이 필요합니다"));
         Long copiedPlanId = tripPlanService.copy(uid, id);
         return ResponseEntity.ok(Map.of("planId", copiedPlanId, "message", "복사되었습니다"));
+    }
+
+    /** "상세 페이지에서 보기" 전용: 저장된 일정 + 그 조건으로 다시 계산한 추천 리스트/슬롯별 대체 후보. */
+    @GetMapping("/{id}/for-result-view")
+    public ResponseEntity<?> forResultView(@PathVariable Long id) {
+        String uid = currentUserId();
+        if (uid == null) return ResponseEntity.status(401).body(Map.of("error", "로그인이 필요합니다"));
+        TripRecommendResponse resp = tripPlanService.buildResultView(uid, id);
+        return resp == null
+                ? ResponseEntity.status(404).body(Map.of("error", "계획을 찾을 수 없습니다"))
+                : ResponseEntity.ok(resp);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

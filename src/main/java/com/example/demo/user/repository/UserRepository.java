@@ -25,14 +25,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("""
         SELECT u FROM User u
-        WHERE (:keyword IS NULL OR :keyword = '' OR
+        WHERE (CAST(:keyword AS String) IS NULL OR :keyword = '' OR
                LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))
-          AND (:role IS NULL OR u.role = :role)
-          AND (:provider IS NULL OR u.provider = :provider)
-          AND (:accountStatus IS NULL OR u.accountStatus = :accountStatus)
-          AND (:createdFrom IS NULL OR u.createdAt >= :createdFrom)
-          AND (:createdTo IS NULL OR u.createdAt < :createdTo)
+          AND (CAST(:role AS String) IS NULL OR u.role = :role)
+          AND (CAST(:provider AS String) IS NULL OR u.provider = :provider)
+          AND (CAST(:accountStatus AS String) IS NULL OR u.accountStatus = :accountStatus)
+          AND (CAST(:createdFrom AS LocalDateTime) IS NULL OR u.createdAt >= :createdFrom)
+          AND (CAST(:createdTo AS LocalDateTime) IS NULL OR u.createdAt < :createdTo)
     """)
     Page<User> searchForAdmin(@Param("keyword") String keyword,
                               @Param("role") String role,

@@ -1,6 +1,7 @@
 const adminState = {
     activePage: document.body.dataset.page,
     usersPage: 0,
+    ownerApplicationsStatus: "PENDING",
     postsPage: 0,
     commentsPage: 0,
     reportsPage: 0,
@@ -162,6 +163,18 @@ function bindStaticEvents() {
     document.getElementById("refreshDashboardButton")?.addEventListener("click", () => {
         loadDashboard().catch((error) => showAlert(error.message, "error"));
     });
+    document.getElementById("refreshOwnerApplicationsButton")?.addEventListener("click", () => {
+        loadOwnerApplications().catch((error) => showAlert(error.message, "error"));
+    });
+    document.querySelectorAll("[data-owner-status]").forEach((button) => {
+        button.addEventListener("click", () => {
+            adminState.ownerApplicationsStatus = button.dataset.ownerStatus || "PENDING";
+            document.querySelectorAll("[data-owner-status]").forEach((tab) => {
+                tab.classList.toggle("active", tab === button);
+            });
+            loadOwnerApplications().catch((error) => showAlert(error.message, "error"));
+        });
+    });
 
     document.getElementById("modalCloseButton")?.addEventListener("click", closeActionModal);
     document.getElementById("modalCancelButton")?.addEventListener("click", closeActionModal);
@@ -189,6 +202,9 @@ async function initializePage() {
             break;
         case "users":
             await loadUsers();
+            break;
+        case "ownerApplications":
+            await loadOwnerApplications();
             break;
         case "posts":
             await populateCategoryFilter();
@@ -306,7 +322,7 @@ async function loadUsers() {
                         <span class="muted">${escapeHtml(item.provider)} · ID ${item.id}</span>
                     </div>
                 </td>
-                <td><span class="badge ${item.role === "ADMIN" ? "admin" : "user"}">${escapeHtml(item.role)}</span></td>
+                <td><span class="badge ${classForRole(item.role)}">${escapeHtml(item.role)}</span></td>
                 <td><span class="badge ${item.accountStatus === "SUSPENDED" ? "danger" : "success"}">${escapeHtml(labelForAccountStatus(item.accountStatus))}</span></td>
                 <td><strong>${numberFormat(item.point)}P</strong></td>
                 <td class="muted">${formatDate(item.createdAt)}</td>
@@ -347,6 +363,7 @@ function openUserRoleModal(userId, userName, currentRole) {
             <label>변경할 역할
                 <select id="modalRoleValue">
                     <option value="USER" ${currentRole === "USER" ? "selected" : ""}>USER — 일반 사용자</option>
+                    <option value="OWNER" ${currentRole === "OWNER" ? "selected" : ""}>OWNER — 사업자</option>
                     <option value="ADMIN" ${currentRole === "ADMIN" ? "selected" : ""}>ADMIN — 관리자</option>
                 </select>
             </label>
@@ -359,6 +376,149 @@ function openUserRoleModal(userId, userName, currentRole) {
             });
             await loadUsers();
             return `권한이 ${response.role}로 변경되었습니다.`;
+        }
+    });
+}
+
+async function loadOwnerApplications() {
+    const status = adminState.ownerApplicationsStatus || "PENDING";
+    const data = await apiRequest(`/admin/api/owner-applications?status=${encodeURIComponent(status)}`);
+    const body = document.getElementById("ownerApplicationsTableBody");
+    if (!body) {
+        return;
+    }
+
+    if (!data.length) {
+        body.innerHTML = `<tr><td colspan="5"><div class="empty-state">${emptyOwnerApplicationMessage(status)}</div></td></tr>`;
+        return;
+    }
+
+    body.innerHTML = data.map((item) => `
+        <tr>
+            <td>
+                <div class="stack">
+                    <strong>${escapeHtml(item.userName)}</strong>
+                    <span class="muted">${escapeHtml(item.userEmail || "이메일 없음")}</span>
+                    <span class="muted">사용자 ID ${item.userId} · 신청 ID ${item.id}</span>
+                    <span class="muted">${escapeHtml(item.userRole || "-")} · ${numberFormat(item.userPoint)}P</span>
+                </div>
+            </td>
+            <td>
+                <div class="stack">
+                    <strong>${escapeHtml(item.storeName)}</strong>
+                    <span class="muted">${escapeHtml(item.businessRegistrationNumber)}</span>
+                    <span class="badge ${classForOwnerStatus(item.status)}">${escapeHtml(labelForOwnerStatus(item.status))}</span>
+                </div>
+            </td>
+            <td>
+                <div class="stack">
+                    ${documentLink(item.id, item.businessRegistrationFilePath, "registration", "사업자등록증")}
+                    ${documentLink(item.id, item.businessLicenseFilePath, "license", "영업신고증")}
+                    ${documentLink(item.id, item.menuFilePath, "menu", "메뉴 정보")}
+                </div>
+            </td>
+            <td>
+                <div class="stack">
+                    <span class="muted">접수 ${formatDate(item.createdAt)}</span>
+                    ${item.reviewedAt ? `<span class="muted">처리 ${formatDate(item.reviewedAt)}</span>` : ""}
+                    ${item.reviewComment ? `<span class="muted">${escapeHtml(item.reviewComment)}</span>` : ""}
+                </div>
+            </td>
+            <td>
+                ${renderOwnerApplicationActions(item)}
+            </td>
+        </tr>
+    `).join("");
+
+    body.querySelectorAll("[data-owner-approve]").forEach((button) => {
+        button.addEventListener("click", () => openOwnerApplicationModal(button.dataset.ownerApprove, button.dataset.storeName, "approve"));
+    });
+    body.querySelectorAll("[data-owner-reject]").forEach((button) => {
+        button.addEventListener("click", () => openOwnerApplicationModal(button.dataset.ownerReject, button.dataset.storeName, "reject"));
+    });
+    body.querySelectorAll("[data-owner-point]").forEach((button) => {
+        button.addEventListener("click", () => openOwnerPointModal(button.dataset.ownerPoint, button.dataset.userName, button.dataset.currentPoint));
+    });
+}
+
+function renderOwnerApplicationActions(item) {
+    if (item.status === "PENDING") {
+        return `
+            <div class="action-group">
+                <button type="button" class="primary-button" data-owner-approve="${item.id}" data-store-name="${escapeHtml(item.storeName)}">승인</button>
+                <button type="button" class="danger-button" data-owner-reject="${item.id}" data-store-name="${escapeHtml(item.storeName)}">반려</button>
+            </div>
+        `;
+    }
+    if (item.status === "APPROVED") {
+        return `
+            <div class="action-group">
+                <button type="button" class="tiny-button" data-owner-point="${item.userId}" data-user-name="${escapeHtml(item.userName)}" data-current-point="${item.userPoint}">포인트 지급</button>
+            </div>
+        `;
+    }
+    return `<span class="muted">반려 완료</span>`;
+}
+
+function emptyOwnerApplicationMessage(status) {
+    if (status === "APPROVED") {
+        return "승인 완료된 사업자 신청이 없습니다.";
+    }
+    if (status === "REJECTED") {
+        return "반려된 사업자 신청이 없습니다.";
+    }
+    return "검토 대기 중인 사업자 신청이 없습니다.";
+}
+
+function documentLink(requestId, path, type, label) {
+    if (!path) {
+        return `<span class="muted">${escapeHtml(label)} 없음</span>`;
+    }
+    return `<a class="content-link" href="/admin/api/owner-applications/${requestId}/documents/${type}" target="_blank" rel="noopener">${escapeHtml(label)}</a>`;
+}
+
+function openOwnerPointModal(userId, userName, currentPoint) {
+    openActionModal({
+        title: "사업자 포인트 지급",
+        summary: `${userName} 사업자의 포인트를 조정합니다. (현재: ${numberFormat(currentPoint)}P)`,
+        confirmText: "포인트 조정",
+        reasonOptions: toReasonOptions(["POINT_ADJUSTMENT", "ROLE_POLICY", "POLICY", "OTHER"]),
+        extraHtml: `
+            <label>조정 값
+                <input type="number" id="modalPointDelta" placeholder="지급: +1000 / 차감: -500">
+            </label>
+        `,
+        getExtraPayload: () => ({ delta: Number(document.getElementById("modalPointDelta")?.value || 0) }),
+        submit: async (reasonPayload) => {
+            await apiRequest(`/admin/api/users/${userId}/points`, {
+                method: "POST",
+                body: JSON.stringify(reasonPayload)
+            });
+            await loadOwnerApplications();
+            return "사업자 포인트가 조정되었습니다.";
+        }
+    });
+}
+
+function openOwnerApplicationModal(requestId, storeName, mode) {
+    const isApprove = mode === "approve";
+    openActionModal({
+        title: isApprove ? "사업자 신청 승인" : "사업자 신청 반려",
+        summary: `${storeName} 사업자 신청을 ${isApprove ? "승인" : "반려"}합니다.`,
+        confirmText: isApprove ? "승인" : "반려",
+        requireReasonCode: false,
+        showReasonDetail: !isApprove,
+        requireReasonDetail: !isApprove,
+        reasonDetailLabel: "반려 사유",
+        reasonDetailPlaceholder: "신청자에게 보여줄 반려 사유를 입력해 주세요.",
+        submit: async (reasonPayload) => {
+            await apiRequest(`/admin/api/owner-applications/${requestId}/${mode}`, {
+                method: "POST",
+                body: JSON.stringify({ reviewComment: reasonPayload.reasonDetail || null })
+            });
+            await loadOwnerApplications();
+            await refreshDashboardSilently();
+            return isApprove ? "사업자 신청을 승인했습니다." : "사업자 신청을 반려했습니다.";
         }
     });
 }
@@ -756,9 +916,16 @@ function openActionModal(config) {
     document.getElementById("actionModalTitle").textContent = config.title;
     document.getElementById("actionModalSummary").textContent = config.summary;
     document.getElementById("modalConfirmButton").textContent = config.confirmText || "실행";
+    const reasonCodeGroup = document.getElementById("modalReasonCodeGroup");
+    const reasonDetailGroup = document.getElementById("modalReasonDetailGroup");
+    const reasonDetail = document.getElementById("modalReasonDetail");
+    reasonCodeGroup.hidden = config.requireReasonCode === false;
+    reasonDetailGroup.hidden = config.showReasonDetail === false;
     fillSelect("modalReasonCode", config.reasonOptions || REASON_OPTIONS, { firstLabel: "사유 코드를 선택해 주세요" });
     document.getElementById("modalReasonCode").value = "";
-    document.getElementById("modalReasonDetail").value = "";
+    document.getElementById("modalReasonDetailLabel").textContent = config.reasonDetailLabel || "상세 메모";
+    reasonDetail.placeholder = config.reasonDetailPlaceholder || "필요 시 조치 사유를 추가로 남겨 주세요. OTHER 선택 시 필수입니다.";
+    reasonDetail.value = "";
     const extraFieldsEl = document.getElementById("modalExtraFields");
     if (extraFieldsEl) {
         extraFieldsEl.innerHTML = config.extraHtml || "";
@@ -811,10 +978,13 @@ async function handleModalSubmit(event) {
 
 function validateModalPayload(payload) {
     const errors = {};
-    if (!payload.reasonCode) {
+    const config = adminState.modal || {};
+    if (config.requireReasonCode !== false && !payload.reasonCode) {
         errors.reasonCode = "사유 코드를 선택해 주세요.";
     }
-    if (payload.reasonCode === "OTHER" && !payload.reasonDetail) {
+    if (config.requireReasonDetail && !payload.reasonDetail) {
+        errors.reasonDetail = config.reasonDetailRequiredMessage || "상세 메모를 입력해 주세요.";
+    } else if (payload.reasonCode === "OTHER" && !payload.reasonDetail) {
         errors.reasonDetail = "기타 사유를 입력해 주세요.";
     }
     return errors;
@@ -939,6 +1109,35 @@ function labelForAction(value) {
 
 function labelForAccountStatus(value) {
     return ACCOUNT_STATUS_LABELS[value] || value || "-";
+}
+
+function labelForOwnerStatus(value) {
+    const labels = {
+        PENDING: "검토 대기",
+        APPROVED: "승인 완료",
+        REJECTED: "반려"
+    };
+    return labels[value] || value || "-";
+}
+
+function classForOwnerStatus(status) {
+    if (status === "APPROVED") {
+        return "success";
+    }
+    if (status === "REJECTED") {
+        return "deleted";
+    }
+    return "warning";
+}
+
+function classForRole(role) {
+    if (role === "ADMIN") {
+        return "admin";
+    }
+    if (role === "OWNER") {
+        return "warning";
+    }
+    return "user";
 }
 
 function labelForReportReason(value) {

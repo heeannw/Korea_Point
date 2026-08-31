@@ -23,6 +23,7 @@
         <!-- EN 버튼: sessionStorage 유지한 채 언어 전환 -->
         <select class="h-btn" id="languageSelect" onchange="changeTripLanguage(this.value)" aria-label="언어 선택"><option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option><option value="zh-CN">中文</option></select>
         <th:block th:if="${isLoggedIn}">
+            <a class="h-btn" th:href="@{/ko/trip/plans}" href="/ko/trip/plans">내 일정</a>
             <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
             <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
             <form th:action="@{/logout}" method="post">
@@ -122,7 +123,23 @@
                     </select>
                 </div>
                 <div class="field-group"><label class="field-label">한국 도착 시각</label><input class="field-input" id="arrivalTime" type="time"></div>
-                <div class="field-group"><label class="field-label">도착 후 일정 시작까지 (분)</label><input class="field-input" id="arrivalReadyMinutes" type="number" min="0" max="600" value="90"><p class="field-hint">입국수속·수하물·부산 이동 포함</p></div>
+                <div class="field-group">
+                    <label class="field-label">도착 후 일정 시작까지</label>
+                    <select class="field-input" id="arrivalTransport" style="display:none;margin-bottom:6px" onchange="applyTransportDefault('arrival')">
+                        <option value="">부산까지 이동수단 (선택 시 기본값 자동계산)</option>
+                        <option value="train">KTX/기차</option>
+                        <option value="bus">고속·시외버스</option>
+                        <option value="rentcar">렌트카</option>
+                        <option value="domestic">국내선 항공 환승</option>
+                    </select>
+                    <div class="duration-input">
+                        <input class="field-input" id="arrivalReadyHours" type="number" min="0" max="10" value="1" aria-label="시간">
+                        <span class="duration-unit">시간</span>
+                        <input class="field-input" id="arrivalReadyMins" type="number" min="0" max="59" step="5" value="30" aria-label="분">
+                        <span class="duration-unit">분</span>
+                    </div>
+                    <p class="field-hint">입국수속·수하물·부산 이동 포함 (대략적인 기본값, 직접 수정 가능)</p>
+                </div>
                 <div class="field-group">
                     <label class="field-label">출국 공항</label>
                     <select class="field-input" id="departureAirport" onchange="applyAirportDefaults('departure')">
@@ -130,7 +147,23 @@
                     </select>
                 </div>
                 <div class="field-group"><label class="field-label">한국 출발 시각</label><input class="field-input" id="departureTime" type="time"></div>
-                <div class="field-group"><label class="field-label">출발 전 일정 종료 여유 (분)</label><input class="field-input" id="departureLeadMinutes" type="number" min="0" max="600" value="180"><p class="field-hint">공항 이동·출국수속 포함</p></div>
+                <div class="field-group">
+                    <label class="field-label">출발 전 일정 종료 여유</label>
+                    <select class="field-input" id="departureTransport" style="display:none;margin-bottom:6px" onchange="applyTransportDefault('departure')">
+                        <option value="">공항까지 이동수단 (선택 시 기본값 자동계산)</option>
+                        <option value="train">KTX/기차</option>
+                        <option value="bus">고속·시외버스</option>
+                        <option value="rentcar">렌트카</option>
+                        <option value="domestic">국내선 항공 환승</option>
+                    </select>
+                    <div class="duration-input">
+                        <input class="field-input" id="departureLeadHours" type="number" min="0" max="10" value="3" aria-label="시간">
+                        <span class="duration-unit">시간</span>
+                        <input class="field-input" id="departureLeadMins" type="number" min="0" max="59" step="5" value="0" aria-label="분">
+                        <span class="duration-unit">분</span>
+                    </div>
+                    <p class="field-hint">공항 이동·출국수속 포함 (대략적인 기본값, 직접 수정 가능)</p>
+                </div>
             </div>
 
             <div class="nights-row" id="nightsRow" style="display:none">
@@ -373,10 +406,12 @@
         document.getElementById('endHour').value = edit.endHour || 21;
         document.getElementById('arrivalAirport').value = edit.arrivalAirport || 'PUS';
         document.getElementById('arrivalTime').value = edit.arrivalTime || '';
-        document.getElementById('arrivalReadyMinutes').value = edit.arrivalReadyMinutes || 90;
+        toggleTransportSelect('arrival');
+        setDurationFields('arrivalReadyHours', 'arrivalReadyMins', edit.arrivalReadyMinutes || 90);
         document.getElementById('departureAirport').value = edit.departureAirport || 'PUS';
         document.getElementById('departureTime').value = edit.departureTime || '';
-        document.getElementById('departureLeadMinutes').value = edit.departureLeadMinutes || 180;
+        toggleTransportSelect('departure');
+        setDurationFields('departureLeadHours', 'departureLeadMins', edit.departureLeadMinutes || 180);
         document.getElementById('mustVisit').value = (edit.mustVisit || []).join(', ');
         document.getElementById('styleDescription').value = edit.styleDescription || '';
         (edit.preferredAreas || []).forEach(area => syncAreaChips(area, true));
@@ -532,11 +567,56 @@
     startDateInput.min = new Date().toISOString().slice(0, 10);
     startDateInput.value = startDateInput.min;
 
+    /** 총 분(minutes)을 "시간" input과 "분" input 두 칸에 나눠 채운다. */
+    function setDurationFields(hoursId, minsId, totalMinutes) {
+        document.getElementById(hoursId).value = Math.floor(totalMinutes / 60);
+        document.getElementById(minsId).value = totalMinutes % 60;
+    }
+
+    /** "시간" input과 "분" input 두 칸을 합쳐 총 분(minutes)으로 돌려준다. */
+    function getDurationMinutes(hoursId, minsId) {
+        const hours = parseInt(document.getElementById(hoursId).value) || 0;
+        const mins = parseInt(document.getElementById(minsId).value) || 0;
+        return hours * 60 + mins;
+    }
+
+    // 공항 x 이동수단별 대략적인 소요시간(분) 추정표. 사용자가 직접 시/분을 고치면 그 값이 우선이고,
+    // 이건 어디까지나 "이 정도면 적당하다"는 기본값 추천용이다.
+    const TRANSPORT_MINUTES = {
+        arrival: {
+            PUS:   { '': 90 },
+            GMP:   { '': 120, train: 210, bus: 240, rentcar: 240, domestic: 120 },
+            ICN:   { '': 180, train: 240, bus: 300, rentcar: 270, domestic: 150 },
+            OTHER: { '': 120, train: 240, bus: 270, rentcar: 240, domestic: 150 }
+        },
+        departure: {
+            PUS:   { '': 180 },
+            GMP:   { '': 210, train: 240, bus: 270, rentcar: 270, domestic: 180 },
+            ICN:   { '': 270, train: 270, bus: 330, rentcar: 300, domestic: 210 },
+            OTHER: { '': 240, train: 270, bus: 300, rentcar: 270, domestic: 210 }
+        }
+    };
+
+    /** 김해공항(PUS)이면 이미 부산 도착이라 이동수단 선택 자체가 필요 없어서 숨긴다. */
+    function toggleTransportSelect(type) {
+        const airport = document.getElementById(type + 'Airport').value;
+        const select = document.getElementById(type + 'Transport');
+        if (airport === 'PUS') { select.style.display = 'none'; select.value = ''; }
+        else select.style.display = '';
+    }
+
+    function applyTransportDefault(type) {
+        const airport = document.getElementById(type + 'Airport').value;
+        const transport = document.getElementById(type + 'Transport').value;
+        const table = TRANSPORT_MINUTES[type][airport] || TRANSPORT_MINUTES[type].OTHER;
+        const minutes = table[transport] !== undefined ? table[transport] : table[''];
+        if (type === 'arrival') setDurationFields('arrivalReadyHours', 'arrivalReadyMins', minutes);
+        else setDurationFields('departureLeadHours', 'departureLeadMins', minutes);
+    }
+
     function applyAirportDefaults(type) {
-        const arrival = document.getElementById('arrivalAirport').value;
-        const departure = document.getElementById('departureAirport').value;
-        if (type === 'arrival') document.getElementById('arrivalReadyMinutes').value = arrival === 'PUS' ? 90 : arrival === 'GMP' ? 120 : arrival === 'ICN' ? 180 : 120;
-        if (type === 'departure') document.getElementById('departureLeadMinutes').value = departure === 'PUS' ? 180 : departure === 'GMP' ? 210 : departure === 'ICN' ? 270 : 240;
+        toggleTransportSelect(type);
+        applyTransportDefault(type);
     }
 
     function getSlotOrders() {
@@ -602,10 +682,10 @@
             endHour:          parseInt(document.getElementById('endHour').value)    || 21,
             arrivalAirport:   document.getElementById('arrivalAirport').value,
             arrivalTime:      document.getElementById('arrivalTime').value || null,
-            arrivalReadyMinutes: parseInt(document.getElementById('arrivalReadyMinutes').value) || 0,
+            arrivalReadyMinutes: getDurationMinutes('arrivalReadyHours', 'arrivalReadyMins'),
             departureAirport: document.getElementById('departureAirport').value,
             departureTime:    document.getElementById('departureTime').value || null,
-            departureLeadMinutes: parseInt(document.getElementById('departureLeadMinutes').value) || 0,
+            departureLeadMinutes: getDurationMinutes('departureLeadHours', 'departureLeadMins'),
             intensity:        document.getElementById('intensity').value     || 'balanced',
             slotOrders,
             dailyTourism: slotOrders.filter(s => s.type === 'tourism').length,

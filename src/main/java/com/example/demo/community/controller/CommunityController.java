@@ -44,7 +44,7 @@ public class CommunityController {
         var pageable = PageRequest.of(page, 10, sortOrder);
         boolean myPostsOnly = mine && SecurityUtil.isLoggedIn();
         var data = myPostsOnly
-                ? communityService.getMyCommunityPageData(SecurityUtil.getCurrentUserId(), keyword, pageable)
+                ? communityService.getMyCommunityPageData(SecurityUtil.getCurrentUserId(), categoryId, keyword, pageable)
                 : communityService.getCommunityPageData(categoryId, keyword, pageable);
 
         int totalPages = data.getPosts().getTotalPages();

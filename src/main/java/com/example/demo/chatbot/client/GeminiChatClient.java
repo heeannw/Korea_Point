@@ -2,12 +2,15 @@ package com.example.demo.chatbot.client;
 
 import com.example.demo.trip.integration.ExternalApiClient;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -21,7 +24,11 @@ import java.util.Map;
 @Component
 public class GeminiChatClient {
 
+    private static final Logger log = LoggerFactory.getLogger(GeminiChatClient.class);
     private static final String ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent";
+    /** 503(일시적 과부하)은 구글 측이 "잠시 후 재시도"를 권장하는 케이스라 자동 재시도한다. */
+    private static final int MAX_RETRIES = 4;
+    private static final long INITIAL_BACKOFF_MS = 2000;
 
     private final RestTemplate restTemplate;
 
@@ -32,7 +39,8 @@ public class GeminiChatClient {
     private String model;
 
     public GeminiChatClient() {
-        this.restTemplate = ExternalApiClient.create(3000, 15000);
+        // 무료 등급이라 응답이 느릴 때가 있어 read timeout을 넉넉히 잡는다.
+        this.restTemplate = ExternalApiClient.create(3000, 60000);
     }
 
     public boolean isConfigured() {
@@ -47,23 +55,44 @@ public class GeminiChatClient {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("x-goog-api-key", apiKey);
 
+        // gemini-3.6-flash는 "생각(thinking)" 과정도 maxOutputTokens 예산을 같이 쓰는 모델이라
+        // 최종 답변 전에 예산이 소진되면 문장이 끊긴다. 여유 있게 넉넉히 잡는다.
         Map<String, Object> body = Map.of(
                 "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
-                "generationConfig", Map.of("temperature", 0.3, "maxOutputTokens", 800));
+                "generationConfig", Map.of("temperature", 0.3, "maxOutputTokens", 4096));
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        String url = String.format(ENDPOINT, model);
 
-        try {
-            JsonNode root = restTemplate.exchange(
-                    String.format(ENDPOINT, model),
-                    HttpMethod.POST,
-                    new HttpEntity<>(body, headers),
-                    JsonNode.class).getBody();
-            String text = root == null ? "" : root.at("/candidates/0/content/parts/0/text").asText("").trim();
-            if (text.isBlank()) {
-                throw new ChatbotApiException("Gemini 응답에 답변 텍스트가 없습니다.");
+        int attempt = 0;
+        while (true) {
+            try {
+                JsonNode root = restTemplate.exchange(url, HttpMethod.POST, request, JsonNode.class).getBody();
+                String text = root == null ? "" : root.at("/candidates/0/content/parts/0/text").asText("").trim();
+                if (text.isBlank()) {
+                    throw new ChatbotApiException("Gemini 응답에 답변 텍스트가 없습니다.");
+                }
+                return text;
+            } catch (HttpServerErrorException.ServiceUnavailable e) {
+                attempt++;
+                if (attempt > MAX_RETRIES) {
+                    throw new ChatbotApiException(
+                            "Gemini 모델이 계속 과부하 상태입니다(" + MAX_RETRIES + "회 재시도 후에도 503). 잠시 후 다시 시도해 주세요.", e);
+                }
+                long backoffMs = INITIAL_BACKOFF_MS * (1L << (attempt - 1));
+                log.warn("Gemini 503(모델 과부하), {}ms 대기 후 재시도 ({}/{}차)", backoffMs, attempt, MAX_RETRIES);
+                sleep(backoffMs);
+            } catch (RestClientException e) {
+                throw new ChatbotApiException("Gemini 답변 생성 호출에 실패했습니다: " + e.getMessage(), e);
             }
-            return text;
-        } catch (RestClientException e) {
-            throw new ChatbotApiException("Gemini 답변 생성 호출에 실패했습니다: " + e.getMessage(), e);
+        }
+    }
+
+    private void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ChatbotApiException("재시도 대기 중 인터럽트되었습니다.", e);
         }
     }
 }

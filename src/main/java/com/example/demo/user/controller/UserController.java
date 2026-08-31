@@ -1,9 +1,16 @@
 package com.example.demo.user.controller;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import com.example.demo.user.entity.User;
+import com.example.demo.user.service.EmailVerificationService;
 import com.example.demo.user.service.OwnerRequestService;
 import com.example.demo.user.service.UserService;
+import com.example.demo.user.util.SecurityUtil;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -12,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequiredArgsConstructor
@@ -19,6 +27,7 @@ public class UserController {
 
     private final UserService userService;
     private final OwnerRequestService ownerRequestService;
+    private final EmailVerificationService emailVerificationService;
 
     // Spring Security OAuth2의 loginPage("/login")이 이 URL을 바라봄
     @GetMapping("/login")
@@ -43,6 +52,7 @@ public class UserController {
 
     @GetMapping("/login/success")
     public String loginSuccess(@RequestParam(required = false) String lang,
+                               @RequestParam(required = false) String provider,
                                HttpSession session,
                                Model model) {
         String selected = isSupportedLanguage(lang) ? lang : "ko";
@@ -53,7 +63,103 @@ public class UserController {
                 ? value
                 : ("ko".equals(selected) ? "/ko" : "/");
         model.addAttribute("targetUrl", targetUrl);
+        model.addAttribute("provider", provider);
         return "user/login-success";
+    }
+
+    @GetMapping("/ko/settings")
+    public String settings(HttpSession session, Model model) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        User user = userService.findById(userId);
+        model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
+        model.addAttribute("currentUserName", user.getName());
+        model.addAttribute("user", user);
+        model.addAttribute("hasProvidedEmail", userService.hasProvidedEmail(user));
+        model.addAttribute("isLocalAccount", "local".equals(user.getProvider()));
+        model.addAttribute("loginProviderName", userService.loginProviderName(user));
+        model.addAttribute("pendingEmail", emailVerificationService.getPendingEmail(session));
+        return "user/settings";
+    }
+
+    @PostMapping("/ko/settings/profile")
+    public String updateProfile(@RequestParam String name,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            userService.updateProfile(SecurityUtil.getCurrentUserId(), name);
+            redirectAttributes.addFlashAttribute("settingsMessage", "프로필 정보가 저장됐어요.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("settingsError", ex.getMessage());
+        }
+        return "redirect:/ko/settings";
+    }
+
+    @PostMapping("/ko/settings/password")
+    public String changePassword(@RequestParam String currentPassword,
+                                 @RequestParam String newPassword,
+                                 @RequestParam String passwordConfirm,
+                                 RedirectAttributes redirectAttributes) {
+        try {
+            userService.changeLocalPassword(
+                    SecurityUtil.getCurrentUserId(),
+                    currentPassword,
+                    newPassword,
+                    passwordConfirm
+            );
+            redirectAttributes.addFlashAttribute("passwordMessage", "비밀번호가 변경됐어요.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("passwordError", ex.getMessage());
+        }
+        return "redirect:/ko/settings#password";
+    }
+
+    @PostMapping("/ko/settings/email-code")
+    public String sendEmailCode(@RequestParam String newEmail,
+                                HttpSession session,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            User user = userService.findById(SecurityUtil.getCurrentUserId());
+            if (!"local".equals(user.getProvider())) {
+                throw new IllegalArgumentException("소셜 로그인 계정은 이메일을 직접 변경할 수 없습니다.");
+            }
+            emailVerificationService.sendEmailChangeCode(session, newEmail);
+            redirectAttributes.addFlashAttribute("emailMessage", "인증번호를 메일로 보냈어요. 5분 안에 입력해 주세요. 메일이 안 보이면 스팸함도 확인해 주세요.");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("emailError", ex.getMessage());
+        }
+        return "redirect:/ko/settings#email";
+    }
+
+    @PostMapping("/ko/settings/email")
+    public String updateEmail(@RequestParam String newEmail,
+                              @RequestParam String verificationCode,
+                              HttpSession session,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            String verifiedEmail = emailVerificationService.verifyEmailChangeCode(session, newEmail, verificationCode);
+            userService.updateLocalEmail(SecurityUtil.getCurrentUserId(), verifiedEmail);
+            redirectAttributes.addFlashAttribute("emailMessage", "이메일이 변경됐어요.");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("emailError", ex.getMessage());
+        }
+        return "redirect:/ko/settings#email";
+    }
+
+    @PostMapping("/ko/settings/withdraw")
+    public String withdrawAccount(@RequestParam(required = false) String currentPassword,
+                                  @RequestParam(required = false) String confirmationText,
+                                  HttpServletRequest request,
+                                  HttpServletResponse response,
+                                  RedirectAttributes redirectAttributes) {
+        try {
+            userService.withdrawAccount(SecurityUtil.getCurrentUserId(), currentPassword, confirmationText);
+            redirectAttributes.addFlashAttribute("withdrawMessage", "계정 탈퇴가 완료됐어요. 언제든 다시 가입할 수 있어요.");
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            new SecurityContextLogoutHandler().logout(request, response, authentication);
+            return "redirect:/login";
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("withdrawError", ex.getMessage());
+            return "redirect:/ko/settings#danger";
+        }
     }
 
     @PostMapping("/signup")

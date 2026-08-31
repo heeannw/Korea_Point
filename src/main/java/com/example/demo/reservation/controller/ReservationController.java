@@ -5,6 +5,7 @@ import com.example.demo.reservation.dto.TourApiPlaceDto;
 import com.example.demo.reservation.entity.TourReservation;
 import com.example.demo.reservation.service.ReservationService;
 import com.example.demo.reservation.service.TourApiReservationService;
+import com.example.demo.community.repository.CategoryRepository;
 import com.example.demo.community.repository.PostRepository;
 import com.example.demo.trip.dto.TripPlanDto;
 import com.example.demo.trip.service.TripPlanService;
@@ -21,9 +22,11 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -42,6 +45,7 @@ public class ReservationController {
     private final OwnerRequestService ownerRequestService;
     private final TripPlanService tripPlanService;
     private final PostRepository postRepository;
+    private final CategoryRepository categoryRepository;
 
     @GetMapping("/ko/reservation")
     public String reservationHome(Model model,
@@ -101,6 +105,25 @@ public class ReservationController {
         return "reservation/reservationComplete";
     }
 
+    @PatchMapping("/api/reservations/{reservationId}")
+    @ResponseBody
+    public ResponseEntity<?> updateReservation(@PathVariable Long reservationId,
+                                               @Valid @RequestBody ReservationFormDto form,
+                                               BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body("예약 정보를 확인해 주세요.");
+        }
+        TourReservation reservation = reservationService.update(reservationId, SecurityUtil.getCurrentUserId(), form);
+        return ResponseEntity.ok(reservation);
+    }
+
+    @PatchMapping("/api/reservations/{reservationId}/cancel")
+    @ResponseBody
+    public ResponseEntity<?> cancelReservation(@PathVariable Long reservationId) {
+        TourReservation reservation = reservationService.cancel(reservationId, SecurityUtil.getCurrentUserId());
+        return ResponseEntity.ok(reservation);
+    }
+
     @GetMapping("/ko/mypage")
     public String myPage(Model model) {
         addSessionModel(model);
@@ -108,11 +131,20 @@ public class ReservationController {
         User user = userService.findById(userId);
         Optional<OwnerRequest> latestOwnerRequest = ownerRequestService.findLatestByUserId(userId);
         List<TourReservation> reservations = reservationService.findMyReservations(userId);
+        List<TourReservation> activeReservations = reservations.stream()
+                .filter(reservation -> !"예약 취소".equals(reservation.getStatus()))
+                .toList();
         List<TripPlanDto.Summary> tripPlans = tripPlanService.listByUser(String.valueOf(userId));
         long postCount = postRepository.countByUser_IdAndDeletedAtIsNull(userId);
+        long promoPostCount = postRepository.countByUser_IdAndCategory_NameAndDeletedAtIsNull(userId, "홍보");
+        Long promoCategoryId = categoryRepository.findByName("홍보")
+                .map(category -> category.getId())
+                .orElse(null);
 
         model.addAttribute("today", LocalDate.now());
         model.addAttribute("user", user);
+        model.addAttribute("hasProvidedEmail", userService.hasProvidedEmail(user));
+        model.addAttribute("loginProviderName", userService.loginProviderName(user));
         model.addAttribute("isOwner", "OWNER".equals(user.getRole()));
         model.addAttribute("ownerRequest", latestOwnerRequest.orElse(null));
         model.addAttribute("ownerStatus", latestOwnerRequest
@@ -126,8 +158,12 @@ public class ReservationController {
         model.addAttribute("tripPlanCount", tripPlans.size());
         model.addAttribute("reservationCount", reservations.size());
         model.addAttribute("postCount", postCount);
+        model.addAttribute("promoPostCount", promoPostCount);
+        model.addAttribute("promoCategoryId", promoCategoryId);
         model.addAttribute("reservations", reservations);
+        model.addAttribute("activeReservations", activeReservations);
         model.addAttribute("hasReservation", !reservations.isEmpty());
+        model.addAttribute("hasActiveReservation", !activeReservations.isEmpty());
         if (!reservations.isEmpty()) {
             TourReservation latestReservation = reservations.get(0);
             model.addAttribute("reservation", latestReservation);
@@ -182,7 +218,13 @@ public class ReservationController {
 
     private void addSessionModel(Model model) {
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
-        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
+        if (SecurityUtil.isLoggedIn()) {
+            model.addAttribute("currentUserId", SecurityUtil.getCurrentUserId());
+            model.addAttribute("currentUserName", userService.findById(SecurityUtil.getCurrentUserId()).getName());
+            return;
+        }
+        model.addAttribute("currentUserId", null);
+        model.addAttribute("currentUserName", null);
     }
 
     private void addLatestReservationModel(Model model) {

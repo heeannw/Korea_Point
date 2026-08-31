@@ -129,10 +129,40 @@ h1 {
 }
 
 .toolbar {
-    display: grid;
-    grid-template-columns: 1fr 220px auto;
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     margin-bottom: 24px;
+}
+
+.search-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+}
+
+.category-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.category-btn {
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid #cfe1f5;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #475569;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.category-btn:hover,
+.category-btn.active {
+    border-color: #3b9eff;
+    background: #eff6ff;
+    color: #1a7de0;
 }
 
 .input,
@@ -406,7 +436,4 @@ h1 {
         grid-template-columns: 1fr;
     }
 
-    .toolbar {
-        grid-template-columns: 1fr;
-    }
 }

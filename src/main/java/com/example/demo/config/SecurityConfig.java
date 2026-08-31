@@ -1,9 +1,11 @@
 package com.example.demo.config;
 
 import com.example.demo.user.service.CustomOAuth2UserService;
+import com.example.demo.user.dto.CustomOAuth2User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,6 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
@@ -42,6 +45,10 @@ public class SecurityConfig {
                 .loginPage("/login")
                 .successHandler((request, response, authentication) -> {
                     response.sendRedirect(loginSuccessUrl(request));
+                })
+                .failureHandler((request, response, exception) -> {
+                    log.warn("OAuth2 login failed: {}", exception.getMessage(), exception);
+                    response.sendRedirect("/login?error=true");
                 })
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
@@ -83,6 +90,16 @@ public class SecurityConfig {
     private String loginSuccessUrl(HttpServletRequest request) {
         Object language = request.getSession().getAttribute("loginLanguage");
         String selected = language instanceof String value ? value : "ko";
-        return "/login/success?lang=" + selected;
+        String url = "/login/success?lang=" + selected;
+        Object principal = org.springframework.security.core.context.SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
+        if (principal instanceof CustomOAuth2User user
+                && user.getProvider() != null
+                && !user.getProvider().isBlank()) {
+            url += "&provider=" + user.getProvider();
+        }
+        return url;
     }
 }

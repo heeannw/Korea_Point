@@ -45,9 +45,9 @@
 <header>
     <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
     <div class="header-right">
-        <a th:href="@{/community/post-list(lang='en', categoryId=${selectedCategory}, keyword=${keyword}, sort=${sort})}"
+        <a th:href="@{/community/post-list(lang='en', categoryId=${selectedCategory}, keyword=${keyword}, sort=${sort}, mine=${mine})}"
            class="h-btn" th:classappend="${#locale.language == 'en'} ? ' active' : ''">EN</a>
-        <a th:href="@{/community/post-list(lang='ko', categoryId=${selectedCategory}, keyword=${keyword}, sort=${sort})}"
+        <a th:href="@{/community/post-list(lang='ko', categoryId=${selectedCategory}, keyword=${keyword}, sort=${sort}, mine=${mine})}"
            class="h-btn" th:classappend="${#locale.language != 'en'} ? ' active' : ''">KR</a>
 
         <th:block th:if="${isLoggedIn}">

@@ -53,6 +53,15 @@ public class TripRecommendRequest {
 
     private List<String> preferredAreas;
     private List<String> mustVisit;
+
+    /**
+     * 사용자가 다른 화면(관광지/맛집 등)에서 미리 "저장"해 둔 장소 이름 목록.
+     * mustVisit(사용자가 이 폼에 직접 타이핑한 꼭 가고 싶은 곳)과는 출처가 다르다.
+     * 이 목록에 있는 장소는 점수 경쟁 없이 해당 유형 슬롯에 최우선으로 배치되고,
+     * 남는 슬롯만 기존 추천 로직으로 채워진다.
+     */
+    private List<String> savedPlaceNames;
+
     private List<String> categories;
     private String styleDescription;
 

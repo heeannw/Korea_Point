@@ -28,6 +28,10 @@
                 <strong>사용자 관리</strong>
                 <span>권한, 상태, 포인트 조정</span>
             </a>
+            <a class="nav-link" th:classappend="${activePage == 'ownerApplications'} ? ' active'" th:href="@{/admin/owner-applications}">
+                <strong>사업자 신청 관리</strong>
+                <span>입점 서류 승인, 반려</span>
+            </a>
             <a class="nav-link" th:classappend="${activePage == 'posts'} ? ' active'" th:href="@{/admin/posts}">
                 <strong>게시글 관리</strong>
                 <span>숨김, 복구, 영구 삭제</span>
@@ -158,6 +162,7 @@
                     <select id="usersRole">
                         <option value="">전체</option>
                         <option value="ADMIN">관리자 (ADMIN)</option>
+                        <option value="OWNER">사업자 (OWNER)</option>
                         <option value="USER">일반 (USER)</option>
                     </select>
                 </label>
@@ -190,6 +195,39 @@
                     </table>
                 </div>
                 <div id="usersPagination" class="pagination"></div>
+            </div>
+        </section>
+
+        <section id="ownerApplicationsPanel" class="page-panel">
+            <div class="section-head">
+                <div>
+                    <h2>사업자 신청 관리</h2>
+                    <p>회원가입 또는 마이페이지에서 접수된 입점 서류를 검토하고 사업자 권한을 승인합니다.</p>
+                </div>
+                <button type="button" class="primary-button" id="refreshOwnerApplicationsButton">새로고침</button>
+            </div>
+
+            <div class="admin-tabs" role="tablist" aria-label="사업자 신청 상태">
+                <button type="button" class="admin-tab active" data-owner-status="PENDING">검토 대기</button>
+                <button type="button" class="admin-tab" data-owner-status="APPROVED">승인 완료</button>
+                <button type="button" class="admin-tab" data-owner-status="REJECTED">반려</button>
+            </div>
+
+            <div class="data-shell">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>신청자</th>
+                            <th>가게 정보</th>
+                            <th>서류</th>
+                            <th>접수일</th>
+                            <th>조치</th>
+                        </tr>
+                        </thead>
+                        <tbody id="ownerApplicationsTableBody"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
@@ -407,15 +445,15 @@
 
         <form id="actionModalForm" class="modal-form">
             <div id="modalExtraFields"></div>
-            <label>
+            <label id="modalReasonCodeGroup">
                 사유 코드
                 <select id="modalReasonCode">
                     <option value="">선택해 주세요</option>
                 </select>
                 <span id="modalReasonCodeError" class="field-error"></span>
             </label>
-            <label>
-                상세 메모
+            <label id="modalReasonDetailGroup">
+                <span id="modalReasonDetailLabel">상세 메모</span>
                 <textarea id="modalReasonDetail" rows="4" placeholder="필요 시 조치 사유를 추가로 남겨 주세요. OTHER 선택 시 필수입니다."></textarea>
                 <span id="modalReasonDetailError" class="field-error"></span>
             </label>

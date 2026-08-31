@@ -100,24 +100,62 @@
             flex-direction: column;
             gap: 4px;
         }
+        .history-row {
+            display: flex;
+            align-items: center;
+            border-radius: 10px;
+            transition: background 0.15s ease;
+        }
+        .history-row:hover { background: var(--light); }
+        .history-row.active { background: var(--light); }
         .history-item {
+            flex: 1;
+            min-width: 0;
             display: block;
-            width: 100%;
             text-align: left;
-            padding: 10px 12px;
+            padding: 10px 4px 10px 12px;
             border: none;
             background: transparent;
-            border-radius: 10px;
             font-size: 13px;
             color: var(--dark);
             cursor: pointer;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            transition: background 0.15s ease;
         }
-        .history-item:hover { background: var(--light); }
-        .history-item.active { background: var(--light); color: var(--primary-dark); font-weight: 700; }
+        .history-row.active .history-item { color: var(--primary-dark); font-weight: 700; }
+        .history-actions {
+            display: none;
+            flex: none;
+            gap: 2px;
+            padding-right: 6px;
+        }
+        .history-row:hover .history-actions { display: flex; }
+        .history-action-btn {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+            padding: 6px;
+            border-radius: 6px;
+            color: var(--gray);
+        }
+        .history-action-btn:hover { background: var(--border); }
+        .history-row.editing .history-actions { display: none; }
+        .history-edit-input {
+            flex: 1;
+            min-width: 0;
+            margin: 3px 6px;
+            padding: 7px 8px;
+            border: 1.5px solid var(--primary);
+            border-radius: 8px;
+            font: inherit;
+            font-size: 13px;
+            color: var(--dark);
+            background: var(--white);
+            outline: none;
+        }
         .history-empty {
             font-size: 12px;
             color: #9aa7bd;
@@ -174,21 +212,98 @@
             border: 1px solid var(--border);
             border-bottom-left-radius: 4px;
         }
+        .msg-bubble.story-bubble {
+            max-width: min(80%, 560px);
+        }
+        .story-text {
+            position: relative;
+            overflow: hidden;
+        }
+        .story-text.collapsed {
+            max-height: 130px;
+        }
+        .story-text.collapsed::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 44px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--white));
+        }
+        .story-toggle {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--light);
+            color: var(--primary-dark);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .story-toggle:hover { border-color: var(--primary); }
+        .answer-hero-img, .source-hero-img {
+            display: block;
+            width: 100%;
+            max-height: 180px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
         .msg-sources {
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px dashed var(--border);
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
+            align-items: flex-start;
+            gap: 8px;
         }
-        .source-chip {
+        .msg-sources-label {
+            width: 100%;
+            font-size: 11px;
+            color: var(--gray);
+            margin-bottom: 2px;
+        }
+        .source-card {
+            display: flex;
+            flex-direction: column;
+            align-self: flex-start;
+            width: 128px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--white);
+            cursor: pointer;
+            overflow: hidden;
+            text-align: left;
+            font: inherit;
+            padding: 0;
+            transition: all 0.15s ease;
+        }
+        .source-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(59, 158, 255, 0.18);
+            transform: translateY(-1px);
+        }
+        .source-card-img {
+            width: 100%;
+            height: 64px;
+            object-fit: cover;
+            background: var(--light);
+        }
+        .source-card-title {
+            padding: 6px 8px;
             font-size: 11px;
             font-weight: 600;
-            color: var(--primary-dark);
-            background: var(--light);
-            padding: 4px 10px;
-            border-radius: 50px;
+            color: var(--dark);
+            line-height: 16px;
+            /* 2줄(32px) + 여유(3px). em 기반 계산은 실제 렌더링 시 글자 아랫부분이
+               미세하게 잘리는 문제가 있어 고정 px + 여유값으로 바꿈. */
+            max-height: 35px;
+            overflow: hidden;
+            word-break: break-word;
         }
         .typing { color: var(--gray); font-size: 13px; }
         footer {
@@ -300,17 +415,95 @@
         } catch (e) { /* 저장 공간이 없으면 그냥 이번 세션만 유지 */ }
     }
 
+    // 인라인으로 이름 편집 중인 대화 id (더블클릭 또는 ✏️ 클릭 시 설정됨)
+    let editingId = null;
+
     function renderHistoryList() {
-        historyList.querySelectorAll('.history-item').forEach(el => el.remove());
+        historyList.querySelectorAll('.history-row').forEach(el => el.remove());
         historyEmpty.style.display = conversations.length ? 'none' : 'block';
         [...conversations].reverse().forEach(conv => {
+            const row = document.createElement('div');
+            const isEditing = conv.id === editingId;
+            row.className = 'history-row'
+                + (conv.id === activeId ? ' active' : '')
+                + (isEditing ? ' editing' : '');
+
+            if (isEditing) {
+                const editInput = document.createElement('input');
+                editInput.type = 'text';
+                editInput.className = 'history-edit-input';
+                editInput.value = conv.title;
+                editInput.maxLength = 60;
+                editInput.addEventListener('click', (e) => e.stopPropagation());
+                editInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); commitRename(conv.id, editInput.value); }
+                    else if (e.key === 'Escape') { e.preventDefault(); editingId = null; renderHistoryList(); }
+                });
+                editInput.addEventListener('blur', () => commitRename(conv.id, editInput.value));
+                row.appendChild(editInput);
+                historyList.appendChild(row);
+                editInput.focus();
+                editInput.select();
+                return;
+            }
+
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'history-item' + (conv.id === activeId ? ' active' : '');
+            btn.className = 'history-item';
             btn.textContent = conv.title;
+            btn.title = conv.title;
             btn.addEventListener('click', () => openConversation(conv.id));
-            historyList.appendChild(btn);
+            btn.addEventListener('dblclick', (e) => { e.stopPropagation(); startRename(conv.id); });
+
+            const actions = document.createElement('div');
+            actions.className = 'history-actions';
+
+            const renameBtn = document.createElement('button');
+            renameBtn.type = 'button';
+            renameBtn.className = 'history-action-btn';
+            renameBtn.textContent = '✏️';
+            renameBtn.title = '이름 바꾸기';
+            renameBtn.addEventListener('click', (e) => { e.stopPropagation(); startRename(conv.id); });
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'history-action-btn';
+            deleteBtn.textContent = '🗑️';
+            deleteBtn.title = '삭제';
+            deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteConversation(conv.id); });
+
+            actions.appendChild(renameBtn);
+            actions.appendChild(deleteBtn);
+            row.appendChild(btn);
+            row.appendChild(actions);
+            historyList.appendChild(row);
         });
+    }
+
+    function startRename(id) {
+        editingId = id;
+        renderHistoryList();
+    }
+
+    function commitRename(id, rawValue) {
+        // blur와 Enter가 겹쳐서 두 번 불릴 수 있어 editingId로 한 번만 처리한다.
+        if (editingId !== id) return;
+        editingId = null;
+        const conv = conversations.find(c => c.id === id);
+        const trimmed = (rawValue || '').trim();
+        if (conv && trimmed) {
+            conv.title = trimmed.length > 30 ? trimmed.slice(0, 30) + '…' : trimmed;
+            saveConversations();
+        }
+        renderHistoryList();
+    }
+
+    function deleteConversation(id) {
+        if (!window.confirm('이 대화를 삭제할까요? 되돌릴 수 없어요.')) return;
+        conversations = conversations.filter(c => c.id !== id);
+        saveConversations();
+        if (activeId === id) startNewConversation();
+        else renderHistoryList();
     }
 
     function openConversation(id) {
@@ -319,7 +512,9 @@
         activeId = id;
         shell.innerHTML = '';
         conv.messages.forEach(msg => {
-            const bubble = addMessage(msg.role, msg.text, false);
+            const bubble = msg.isStory ? addStoryMessage(msg.text, false) : addMessage(msg.role, msg.text, false);
+            if (msg.imgUrl) prependImage(bubble, msg.imgUrl);
+            else if (msg.sources && msg.sources[0] && msg.sources[0].imgUrl) prependImage(bubble, msg.sources[0].imgUrl);
             if (msg.sources) addSources(bubble, msg.sources);
         });
         renderHistoryList();
@@ -327,6 +522,7 @@
 
     function startNewConversation() {
         activeId = null;
+        editingId = null;
         shell.innerHTML = '';
         shell.appendChild(chatIntro);
         renderHistoryList();
@@ -345,30 +541,126 @@
         return conv;
     }
 
-    function addMessage(role, text, removeIntro = true) {
-        if (removeIntro && chatIntro.parentNode) chatIntro.remove();
+    function createMessageRow(role) {
         const row = document.createElement('div');
         row.className = 'msg-row ' + role;
         const bubble = document.createElement('div');
         bubble.className = 'msg-bubble';
-        bubble.textContent = text;
         row.appendChild(bubble);
+        return { row, bubble };
+    }
+
+    function addMessage(role, text, removeIntro = true) {
+        if (removeIntro && chatIntro.parentNode) chatIntro.remove();
+        const { row, bubble } = createMessageRow(role);
+        bubble.textContent = text;
         shell.appendChild(row);
         main.scrollTop = main.scrollHeight;
         return bubble;
     }
 
+    /** 이야기 전문처럼 긴 글은 한 번에 다 보여주면 읽기 힘들어서, 일부만 보여주고
+     *  "전체 보기" 버튼으로 펼치게 한다. */
+    const STORY_COLLAPSE_CHARS = 220;
+
+    function renderStoryBubble(bubble, text) {
+        bubble.classList.add('story-bubble');
+        const content = text || '이 이야기의 원문을 찾지 못했어요.';
+        const textEl = document.createElement('div');
+        textEl.className = 'story-text';
+        textEl.textContent = content;
+        bubble.appendChild(textEl);
+
+        if (content.length > STORY_COLLAPSE_CHARS) {
+            textEl.classList.add('collapsed');
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'story-toggle';
+            toggle.textContent = '이야기 전체 보기 ▾';
+            toggle.addEventListener('click', () => {
+                const collapsed = textEl.classList.toggle('collapsed');
+                toggle.textContent = collapsed ? '이야기 전체 보기 ▾' : '접기 ▴';
+                // 접었을 때 방금 접은 말풍선이 화면 밖으로 사라지지 않게 위치를 잡아준다.
+                if (collapsed) {
+                    const row = bubble.closest('.msg-row');
+                    if (row) main.scrollTop = row.offsetTop - 12;
+                }
+            });
+            bubble.appendChild(toggle);
+        }
+    }
+
+    function addStoryMessage(text, removeIntro = true) {
+        if (removeIntro && chatIntro.parentNode) chatIntro.remove();
+        const { row, bubble } = createMessageRow('bot');
+        renderStoryBubble(bubble, text);
+        shell.appendChild(row);
+        main.scrollTop = main.scrollHeight;
+        return bubble;
+    }
+
+    /** 답변/이야기 이미지를 말풍선 맨 위에 붙인다. 이미지가 깨지면 조용히 지운다. */
+    function prependImage(bubble, url) {
+        if (!url) return;
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = '';
+        img.className = 'answer-hero-img';
+        img.addEventListener('error', () => img.remove());
+        bubble.prepend(img);
+    }
+
     function addSources(bubble, sources) {
         if (!sources || sources.length === 0) return;
+        const label = document.createElement('div');
+        label.className = 'msg-sources-label';
+        label.textContent = '📖 참고한 이야기 (눌러서 더 보기)';
         const box = document.createElement('div');
         box.className = 'msg-sources';
+        box.appendChild(label);
         sources.forEach(source => {
-            const chip = document.createElement('span');
-            chip.className = 'source-chip';
-            chip.textContent = '📖 ' + source.title;
-            box.appendChild(chip);
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'source-card';
+            if (source.imgUrl) {
+                const img = document.createElement('img');
+                img.src = source.imgUrl;
+                img.alt = '';
+                img.className = 'source-card-img';
+                img.addEventListener('error', () => img.remove());
+                card.appendChild(img);
+            }
+            const title = document.createElement('span');
+            title.className = 'source-card-title';
+            title.textContent = source.title;
+            card.appendChild(title);
+            card.addEventListener('click', () => expandSource(source));
+            box.appendChild(card);
         });
         bubble.appendChild(box);
+    }
+
+    /** 이야기 카드를 누르면 그 이야기 전문을 새 말풍선으로 보여준다. 추가 API 호출은 없다. */
+    function expandSource(source) {
+        const userText = `「${source.title}」 이야기 더 알려줄래?`;
+        const content = source.content || '이 이야기의 원문을 찾지 못했어요.';
+        addMessage('user', userText);
+        const bubble = addStoryMessage(content);
+        if (source.imgUrl) prependImage(bubble, source.imgUrl);
+
+        if (activeId) {
+            const conv = conversations.find(c => c.id === activeId);
+            if (conv) {
+                conv.messages.push({ role: 'user', text: userText });
+                conv.messages.push({
+                    role: 'bot',
+                    text: content,
+                    imgUrl: source.imgUrl || null,
+                    isStory: true
+                });
+                saveConversations();
+            }
+        }
     }
 
     newChatBtn.addEventListener('click', startNewConversation);
@@ -402,6 +694,7 @@
             const data = await response.json();
             typingBubble.classList.remove('typing');
             typingBubble.textContent = data.answer || '답변을 받지 못했어요.';
+            if (data.sources && data.sources[0]) prependImage(typingBubble, data.sources[0].imgUrl);
             addSources(typingBubble, data.sources);
             conv.messages.push({ role: 'bot', text: data.answer, sources: data.sources });
             saveConversations();

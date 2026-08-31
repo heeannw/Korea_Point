@@ -8,15 +8,14 @@
     <title>마이페이지 | KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/mypage/mypage.css}">
+    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
 <body>
 <header>
     <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
     <div class="header-right">
         <a th:href="@{/ko}" class="h-btn">홈</a>
-        <a th:href="@{/ko/trip/plans}" class="h-btn">내 여행</a>
-        <a th:href="@{/community/post-list}" class="h-btn">커뮤니티</a>
-        <a th:href="@{/ko/reservation}" class="h-btn">예약</a>
+        <a th:href="@{/ko/settings}" class="h-btn">설정</a>
         <a th:href="@{/ko/mypage}" class="h-btn active">마이페이지</a>
     </div>
 </header>
@@ -34,7 +33,7 @@
         </div>
     </section>
 
-    <section class="profile">
+    <a class="profile profile-link" th:href="@{/ko/settings}" aria-label="계정 설정으로 이동">
         <div class="user-info">
             <div class="avatar" th:text="${currentUserName != null and !#strings.isEmpty(currentUserName) ? #strings.substring(currentUserName, 0, 1) : 'U'}">U</div>
             <div>
@@ -44,7 +43,8 @@
                           th:text="${ownerStatus == 'APPROVED'} ? '인증 사업자' : '사업자 검토중'">사업자 검토중</span>
                     <span th:unless="${isOwner}" class="user-mark">개인 여행자</span>
                 </div>
-                <p th:text="${user.email}">user@koreapoint.com</p>
+                <p th:if="${hasProvidedEmail}" th:text="${user.email}">user@koreapoint.com</p>
+                <p class="login-provider" th:text="${loginProviderName}">Google 로그인</p>
             </div>
         </div>
         <div class="point-box" th:if="${isOwner}">
@@ -55,48 +55,60 @@
             <span>활동 상태</span>
             <strong>ACTIVE</strong>
         </div>
-    </section>
+    </a>
 
     <div th:if="${ownerRequestMessage}" class="notice success" th:text="${ownerRequestMessage}">신청이 접수됐어요.</div>
     <div th:if="${ownerRequestError}" class="notice error" th:text="${ownerRequestError}">신청 정보를 확인해 주세요.</div>
 
-    <section class="stats">
-        <article class="stat">
+    <section th:if="${isOwner}" class="owner-quick">
+        <div>
+            <p class="eyebrow small">Business</p>
+            <h2>사업자 모드</h2>
+            <p th:if="${ownerStatus == 'APPROVED'}">가게 홍보와 사업자 활동을 먼저 관리하고, 기존 여행 활동은 필요할 때 펼쳐서 확인해요.</p>
+            <p th:unless="${ownerStatus == 'APPROVED'}">사업자 신청 상태를 확인하고, 기존 여행 활동은 필요할 때 펼쳐서 확인해요.</p>
+        </div>
+        <button type="button" class="btn secondary" id="personalActivityToggle"
+                aria-expanded="false"
+                onclick="togglePersonalActivity()">내 여행 활동 보기</button>
+    </section>
+
+    <section class="stats personal-activity-section" th:attr="hidden=${isOwner} ? 'hidden' : null">
+        <a class="stat stat-link" href="#tripPlans">
             <span>내 여행 일정</span>
             <strong th:text="${tripPlanCount}">0</strong>
             <p>저장한 추천 코스</p>
-        </article>
-        <article class="stat">
+        </a>
+        <a class="stat stat-link" href="#reservations">
             <span>예약 내역</span>
             <strong th:text="${reservationCount}">0</strong>
             <p>관광지 예약</p>
-        </article>
+        </a>
         <a class="stat stat-link" th:href="@{/community/post-list(mine=true)}">
             <span>작성한 글</span>
             <strong th:text="${postCount}">0</strong>
             <p>커뮤니티 게시글</p>
         </a>
-        <article class="stat">
-            <span>계정 유형</span>
-            <strong th:text="${isOwner} ? '사업자' : '개인'">개인</strong>
-            <p th:text="${isOwner} ? '입점 관리 가능' : '여행자 계정'">여행자 계정</p>
-        </article>
+        <a class="stat stat-link" href="#savedPlaces">
+            <span>저장한 장소</span>
+            <strong id="savedPlaceCount">0</strong>
+            <p>관광지 · 음식점 · 카페</p>
+        </a>
     </section>
 
     <section class="contents">
-        <article class="box wide">
+        <article id="tripPlans" class="box wide personal-activity-section" th:attr="hidden=${isOwner} ? 'hidden' : null">
             <div class="box-title">
                 <div>
                     <p class="eyebrow small">Trip Plan</p>
                     <h2>내 여행 일정</h2>
                 </div>
-                <a th:href="${hasTripPlans} ? @{/ko/trip/plans} : @{/ko/trip}" class="text-link"
-                   th:text="${hasTripPlans} ? '전체보기' : '일정 만들기'">전체보기</a>
+                <button th:if="${hasTripPlans}" type="button" class="text-link text-button" onclick="openTripPlanList()">전체보기</button>
+                <a th:unless="${hasTripPlans}" th:href="@{/ko/trip}" class="text-link">일정 만들기</a>
             </div>
 
             <div th:if="${hasTripPlans}" class="trip-plan-list">
                 <article class="trip-plan-card" th:each="plan, iter : ${tripPlans}" th:if="${iter.index < 4}"
-                         th:data-plan-id="${plan.id}">
+                         th:data-plan-id="${plan.id}" th:onclick="|showTripPlanDetail(${plan.id})|">
                     <div class="trip-plan-main">
                         <div>
                             <div class="trip-title-row">
@@ -119,15 +131,17 @@
                                 <span th:text="| · 저장일 ${#temporals.format(plan.createdAt, 'yyyy-MM-dd')}|"> · 저장일 2026-08-12</span>
                             </p>
                         </div>
-                    </div>
-                    <div class="trip-actions">
-                        <button type="button" class="mini-btn primary" th:onclick="|showTripPlanDetail(${plan.id})|">상세보기</button>
-                        <button type="button" class="mini-btn"
-                                th:data-plan-id="${plan.id}"
-                                th:data-plan-title="${plan.title}"
-                                onclick="renameTripPlan(this)">제목 수정</button>
-                        <button type="button" class="mini-btn" th:onclick="|copyTripPlan(${plan.id})|">복사</button>
-                        <button type="button" class="mini-btn danger" th:onclick="|deleteTripPlan(${plan.id})|">삭제</button>
+                        <div class="kebab-wrap">
+                            <button type="button" class="kebab-btn" onclick="toggleTripMenu(this, event)" aria-label="일정 메뉴">⋯</button>
+                            <div class="action-menu" hidden>
+                                <button type="button"
+                                        th:data-plan-id="${plan.id}"
+                                        th:data-plan-title="${plan.title}"
+                                        onclick="renameTripPlan(this, event)">제목 수정</button>
+                                <button type="button" th:onclick="|copyTripPlan(${plan.id}, event)|">복사</button>
+                                <button type="button" class="danger" th:onclick="|deleteTripPlan(${plan.id}, event)|">삭제</button>
+                            </div>
+                        </div>
                     </div>
                 </article>
             </div>
@@ -146,33 +160,64 @@
             </div>
             <div class="menu-list">
                 <a th:href="@{/community/post-list(mine=true)}" class="menu-btn">내가 쓴 글 보기</a>
-                <a th:href="@{/community/post/write}" class="menu-btn">커뮤니티 글쓰기</a>
-                <a th:href="@{/ko/reservation}" class="menu-btn">예약하러 가기</a>
-                <a th:href="@{/ko/trip}" class="menu-btn">여행 일정 만들기</a>
+                <a th:unless="${isOwner}" href="#savedPlaces" class="menu-btn">내 저장 장소 보기</a>
+                <a th:unless="${isOwner}" href="#tripPlans" class="menu-btn">내 여행 일정 보기</a>
+                <a th:unless="${isOwner}" href="#reservations" class="menu-btn">예약 내역 보기</a>
+                <button th:if="${isOwner}" type="button" class="menu-btn" onclick="showPersonalActivitySection('savedPlaces')">내 저장 장소 보기</button>
+                <button th:if="${isOwner}" type="button" class="menu-btn" onclick="showPersonalActivitySection('tripPlans')">내 여행 일정 보기</button>
+                <button th:if="${isOwner}" type="button" class="menu-btn" onclick="showPersonalActivitySection('reservations')">예약 내역 보기</button>
+                <button th:unless="${isOwner}" type="button" class="menu-btn" onclick="openOwnerApplication()">사업자 전환 신청하기</button>
                 <form th:action="@{/logout}" method="post">
                     <button type="submit" class="menu-btn logout">로그아웃</button>
                 </form>
             </div>
         </article>
 
-        <article class="box wide">
+        <article id="reservations" class="box wide personal-activity-section" th:attr="hidden=${isOwner} ? 'hidden' : null">
             <div class="box-title">
                 <div>
                     <p class="eyebrow small">Reservation</p>
                     <h2>예약 내역</h2>
                 </div>
-                <a th:href="@{/ko/reservation}" class="text-link">예약하기</a>
+                <button th:if="${hasReservation}" type="button" class="text-link text-button" onclick="openReservationList()">전체보기</button>
+                <a th:unless="${hasReservation}" th:href="@{/ko/reservation}" class="text-link">예약하기</a>
             </div>
 
-            <div th:if="${hasReservation}" class="reservation-list">
-                <article class="reservation-card" th:each="reservation, iter : ${reservations}" th:if="${iter.index < 3}">
+            <div th:if="${hasActiveReservation}" class="reservation-list">
+                <article class="reservation-card" th:each="reservation, iter : ${activeReservations}" th:if="${iter.index < 3}">
                     <div>
                         <p class="reservation-no" th:text="${reservation.reservationNo}">KP-00000000-0000</p>
                         <h3 th:text="${reservation.placeTitle}">관광지명</h3>
                         <p th:text="|${reservation.reservationDate} · ${reservation.reservationTime} · ${reservation.peopleCount}명|">2026-08-12 · 10:00 · 1명</p>
                     </div>
-                    <span class="status-badge" th:text="${reservation.status}">예약 완료</span>
+                    <div class="reservation-side">
+                        <span class="status-badge"
+                              th:classappend="${reservation.status == '예약 취소'} ? ' muted' : ''"
+                              th:text="${reservation.status}">예약 완료</span>
+                        <div class="kebab-wrap">
+                            <button type="button" class="kebab-btn" onclick="toggleActionMenu(this, event)" aria-label="예약 메뉴">⋯</button>
+                            <div class="action-menu" hidden>
+                                <button type="button"
+                                        th:data-id="${reservation.id}"
+                                        th:data-content-id="${reservation.contentId}"
+                                        th:data-content-type-id="${reservation.contentTypeId}"
+                                        th:data-place-title="${reservation.placeTitle}"
+                                        th:data-date="${reservation.reservationDate}"
+                                        th:data-time="${reservation.reservationTime}"
+                                        th:data-people="${reservation.peopleCount}"
+                                        th:data-memo="${reservation.memo}"
+                                        onclick="openReservationEdit(this, event)">수정</button>
+                                <button type="button" class="danger"
+                                        th:data-id="${reservation.id}"
+                                        onclick="cancelReservation(this, event)">취소</button>
+                            </div>
+                        </div>
+                    </div>
                 </article>
+            </div>
+            <div th:if="${!hasActiveReservation and hasReservation}" class="empty">
+                현재 예약 완료 내역이 없어요.<br>
+                취소한 예약은 전체보기에서 확인할 수 있어요.
             </div>
             <div th:unless="${hasReservation}" class="empty">
                 아직 예약 내역이 없어요.<br>
@@ -180,71 +225,121 @@
             </div>
         </article>
 
-        <article class="box wide" th:if="${isOwner}">
+        <article id="savedPlaces" class="box wide personal-activity-section" th:attr="hidden=${isOwner} ? 'hidden' : null">
+            <div class="box-title">
+                <div>
+                    <p class="eyebrow small">Saved Places</p>
+                    <h2>내 저장 장소</h2>
+                </div>
+            </div>
+
+            <div class="saved-filter" aria-label="저장 장소 분류">
+                <button type="button" class="saved-filter-btn active" data-saved-filter="all">전체</button>
+                <button type="button" class="saved-filter-btn" data-saved-filter="tour">관광지</button>
+                <button type="button" class="saved-filter-btn" data-saved-filter="food">음식점</button>
+                <button type="button" class="saved-filter-btn" data-saved-filter="cafe">카페</button>
+            </div>
+
+            <div id="savedPlaceList" class="saved-place-list"></div>
+            <div id="savedPlaceEmpty" class="empty">
+                아직 저장한 장소가 없어요.<br>
+                관광지 · 음식점 · 카페 상세창에서 하트를 누르면 이곳에 모아볼 수 있게 연결될 예정이에요.
+            </div>
+        </article>
+
+        <article class="box wide business-box" th:if="${isOwner}">
             <div class="box-title">
                 <div>
                     <p class="eyebrow small">Business</p>
                     <h2>사업자 관리</h2>
                 </div>
             </div>
-            <div class="owner-box">
-                <span class="owner-mark"
-                      th:text="${ownerStatus == 'APPROVED'} ? '인증 사업자' : '사업자 검토중'">사업자 검토중</span>
-                <p>입점 서류와 메뉴 정보를 검토 중이에요. 승인 후 가게 정보를 관리할 수 있어요.</p>
-                <a class="btn secondary full" th:href="@{/ko/mypage}">입점 정보 확인</a>
-            </div>
-        </article>
-
-        <article class="box wide" th:unless="${isOwner}">
-            <div class="box-title">
-                <div>
-                    <p class="eyebrow small">Business</p>
-                    <h2>사업자 전환 신청</h2>
+            <div class="owner-box" th:if="${ownerStatus == 'APPROVED'}">
+                <div class="business-summary">
+                    <div>
+                        <span class="owner-mark">인증 사업자</span>
+                        <h3>사업자 활동 관리</h3>
+                        <p>홍보글 작성과 포인트 사용 현황을 이곳에서 빠르게 확인해요.</p>
+                    </div>
+                    <div class="business-point">
+                        <span>홍보 포인트</span>
+                        <strong th:text="|${user.point}P|">1000P</strong>
+                    </div>
+                </div>
+                <div class="business-stats">
+                    <a class="business-stat" th:href="@{/community/post-list(mine=true, categoryId=${promoCategoryId})}">
+                        <span>내 홍보글</span>
+                        <strong th:text="${promoPostCount}">0</strong>
+                    </a>
+                    <a class="business-stat" th:href="@{/community/post-list(mine=true)}">
+                        <span>전체 작성글</span>
+                        <strong th:text="${postCount}">0</strong>
+                    </a>
+                </div>
+                <div class="business-actions">
+                    <a class="btn" th:href="@{/community/post/write}">홍보글 작성하기</a>
+                    <a class="btn secondary" th:href="@{/community/post-list(mine=true, categoryId=${promoCategoryId})}">내 홍보글 보기</a>
                 </div>
             </div>
-
-            <div class="owner-box" th:if="${hasPendingOwnerRequest}">
-                <span class="owner-mark">검토 대기</span>
-                <p>
-                    <strong th:text="${ownerRequest.storeName}">가게명</strong> 사업자 신청이 접수됐어요.
-                    승인되면 계정 권한이 사업자로 변경됩니다.
-                </p>
-            </div>
-
-            <div class="owner-box" th:if="${ownerStatus == 'REJECTED'}">
-                <span class="status-badge rejected">반려</span>
-                <p th:text="${ownerRequest.reviewComment != null and !#strings.isEmpty(ownerRequest.reviewComment) ? ownerRequest.reviewComment : '신청 정보가 반려됐어요. 내용을 보완해 다시 신청해 주세요.'}">
-                    신청 정보가 반려됐어요.
-                </p>
-            </div>
-
-            <form th:if="${!hasPendingOwnerRequest}" class="owner-form"
-                  th:action="@{/ko/mypage/owner-application}" method="post" enctype="multipart/form-data">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                <input name="storeName" type="text" placeholder="가게명" required>
-                <input name="businessRegistrationNumber" type="text" placeholder="사업자등록번호" required>
-                <label>
-                    <span>사업자등록증</span>
-                    <input name="businessRegistrationFile" type="file" required>
-                </label>
-                <label>
-                    <span>영업신고증</span>
-                    <input name="businessLicenseFile" type="file" required>
-                </label>
-                <label>
-                    <span>메뉴판 또는 메뉴 정보</span>
-                    <input name="menuFile" type="file" required>
-                </label>
-                <button type="submit" class="btn full">사업자 전환 신청</button>
-            </form>
-
-            <div class="owner-box write-box">
-                <p>내가 쓴 게시글은 총 <strong th:text="${postCount}">0</strong>개예요.</p>
-                <a class="btn secondary full" th:href="@{/community/post-list(mine=true)}">내가 쓴 글 보기</a>
+            <div class="owner-box" th:unless="${ownerStatus == 'APPROVED'}">
+                <span class="owner-mark">사업자 검토중</span>
+                <p>입점 서류와 메뉴 정보를 검토 중이에요. 승인되면 홍보글 작성과 사업자 관리 기능을 사용할 수 있어요.</p>
+                <button type="button" class="btn secondary full" onclick="openOwnerApplication()">신청 상태 확인</button>
             </div>
         </article>
     </section>
 </main>
+<div id="tripPlanListModal" class="modal-backdrop" hidden>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="tripPlanListTitle">
+        <div class="modal-head">
+            <div>
+                <p class="eyebrow small">Trip Plan</p>
+                <h2 id="tripPlanListTitle">전체 여행 일정</h2>
+            </div>
+            <button type="button" class="modal-close" onclick="closeTripPlanList()" aria-label="닫기">×</button>
+        </div>
+        <div th:if="${hasTripPlans}" class="trip-plan-list modal-list">
+            <article class="trip-plan-card" th:each="plan : ${tripPlans}"
+                     th:data-plan-id="${plan.id}" th:onclick="|showTripPlanDetail(${plan.id})|">
+                <div class="trip-plan-main">
+                    <div>
+                        <div class="trip-title-row">
+                            <strong class="trip-plan-title" th:text="${plan.title}">부산 2박 3일</strong>
+                            <span class="status-badge"
+                                  th:classappend="${plan.tripStatus == 'ONGOING'} ? ' ongoing' : (${plan.tripStatus == 'COMPLETED'} ? ' completed' : (${plan.tripStatus == 'UNSCHEDULED'} ? ' muted' : ''))"
+                                  th:text="${plan.tripStatusLabel}">예정</span>
+                        </div>
+                        <p class="trip-meta">
+                            <span th:text="${plan.startDate != null} ? |${plan.startDate} ~ ${plan.endDate}| : '날짜 미정'">2026-08-12 ~ 2026-08-14</span>
+                            <span th:text="| · ${plan.travelDays}일|"> · 3일</span>
+                            <span th:if="${plan.companion != null && !plan.companion.isBlank()}" th:text="| · ${plan.companion}|"> · 친구</span>
+                        </p>
+                        <p class="trip-meta">
+                            <span th:if="${#lists.isEmpty(plan.preferredAreas)}">지역 미정</span>
+                            <span th:unless="${#lists.isEmpty(plan.preferredAreas)}">
+                                <span th:each="area, areaStat : ${plan.preferredAreas}"
+                                      th:text="${areaStat.first} ? ${area} : |, ${area}|">부산</span>
+                            </span>
+                            <span th:text="| · 저장일 ${#temporals.format(plan.createdAt, 'yyyy-MM-dd')}|"> · 저장일 2026-08-12</span>
+                        </p>
+                    </div>
+                    <div class="kebab-wrap">
+                        <button type="button" class="kebab-btn" onclick="toggleTripMenu(this, event)" aria-label="일정 메뉴">⋯</button>
+                        <div class="action-menu" hidden>
+                            <button type="button"
+                                    th:data-plan-id="${plan.id}"
+                                    th:data-plan-title="${plan.title}"
+                                    onclick="renameTripPlan(this, event)">제목 수정</button>
+                            <button type="button" th:onclick="|copyTripPlan(${plan.id}, event)|">복사</button>
+                            <button type="button" class="danger" th:onclick="|deleteTripPlan(${plan.id}, event)|">삭제</button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+        <div th:unless="${hasTripPlans}" class="empty">저장된 여행 일정이 아직 없어요.</div>
+    </section>
+</div>
 <div id="tripDetailModal" class="modal-backdrop" hidden>
     <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="tripDetailTitle">
         <div class="modal-head">
@@ -257,12 +352,158 @@
         <div id="tripDetailMeta" class="detail-meta"></div>
         <div id="tripDetailDays" class="detail-days"></div>
         <div class="modal-actions">
-            <a class="btn secondary" th:href="@{/ko/trip/plans}">전체 일정으로 이동</a>
+            <button type="button" class="btn secondary" onclick="returnToTripPlanList()">전체 일정 보기</button>
             <button type="button" class="btn" onclick="closeTripPlanDetail()">확인</button>
         </div>
     </section>
 </div>
-<script>
+<div id="reservationEditModal" class="modal-backdrop" hidden>
+    <section class="modal-panel reservation-edit-modal" role="dialog" aria-modal="true" aria-labelledby="reservationEditTitle">
+        <div class="modal-head">
+            <div>
+                <p class="eyebrow small">Reservation</p>
+                <h2 id="reservationEditTitle">예약 수정</h2>
+            </div>
+            <button type="button" class="modal-close" onclick="closeReservationEdit()" aria-label="닫기">×</button>
+        </div>
+        <form class="reservation-edit-form" onsubmit="submitReservationEdit(event)">
+            <input type="hidden" id="editReservationId">
+            <input type="hidden" id="editContentId">
+            <input type="hidden" id="editContentTypeId">
+            <input type="hidden" id="editPlaceTitle">
+            <label class="field">
+                <span class="label">예약 날짜</span>
+                <input class="input" id="editReservationDate" type="date" required>
+            </label>
+            <label class="field">
+                <span class="label">예약 시간</span>
+                <select class="select" id="editReservationTime" required>
+                    <option value="10:00">10:00</option>
+                    <option value="11:00">11:00</option>
+                    <option value="13:00">13:00</option>
+                    <option value="14:00">14:00</option>
+                    <option value="15:00">15:00</option>
+                    <option value="16:00">16:00</option>
+                </select>
+            </label>
+            <label class="field">
+                <span class="label">인원</span>
+                <input class="input" id="editPeopleCount" type="number" min="1" max="10" required>
+            </label>
+            <label class="field full">
+                <span class="label">요청 메모</span>
+                <textarea class="textarea" id="editMemo" placeholder="필요한 요청사항을 입력하세요"></textarea>
+            </label>
+            <div class="modal-actions">
+                <button type="button" class="btn secondary" onclick="closeReservationEdit()">닫기</button>
+                <button type="submit" class="btn">수정 저장</button>
+            </div>
+        </form>
+    </section>
+</div>
+<div id="reservationListModal" class="modal-backdrop" hidden>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="reservationListTitle">
+        <div class="modal-head">
+            <div>
+                <p class="eyebrow small">Reservation</p>
+                <h2 id="reservationListTitle">전체 예약 내역</h2>
+            </div>
+            <button type="button" class="modal-close" onclick="closeReservationList()" aria-label="닫기">×</button>
+        </div>
+        <div th:if="${hasReservation}" class="reservation-filter" aria-label="예약 상태 분류">
+            <button type="button" class="saved-filter-btn active" data-reservation-filter="all" onclick="filterReservations(this)">전체</button>
+            <button type="button" class="saved-filter-btn" data-reservation-filter="active" onclick="filterReservations(this)">예약 완료</button>
+            <button type="button" class="saved-filter-btn" data-reservation-filter="canceled" onclick="filterReservations(this)">예약 취소</button>
+        </div>
+        <div th:if="${hasReservation}" class="reservation-list modal-list">
+            <article class="reservation-card"
+                     th:each="reservation : ${reservations}"
+                     th:data-reservation-status="${reservation.status == '예약 취소'} ? 'canceled' : 'active'">
+                <div>
+                    <p class="reservation-no" th:text="${reservation.reservationNo}">KP-00000000-0000</p>
+                    <h3 th:text="${reservation.placeTitle}">관광지명</h3>
+                    <p th:text="|${reservation.reservationDate} · ${reservation.reservationTime} · ${reservation.peopleCount}명|">2026-08-12 · 10:00 · 1명</p>
+                </div>
+                <div class="reservation-side">
+                    <span class="status-badge"
+                          th:classappend="${reservation.status == '예약 취소'} ? ' muted' : ''"
+                          th:text="${reservation.status}">예약 완료</span>
+                    <div class="kebab-wrap" th:unless="${reservation.status == '예약 취소'}">
+                        <button type="button" class="kebab-btn" onclick="toggleActionMenu(this, event)" aria-label="예약 메뉴">⋯</button>
+                        <div class="action-menu" hidden>
+                            <button type="button"
+                                    th:data-id="${reservation.id}"
+                                    th:data-content-id="${reservation.contentId}"
+                                    th:data-content-type-id="${reservation.contentTypeId}"
+                                    th:data-place-title="${reservation.placeTitle}"
+                                    th:data-date="${reservation.reservationDate}"
+                                    th:data-time="${reservation.reservationTime}"
+                                    th:data-people="${reservation.peopleCount}"
+                                    th:data-memo="${reservation.memo}"
+                                    onclick="openReservationEdit(this, event)">수정</button>
+                            <button type="button" class="danger"
+                                    th:data-id="${reservation.id}"
+                                    onclick="cancelReservation(this, event)">취소</button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+        <div id="reservationFilterEmpty" class="empty" hidden>해당 상태의 예약 내역이 없어요.</div>
+        <div th:unless="${hasReservation}" class="empty">아직 예약 내역이 없어요.</div>
+    </section>
+</div>
+<div id="ownerApplicationModal" class="modal-backdrop" hidden th:unless="${isOwner}">
+    <section class="modal-panel owner-modal" role="dialog" aria-modal="true" aria-labelledby="ownerApplicationTitle">
+        <div class="modal-head">
+            <div>
+                <p class="eyebrow small">Business</p>
+                <h2 id="ownerApplicationTitle">사업자 전환 신청</h2>
+            </div>
+            <button type="button" class="modal-close" onclick="closeOwnerApplication()" aria-label="닫기">×</button>
+        </div>
+
+        <div class="owner-box" th:if="${hasPendingOwnerRequest}">
+            <span class="owner-mark">검토 대기</span>
+            <p>
+                <strong th:text="${ownerRequest.storeName}">가게명</strong> 사업자 신청이 접수됐어요.
+                승인되면 계정 권한이 사업자로 변경됩니다.
+            </p>
+        </div>
+
+        <div class="owner-box" th:if="${ownerStatus == 'REJECTED'}">
+            <span class="status-badge rejected">반려</span>
+            <p th:text="${ownerRequest.reviewComment != null and !#strings.isEmpty(ownerRequest.reviewComment) ? ownerRequest.reviewComment : '신청 정보가 반려됐어요. 내용을 보완해 다시 신청해 주세요.'}">
+                신청 정보가 반려됐어요.
+            </p>
+        </div>
+
+        <form th:if="${!hasPendingOwnerRequest}" class="owner-form"
+              th:action="@{/ko/mypage/owner-application}" method="post" enctype="multipart/form-data">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input name="storeName" type="text" placeholder="가게명" required>
+            <input name="businessRegistrationNumber" type="text" placeholder="사업자등록번호" required>
+            <label>
+                <span>사업자등록증</span>
+                <input name="businessRegistrationFile" type="file" required>
+            </label>
+            <label>
+                <span>영업신고증</span>
+                <input name="businessLicenseFile" type="file" required>
+            </label>
+            <label>
+                <span>메뉴판 또는 메뉴 정보</span>
+                <input name="menuFile" type="file" required>
+            </label>
+            <button type="submit" class="btn full">사업자 전환 신청</button>
+        </form>
+    </section>
+</div>
+<script th:inline="javascript">
+    const currentUserId = /*[[${currentUserId}]]*/ null;
+    const savedPlacesKey = currentUserId ? `tourSavedPlaces:${currentUserId}` : 'tourSavedPlaces:guest';
+    const legacySavedPlaceKeys = ['tourSavedPlaces', 'tourSavedPlaces:guest', 'tourSavedPlaces:null', 'tourSavedPlaces:undefined']
+        .filter(key => key !== savedPlacesKey);
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
     const jsonHeaders = {'Content-Type': 'application/json'};
@@ -286,6 +527,8 @@
     }
 
     async function showTripPlanDetail(planId) {
+        closeTripPlanList();
+        closeAllActionMenus();
         const modal = document.getElementById('tripDetailModal');
         const title = document.getElementById('tripDetailTitle');
         const meta = document.getElementById('tripDetailMeta');
@@ -329,13 +572,136 @@
         document.getElementById('tripDetailModal').hidden = true;
     }
 
+    function returnToTripPlanList() {
+        closeTripPlanDetail();
+        openTripPlanList();
+    }
+
+    function openTripPlanList() {
+        document.getElementById('tripPlanListModal').hidden = false;
+    }
+
+    function closeTripPlanList() {
+        const modal = document.getElementById('tripPlanListModal');
+        if (modal) modal.hidden = true;
+    }
+
+    function openReservationList() {
+        resetReservationFilter();
+        document.getElementById('reservationListModal').hidden = false;
+    }
+
+    function closeReservationList() {
+        document.getElementById('reservationListModal').hidden = true;
+    }
+
+    function resetReservationFilter() {
+        const firstFilter = document.querySelector('[data-reservation-filter="all"]');
+        if (firstFilter) filterReservations(firstFilter);
+    }
+
+    function filterReservations(button) {
+        const filter = button.dataset.reservationFilter || 'all';
+        document.querySelectorAll('[data-reservation-filter]').forEach(item => {
+            item.classList.toggle('active', item === button);
+        });
+
+        let visibleCount = 0;
+        document.querySelectorAll('[data-reservation-status]').forEach(card => {
+            const visible = filter === 'all' || card.dataset.reservationStatus === filter;
+            card.hidden = !visible;
+            if (visible) visibleCount += 1;
+        });
+
+        const empty = document.getElementById('reservationFilterEmpty');
+        if (empty) empty.hidden = visibleCount > 0;
+    }
+
+    function openOwnerApplication() {
+        const modal = document.getElementById('ownerApplicationModal');
+        if (modal) modal.hidden = false;
+    }
+
+    function closeOwnerApplication() {
+        const modal = document.getElementById('ownerApplicationModal');
+        if (modal) modal.hidden = true;
+    }
+
+    function setPersonalActivityVisible(isVisible) {
+        document.querySelectorAll('.personal-activity-section').forEach(section => {
+            section.hidden = !isVisible;
+        });
+        const toggle = document.getElementById('personalActivityToggle');
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', String(isVisible));
+            toggle.textContent = isVisible ? '내 여행 활동 접기' : '내 여행 활동 보기';
+        }
+    }
+
+    function togglePersonalActivity() {
+        const firstSection = document.querySelector('.personal-activity-section');
+        setPersonalActivityVisible(Boolean(firstSection?.hidden));
+    }
+
+    function showPersonalActivitySection(sectionId) {
+        setPersonalActivityVisible(true);
+        requestAnimationFrame(() => {
+            document.getElementById(sectionId)?.scrollIntoView({behavior: 'smooth', block: 'start'});
+        });
+    }
+
+    function closeAllActionMenus() {
+        document.querySelectorAll('.action-menu').forEach(menu => {
+            menu.hidden = true;
+        });
+    }
+
+    function toggleActionMenu(button, event) {
+        event.stopPropagation();
+        const menu = button.nextElementSibling;
+        const nextHidden = !menu.hidden;
+        closeAllActionMenus();
+        menu.hidden = nextHidden;
+    }
+
+    function toggleTripMenu(button, event) {
+        toggleActionMenu(button, event);
+    }
+
+    document.addEventListener('click', closeAllActionMenus);
+
+    document.getElementById('tripPlanListModal').addEventListener('click', event => {
+        if (event.target.id === 'tripPlanListModal') {
+            closeTripPlanList();
+        }
+    });
+
     document.getElementById('tripDetailModal').addEventListener('click', event => {
         if (event.target.id === 'tripDetailModal') {
             closeTripPlanDetail();
         }
     });
 
-    async function renameTripPlan(button) {
+    document.getElementById('reservationListModal').addEventListener('click', event => {
+        if (event.target.id === 'reservationListModal') {
+            closeReservationList();
+        }
+    });
+
+    document.getElementById('ownerApplicationModal')?.addEventListener('click', event => {
+        if (event.target.id === 'ownerApplicationModal') {
+            closeOwnerApplication();
+        }
+    });
+
+    document.getElementById('reservationEditModal').addEventListener('click', event => {
+        if (event.target.id === 'reservationEditModal') {
+            closeReservationEdit();
+        }
+    });
+
+    async function renameTripPlan(button, event) {
+        event?.stopPropagation();
         const planId = button.dataset.planId;
         const currentTitle = button.dataset.planTitle;
         const title = prompt('새 일정 제목을 입력해 주세요.', currentTitle || '');
@@ -356,7 +722,8 @@
         location.reload();
     }
 
-    async function copyTripPlan(planId) {
+    async function copyTripPlan(planId, event) {
+        event?.stopPropagation();
         if (!confirm('이 일정을 복사할까요?')) return;
         const response = await fetch(`/api/trip/plan/${planId}/copy`, {
             method: 'POST',
@@ -369,7 +736,8 @@
         location.reload();
     }
 
-    async function deleteTripPlan(planId) {
+    async function deleteTripPlan(planId, event) {
+        event?.stopPropagation();
         if (!confirm('이 일정을 삭제할까요?')) return;
         const response = await fetch(`/api/trip/plan/${planId}`, {
             method: 'DELETE',
@@ -381,6 +749,207 @@
         }
         location.reload();
     }
+
+    function openReservationEdit(button, event) {
+        event?.stopPropagation();
+        document.getElementById('editReservationId').value = button.dataset.id || '';
+        document.getElementById('editContentId').value = button.dataset.contentId || '';
+        document.getElementById('editContentTypeId').value = button.dataset.contentTypeId || '';
+        document.getElementById('editPlaceTitle').value = button.dataset.placeTitle || '';
+        document.getElementById('editReservationDate').value = button.dataset.date || '';
+        document.getElementById('editReservationTime').value = button.dataset.time || '10:00';
+        document.getElementById('editPeopleCount').value = button.dataset.people || '1';
+        document.getElementById('editMemo').value = button.dataset.memo || '';
+        document.getElementById('reservationEditTitle').textContent = `${button.dataset.placeTitle || '예약'} 수정`;
+        document.getElementById('reservationEditModal').hidden = false;
+    }
+
+    function closeReservationEdit() {
+        document.getElementById('reservationEditModal').hidden = true;
+    }
+
+    async function submitReservationEdit(event) {
+        event.preventDefault();
+        const id = document.getElementById('editReservationId').value;
+        const response = await fetch(`/api/reservations/${id}`, {
+            method: 'PATCH',
+            headers: jsonHeaders,
+            body: JSON.stringify({
+                contentId: document.getElementById('editContentId').value,
+                contentTypeId: document.getElementById('editContentTypeId').value,
+                placeTitle: document.getElementById('editPlaceTitle').value,
+                reservationDate: document.getElementById('editReservationDate').value,
+                reservationTime: document.getElementById('editReservationTime').value,
+                peopleCount: Number(document.getElementById('editPeopleCount').value),
+                memo: document.getElementById('editMemo').value
+            })
+        });
+        if (!response.ok) {
+            alert('예약을 수정하지 못했습니다.');
+            return;
+        }
+        location.reload();
+    }
+
+    async function cancelReservation(button, event) {
+        event?.stopPropagation();
+        if (!confirm('이 예약을 취소할까요?')) return;
+        const response = await fetch(`/api/reservations/${button.dataset.id}/cancel`, {
+            method: 'PATCH',
+            headers: csrfHeaders
+        });
+        if (!response.ok) {
+            alert('예약을 취소하지 못했습니다.');
+            return;
+        }
+        location.reload();
+    }
+
+    function openSavedPlace(button, event) {
+        event?.stopPropagation();
+        const href = button.dataset.href;
+        if (href) location.href = href;
+    }
+
+    function removeSavedPlace(button, event) {
+        event?.stopPropagation();
+        if (!confirm('이 장소를 저장 목록에서 해제할까요?')) return;
+        const id = String(button.dataset.id || '');
+        savedPlaceState.places = savedPlaceState.places.filter(place => String(place.id) !== id);
+        try {
+            const saved = readSavedPlaces(savedPlacesKey)
+                .filter(place => String(place.id) !== id);
+            localStorage.setItem(savedPlacesKey, JSON.stringify(saved));
+        } catch (error) {}
+        renderSavedPlaces();
+    }
+
+    const savedPlaceState = {
+        activeFilter: 'all',
+        places: []
+    };
+
+    function readSavedPlaces(key) {
+        try {
+            const value = JSON.parse(localStorage.getItem(key) || '[]');
+            if (!Array.isArray(value)) return [];
+            return value
+                .map(item => typeof item === 'object' && item !== null ? item : {id: String(item)})
+                .filter(item => item.id != null);
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function migrateLegacySavedPlaces() {
+        const current = readSavedPlaces(savedPlacesKey);
+        const merged = [...current];
+        const seen = new Set(current.map(place => String(place.id)));
+        let migrated = false;
+
+        legacySavedPlaceKeys.forEach(key => {
+            const places = readSavedPlaces(key);
+            places.forEach(place => {
+                const id = String(place.id);
+                if (!seen.has(id)) {
+                    seen.add(id);
+                    merged.push(place);
+                    migrated = true;
+                }
+            });
+            if (places.length > 0) {
+                localStorage.removeItem(key);
+            }
+        });
+
+        if (migrated) {
+            localStorage.setItem(savedPlacesKey, JSON.stringify(merged));
+        }
+    }
+
+    async function fillLegacyTourPlace(place) {
+        if (place.title && !/^저장한 관광지/.test(place.title)) return place;
+        try {
+            const response = await fetch(`/tour/api/detail/${encodeURIComponent(place.id)}?contentTypeId=${encodeURIComponent(place.contentTypeId || '12')}&lang=ko`);
+            if (!response.ok) return place;
+            const detail = await response.json();
+            return {
+                ...place,
+                title: detail.title || place.title,
+                image: detail.image || place.image,
+                contentTypeId: detail.contentTypeId || place.contentTypeId || '12'
+            };
+        } catch (error) {
+            return place;
+        }
+    }
+
+    async function buildSavedPlaceItems() {
+        migrateLegacySavedPlaces();
+        const tourPlaces = readSavedPlaces(savedPlacesKey);
+        const items = await Promise.all(tourPlaces.map(async (place, index) => {
+            const filled = await fillLegacyTourPlace(place);
+            return {
+            id: String(filled.id),
+            type: 'tour',
+            typeLabel: '관광지',
+            title: filled.title || `저장한 관광지 ${index + 1}`,
+            meta: filled.addr || `관광지 ID ${filled.id}`,
+            href: `/tour/all?lang=ko&focus=${encodeURIComponent(filled.id)}`
+            };
+        }));
+
+        savedPlaceState.places = items;
+        try {
+            localStorage.setItem(savedPlacesKey, JSON.stringify(items.map(item => ({
+                id: item.id,
+                title: item.title,
+                addr: item.meta.startsWith('관광지 ID ') ? '' : item.meta,
+                type: item.type
+            }))));
+        } catch (error) {}
+        renderSavedPlaces();
+    }
+
+    function renderSavedPlaces() {
+        const list = document.getElementById('savedPlaceList');
+        const empty = document.getElementById('savedPlaceEmpty');
+        const count = document.getElementById('savedPlaceCount');
+        const filtered = savedPlaceState.activeFilter === 'all'
+            ? savedPlaceState.places
+            : savedPlaceState.places.filter(place => place.type === savedPlaceState.activeFilter);
+
+        count.textContent = savedPlaceState.places.length;
+        list.innerHTML = filtered.map(place => `
+            <article class="saved-place-card" onclick="location.href='${escapeHtml(place.href || '/tour/all?lang=ko')}'">
+                <div>
+                    <strong>${escapeHtml(place.title)}</strong>
+                    <p>${escapeHtml(place.meta)}</p>
+                </div>
+                <div class="kebab-wrap">
+                    <button type="button" class="kebab-btn" onclick="toggleActionMenu(this, event)" aria-label="저장 장소 메뉴">⋯</button>
+                    <div class="action-menu" hidden>
+                        <button type="button" data-href="${escapeHtml(place.href || '/tour/all?lang=ko')}" onclick="openSavedPlace(this, event)">보기</button>
+                        <button type="button" class="danger" data-id="${escapeHtml(place.id)}" onclick="removeSavedPlace(this, event)">저장 해제</button>
+                    </div>
+                </div>
+            </article>
+        `).join('');
+        empty.hidden = filtered.length > 0;
+        list.hidden = filtered.length === 0;
+    }
+
+    document.querySelectorAll('[data-saved-filter]').forEach(button => {
+        button.addEventListener('click', () => {
+            savedPlaceState.activeFilter = button.dataset.savedFilter;
+            document.querySelectorAll('[data-saved-filter]').forEach(item => {
+                item.classList.toggle('active', item === button);
+            });
+            renderSavedPlaces();
+        });
+    });
+
+    buildSavedPlaceItems();
 
 </script>
 </body>

@@ -33,6 +33,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @EntityGraph(attributePaths = {"user", "category"})
     Page<Post> findByUser_IdAndTitleContainingIgnoreCaseAndDeletedAtIsNull(Long userId, String keyword, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"user", "category"})
+    Page<Post> findByUser_IdAndCategoryIdAndDeletedAtIsNull(Long userId, Long categoryId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"user", "category"})
+    Page<Post> findByUser_IdAndCategoryIdAndTitleContainingIgnoreCaseAndDeletedAtIsNull(Long userId, Long categoryId, String keyword, Pageable pageable);
+
     // 移댄뀒怨좊━ + ?쒕ぉ 寃???숈떆 ?곸슜 (?섏씠吏?
     @EntityGraph(attributePaths = {"user", "category"})
     Page<Post> findByCategoryIdAndTitleContainingIgnoreCaseAndDeletedAtIsNull(Long categoryId, String keyword, Pageable pageable);
@@ -60,13 +66,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         SELECT p FROM Post p
         JOIN p.user u
         LEFT JOIN p.category c
-        WHERE (:categoryId IS NULL OR c.id = :categoryId)
-          AND (:authorId IS NULL OR u.id = :authorId)
-          AND (:keyword IS NULL OR :keyword = '' OR
+        WHERE (CAST(:categoryId AS Long) IS NULL OR c.id = :categoryId)
+          AND (CAST(:authorId AS Long) IS NULL OR u.id = :authorId)
+          AND (CAST(:keyword AS String) IS NULL OR :keyword = '' OR
                LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-          AND (:createdFrom IS NULL OR p.createdAt >= :createdFrom)
-          AND (:createdTo IS NULL OR p.createdAt < :createdTo)
+          AND (CAST(:createdFrom AS LocalDateTime) IS NULL OR p.createdAt >= :createdFrom)
+          AND (CAST(:createdTo AS LocalDateTime) IS NULL OR p.createdAt < :createdTo)
           AND (
                :status = 'all' OR
                (:status = 'active' AND p.deletedAt IS NULL) OR
@@ -78,13 +84,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         SELECT COUNT(p) FROM Post p
         JOIN p.user u
         LEFT JOIN p.category c
-        WHERE (:categoryId IS NULL OR c.id = :categoryId)
-          AND (:authorId IS NULL OR u.id = :authorId)
-          AND (:keyword IS NULL OR :keyword = '' OR
+        WHERE (CAST(:categoryId AS Long) IS NULL OR c.id = :categoryId)
+          AND (CAST(:authorId AS Long) IS NULL OR u.id = :authorId)
+          AND (CAST(:keyword AS String) IS NULL OR :keyword = '' OR
                LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
                LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-          AND (:createdFrom IS NULL OR p.createdAt >= :createdFrom)
-          AND (:createdTo IS NULL OR p.createdAt < :createdTo)
+          AND (CAST(:createdFrom AS LocalDateTime) IS NULL OR p.createdAt >= :createdFrom)
+          AND (CAST(:createdTo AS LocalDateTime) IS NULL OR p.createdAt < :createdTo)
           AND (
                :status = 'all' OR
                (:status = 'active' AND p.deletedAt IS NULL) OR
@@ -105,6 +111,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     long countByDeletedAtIsNull();
 
     long countByUser_IdAndDeletedAtIsNull(Long userId);
+
+    long countByUser_IdAndCategory_NameAndDeletedAtIsNull(Long userId, String categoryName);
 
     List<Post> findAllByDeletedAtIsNotNullAndDeletedAtBefore(LocalDateTime deletedAt);
 

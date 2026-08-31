@@ -108,6 +108,10 @@
                     </div>
                 </div>
                 <div class="dp-reason" id="dpReason"></div>
+                <div class="dp-desc-section" id="dpDescSection" style="display:none">
+                    <div class="dp-section-title">📖 이곳은</div>
+                    <div class="dp-desc-text" id="dpDescText"></div>
+                </div>
                 <div class="dp-review-section" id="dpReviewSection" style="display:none">
                     <div class="dp-section-title">💬 리뷰</div>
                     <div id="dpReviewList"></div>
@@ -217,6 +221,18 @@
         return `${areas} ${Math.max(0, days - 1)}박 ${days}일`;
     }
 
+    function hideSaveButton() {
+        const button = document.getElementById('savePlanBtn');
+        if (button) button.style.display = 'none';
+    }
+    function showSaveButton() {
+        const button = document.getElementById('savePlanBtn');
+        if (!button) return;
+        button.style.display = '';
+        button.disabled = false;
+        button.textContent = '일정 저장';
+    }
+
     async function autoSaveTripPlan() {
         if (!isLoggedIn || !tripResult || !tripRequest) return;
         const saveKey = JSON.stringify({
@@ -224,11 +240,10 @@
             schedule: tripResult.schedule || []
         });
         if (sessionStorage.getItem('savedTripPlanKey') === saveKey) {
-            const button = document.getElementById('savePlanBtn');
-            if (button) {
-                button.textContent = '저장 완료';
-                button.disabled = true;
-            }
+            // 이미 저장된 일정을 보러 들어온 것뿐이라 버튼을 눌러도 할 일이 없다.
+            // "저장 완료"로 비활성화만 해두면 왜 안 눌리는지 헷갈리니 숨긴다.
+            // (장소를 바꾸는 등 내용이 달라지면 showSaveButton()이 다시 보여준다)
+            hideSaveButton();
             return;
         }
         const planId = await persistTripPlan(defaultTripPlanTitle(), {silent: true});
@@ -485,7 +500,9 @@
 
     async function drawDay(day) {
         clearMap(); closeDetail();
-        document.getElementById('loadingOverlay').classList.add('show');
+        const loadingOverlayEl = document.getElementById('loadingOverlay');
+        loadingOverlayEl.querySelector('.loading-text').textContent = '지도에 일정을 그리는 중...';
+        loadingOverlayEl.classList.add('show');
 
         const dayData = tripResult.schedule.find(d => d.day === day);
         if (!dayData || !dayData.slots.length) {
@@ -679,6 +696,9 @@
             avgRating: altSlot.avgRating, reviewCount: altSlot.reviewCount,
             reviews: altSlot.reviews, alternatives: orig.alternatives
         };
+        // 이미 저장된 일정을 보다가 장소를 바꾼 거라 저장 버튼을 숨겨뒀을 수 있는데,
+        // 바뀐 내용을 저장할 수 있게 다시 보여준다.
+        showSaveButton();
         if (dayCache[dayIdx]?.[slotIdx]) {
             dayCache[dayIdx][slotIdx].slot = dayData.slots[slotIdx];
             // alt 좌표 없으면 kakaoSearch로 보완
@@ -756,6 +776,8 @@
         const reasonEl = document.getElementById('dpReason');
         if (slot.reason) { reasonEl.textContent = '💡 ' + slot.reason; reasonEl.style.display = 'block'; }
         else { reasonEl.style.display = 'none'; }
+
+        loadPlaceDescription(slot.placeName, slot.address);
 
         const revSection = document.getElementById('dpReviewSection');
         const revList    = document.getElementById('dpReviewList');
@@ -835,6 +857,32 @@
         document.getElementById('detailPanel').classList.remove('open');
     }
 
+    /* ─── 장소 개요(설명) — 리뷰만 있고 "여기가 뭐 하는 곳인지"가 없다는 피드백으로 추가 ─── */
+    let descRequestId = 0;
+    async function loadPlaceDescription(placeName, address) {
+        const section = document.getElementById('dpDescSection');
+        const textEl = document.getElementById('dpDescText');
+        const myRequestId = ++descRequestId;
+        section.style.display = 'block';
+        textEl.textContent = '설명을 불러오는 중...';
+        textEl.classList.add('loading');
+        try {
+            const params = new URLSearchParams({ name: placeName });
+            if (address) params.set('address', address);
+            const response = await fetch(`/api/trip/place/description?${params.toString()}`);
+            if (myRequestId !== descRequestId) return; // 그 사이 다른 장소를 열었으면 무시
+            const data = response.ok ? await response.json() : { description: '' };
+            if (data.description) {
+                textEl.textContent = data.description;
+                textEl.classList.remove('loading');
+            } else {
+                section.style.display = 'none';
+            }
+        } catch (e) {
+            if (myRequestId === descRequestId) section.style.display = 'none';
+        }
+    }
+
     /* ─── 추천 리스트 렌더링 ─── */
     function renderRecList(containerId, list) {
         document.getElementById(containerId).innerHTML = list?.length
@@ -879,6 +927,12 @@
         }
         tripResult  = JSON.parse(raw);
         tripRequest = JSON.parse(sessionStorage.getItem('tripRequest') || '{}');
+        // 예약 정보 조회(loadReservedPlaces)가 느리면 지도를 그리기 전까지 화면이 텅 비어
+        // 보이던 문제 — 초기화 시작하자마자 로딩 스피너부터 띄운다.
+        const loadingOverlayEl = document.getElementById('loadingOverlay');
+        const loadingTextEl = loadingOverlayEl.querySelector('.loading-text');
+        loadingTextEl.textContent = '일정을 불러오는 중...';
+        loadingOverlayEl.classList.add('show');
         await loadReservedPlaces();
 
         const days = tripRequest.travelDays || tripResult.schedule.length;
