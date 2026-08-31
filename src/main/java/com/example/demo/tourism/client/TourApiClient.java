@@ -63,10 +63,11 @@ public class TourApiClient {
     private static final int MAX_PAGES = 20;
 
     /**
-     * EngService2는 KorService2와 다른 콘텐츠 유형 코드를 쓴다(관광지 76, 음식점 82 …).
+     * 국문 외 서비스(Eng/Jpn/Chs/Fre …)는 KorService2와 다른 콘텐츠 유형 코드를 쓴다
+     * (관광지 76, 음식점 82 …). 네 언어 모두 영문과 같은 코드 체계라 한 매핑으로 처리한다.
      * 화면과 상세 조회는 국문 코드 기준이므로 API 경계에서만 변환한다.
      */
-    private static final Map<String, String> ENGLISH_TO_KOREAN_TYPE = Map.of(
+    private static final Map<String, String> FOREIGN_TO_KOREAN_TYPE = Map.of(
             "76", "12",  // 관광지
             "78", "14",  // 문화시설
             "85", "15",  // 행사/공연/축제
@@ -76,9 +77,12 @@ public class TourApiClient {
             "79", "38",  // 쇼핑
             "82", "39"); // 음식점
 
-    private static final Map<String, String> KOREAN_TO_ENGLISH_TYPE = ENGLISH_TO_KOREAN_TYPE
+    private static final Map<String, String> KOREAN_TO_FOREIGN_TYPE = FOREIGN_TO_KOREAN_TYPE
             .entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+
+    /** 국문(KorService2)이 아닌, 영문식 코드 체계를 쓰는 서비스로 나가는 언어들. */
+    private static final Set<String> FOREIGN_LANGS = Set.of("en", "ja", "zh", "fr");
 
     private final RestClient restClient;
     private final TourApiProperties properties;
@@ -295,9 +299,7 @@ public class TourApiClient {
 
     private UriComponentsBuilder commonUri(String lang, String operation) {
         requireServiceKey();
-        String baseUrl = "en".equalsIgnoreCase(lang)
-                ? properties.getEnglishBaseUrl()
-                : properties.getKoreanBaseUrl();
+        String baseUrl = properties.baseUrlFor(lang);
         return UriComponentsBuilder.fromUriString(baseUrl + "/" + operation)
                 .queryParam("serviceKey", properties.getServiceKey())
                 .queryParam("MobileOS", properties.getMobileOs())
@@ -347,16 +349,21 @@ public class TourApiClient {
         return filtered;
     }
 
+    /** 국문 외 서비스로 나가는 요청인지. 이때만 콘텐츠 유형 코드를 영문식으로 변환한다. */
+    private boolean usesForeignService(String lang) {
+        return lang != null && FOREIGN_LANGS.contains(lang.toLowerCase());
+    }
+
     /** 국문 코드를 요청 대상 서비스가 이해하는 코드로 바꾼다. */
     private String toApiType(String koreanType, String lang) {
-        if (koreanType == null || !"en".equalsIgnoreCase(lang)) return koreanType;
-        return KOREAN_TO_ENGLISH_TYPE.getOrDefault(koreanType, koreanType);
+        if (koreanType == null || !usesForeignService(lang)) return koreanType;
+        return KOREAN_TO_FOREIGN_TYPE.getOrDefault(koreanType, koreanType);
     }
 
     /** 응답의 콘텐츠 유형 코드를 화면이 기대하는 국문 코드로 통일한다. */
     private String toKoreanType(String apiType, String lang) {
-        if (apiType == null || !"en".equalsIgnoreCase(lang)) return apiType;
-        return ENGLISH_TO_KOREAN_TYPE.getOrDefault(apiType, apiType);
+        if (apiType == null || !usesForeignService(lang)) return apiType;
+        return FOREIGN_TO_KOREAN_TYPE.getOrDefault(apiType, apiType);
     }
 
     private JsonNode requestRoot(UriComponentsBuilder uriBuilder) {

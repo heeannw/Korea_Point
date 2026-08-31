@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 음식점과 카페를 한 화면에서 보여준다.
@@ -120,8 +121,13 @@ public class TourFoodController {
         return "tourism/food";
     }
 
+    /** 지원 언어. 그 밖의 값은 국문으로 되돌린다. TourApiProperties.baseUrlFor와 맞춰 둔다. */
+    private static final Set<String> SUPPORTED_LANGS = Set.of("ko", "en", "ja", "zh", "fr");
+
     private String normalize(String lang) {
-        return "en".equalsIgnoreCase(lang) ? "en" : "ko";
+        if (lang == null) return "ko";
+        String lower = lang.toLowerCase();
+        return SUPPORTED_LANGS.contains(lower) ? lower : "ko";
     }
 
     /** 관광 화면이 저장해 둔 사용자 위치를 읽기만 한다. 이 화면에서는 쓰지 않는다. */
