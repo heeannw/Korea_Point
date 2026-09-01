@@ -144,8 +144,10 @@
         /* ===== 3. Hero ===== */
         .hero {
             position: relative;
-            height: 100vh;
-            min-height: 640px;
+            /* 화면을 꽉 채우면 첫 화면에 콘텐츠가 하나도 안 보인다.
+               아래 내용이 살짝 걸치게 두어 스크롤을 유도한다. */
+            height: 78vh;
+            min-height: 560px;
             background: var(--dark);
             overflow: hidden;
         }
@@ -211,7 +213,7 @@
         .hero-title {
             max-width: 620px;
             font-family: "Sora", "Noto Sans KR", sans-serif;
-            font-size: clamp(54px, 7vw, 92px);
+            font-size: clamp(40px, 5.5vw, 68px);
             font-weight: 700;
             line-height: 0.96;
             letter-spacing: -0.06em;
@@ -333,12 +335,13 @@
         .categories {
             background: var(--white);
             border-bottom: 1px solid var(--border);
-            padding: 36px 56px 40px;
+            /* 좌우 여백을 .section 과 맞춰 카드들과 끝선이 어긋나지 않게 한다 */
+            padding: 36px 80px 40px;
             scroll-margin-top: 92px;
         }
 
         .category-grid {
-            max-width: 980px;
+            max-width: 1280px;
             margin: 0 auto;
             display: flex;
             justify-content: space-between;
@@ -402,7 +405,7 @@
         .section {
             max-width: 1440px;
             margin: 0 auto;
-            padding: 72px 80px;
+            padding: 56px 80px;
         }
 
         .section-header-row {
@@ -485,7 +488,7 @@
         /* ── 축제 캐러셀 ─────────────────────────────────────────────
            카드 수가 많아 한 줄에 다 담기지 않는다. 가로로 넘겨 보게 하되
            스크롤·스와이프를 그대로 쓰고(모바일에서 자연스럽다), 마우스만 쓰는
-           환경을 위해 화살표를 얹는다. 넘길 게 없으면 화살표는 숨는다. */
+           환경을 위해 헤더에 화살표를 둔다. */
         .festival-rail {
             position: relative;
         }
@@ -504,39 +507,61 @@
             display: none;
         }
 
+        /* 화면 폭에 맞춰 카드 크기를 계산한다. 다음 카드가 늘 같은 비율(4분의 1)만
+           보이게 해서 "더 있다"는 신호는 남기되 잘린 게 실수처럼 보이지 않게 한다. */
         .festival-track .festival-card {
-            flex: 0 0 262px;
+            flex: 0 0 calc((100% - 80px) / 4.25);
             scroll-snap-align: start;
         }
 
+        @media (max-width: 1200px) {
+            .festival-track .festival-card { flex-basis: calc((100% - 60px) / 3.25); }
+        }
+
+        @media (max-width: 900px) {
+            .festival-track .festival-card { flex-basis: calc((100% - 40px) / 2.25); }
+        }
+
+        @media (max-width: 600px) {
+            .festival-track .festival-card { flex-basis: calc((100% - 20px) / 1.25); }
+        }
+
+        /* 화살표는 카드 위에 얹지 않고 섹션 헤더에 둔다.
+           카드를 가리지 않고, 넘길 수 없을 때는 흐려져서 자리도 안 흔들린다. */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .rail-arrow {
-            position: absolute;
-            top: 95px;
-            width: 40px;
-            height: 40px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             border: 1px solid var(--border);
             background: var(--white);
             color: var(--dark);
-            box-shadow: var(--shadow);
             cursor: pointer;
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 2;
+            padding: 0;
+            transition: color .2s ease, border-color .2s ease, opacity .2s ease;
         }
 
-        .rail-arrow.left  { left: -18px; }
-        .rail-arrow.right { right: -18px; }
-
-        .rail-arrow:hover {
+        .rail-arrow:hover:not(:disabled) {
             color: var(--primary);
             border-color: var(--primary);
         }
 
-        /* 손가락으로 넘길 수 있는 환경에서는 화살표를 띄우지 않는다 */
+        .rail-arrow:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        /* 손가락으로 넘기는 환경에서는 화살표가 필요 없다 */
         @media (hover: hover) and (min-width: 900px) {
-            .rail-arrow.is-on { display: flex; }
+            .rail-arrow { display: flex; }
         }
 
         .festival-grid {
@@ -567,7 +592,9 @@
         .festival-media,
         .place-media {
             position: relative;
-            height: 190px;
+            /* 높이를 고정하면 카드 폭에 따라 비율이 제각각이 된다.
+               폭이 달라져도 사진 비율은 늘 같도록 비율로 잡는다. */
+            aspect-ratio: 3 / 2;
             overflow: hidden;
             /* 세로 포스터가 섞여 있어 원본을 자르지 않고(contain) 보여준다.
                남는 여백을 회색으로 두면 허전해서, 같은 사진을 흐리게 깔아
@@ -1362,15 +1389,21 @@
             <h2 class="section-title">Happening in Busan</h2>
             <p class="section-sub">Festivals and events running now or starting soon</p>
         </div>
-        <a class="see-all" th:href="@{/tour/all(lang='en')}" href="/tour/all?lang=en">See all</a>
-    </div>
-
-    <div class="festival-rail">
+        <div class="header-actions">
+            <a class="see-all" th:href="@{/tour/all(lang='en')}" href="/tour/all?lang=en">See all</a>
         <button class="rail-arrow left" type="button" aria-label="Previous">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
-        <div class="festival-track">
+        <button class="rail-arrow right" type="button" aria-label="Next">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+        </div>
+    </div>
+
+    <div class="festival-rail">
+                <div class="festival-track">
         <a class="festival-card"
            th:each="festival : ${festivals}"
            th:href="@{/tour/all(lang='en',focus=${festival.contentId})}"
@@ -1392,11 +1425,7 @@
             </div>
         </a>
     </div>
-        <button class="rail-arrow right" type="button" aria-label="Next">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
-    </div>
+        </div>
 </section>
 
 
@@ -1735,7 +1764,7 @@
 
 <script>
     /* 축제 캐러셀: 넘길 여지가 있을 때만 화살표를 띄운다 */
-    document.querySelectorAll('.festival-rail').forEach(function (rail) {
+    document.querySelectorAll('.festival-section').forEach(function (rail) {
         var track = rail.querySelector('.festival-track');
         var prev  = rail.querySelector('.rail-arrow.left');
         var next  = rail.querySelector('.rail-arrow.right');
@@ -1747,8 +1776,8 @@
 
         function update() {
             var max = track.scrollWidth - track.clientWidth;
-            prev.classList.toggle('is-on', max > 4 && track.scrollLeft > 4);
-            next.classList.toggle('is-on', max > 4 && track.scrollLeft < max - 4);
+            prev.disabled = !(max > 4 && track.scrollLeft > 4);
+            next.disabled = !(max > 4 && track.scrollLeft < max - 4);
         }
         track.addEventListener('scroll', update, { passive: true });
         window.addEventListener('resize', update);
