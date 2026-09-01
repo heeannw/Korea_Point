@@ -110,14 +110,6 @@
 <header>
   <a class="logo" translate="no" th:href="${lang == 'en'} ? @{/en} : @{/ko}">Korea<span>Point</span></a>
   <div class="header-right">
-    <select class="h-btn" translate="no" onchange="switchLang(this.value)" aria-label="Language">
-      <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
-      <option value="en" th:selected="${lang == 'en'}">English</option>
-      <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
-      <option value="zh" th:selected="${lang == 'zh'}">中文</option>
-      <option value="fr" th:selected="${lang == 'fr'}">Français</option>
-    </select>
-
     <th:block th:if="${isLoggedIn}">
       <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
       <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
@@ -128,6 +120,14 @@
     <th:block th:unless="${isLoggedIn}">
       <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill" th:text="#{tour.nav.login}">Login</a>
     </th:block>
+
+    <select class="h-btn" translate="no" style="margin-left:6px" onchange="switchLang(this.value)" aria-label="Language">
+      <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
+      <option value="en" th:selected="${lang == 'en'}">English</option>
+      <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
+      <option value="zh" th:selected="${lang == 'zh'}">中文</option>
+      <option value="fr" th:selected="${lang == 'fr'}">Français</option>
+    </select>
   </div>
 </header>
 <div class="app-body">
