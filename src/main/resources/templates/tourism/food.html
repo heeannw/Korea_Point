@@ -213,7 +213,7 @@
       <form class="search-box" th:action="@{/tour/food/search}" method="get" id="searchForm">
         <input type="hidden" name="lang" th:value="${lang}">
         <input type="hidden" name="cafeOnly" th:value="${cafeOnly}">
-        <input type="text" name="keyword" id="searchInput" th:value="${keyword}" placeholder="검색">
+        <input type="text" name="keyword" id="searchInput" th:value="${keyword}" placeholder="검색" oninput="onSearchInput()">
         <button type="submit" id="searchBtn">검색</button>
       </form>
     </div>
@@ -554,7 +554,17 @@
   function getMatchingPlaces() {
     let list = [...PLACES];
     if (activeCategory !== 'all') list = list.filter(p => p.foodCategory === activeCategory);
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    if (q) list = list.filter(p =>
+      (p.title || '').toLowerCase().includes(q) || (p.addr || '').toLowerCase().includes(q));
     return list;
+  }
+
+  // 타이핑하는 동안 로드된 목록을 즉시 필터. Enter/버튼은 폼 submit → 서버 검색.
+  let searchFilterTimer;
+  function onSearchInput() {
+    clearTimeout(searchFilterTimer);
+    searchFilterTimer = setTimeout(render, 150);
   }
 
   function updateSortAvailability() {

@@ -1215,7 +1215,11 @@
       document.getElementById('recentDropdown').classList.remove('show');
     }, 500);
   }
+  let searchFilterTimer;
   function onSearchInput(val) {
+    // 타이핑하는 동안 로드된 목록을 즉시 필터한다. Enter/버튼은 폼 submit → 서버 검색(미로드 결과·최근검색어 저장).
+    clearTimeout(searchFilterTimer);
+    searchFilterTimer = setTimeout(render, 150);
     if (val.trim().length === 0) {
       document.getElementById('suggestDropdown').classList.remove('show');
       showRecent();
