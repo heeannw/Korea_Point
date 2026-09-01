@@ -562,7 +562,24 @@
         .place-media {
             position: relative;
             height: 190px;
-            background: #f4f6f8;
+            overflow: hidden;
+            /* 세로 포스터가 섞여 있어 원본을 자르지 않고(contain) 보여준다.
+               남는 여백을 회색으로 두면 허전해서, 같은 사진을 흐리게 깔아
+               사진의 색으로 채운다. */
+            background-color: #eceef1;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .festival-media::after,
+        .place-media::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            backdrop-filter: blur(22px) saturate(1.15);
+            -webkit-backdrop-filter: blur(22px) saturate(1.15);
+            background: rgba(255, 255, 255, 0.18);
         }
 
         /*
@@ -571,6 +588,8 @@
         */
         .festival-image,
         .place-image {
+            position: relative;
+            z-index: 1;
             width: 100%;
             height: 100%;
             display: block;
@@ -586,7 +605,7 @@
             position: absolute;
             top: 12px;
             left: 12px;
-            z-index: 1;
+            z-index: 2;
             padding: 4px 12px;
             border-radius: 50px;
             font-size: 12px;
@@ -639,7 +658,7 @@
             position: absolute;
             top: 12px;
             left: 12px;
-            z-index: 1;
+            z-index: 2;
             padding: 4px 12px;
             border-radius: 50px;
             font-size: 12px;
@@ -1339,7 +1358,7 @@
            th:each="festival : ${festivals}"
            th:href="@{/tour/all(lang='ko',focus=${festival.contentId})}"
            href="/tour/all?lang=ko">
-            <div class="festival-media">
+            <div class="festival-media" th:style="|background-image:url('${festival.imageUrl}')|">
                 <span class="festival-badge"
                       th:classappend="${festival.ongoing} ? ' is-on'"
                       th:text="${festival.badge}">진행중</span>
@@ -1380,7 +1399,7 @@
            th:each="place : ${places}"
            th:href="@{/tour/all(lang='ko',focus=${place.contentId})}"
            href="/tour/all?lang=ko">
-            <div class="place-media">
+            <div class="place-media" th:style="|background-image:url('${place.imageUrl}')|">
                 <img class="place-image"
                      th:classappend="${place.imageModifiable} ? ' can-crop'"
                      th:src="${place.imageUrl}"
@@ -1410,7 +1429,7 @@
            th:each="food : ${foods}"
            th:href="@{/tour/food(lang='ko',focus=${food.contentId})}"
            href="/tour/food?lang=ko">
-            <div class="place-media">
+            <div class="place-media" th:style="|background-image:url('${food.imageUrl}')|">
                 <span class="place-badge" th:if="${food.category}" th:text="${food.category}">한식</span>
                 <img class="place-image"
                      th:classappend="${food.imageModifiable} ? ' can-crop'"
