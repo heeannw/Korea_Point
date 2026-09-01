@@ -90,6 +90,7 @@ public class HomeFoodService {
                 .address(placeI18n.translateAddress(lang, item.getContentId(), item.getAddress()))
                 .category(categoryLabel(item, lang))
                 .imageUrl(toHttps(item.getImageUrl()))
+                .thumbnailUrl(toHttps(item.getThumbnailUrl()))
                 .imageModifiable(item.isImageModifiable())
                 .build();
     }

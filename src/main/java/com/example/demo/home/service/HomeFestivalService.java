@@ -88,6 +88,7 @@ public class HomeFestivalService {
                 .title(placeI18n.translateTitle(lang, item.getContentId(), item.getTitle()))
                 .address(placeI18n.translateAddress(lang, item.getContentId(), item.getAddress()))
                 .imageUrl(toHttps(item.getImageUrl()))
+                .thumbnailUrl(toHttps(item.getThumbnailUrl()))
                 .startDate(start)
                 .endDate(end)
                 .period(formatPeriod(start, end))

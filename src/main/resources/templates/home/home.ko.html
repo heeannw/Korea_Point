@@ -1390,7 +1390,7 @@
            th:each="festival : ${festivals}"
            th:href="@{/tour/all(lang='ko',focus=${festival.contentId})}"
            href="/tour/all?lang=ko">
-            <div class="festival-media" th:style="|background-image:url('${festival.imageUrl}')|">
+            <div class="festival-media" th:style="|background-image:url('${festival.thumbnailUrl ?: festival.imageUrl}')|">
                 <span class="festival-badge"
                       th:classappend="${festival.ongoing} ? ' is-on'"
                       th:text="${festival.badge}">진행중</span>
@@ -1431,7 +1431,7 @@
            th:each="place : ${places}"
            th:href="@{/tour/all(lang='ko',focus=${place.contentId})}"
            href="/tour/all?lang=ko">
-            <div class="place-media" th:style="|background-image:url('${place.imageUrl}')|">
+            <div class="place-media" th:style="|background-image:url('${place.thumbnailUrl ?: place.imageUrl}')|">
                 <img class="place-image"
                      th:classappend="${place.imageModifiable} ? ' can-crop'"
                      th:src="${place.imageUrl}"
@@ -1461,7 +1461,7 @@
            th:each="food : ${foods}"
            th:href="@{/tour/food(lang='ko',focus=${food.contentId})}"
            href="/tour/food?lang=ko">
-            <div class="place-media" th:style="|background-image:url('${food.imageUrl}')|">
+            <div class="place-media" th:style="|background-image:url('${food.thumbnailUrl ?: food.imageUrl}')|">
                 <span class="place-badge" th:if="${food.category}" th:text="${food.category}">한식</span>
                 <img class="place-image"
                      th:classappend="${food.imageModifiable} ? ' can-crop'"

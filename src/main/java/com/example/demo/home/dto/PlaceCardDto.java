@@ -28,6 +28,12 @@ public class PlaceCardDto {
     private final String imageUrl;
 
     /**
+     * 썸네일 (약 150x100). 카드 뒤에 흐리게 까는 용도라 화질이 필요 없고,
+     * 배경 이미지는 lazy 로딩이 안 되므로 작은 파일을 써야 첫 로딩이 늦지 않는다.
+     */
+    private final String thumbnailUrl;
+
+    /**
      * 이미지를 잘라내도 되는지.
      * 관광공사 이미지의 상당수가 "변경금지"라 크롭이 위반이 된다.
      */
