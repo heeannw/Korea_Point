@@ -111,19 +111,41 @@
   font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .dp-course-name{font-size:13px;color:#333;line-height:1.4}
 
-/* ── 리뷰 카드 ── */
-.review-card{padding:14px 16px;border-bottom:1px solid #f5f7fa}
-.review-card:last-child{border-bottom:0}
-.rv-form{padding:0 16px 14px;border-bottom:8px solid #f5f7fa;margin-bottom:8px}
-.rv-stars{font-size:24px;color:#facc15;letter-spacing:3px;cursor:pointer;user-select:none;margin-bottom:8px}
-.rv-form textarea{width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:9px 11px;font:inherit;font-size:13px;resize:vertical;outline:none}
+/* ── 리뷰 ── */
+.rv-wrap{padding:0}
+.rv-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 16px 10px}
+.rv-head .section-title{margin-bottom:0}
+.rv-avg{color:#f59e0b;font-weight:800;font-size:13px;margin-left:3px}
+.rv-cnt{font-size:11px;color:#aaa;font-weight:600;margin-left:1px}
+.rv-open{border:0;background:none;color:var(--blue-dk);font:700 13px inherit;cursor:pointer;
+  padding:4px 2px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.rv-open:hover{text-decoration:underline}
+.rv-form{padding:0 16px 14px}
+.rv-stars{display:flex;gap:4px;font-size:26px;line-height:1;color:#d7dde5;cursor:pointer;user-select:none;margin-bottom:10px}
+.rv-stars span{transition:transform .1s ease,color .1s ease}
+.rv-stars span.on{color:#facc15}
+.rv-stars span:active{transform:scale(1.2)}
+.rv-form textarea{width:100%;box-sizing:border-box;border:1.5px solid #e5e7eb;border-radius:9px;padding:10px 12px;
+  font:inherit;font-size:13px;line-height:1.6;resize:vertical;outline:none;background:#fff;transition:border-color .12s}
 .rv-form textarea:focus{border-color:var(--blue)}
-.rv-form .outline-btn{margin-top:8px}
-.rv-del{margin-top:6px;border:none;background:none;color:#ef4444;font-size:12px;cursor:pointer;padding:0}
-.review-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.rv-submit{margin-top:9px;width:100%;padding:10px;border:0;border-radius:9px;background:var(--blue-dk);color:#fff;
+  font:700 13px inherit;cursor:pointer;transition:background .12s}
+.rv-submit:hover{background:var(--blue)}
+.rv-actions{display:flex;gap:12px;margin-top:6px}
+.rv-form .rv-actions{margin-top:8px;justify-content:center}
+.rv-actions button{border:0;background:none;padding:2px 4px;font-size:11px;font-weight:600;cursor:pointer;color:#9aa5b1}
+.rv-actions button:hover{color:#4b5563}
+.review-card{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:14px 16px;border-bottom:1px solid #f5f7fa}
+.review-card:last-child{border-bottom:0}
+.rv-avatar{width:34px;height:34px;border-radius:50%;background:var(--blue-lt,#e8f3ff);color:var(--blue-dk);
+  font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.review-head{display:flex;align-items:baseline;gap:6px;margin-bottom:3px}
+.review-head .rv-actions{margin-left:auto;margin-top:0;gap:10px}
 .review-author{font-size:13px;font-weight:700;color:#222}
-.review-star{font-size:12px;color:#facc15;font-weight:600}
-.review-text{font-size:12px;color:#555;line-height:1.6}
+.review-date{font-size:11px;color:#aaa}
+.review-edited{font-size:10px;color:#c2c2c2;font-weight:500}
+.review-star{font-size:12px;color:#facc15;letter-spacing:1px;margin-bottom:5px}
+.review-text{font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap;word-break:break-word}
 
 /* ── 커뮤니티 카드 ── */
 .community-card{display:block;padding:14px 16px;border-bottom:1px solid #f5f7fa;

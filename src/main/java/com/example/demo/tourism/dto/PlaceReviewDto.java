@@ -9,15 +9,19 @@ public record PlaceReviewDto(
         int rating,
         String text,
         String createdAt,
+        boolean edited,
         boolean mine
 ) {
     public static PlaceReviewDto of(PlaceReview r, Long viewerUserId) {
+        boolean edited = r.getCreatedAt() != null && r.getUpdatedAt() != null
+                && r.getUpdatedAt().isAfter(r.getCreatedAt());
         return new PlaceReviewDto(
                 r.getId(),
                 r.getUser() != null ? r.getUser().getName() : null,
                 r.getRating(),
                 r.getText(),
                 r.getCreatedAt() != null ? r.getCreatedAt().toString() : null,
+                edited,
                 viewerUserId != null && r.getUser() != null && viewerUserId.equals(r.getUser().getId()));
     }
 }

@@ -351,7 +351,9 @@
       delete:     /*[[#{tour.reviews.delete}]]*/ 'Delete',
       deleteConfirm: /*[[#{tour.reviews.deleteConfirm}]]*/ 'Delete this review?',
       pickRating: /*[[#{tour.reviews.pickRating}]]*/ 'Please pick a rating.',
-      saveFail:   /*[[#{tour.reviews.saveFail}]]*/ 'Could not save the review.'
+      saveFail:   /*[[#{tour.reviews.saveFail}]]*/ 'Could not save the review.',
+      cancel:     /*[[#{tour.reviews.cancel}]]*/ 'Cancel',
+      edited:     /*[[#{tour.reviews.edited}]]*/ '(edited)'
     },
     community: {
       loading:    /*[[#{tour.community.loading}]]*/ 'Loading community stories…',
@@ -833,8 +835,9 @@
           <div class="card-cat" style="color:${getCatColor(p.type)}">${catLabel(p)}</div>
           <div class="card-name"><span class="cn-text">${p.title ?? '-'}</span>${festBadgeHtml(p)}</div>
           <div class="card-meta">
-            <span class="stars-s">★</span>${p.rating ?? '-'}
-            (${p.user_ratings_total ? (p.user_ratings_total / 1000).toFixed(1) + 'k' : '-'})
+            ${p.userReviewCount
+              ? `<span><span class="stars-s">★</span>${p.userRating.toFixed(1)} (${p.userReviewCount})</span>`
+              : `<span><span class="stars-s">★</span>${p.rating ?? '-'} (${p.user_ratings_total ? (p.user_ratings_total / 1000).toFixed(1) + 'k' : '-'})</span>`}
             <span class="card-dist">📍 ${distStr(p.distance)}</span>
           </div>
         </div>
@@ -984,7 +987,20 @@
   }
 
   // 관광지 리뷰(있으면)를 방문자 리뷰 카드로 보여준다.
-  let rvRating = 0;   // 쓰기 폼에서 선택한 별점
+  let rvRating = 0;        // 쓰기 폼에서 선택한 별점
+  let rvFormOpen = false;  // 리뷰 작성/수정 폼이 열려 있는지
+  let rvFormPlace = null;  // 폼이 열린 장소 (장소 바뀌면 닫음)
+
+  // 상세 헤더 별점(방문자 리뷰 평균). count 0이면 "평점 없음".
+  function renderDpRating(score, count) {
+    const el = document.getElementById('dpRating');
+    if (!el) return;
+    el.innerHTML = (score > 0 && count > 0)
+      ? `<span class="dp-rating-stars">★</span>
+         <span class="dp-rating-score">${score.toFixed(1)}</span>
+         <span class="dp-rating-count">${i18nFmt(I18N.detail.reviewsCount, count.toLocaleString())}</span>`
+      : `<span style="color:#bbb;font-size:11px">${escapeDetail(I18N.detail.noRating)}</span>`;
+  }
 
   async function renderReviews(p) {
     const root = document.getElementById('dpReviews');
@@ -996,34 +1012,81 @@
     } catch (e) { /* 빈 목록으로 진행 */ }
     if (currentDetailPlace !== p) return;
 
-    const mine = reviews.find(r => r.mine);
-    rvRating = mine ? mine.rating : 0;
+    if (rvFormPlace !== p) { rvFormOpen = false; rvFormPlace = p; }
 
-    const form = LOGGED_IN ? `
+    const mine = reviews.find(r => r.mine);
+    const editing = rvFormOpen && !!mine;   // 내 리뷰 수정 중
+    rvRating = editing ? mine.rating : 0;
+
+    const fmtDate = s => (s || '').slice(0, 10).replace(/-/g, '.');
+    const initial = n => (n || I18N.reviews.anonymous || '?').trim().charAt(0).toUpperCase() || '?';
+    const avg = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
+
+    const form = (LOGGED_IN && rvFormOpen) ? `
       <div class="rv-form" data-content="${escapeDetail(String(p.id))}" data-type="${escapeDetail(p.type ?? '')}">
         <div class="rv-stars" id="rvStars">${[1,2,3,4,5].map(n =>
-          `<span data-n="${n}" onclick="setRvRating(${n})">${n <= rvRating ? '★' : '☆'}</span>`).join('')}</div>
-        <textarea id="rvText" rows="3" placeholder="${escapeDetail(I18N.reviews.placeholder)}">${mine ? escapeDetail(mine.text || '') : ''}</textarea>
-        <button type="button" class="outline-btn" onclick="submitReview()">${escapeDetail(mine ? I18N.reviews.edit : I18N.reviews.write)}</button>
+          `<span data-n="${n}" class="${n <= rvRating ? 'on' : ''}">★</span>`).join('')}</div>
+        <textarea id="rvText" rows="3" placeholder="${escapeDetail(I18N.reviews.placeholder)}">${editing ? escapeDetail(mine.text || '') : ''}</textarea>
+        <button type="button" class="rv-submit" onclick="submitReview()">${escapeDetail(editing ? I18N.reviews.edit : I18N.reviews.write)}</button>
+        <div class="rv-actions"><button type="button" onclick="closeReviewForm()">${escapeDetail(I18N.reviews.cancel)}</button></div>
       </div>` : '';
 
-    const list = reviews.length ? reviews.map(r => `<article class="review-card">
-        <div class="review-head">
-          <span class="review-author">${escapeDetail(r.authorName || I18N.reviews.anonymous)}</span>
-          <span class="review-star">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
-        </div>
-        <p class="review-text">${escapeDetail(r.text || '')}</p>
-        ${r.mine ? `<button type="button" class="rv-del" onclick="deleteReview(${r.id})">${escapeDetail(I18N.reviews.delete)}</button>` : ''}
-      </article>`).join('')
-      : `<div class="empty-state" style="padding:24px 16px"><strong>${escapeDetail(I18N.reviews.emptyTitle)}</strong>${escapeDetail(I18N.reviews.emptyBody)}</div>`;
+    // 내 리뷰가 없고 폼도 닫혀 있으면 "리뷰 쓰기" 버튼만.
+    const writeBtn = (LOGGED_IN && !mine && !rvFormOpen)
+      ? `<button type="button" class="rv-open" onclick="openReviewForm()">✏️ ${escapeDetail(I18N.reviews.write)}</button>` : '';
 
-    root.innerHTML = `<div class="section-card"><div class="section-title">${escapeDetail(I18N.reviews.title)} <small>${reviews.length}</small></div>${form}${list}</div>`;
+    const others = reviews.filter(r => !r.mine);
+    const shown = editing ? others : (mine ? [mine, ...others] : others);   // 내 리뷰는 항상 맨 위
+    const list = shown.length ? shown.map(r => `<article class="review-card">
+        <div class="rv-avatar">${escapeDetail(initial(r.authorName))}</div>
+        <div>
+          <div class="review-head">
+            <span class="review-author">${escapeDetail(r.authorName || I18N.reviews.anonymous)}</span>
+            <span class="review-date">${escapeDetail(fmtDate(r.createdAt))}</span>
+            ${r.edited ? `<span class="review-edited">${escapeDetail(I18N.reviews.edited)}</span>` : ''}
+            ${r.mine ? `<span class="rv-actions">
+              <button type="button" onclick="openReviewForm()">${escapeDetail(I18N.reviews.edit)}</button>
+              <button type="button" onclick="deleteReview(${r.id})">${escapeDetail(I18N.reviews.delete)}</button>
+            </span>` : ''}
+          </div>
+          <div class="review-star">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+          <p class="review-text">${escapeDetail(r.text || '')}</p>
+        </div>
+      </article>`).join('')
+      : (reviews.length ? '' : `<div class="empty-state" style="padding:24px 16px"><strong>${escapeDetail(I18N.reviews.emptyTitle)}</strong>${escapeDetail(I18N.reviews.emptyBody)}</div>`);
+
+    const titleMeta = reviews.length
+      ? `<span class="rv-avg">★ ${avg.toFixed(1)}</span> <span class="rv-cnt">(${reviews.length})</span>`
+      : `<span class="rv-cnt">(0)</span>`;
+    root.innerHTML = `<div class="section-card rv-wrap"><div class="rv-head"><div class="section-title">${escapeDetail(I18N.reviews.title)} ${titleMeta}</div>${writeBtn}</div>${form}${list}</div>`;
+
+    renderDpRating(avg, reviews.length);   // 헤더 별점을 방문자 리뷰 평균으로 갱신
+
+    const tabBtn = document.querySelector('.dp-tab[data-tab="reviews"]');
+    if (tabBtn) {
+      tabBtn.dataset.baseLabel = tabBtn.dataset.baseLabel || tabBtn.textContent.trim();
+      tabBtn.textContent = tabBtn.dataset.baseLabel + (reviews.length ? ` (${reviews.length})` : '');
+    }
+
+    const starBox = document.getElementById('rvStars');
+    if (starBox) {
+      const paint = v => starBox.querySelectorAll('span').forEach(s => s.classList.toggle('on', +s.dataset.n <= v));
+      starBox.querySelectorAll('span').forEach(s => {
+        s.addEventListener('mouseenter', () => paint(+s.dataset.n));
+        s.addEventListener('click', () => { rvRating = +s.dataset.n; paint(rvRating); });
+      });
+      starBox.addEventListener('mouseleave', () => paint(rvRating));
+    }
   }
 
-  function setRvRating(n) {
-    rvRating = n;
-    document.querySelectorAll('#rvStars span').forEach(s =>
-      s.textContent = Number(s.dataset.n) <= n ? '★' : '☆');
+  function openReviewForm() {
+    rvFormOpen = true;
+    if (currentDetailPlace) renderReviews(currentDetailPlace);
+  }
+
+  function closeReviewForm() {
+    rvFormOpen = false;
+    if (currentDetailPlace) renderReviews(currentDetailPlace);
   }
 
   async function submitReview() {
@@ -1035,6 +1098,7 @@
         contentId: box.dataset.content, contentTypeId: box.dataset.type,
         rating: rvRating, text: document.getElementById('rvText').value
       });
+      rvFormOpen = false;
       if (currentDetailPlace) renderReviews(currentDetailPlace);
     } catch (e) { alert(I18N.reviews.saveFail); }
   }
@@ -1043,6 +1107,7 @@
     if (!confirm(I18N.reviews.deleteConfirm)) return;
     try {
       await csrfFetch(`/tour/api/reviews/${id}`, 'DELETE');
+      rvFormOpen = false;
       if (currentDetailPlace) renderReviews(currentDetailPlace);
     } catch (e) {}
   }
@@ -1162,13 +1227,8 @@
     document.getElementById('dpBadges').innerHTML =
             `<span class="dp-badge" style="background:${color}22;color:${color}">${typeName(p.type)}</span>
        <span class="dp-badge db-gold">🏆 ${p.score?.toFixed(1) ?? '-'}${I18N.detail.scoreSuffix}</span>`;
-    const rc = Number(p.user_ratings_total || 0);
-    const rating = Number(p.rating || 0);
-    document.getElementById('dpRating').innerHTML = rating > 0
-            ? `<span class="dp-rating-stars">★</span>
-       <span class="dp-rating-score">${rating.toFixed(1)}</span>
-       <span class="dp-rating-count">${i18nFmt(I18N.detail.reviewsCount, rc.toLocaleString())}</span>`
-            : `<span style="color:#bbb;font-size:11px">${escapeDetail(I18N.detail.noRating)}</span>`;
+    renderDpRating(p.userReviewCount ? Number(p.userRating) : Number(p.rating || 0),
+                   p.userReviewCount || Number(p.user_ratings_total || 0));
     document.getElementById('dpInfoRow').innerHTML = '';   // 주소는 이름 밑에 있으므로 정보 탭엔 운영정보만
     document.getElementById('dpDesc').textContent = I18N.detail.preparing;
     renderReviews(p);
