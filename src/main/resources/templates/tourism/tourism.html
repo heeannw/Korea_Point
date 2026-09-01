@@ -68,10 +68,12 @@
     .chip[data-cat="attraction"]:hover,.chip[data-cat="attraction"].active{background:#ef4444;border-color:#ef4444;color:#fff}
     .chip[data-cat="culture"]:hover,.chip[data-cat="culture"].active{background:#f59e0b;border-color:#f59e0b;color:#fff}
     .chip[data-cat="festival"]:hover,.chip[data-cat="festival"].active{background:#ec4899;border-color:#ec4899;color:#fff}
-    .chip[data-cat="course"]:hover,.chip[data-cat="course"].active{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
     .chip[data-cat="leisure"]:hover,.chip[data-cat="leisure"].active{background:#22c55e;border-color:#22c55e;color:#fff}
     .chip[data-cat="shopping"]:hover,.chip[data-cat="shopping"].active{background:#3b9eff;border-color:#3b9eff;color:#fff}
     .sort-row{padding:10px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .near-note{margin:0 16px 8px;padding:8px 11px;border-radius:10px;background:var(--light);border:1px solid var(--border);font-size:12px;color:var(--mid);line-height:1.5;flex-shrink:0}
+    .near-note[hidden]{display:none}
+    .near-note b{color:var(--blue-dk)}
     .result-count{font-size:13px;color:var(--gray)}
     .result-count strong{color:var(--dark)}
     .sort-btns{display:flex;gap:4px;max-width:270px;overflow-x:auto;scrollbar-width:none}
@@ -82,14 +84,23 @@
     .place-list::-webkit-scrollbar{width:4px}
     .place-list::-webkit-scrollbar-track{background:transparent}
     .place-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-    .place-card{display:flex;gap:12px;padding:12px;border-radius:var(--r);cursor:pointer;transition:background .15s, box-shadow .15s;margin-bottom:4px;border:1.5px solid transparent}
+    .place-card{position:relative;display:flex;gap:12px;padding:12px;border-radius:var(--r);cursor:pointer;transition:background .15s, box-shadow .15s;margin-bottom:4px;border:1.5px solid transparent;content-visibility:auto;contain-intrinsic-size:0 98px}
+    .card-save{position:absolute;top:8px;right:8px;width:28px;height:28px;border:none;border-radius:50%;background:rgba(255,255,255,.92);color:#cbd5e1;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.14);z-index:2;transition:color .15s,transform .1s}
+    .card-save:hover{color:#ef4444;transform:scale(1.1)}
+    .card-save.saved{color:#ef4444}
     .place-card:hover{background:var(--light)}
     .place-card.active{border:1.5px solid var(--blue);background:var(--blue-lt)}
     .place-card.active .card-name{color:var(--blue-dk);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--blue)}
     .place-card .thumb{width:72px;height:72px;border-radius:10px;background-size:cover;background-position:center;flex-shrink:0;position:relative;background-color:var(--light)}
     .place-card .rank{position:absolute;top:-6px;left:-6px;width:20px;height:20px;background:var(--blue);color:#fff;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
     .card-info{flex:1;min-width:0}
-    .card-name{font-size:14px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .card-name{font-size:14px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:5px}
+    .card-name .cn-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+    .fest-badge{flex-shrink:0;display:inline-block;padding:1px 7px;border-radius:50px;font-size:10px;font-weight:800;vertical-align:middle;letter-spacing:.2px}
+    .fest-badge.ongoing{background:#dcfce7;color:#15803d}
+    .fest-badge.upcoming{background:#fef3c7;color:#b45309}
+    .fest-badge.ended{background:#f1f5f9;color:#94a3b8}
+    .dp-name .fest-badge{font-size:12px;padding:2px 9px}
     .card-cat{font-size:11px;color:var(--blue);font-weight:600;margin-bottom:4px}
     .card-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray)}
     .stars-s{color:var(--gold);font-size:11px}
@@ -110,14 +121,6 @@
 <header>
   <a class="logo" translate="no" th:href="${lang == 'en'} ? @{/en} : @{/ko}">Korea<span>Point</span></a>
   <div class="header-right">
-    <select class="h-btn" translate="no" onchange="switchLang(this.value)" aria-label="Language">
-      <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
-      <option value="en" th:selected="${lang == 'en'}">English</option>
-      <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
-      <option value="zh" th:selected="${lang == 'zh'}">中文</option>
-      <option value="fr" th:selected="${lang == 'fr'}">Français</option>
-    </select>
-
     <th:block th:if="${isLoggedIn}">
       <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
       <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
@@ -128,6 +131,14 @@
     <th:block th:unless="${isLoggedIn}">
       <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill" th:text="#{tour.nav.login}">Login</a>
     </th:block>
+
+    <select class="h-btn" translate="no" style="margin-left:6px" onchange="switchLang(this.value)" aria-label="Language">
+      <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
+      <option value="en" th:selected="${lang == 'en'}">English</option>
+      <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
+      <option value="zh" th:selected="${lang == 'zh'}">中文</option>
+      <option value="fr" th:selected="${lang == 'fr'}">Français</option>
+    </select>
   </div>
 </header>
 <div class="app-body">
@@ -175,7 +186,6 @@
         <div class="chip" data-cat="culture" onclick="setCategory('culture')">🏛️ <span th:text="#{tour.cat.culture}">Culture</span></div>
         <div class="chip" data-cat="leisure" onclick="setCategory('leisure')">🏄 <span th:text="#{tour.cat.leisure}">Leisure &amp; Activities</span></div>
         <div class="chip" data-cat="shopping" onclick="setCategory('shopping')">🛍️ <span th:text="#{tour.cat.shopping}">Shopping</span></div>
-        <div class="chip" data-cat="course" onclick="setCategory('course')">🗺️ <span th:text="#{tour.cat.course}">Travel Courses</span></div>
         <div class="chip" data-cat="festival" onclick="setCategory('festival')">🎉 <span th:text="#{tour.cat.festival}">Festivals &amp; Events</span></div>
       </div>
       <button class="scroll-btn right" id="scrollRight" onclick="scrollFilter(1)">›</button>
@@ -191,6 +201,8 @@
         <button class="sort-btn" id="sortDistance" onclick="setSort('distance')">📍 <span th:text="#{tour.sort.distance}">Distance</span></button>
       </div>
     </div>
+
+    <div class="near-note" id="nearNote" hidden></div>
 
     <div class="place-list" id="placeList"></div>
     <div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;"></div>
@@ -208,9 +220,6 @@
       <div class="dp-header">
         <button class="dp-back" onclick="closeDetail()">←</button>
         <div class="dp-title" id="dpTitle"></div>
-        <div class="dp-header-right">
-          <button class="summary-save" id="btnSave" type="button" th:attr="aria-label=#{tour.detail.savePlace}" aria-label="Save place">♡</button>
-        </div>
       </div>
       <div class="dp-hero no-image" id="dpHero">
         <button class="dp-hero-nav dp-hero-prev dp-hero-hidden" id="dpImgPrev" type="button" onclick="moveDetailImage(-1)" th:attr="aria-label=#{tour.detail.prevImage}" aria-label="Previous image">‹</button>
@@ -219,6 +228,7 @@
       </div>
       <div class="dp-body">
         <section class="dp-summary">
+          <button class="summary-save" id="btnSave" type="button" th:attr="aria-label=#{tour.detail.savePlace}" aria-label="Save place">♡</button>
           <div class="dp-badges" id="dpBadges"></div>
           <div class="dp-name" id="dpName"></div>
           <div class="dp-sub" id="dpSub"></div>
@@ -246,7 +256,6 @@
         <section class="tab-panel" id="tab-info">
           <div class="dp-info-row" id="dpInfoRow"></div>
           <div class="section-card"><div class="section-title" th:text="#{tour.detail.about}">About</div><div class="dp-desc" id="dpDesc"></div></div>
-          <div id="dpApiInfo"></div>
           <div class="dp-course" id="dpCourse" hidden></div>
         </section>
         <section class="tab-panel" id="tab-reviews" hidden><div id="dpReviews"></div></section>
@@ -263,6 +272,7 @@
   const centerLat = /*[[${centerLat}]]*/ 35.1796;
   const centerLon = /*[[${centerLon}]]*/ 129.0756;
   const currentUserId = /*[[${currentUserId}]]*/ null;
+  const NEAR_TITLE = /*[[${near}]]*/ null;
   let spotName = /*[[${spotname}]]*/ 'My Location';
   let lang = /*[[${lang}]]*/ 'ko';
 
@@ -279,6 +289,12 @@
       other:      /*[[#{tour.cat.other}]]*/ 'Other'
     },
     chipPopular:  /*[[#{tour.chip.popular}]]*/ 'Popular',
+    nearNote:     /*[[#{tour.list.nearNote}]]*/ 'Sorted by distance from <b>{0}</b>',
+    festival: {
+      ongoing: /*[[#{tour.festival.ongoing}]]*/ 'Ongoing',
+      dday:    /*[[#{tour.festival.dday}]]*/ 'D-{0}',
+      ended:   /*[[#{tour.festival.ended}]]*/ 'Ended'
+    },
     detailLabels: {
       hours:          /*[[#{tour.dl.hours}]]*/ 'Hours',
       bizHours:       /*[[#{tour.dl.bizHours}]]*/ 'Hours',
@@ -325,9 +341,17 @@
     },
     reviews: {
       emptyTitle: /*[[#{tour.reviews.emptyTitle}]]*/ 'No visitor reviews yet',
-      emptyBody:  /*[[#{tour.reviews.emptyBody}]]*/ 'Short reviews written after a visit will appear here.',
+      emptyBody:  /*[[#{tour.reviews.emptyBody}]]*/ 'Be the first to leave a review.',
       title:      /*[[#{tour.reviews.title}]]*/ 'Visitor reviews',
-      anonymous:  /*[[#{tour.reviews.anonymous}]]*/ 'Visitor'
+      anonymous:  /*[[#{tour.reviews.anonymous}]]*/ 'Visitor',
+      loading:    /*[[#{tour.reviews.loading}]]*/ 'Loading reviews…',
+      placeholder: /*[[#{tour.reviews.placeholder}]]*/ 'Share your experience',
+      write:      /*[[#{tour.reviews.write}]]*/ 'Post review',
+      edit:       /*[[#{tour.reviews.edit}]]*/ 'Update review',
+      delete:     /*[[#{tour.reviews.delete}]]*/ 'Delete',
+      deleteConfirm: /*[[#{tour.reviews.deleteConfirm}]]*/ 'Delete this review?',
+      pickRating: /*[[#{tour.reviews.pickRating}]]*/ 'Please pick a rating.',
+      saveFail:   /*[[#{tour.reviews.saveFail}]]*/ 'Could not save the review.'
     },
     community: {
       loading:    /*[[#{tour.community.loading}]]*/ 'Loading community stories…',
@@ -402,7 +426,7 @@
     return (activePinId != null && list[activePinId]) ? list[activePinId].title : null;
   }
   let activeCategory = 'All';
-  let activeSort = 'recommended';
+  let activeSort = NEAR_TITLE ? 'distance' : 'recommended';   // 근처 조회로 넘어오면 거리순으로 시작
   let activePinId = null;
   let map;
   let markerMap = [];
@@ -601,6 +625,37 @@
     if (d == null) return '-';
     return d < 1 ? (d * 1000).toFixed(0) + 'm' : d.toFixed(1) + 'km';
   }
+
+  /** 축제(type 15) 상태 뱃지: 시작 전이면 D-n, 기간 중이면 '진행중'. 그 외 null. */
+  function festivalStatus(p) {
+    if (String(p.type) !== '15' || !p.eventStartDate) return null;
+    const toDate = s => {
+      const t = String(s);
+      return new Date(+t.slice(0, 4), +t.slice(4, 6) - 1, +t.slice(6, 8));
+    };
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const start = toDate(p.eventStartDate);
+    const end = p.eventEndDate ? toDate(p.eventEndDate) : start;
+    if (today < start) {
+      const days = Math.round((start - today) / 86400000);
+      return { text: i18nFmt(I18N.festival.dday, days), cls: 'upcoming' };
+    }
+    if (today <= end) return { text: I18N.festival.ongoing, cls: 'ongoing' };
+    return { text: I18N.festival.ended, cls: 'ended' };
+  }
+  function festBadgeHtml(p) {
+    const s = festivalStatus(p);
+    return s ? `<span class="fest-badge ${s.cls}">${s.text}</span>` : '';
+  }
+  /** 축제 정렬 키: 진행 중/오늘 시작이면 -1(최상단), 아니면 시작까지 남은 일수. 축제 아니면 Infinity. */
+  function festivalDday(p) {
+    if (String(p.type) !== '15' || !p.eventStartDate) return Infinity;
+    const t = String(p.eventStartDate);
+    const start = new Date(+t.slice(0, 4), +t.slice(4, 6) - 1, +t.slice(6, 8));
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const days = Math.round((start - today) / 86400000);
+    return days <= 0 ? -1 : days;
+  }
   function getCatColor(type) {
     return CATEGORY_COLOR[String(type)] ?? '#64748b';
   }
@@ -635,7 +690,7 @@
   }
 
   function getMatchingPlaces() {
-    let list = [...PLACES];
+    let list = [...PLACES].filter(p => String(p.type) !== '25');   // 여행코스: 부산 1건뿐이라 목록에서 제외
     const q = document.getElementById('searchInput').value.toLowerCase();
     if (activeCategory !== 'All') {
       list = list.filter(p => typeSlug(p.type) === activeCategory);
@@ -675,7 +730,11 @@
   function getFiltered() {
     let list = getMatchingPlaces();
     if (activeSort === 'recommended') {
-      list.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+      if (activeCategory === 'festival') {
+        list.sort((a, b) => festivalDday(a) - festivalDday(b));   // 임박한 축제 먼저
+      } else {
+        list.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+      }
     } else if (activeSort === 'popular') {
       list = list.filter(p => p.popularRank != null)
         .sort((a, b) => activeCategory === 'All'
@@ -697,6 +756,7 @@
   function setCategory(c) {
     exitCourseMode();
     activeCategory = c;
+    if (c === 'festival') activeSort = 'recommended';   // 축제는 D-day 순으로
     document.querySelectorAll('.chip').forEach(ch =>
             ch.classList.toggle('active', ch.dataset.cat === c)
     );
@@ -763,12 +823,15 @@
     updateMarkerVisibility();
     document.getElementById('placeList').innerHTML = list.map((p, i) => `
       <div class="place-card${activePinId == i ? ' active' : ''}" id="card-${i}" onclick="selectPlace(${i})">
+        <button class="card-save${savedSet().has(String(p.id)) ? ' saved' : ''}" type="button"
+                data-id="${p.id ?? ''}" data-type="${p.type ?? ''}" onclick="cardSaveClick(event, this)"
+        >${savedSet().has(String(p.id)) ? '♥' : '♡'}</button>
         <div class="thumb" style="background-image:url('${p.image ?? ''}')">
           <div class="rank" style="background:${getCatColor(p.type)}">${i + 1}</div>
         </div>
         <div class="card-info">
           <div class="card-cat" style="color:${getCatColor(p.type)}">${catLabel(p)}</div>
-          <div class="card-name">${p.title ?? '-'}</div>
+          <div class="card-name"><span class="cn-text">${p.title ?? '-'}</span>${festBadgeHtml(p)}</div>
           <div class="card-meta">
             <span class="stars-s">★</span>${p.rating ?? '-'}
             (${p.user_ratings_total ? (p.user_ratings_total / 1000).toFixed(1) + 'k' : '-'})
@@ -886,7 +949,6 @@
 
   async function loadTourApiDetail(p) {
     const desc = document.getElementById('dpDesc');
-    const apiInfo = document.getElementById('dpApiInfo');
     if (!p.id || !p.type) {
       desc.textContent = I18N.detail.noId;
       return;
@@ -904,8 +966,8 @@
       const overview = escapeDetail(detail.overview || I18N.detail.noOverview);
       const tel = detail.tel ? `<p style="margin-top:10px"><b>${escapeDetail(I18N.detail.tel)}:</b> ${escapeDetail(detail.tel)}</p>` : '';
       desc.innerHTML = `<p style="line-height:1.75;white-space:pre-line">${overview}</p>${tel}`;
-      apiInfo.innerHTML = rows
-        ? `<div class="section-card"><div class="section-title">${escapeDetail(I18N.detail.usageInfo)}</div><div class="dp-info-row" style="margin:0">${rows}</div></div>` : '';
+      // 운영정보(영업시간·휴무일 등)를 별도 제목 없이 주소 바로 밑에 이어 붙인다.
+      if (rows) document.getElementById('dpInfoRow').insertAdjacentHTML('beforeend', rows);
       setDetailImages(detail.images?.length ? detail.images : [detail.image || p.image]);
     } catch (error) {
       desc.textContent = I18N.detail.loadFail;
@@ -922,22 +984,67 @@
   }
 
   // 관광지 리뷰(있으면)를 방문자 리뷰 카드로 보여준다.
-  function renderReviews(p) {
+  let rvRating = 0;   // 쓰기 폼에서 선택한 별점
+
+  async function renderReviews(p) {
     const root = document.getElementById('dpReviews');
-    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
-    if (!reviews.length) {
-      root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">✎</span>
-        <strong>${escapeDetail(I18N.reviews.emptyTitle)}</strong>${escapeDetail(I18N.reviews.emptyBody)}</div>`;
-      return;
-    }
-    root.innerHTML = `<div class="section-card"><div class="section-title">${escapeDetail(I18N.reviews.title)} <small>${reviews.length}</small></div>`
-      + reviews.slice(0, 10).map(r => `<article class="review-card">
-          <div class="review-head">
-            <span class="review-author">${escapeDetail(r.author_name || r.authorName || I18N.reviews.anonymous)}</span>
-            <span class="review-star">${r.rating ? `★ ${escapeDetail(String(r.rating))}` : ''}</span>
-          </div>
-          <p class="review-text">${escapeDetail(r.text || r.content || '')}</p>
-        </article>`).join('') + `</div>`;
+    root.innerHTML = `<div class="section-card empty-state">${escapeDetail(I18N.reviews.loading)}</div>`;
+    let reviews = [];
+    try {
+      const res = await fetch(`/tour/api/reviews/${encodeURIComponent(p.id)}`);
+      if (res.ok) reviews = await res.json();
+    } catch (e) { /* 빈 목록으로 진행 */ }
+    if (currentDetailPlace !== p) return;
+
+    const mine = reviews.find(r => r.mine);
+    rvRating = mine ? mine.rating : 0;
+
+    const form = LOGGED_IN ? `
+      <div class="rv-form" data-content="${escapeDetail(String(p.id))}" data-type="${escapeDetail(p.type ?? '')}">
+        <div class="rv-stars" id="rvStars">${[1,2,3,4,5].map(n =>
+          `<span data-n="${n}" onclick="setRvRating(${n})">${n <= rvRating ? '★' : '☆'}</span>`).join('')}</div>
+        <textarea id="rvText" rows="3" placeholder="${escapeDetail(I18N.reviews.placeholder)}">${mine ? escapeDetail(mine.text || '') : ''}</textarea>
+        <button type="button" class="outline-btn" onclick="submitReview()">${escapeDetail(mine ? I18N.reviews.edit : I18N.reviews.write)}</button>
+      </div>` : '';
+
+    const list = reviews.length ? reviews.map(r => `<article class="review-card">
+        <div class="review-head">
+          <span class="review-author">${escapeDetail(r.authorName || I18N.reviews.anonymous)}</span>
+          <span class="review-star">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+        </div>
+        <p class="review-text">${escapeDetail(r.text || '')}</p>
+        ${r.mine ? `<button type="button" class="rv-del" onclick="deleteReview(${r.id})">${escapeDetail(I18N.reviews.delete)}</button>` : ''}
+      </article>`).join('')
+      : `<div class="empty-state" style="padding:24px 16px"><strong>${escapeDetail(I18N.reviews.emptyTitle)}</strong>${escapeDetail(I18N.reviews.emptyBody)}</div>`;
+
+    root.innerHTML = `<div class="section-card"><div class="section-title">${escapeDetail(I18N.reviews.title)} <small>${reviews.length}</small></div>${form}${list}</div>`;
+  }
+
+  function setRvRating(n) {
+    rvRating = n;
+    document.querySelectorAll('#rvStars span').forEach(s =>
+      s.textContent = Number(s.dataset.n) <= n ? '★' : '☆');
+  }
+
+  async function submitReview() {
+    const box = document.querySelector('.rv-form');
+    if (!box) return;
+    if (!rvRating) { alert(I18N.reviews.pickRating); return; }
+    try {
+      await csrfFetch('/tour/api/reviews', 'POST', {
+        contentId: box.dataset.content, contentTypeId: box.dataset.type,
+        rating: rvRating, text: document.getElementById('rvText').value
+      });
+      if (currentDetailPlace) renderReviews(currentDetailPlace);
+    } catch (e) { alert(I18N.reviews.saveFail); }
+  }
+
+  async function deleteReview(id) {
+    if (!confirm(I18N.reviews.deleteConfirm)) return;
+    try {
+      await csrfFetch(`/tour/api/reviews/${id}`, 'DELETE');
+      if (currentDetailPlace) renderReviews(currentDetailPlace);
+    } catch (e) {}
   }
 
   // 이 장소를 태그한 커뮤니티 글을 불러온다.
@@ -1029,6 +1136,19 @@
     }
   }
 
+  /** 목록 카드의 하트. 상세를 열지 않고 저장만 토글한다. */
+  async function cardSaveClick(event, btn) {
+    event.stopPropagation();
+    const id = String(btn.dataset.id || '');
+    if (!id) return;
+    const p = (window._currentList || PLACES).find(x => String(x.id) === id)
+      || { id, type: btn.dataset.type || '' };
+    await toggleSave(p);
+    const on = savedIds.has(id);
+    btn.classList.toggle('saved', on);
+    btn.textContent = on ? '♥' : '♡';
+  }
+
   function openDetail(p) {
 
     if (!p) return;
@@ -1037,7 +1157,7 @@
     const color = getCatColor(p.type);
     document.getElementById('dpTitle').textContent = p.title ?? '-';
     setDetailImages([p.image]);
-    document.getElementById('dpName').textContent = p.title ?? '-';
+    document.getElementById('dpName').innerHTML = escapeDetail(p.title ?? '-') + festBadgeHtml(p);
     document.getElementById('dpSub').textContent = p.addr ?? '';
     document.getElementById('dpBadges').innerHTML =
             `<span class="dp-badge" style="background:${color}22;color:${color}">${typeName(p.type)}</span>
@@ -1049,13 +1169,8 @@
        <span class="dp-rating-score">${rating.toFixed(1)}</span>
        <span class="dp-rating-count">${i18nFmt(I18N.detail.reviewsCount, rc.toLocaleString())}</span>`
             : `<span style="color:#bbb;font-size:11px">${escapeDetail(I18N.detail.noRating)}</span>`;
-    document.getElementById('dpInfoRow').innerHTML = `
-      <div class="dp-info"><div class="dp-info-label">${escapeDetail(I18N.detail.address)}</div><div class="dp-info-val">${escapeDetail(p.addr ?? '-')}</div></div>
-      <div class="dp-info"><div class="dp-info-label">${escapeDetail(I18N.detail.distance)}</div><div class="dp-info-val">${distStr(p.distance)}</div></div>
-      <div class="dp-info"><div class="dp-info-label">${escapeDetail(I18N.detail.score)}</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
-      <div class="dp-info"><div class="dp-info-label">${escapeDetail(I18N.detail.category)}</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
+    document.getElementById('dpInfoRow').innerHTML = '';   // 주소는 이름 밑에 있으므로 정보 탭엔 운영정보만
     document.getElementById('dpDesc').textContent = I18N.detail.preparing;
-    document.getElementById('dpApiInfo').innerHTML = '';
     renderReviews(p);
     loadCommunityPosts(p);
     updateSaveButton(p);
@@ -1153,7 +1268,11 @@
       document.getElementById('recentDropdown').classList.remove('show');
     }, 500);
   }
+  let searchFilterTimer;
   function onSearchInput(val) {
+    // 타이핑하는 동안 로드된 목록을 즉시 필터한다. Enter/버튼은 폼 submit → 서버 검색(미로드 결과·최근검색어 저장).
+    clearTimeout(searchFilterTimer);
+    searchFilterTimer = setTimeout(render, 150);
     if (val.trim().length === 0) {
       document.getElementById('suggestDropdown').classList.remove('show');
       showRecent();
@@ -1247,8 +1366,16 @@
   }
 
   applyAllChipLabel();
+  if (NEAR_TITLE) {
+    const note = document.getElementById('nearNote');
+    note.innerHTML = i18nFmt(I18N.nearNote, escapeDetail(NEAR_TITLE));
+    note.hidden = false;
+  }
   render();
-  loadSavedIds().then(() => { if (currentDetailPlace) updateSaveButton(currentDetailPlace); });
+  loadSavedIds().then(() => {
+    render();   // 서버에서 받은 저장 상태를 카드 하트에 반영
+    if (currentDetailPlace) updateSaveButton(currentDetailPlace);
+  });
 </script>
 
 <script th:src="'//dapi.kakao.com/v2/maps/sdk.js?appkey=' + ${kakaoKey} + '&autoload=false&libraries=clusterer'"></script>

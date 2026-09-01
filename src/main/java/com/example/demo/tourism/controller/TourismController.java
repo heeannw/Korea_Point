@@ -44,6 +44,7 @@ public class TourismController {
     public String tourAllKO(Model model, HttpSession session,
                             @RequestParam(value = "lat", required = false) Double lat,
                             @RequestParam(value = "lon", required = false) Double lon,
+                            @RequestParam(value = "near", required = false) String near,
                             @RequestParam(value = "lang") String lang) {
         lang = normalizeLang(lang);
         List<TourPlaceDto> displayList = tourismService.allList(lang);
@@ -62,6 +63,7 @@ public class TourismController {
         model.addAttribute("centerLon", BUSAN_CENTER_LON);
 
         model.addAttribute("spotname", spotname);
+        model.addAttribute("near", near);
         model.addAttribute("userlat", lat);
         model.addAttribute("userlon", lon);
         model.addAttribute("lang", lang);

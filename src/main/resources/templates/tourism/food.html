@@ -70,9 +70,15 @@
     .sort-btn.active{background:var(--blue);border-color:var(--blue);color:#fff}
 
     .place-list{flex:1;overflow-y:auto;padding:0 12px 12px}
-    .place-card{display:flex;gap:10px;padding:10px;border:1.5px solid transparent;border-radius:var(--r);
-      cursor:pointer;margin-bottom:6px}
+    .place-card{position:relative;display:flex;gap:10px;padding:10px;border:1.5px solid transparent;border-radius:var(--r);
+      cursor:pointer;margin-bottom:6px;content-visibility:auto;contain-intrinsic-size:0 94px}
     .place-card:hover{background:var(--light)}
+    .card-save{position:absolute;top:8px;right:8px;width:28px;height:28px;border:none;border-radius:50%;
+      background:rgba(255,255,255,.92);color:#cbd5e1;font-size:15px;line-height:1;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.14);z-index:2;
+      transition:color .15s,transform .1s}
+    .card-save:hover{color:#ef4444;transform:scale(1.1)}
+    .card-save.saved{color:#ef4444}
     .place-card.active{border-color:var(--blue);background:var(--light)}
     .thumb{width:72px;height:72px;flex:none;border-radius:10px;background:#e2e8f0 center/cover no-repeat;position:relative}
     .rank{position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:6px;color:#fff;
@@ -98,9 +104,11 @@
     .dp-back:hover{background:#f3f4f6}
     .dp-title{flex:1;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dark);padding:0 4px}
     .dp-header-right{display:flex;gap:2px}
-    .summary-save{width:36px;height:36px;border:none;border-radius:50%;background:transparent;
-      color:#bbb;font-size:21px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+    /* 저장(하트)은 헤더가 아니라 장소명 블록 우측 상단에 겹쳐 놓는다. */
+    .summary-save{position:absolute;top:12px;right:12px;width:36px;height:36px;border:none;border-radius:50%;background:transparent;
+      color:#bbb;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;z-index:2}
     .summary-save:hover{color:#ef4444;background:#fef2f2}
+    .summary-save.saved{color:#ef4444}
 
     .dp-hero{width:100%;height:195px;background:#eef2f7 center/cover no-repeat;
       flex-shrink:0;position:relative;overflow:hidden;cursor:pointer}
@@ -109,7 +117,7 @@
       color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:50px}
 
     .dp-body{flex:1;overflow-y:auto}
-    .dp-summary{padding:16px 16px 14px;border-bottom:1px solid #f0f0f0}
+    .dp-summary{position:relative;padding:16px 44px 14px 16px;border-bottom:1px solid #f0f0f0}
     .dp-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
     .dp-badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:700}
     .dp-badge-detail{background:#f1f5f9;color:var(--mid)}
@@ -144,6 +152,7 @@
     .section-title{font-size:14px;font-weight:800;color:#111;margin-bottom:12px}
     .section-title small{color:#aaa;font-weight:500;font-size:12px}
     .dp-info-row{padding:0 16px;border-bottom:8px solid #f5f7fa}
+    .dp-info-row:empty{display:none}
     .dp-info{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid #f5f7fa;align-items:flex-start}
     .dp-info:last-child{border-bottom:0}
     .dp-info-label{font-size:11px;color:#aaa;font-weight:600;min-width:50px;flex:none;padding-top:1px}
@@ -154,6 +163,12 @@
     .outline-btn{display:inline-block;margin-top:12px;padding:9px 18px;border:1.5px solid var(--blue);
       border-radius:6px;color:var(--blue-dk);background:#fff;font:700 12px inherit;text-decoration:none;cursor:pointer}
     .outline-btn:hover{background:var(--light)}
+    .rv-form{padding:0 16px 14px;border-bottom:8px solid #f5f7fa;margin-bottom:8px}
+    .rv-stars{font-size:24px;color:#facc15;letter-spacing:3px;cursor:pointer;user-select:none;margin-bottom:8px}
+    .rv-form textarea{width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:9px 11px;font:inherit;font-size:13px;resize:vertical;outline:none}
+    .rv-form textarea:focus{border-color:var(--blue)}
+    .rv-form .outline-btn{margin-top:8px}
+    .rv-del{margin-top:6px;border:none;background:none;color:#ef4444;font-size:12px;cursor:pointer;padding:0}
     .review-card{padding:14px 16px;border-bottom:1px solid #f5f7fa}
     .review-card:last-child{border-bottom:0}
     .review-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
@@ -177,9 +192,18 @@
 <header>
   <a class="logo" translate="no" th:href="${lang == 'en'} ? @{/en} : @{/ko}">Korea<span>Point</span></a>
   <div class="header-right">
-    <a class="h-btn" th:href="@{/tour/all(lang=${lang})}" id="btnTour">Tourism</a>
-    <a class="h-btn active" th:href="@{/tour/food(lang=${lang})}" id="btnTaste">Taste</a>
-    <select class="h-btn" translate="no" onchange="switchLang(this.value)" aria-label="Language" id="langSelect">
+    <th:block th:if="${isLoggedIn}">
+      <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
+      <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
+      <form th:action="@{/logout}" method="post">
+        <button type="submit" class="h-btn h-btn-fill" th:text="#{tour.nav.logout}">Logout</button>
+      </form>
+    </th:block>
+    <th:block th:unless="${isLoggedIn}">
+      <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill" th:text="#{tour.nav.login}">Login</a>
+    </th:block>
+
+    <select class="h-btn" translate="no" style="margin-left:6px" onchange="switchLang(this.value)" aria-label="Language" id="langSelect">
       <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
       <option value="en" th:selected="${lang == 'en'}">English</option>
       <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
@@ -195,15 +219,15 @@
       <form class="search-box" th:action="@{/tour/food/search}" method="get" id="searchForm">
         <input type="hidden" name="lang" th:value="${lang}">
         <input type="hidden" name="cafeOnly" th:value="${cafeOnly}">
-        <input type="text" name="keyword" id="searchInput" th:value="${keyword}" placeholder="검색">
+        <input type="text" name="keyword" id="searchInput" th:value="${keyword}" placeholder="검색" oninput="onSearchInput()">
         <button type="submit" id="searchBtn">검색</button>
       </form>
     </div>
     <nav class="mode-tabs" aria-label="맛집 유형">
       <a class="mode-tab" th:classappend="${cafeOnly} ? '' : 'active'"
-         th:href="@{/tour/food(lang=${lang})}" id="tabFood">음식점</a>
+         th:href="@{/tour/food(lang=${lang}, lat=${userlat}, lon=${userlon}, near=${near})}" id="tabFood">음식점</a>
       <a class="mode-tab" th:classappend="${cafeOnly} ? 'active' : ''"
-         th:href="@{/tour/cafe(lang=${lang})}" id="tabCafe">카페</a>
+         th:href="@{/tour/cafe(lang=${lang}, lat=${userlat}, lon=${userlon}, near=${near})}" id="tabCafe">카페</a>
     </nav>
     <div class="filter-wrap" th:hidden="${cafeOnly}">
       <button class="scroll-btn left" id="scrollLeft" type="button" onclick="scrollFilter(-1)" disabled>‹</button>
@@ -230,13 +254,11 @@
       <div class="dp-header">
         <button class="dp-back" onclick="closeDetail()">←</button>
         <div class="dp-title" id="dpTitle"></div>
-        <div class="dp-header-right">
-          <button class="summary-save" id="btnSave" type="button" aria-label="장소 저장">♡</button>
-        </div>
       </div>
       <div class="dp-hero no-image" id="dpHero"></div>
       <div class="dp-body">
         <section class="dp-summary">
+          <button class="summary-save" id="btnSave" type="button" aria-label="장소 저장">♡</button>
           <div class="dp-badges" id="dpBadge"></div>
           <div class="dp-name" id="dpName"></div>
           <div class="dp-sub" id="dpSub"></div>
@@ -246,8 +268,8 @@
           <button class="quick-btn" id="btnRoute" type="button">
             <div class="qb-icon">🚊</div><span class="qb-label">길찾기</span>
           </button>
-          <button class="quick-btn" id="btnPlan" type="button">
-            <div class="qb-icon">📅</div><span class="qb-label">일정 추가</span>
+          <button class="quick-btn" id="btnNearTour" type="button">
+            <div class="qb-icon">🗺️</div><span class="qb-label">근처 관광지</span>
           </button>
           <button class="quick-btn" id="btnReservation" type="button" hidden>
             <div class="qb-icon">📞</div><span class="qb-label">예약 문의</span>
@@ -264,7 +286,6 @@
         <section class="tab-panel" id="tab-info">
           <div class="dp-info-row" id="dpInfoRow"></div>
           <div class="section-card"><div class="section-title" id="aboutTitle">장소 소개</div><div class="dp-desc" id="dpDesc"></div></div>
-          <div id="dpApiInfo"></div>
         </section>
         <section class="tab-panel" id="tab-reviews" hidden><div id="dpReviews"></div></section>
         <section class="tab-panel" id="tab-community" hidden><div id="dpCommunity"></div></section>
@@ -306,11 +327,11 @@
          empty:'조건에 맞는 곳이 없습니다.', route:'🚊 길찾기', loading:'상세정보를 불러오는 중...',
          failed:'상세정보를 불러오지 못했습니다.', none:'등록된 설명이 없습니다.',
          addr:'주소', distance:'거리', category:'분류', tel:'전화', taste:'맛집', foodTab:'음식점', cafeTab:'카페',
-         routeLabel:'길찾기', planLabel:'일정 추가', reservationLabel:'예약 문의', shareLabel:'공유', saveAria:'장소 저장',
+         routeLabel:'길찾기', nearTourLabel:'근처 관광지', planLabel:'일정 추가', reservationLabel:'예약 문의', shareLabel:'공유', saveAria:'장소 저장',
          infoTab:'정보', reviewsTab:'리뷰', communityTab:'커뮤니티', about:'장소 소개', menuHours:'메뉴 · 이용 정보',
          reviewsSuffix:'개 리뷰', noRating:'아직 방문자 평점이 없어요',
          reviewsEmptyTitle:'아직 방문자 리뷰가 없어요', reviewsEmptyBody:'직접 방문한 사용자의 짧은 리뷰가 이곳에 표시돼요.',
-         reviewsTitle:'방문자 리뷰', visitor:'방문자',
+         reviewsTitle:'방문자 리뷰', visitor:'방문자', rvLoading:'리뷰 불러오는 중…', rvPlaceholder:'방문 후기를 남겨주세요', rvWrite:'리뷰 등록', rvEdit:'리뷰 수정', rvDelete:'삭제', rvDeleteConfirm:'이 리뷰를 삭제할까요?', rvPickRating:'별점을 선택해주세요.', rvSaveFail:'리뷰를 저장하지 못했어요.',
          communityLoading:'커뮤니티 이야기를 불러오는 중…', communityEmptyTitle:'이 장소의 첫 이야기를 남겨보세요',
          communityEmptyBody:'커뮤니티에서 이 장소를 태그한 여행기와 후기가 모여요.', communityWrite:'커뮤니티 글쓰기',
          communityTitle:'커뮤니티 이야기', communityWriteThis:'이 장소 글쓰기', communityLoadFail:'커뮤니티 글을 불러오지 못했어요.',
@@ -325,11 +346,11 @@
          empty:'No places match this filter.', route:'🚊 Directions', loading:'Loading details...',
          failed:'Could not load details.', none:'No description registered.',
          addr:'Address', distance:'Distance', category:'Category', tel:'Phone', taste:'Taste', foodTab:'Restaurants', cafeTab:'Cafe',
-         routeLabel:'Directions', planLabel:'Add to plan', reservationLabel:'Reserve', shareLabel:'Share', saveAria:'Save place',
+         routeLabel:'Directions', nearTourLabel:'Nearby attractions', planLabel:'Add to plan', reservationLabel:'Reserve', shareLabel:'Share', saveAria:'Save place',
          infoTab:'Info', reviewsTab:'Reviews', communityTab:'Community', about:'About', menuHours:'Menu & hours',
          reviewsSuffix:' reviews', noRating:'No visitor ratings yet',
          reviewsEmptyTitle:'No visitor reviews yet', reviewsEmptyBody:'Short reviews written after a visit will appear here.',
-         reviewsTitle:'Visitor reviews', visitor:'Visitor',
+         reviewsTitle:'Visitor reviews', visitor:'Visitor', rvLoading:'Loading reviews…', rvPlaceholder:'Share your experience', rvWrite:'Post review', rvEdit:'Update review', rvDelete:'Delete', rvDeleteConfirm:'Delete this review?', rvPickRating:'Please pick a rating.', rvSaveFail:'Could not save the review.',
          communityLoading:'Loading community stories…', communityEmptyTitle:'Be the first to share this place',
          communityEmptyBody:'Long-form stories tagged in Community appear here.', communityWrite:'Write a story',
          communityTitle:'Community stories', communityWriteThis:'Write a story', communityLoadFail:'Could not load Community stories.',
@@ -344,11 +365,11 @@
          empty:'条件に合う店がありません。', route:'🚊 ルート', loading:'詳細情報を読み込み中...',
          failed:'詳細情報を読み込めませんでした。', none:'登録された説明がありません。',
          addr:'住所', distance:'距離', category:'分類', tel:'電話', taste:'グルメ', foodTab:'飲食店', cafeTab:'カフェ',
-         routeLabel:'ルート', planLabel:'日程に追加', reservationLabel:'予約問い合わせ', shareLabel:'シェア', saveAria:'場所を保存',
+         routeLabel:'ルート', nearTourLabel:'近くの観光地', planLabel:'日程に追加', reservationLabel:'予約問い合わせ', shareLabel:'シェア', saveAria:'場所を保存',
          infoTab:'情報', reviewsTab:'レビュー', communityTab:'コミュニティ', about:'場所の紹介', menuHours:'メニュー・利用案内',
          reviewsSuffix:'件のレビュー', noRating:'まだ訪問者の評価がありません',
          reviewsEmptyTitle:'まだ訪問者のレビューがありません', reviewsEmptyBody:'実際に訪れたユーザーの短いレビューがここに表示されます。',
-         reviewsTitle:'訪問者レビュー', visitor:'訪問者',
+         reviewsTitle:'訪問者レビュー', visitor:'訪問者', rvLoading:'レビューを読み込み中…', rvPlaceholder:'訪問の感想を書いてください', rvWrite:'レビューを投稿', rvEdit:'レビューを更新', rvDelete:'削除', rvDeleteConfirm:'このレビューを削除しますか？', rvPickRating:'評価を選んでください。', rvSaveFail:'レビューを保存できませんでした。',
          communityLoading:'コミュニティの投稿を読み込み中…', communityEmptyTitle:'この場所の最初の投稿を残してみましょう',
          communityEmptyBody:'コミュニティでこの場所をタグ付けした旅行記やレビューがここに集まります。', communityWrite:'コミュニティに投稿',
          communityTitle:'コミュニティの投稿', communityWriteThis:'この場所について投稿', communityLoadFail:'コミュニティの投稿を読み込めませんでした。',
@@ -363,11 +384,11 @@
          empty:'没有符合条件的地点。', route:'🚊 路线', loading:'正在加载详细信息...',
          failed:'无法加载详细信息。', none:'暂无相关介绍。',
          addr:'地址', distance:'距离', category:'分类', tel:'电话', taste:'美食', foodTab:'餐厅', cafeTab:'咖啡馆',
-         routeLabel:'路线', planLabel:'加入行程', reservationLabel:'预约咨询', shareLabel:'分享', saveAria:'收藏地点',
+         routeLabel:'路线', nearTourLabel:'附近景点', planLabel:'加入行程', reservationLabel:'预约咨询', shareLabel:'分享', saveAria:'收藏地点',
          infoTab:'信息', reviewsTab:'评论', communityTab:'社区', about:'地点介绍', menuHours:'菜单 · 使用信息',
          reviewsSuffix:'条评论', noRating:'暂无访客评分',
          reviewsEmptyTitle:'暂无访客评论', reviewsEmptyBody:'到访用户的简短评论将显示在这里。',
-         reviewsTitle:'访客评论', visitor:'访客',
+         reviewsTitle:'访客评论', visitor:'访客', rvLoading:'正在加载评论…', rvPlaceholder:'分享你的体验', rvWrite:'发布评论', rvEdit:'更新评论', rvDelete:'删除', rvDeleteConfirm:'删除这条评论？', rvPickRating:'请选择评分。', rvSaveFail:'无法保存评论。',
          communityLoading:'正在加载社区动态…', communityEmptyTitle:'来发布这个地点的第一条动态吧',
          communityEmptyBody:'在社区中标记此地点的游记和点评会汇集在这里。', communityWrite:'发布动态',
          communityTitle:'社区动态', communityWriteThis:'发布关于此地点的动态', communityLoadFail:'无法加载社区动态。',
@@ -382,11 +403,11 @@
          empty:'Aucun lieu ne correspond à ce filtre.', route:'🚊 Itinéraire', loading:'Chargement des détails...',
          failed:'Impossible de charger les détails.', none:'Aucune description enregistrée.',
          addr:'Adresse', distance:'Distance', category:'Catégorie', tel:'Téléphone', taste:'Goûter', foodTab:'Restaurants', cafeTab:'Café',
-         routeLabel:'Itinéraire', planLabel:'Ajouter au programme', reservationLabel:'Réserver', shareLabel:'Partager', saveAria:'Enregistrer le lieu',
+         routeLabel:'Itinéraire', nearTourLabel:'Sites à proximité', planLabel:'Ajouter au programme', reservationLabel:'Réserver', shareLabel:'Partager', saveAria:'Enregistrer le lieu',
          infoTab:'Infos', reviewsTab:'Avis', communityTab:'Communauté', about:'Présentation du lieu', menuHours:'Menu et horaires',
          reviewsSuffix:' avis', noRating:'Pas encore d\'avis de visiteurs',
          reviewsEmptyTitle:'Pas encore d\'avis de visiteurs', reviewsEmptyBody:'Les courts avis rédigés après une visite apparaîtront ici.',
-         reviewsTitle:'Avis des visiteurs', visitor:'Visiteur',
+         reviewsTitle:'Avis des visiteurs', visitor:'Visiteur', rvLoading:'Chargement des avis…', rvPlaceholder:'Partagez votre expérience', rvWrite:'Publier un avis', rvEdit:'Modifier l’avis', rvDelete:'Supprimer', rvDeleteConfirm:'Supprimer cet avis ?', rvPickRating:'Veuillez choisir une note.', rvSaveFail:'Impossible d’enregistrer l’avis.',
          communityLoading:'Chargement des publications de la communauté…', communityEmptyTitle:'Soyez le premier à partager ce lieu',
          communityEmptyBody:'Les récits qui taguent ce lieu dans la communauté apparaissent ici.', communityWrite:'Rédiger une publication',
          communityTitle:'Publications de la communauté', communityWriteThis:'Écrire sur ce lieu', communityLoadFail:'Impossible de charger les publications de la communauté.',
@@ -479,7 +500,7 @@
     document.getElementById('sortDist').textContent = T.dist;
     document.getElementById('countUnit').textContent = T.unit;
     document.getElementById('btnRoute').querySelector('.qb-label').textContent = T.routeLabel;
-    document.getElementById('btnPlan').querySelector('.qb-label').textContent = T.planLabel;
+    document.getElementById('btnNearTour').querySelector('.qb-label').textContent = T.nearTourLabel;
     document.getElementById('btnReservation').querySelector('.qb-label').textContent = T.reservationLabel;
     document.getElementById('btnShare').querySelector('.qb-label').textContent = T.shareLabel;
     document.getElementById('btnSave').setAttribute('aria-label', T.saveAria);
@@ -491,7 +512,6 @@
     if (aboutTitle) aboutTitle.textContent = T.about;
     const mediaTitle = document.getElementById('mediaViewerTitle');
     if (mediaTitle) mediaTitle.textContent = T.photos;
-    document.getElementById('btnTaste').textContent = T.taste;
     document.getElementById('tabFood').textContent = T.foodTab;
     document.getElementById('tabCafe').textContent = T.cafeTab;
     document.getElementById('sortRec').classList.toggle('active', activeSort === 'recommended');
@@ -540,7 +560,17 @@
   function getMatchingPlaces() {
     let list = [...PLACES];
     if (activeCategory !== 'all') list = list.filter(p => p.foodCategory === activeCategory);
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    if (q) list = list.filter(p =>
+      (p.title || '').toLowerCase().includes(q) || (p.addr || '').toLowerCase().includes(q));
     return list;
+  }
+
+  // 타이핑하는 동안 로드된 목록을 즉시 필터. Enter/버튼은 폼 submit → 서버 검색.
+  let searchFilterTimer;
+  function onSearchInput() {
+    clearTimeout(searchFilterTimer);
+    searchFilterTimer = setTimeout(render, 150);
   }
 
   function updateSortAvailability() {
@@ -611,6 +641,9 @@
     if (list.length === 0) { box.innerHTML = `<div class="empty">${T.empty}</div>`; return; }
     box.innerHTML = list.map((p, i) => `
       <div class="place-card${activePinId === i ? ' active' : ''}" id="card-${i}" onclick="selectPlace(${i})">
+        <button class="card-save${savedIds.has(String(p.id)) ? ' saved' : ''}" type="button"
+                data-id="${escapeHtml(String(p.id ?? ''))}" data-type="${escapeHtml(p.type ?? '39')}"
+                onclick="cardSaveClick(event, this)">${savedIds.has(String(p.id)) ? '♥' : '♡'}</button>
         <div class="thumb" style="background-image:url('${escapeHtml(p.image ?? '')}')">
           <div class="rank" style="background:${cardColorOf(p)}">${activeSort === 'popular' ? p.popularRank : i + 1}</div>
         </div>
@@ -766,13 +799,8 @@
          <span class="dp-rating-score">${rating.toFixed(1)}</span>
          <span class="dp-rating-count">${rc.toLocaleString()}${T.reviewsSuffix}</span>`
       : `<span style="color:#bbb;font-size:11px">${T.noRating}</span>`;
-    document.getElementById('dpInfoRow').innerHTML = `
-      <div class="dp-info"><div class="dp-info-label">${T.addr}</div>
-        <div class="dp-info-val">${escapeHtml(p.addr ?? '-')}</div></div>
-      <div class="dp-info"><div class="dp-info-label">${T.distance}</div>
-        <div class="dp-info-val">${distStr(p.distance)}</div></div>`;
+    document.getElementById('dpInfoRow').innerHTML = '';   // 주소는 이름 밑에 있으므로 정보 탭엔 운영정보만
     document.getElementById('dpDesc').textContent = T.loading;
-    document.getElementById('dpApiInfo').innerHTML = '';
     const reservationButton = document.getElementById('btnReservation');
     reservationButton.hidden = true;
     reservationButton.dataset.tel = '';
@@ -790,23 +818,67 @@
     });
   }
 
-  function renderVisitorReviews(p) {
+  let rvRating = 0;
+
+  async function renderVisitorReviews(p) {
     const root = document.getElementById('dpReviews');
-    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
-    if (!reviews.length) {
-      root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">✎</span>
-        <strong>${T.reviewsEmptyTitle}</strong>
-        ${T.reviewsEmptyBody}</div>`;
-      return;
-    }
-    root.innerHTML = `<div class="section-card"><div class="section-title">${T.reviewsTitle} <small>${reviews.length}</small></div>`
-      + reviews.map(r => `<article class="review-card">
-          <div class="review-head">
-            <span class="review-author">${escapeHtml(r.authorName || r.author_name || T.visitor)}</span>
-            <span class="review-star">${r.rating ? `★ ${escapeHtml(String(r.rating))}` : ''}</span>
-          </div>
-          <p class="review-text">${escapeHtml(r.text || r.content || '')}</p>
-        </article>`).join('') + `</div>`;
+    root.innerHTML = `<div class="section-card empty-state">${T.rvLoading}</div>`;
+    let reviews = [];
+    try {
+      const res = await fetch(`/tour/api/reviews/${encodeURIComponent(p.id)}`);
+      if (res.ok) reviews = await res.json();
+    } catch (e) {}
+    if (currentDetailPlace !== p) return;
+
+    const mine = reviews.find(r => r.mine);
+    rvRating = mine ? mine.rating : 0;
+
+    const form = LOGGED_IN ? `
+      <div class="rv-form" data-content="${escapeHtml(String(p.id))}" data-type="${escapeHtml(p.type ?? '39')}">
+        <div class="rv-stars" id="rvStars">${[1,2,3,4,5].map(n =>
+          `<span data-n="${n}" onclick="setRvRating(${n})">${n <= rvRating ? '★' : '☆'}</span>`).join('')}</div>
+        <textarea id="rvText" rows="3" placeholder="${escapeHtml(T.rvPlaceholder)}">${mine ? escapeHtml(mine.text || '') : ''}</textarea>
+        <button type="button" class="outline-btn" onclick="submitReview()">${mine ? T.rvEdit : T.rvWrite}</button>
+      </div>` : '';
+
+    const list = reviews.length ? reviews.map(r => `<article class="review-card">
+        <div class="review-head">
+          <span class="review-author">${escapeHtml(r.authorName || T.visitor)}</span>
+          <span class="review-star">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+        </div>
+        <p class="review-text">${escapeHtml(r.text || '')}</p>
+        ${r.mine ? `<button type="button" class="rv-del" onclick="deleteReview(${r.id})">${T.rvDelete}</button>` : ''}
+      </article>`).join('')
+      : `<div class="empty-state" style="padding:24px 16px"><strong>${T.reviewsEmptyTitle}</strong>${T.reviewsEmptyBody}</div>`;
+
+    root.innerHTML = `<div class="section-card"><div class="section-title">${T.reviewsTitle} <small>${reviews.length}</small></div>${form}${list}</div>`;
+  }
+
+  function setRvRating(n) {
+    rvRating = n;
+    document.querySelectorAll('#rvStars span').forEach(s =>
+      s.textContent = Number(s.dataset.n) <= n ? '★' : '☆');
+  }
+
+  async function submitReview() {
+    const box = document.querySelector('.rv-form');
+    if (!box) return;
+    if (!rvRating) { alert(T.rvPickRating); return; }
+    try {
+      await csrfFetch('/tour/api/reviews', 'POST', {
+        contentId: box.dataset.content, contentTypeId: box.dataset.type,
+        rating: rvRating, text: document.getElementById('rvText').value
+      });
+      if (currentDetailPlace) renderVisitorReviews(currentDetailPlace);
+    } catch (e) { alert(T.rvSaveFail); }
+  }
+
+  async function deleteReview(id) {
+    if (!confirm(T.rvDeleteConfirm)) return;
+    try {
+      await csrfFetch(`/tour/api/reviews/${id}`, 'DELETE');
+      if (currentDetailPlace) renderVisitorReviews(currentDetailPlace);
+    } catch (e) {}
   }
 
   async function loadCommunityPosts(p) {
@@ -861,8 +933,8 @@
              <div class="dp-info-val">${escapeHtml(stripTags(v))}</div></div>`).join('');
       const tel = d.tel ? `<p style="margin-top:10px"><b>${T.tel}:</b> ${escapeHtml(d.tel)}</p>` : '';
       desc.innerHTML = `<p style="line-height:1.75;white-space:pre-line">${escapeHtml(stripTags(d.overview) || T.none)}</p>` + tel;
-      document.getElementById('dpApiInfo').innerHTML = rows
-        ? `<div class="section-card"><div class="section-title">${T.menuHours}</div><div class="dp-info-row" style="margin:0">${rows}</div></div>` : '';
+      // 영업시간·휴무일 등을 별도 제목 없이 주소 바로 밑에 이어 붙인다.
+      if (rows) document.getElementById('dpInfoRow').insertAdjacentHTML('beforeend', rows);
       if (reservationText) {
         const phone = reservationText.match(/0\d{1,2}-\d{3,4}-\d{4}/)?.[0] || '';
         const reservationButton = document.getElementById('btnReservation');
@@ -903,12 +975,13 @@
     else location.href = `${base}?end=${end}`;
   };
 
-  document.getElementById('btnPlan').onclick = function () {
+  document.getElementById('btnNearTour').onclick = function () {
     const p = currentDetailPlace;
-    if (!p) return;
-    const base = isEn ? '/en/trip' : '/ko/trip';
-    location.href = `${base}?place=${encodeURIComponent(p.title || '')}&contentId=${encodeURIComponent(p.id || '')}`;
+    if (!p || !p.lat || !p.lng) return;
+    const q = new URLSearchParams({ lang: LANG_KEY, lat: p.lat, lon: p.lng, near: p.title ?? '' });
+    location.href = '/tour/all?' + q.toString();
   };
+
 
   document.getElementById('btnReservation').onclick = function () {
     const tel = this.dataset.tel;
@@ -964,6 +1037,19 @@
   }
   document.getElementById('btnSave').onclick = () => toggleSave(currentDetailPlace);
 
+  /** 목록 카드의 하트. 상세를 열지 않고 저장만 토글한다. */
+  async function cardSaveClick(event, btn) {
+    event.stopPropagation();
+    const id = String(btn.dataset.id || '');
+    if (!id) return;
+    const p = (window._currentList || PLACES).find(x => String(x.id) === id)
+      || { id, type: btn.dataset.type || '39' };
+    await toggleSave(p);
+    const on = savedIds.has(id);
+    btn.classList.toggle('saved', on);
+    btn.textContent = on ? '♥' : '♡';
+  }
+
   document.getElementById('btnShare').onclick = async function () {
     const p = currentDetailPlace;
     if (!p) return;
@@ -1005,7 +1091,10 @@
 
   applyStaticLabels();
   render();
-  loadSavedIds().then(() => { if (currentDetailPlace) updateSaveButton(currentDetailPlace); });
+  loadSavedIds().then(() => {
+    render();   // 서버에서 받은 저장 상태를 카드 하트에 반영
+    if (currentDetailPlace) updateSaveButton(currentDetailPlace);
+  });
   document.getElementById('filterRow').addEventListener('scroll', updateScrollBtns);
   updateScrollBtns();
   if (KAKAO_KEY) {

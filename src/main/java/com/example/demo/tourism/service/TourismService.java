@@ -1,6 +1,7 @@
 package com.example.demo.tourism.service;
 
 import com.example.demo.tourism.client.TourApiClient;
+import com.example.demo.tourism.config.DeeplTranslator;
 import com.example.demo.tourism.dto.FoodPopularityDto;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.example.demo.tourism.dto.TourPopularityDto;
@@ -37,12 +38,16 @@ public class TourismService {
     private final TourApiClient tourApiClient;
     private final TourPopularityProvider popularityProvider;
     private final FoodPopularityProvider foodPopularityProvider;
+    private final DeeplTranslator deepl;
+    /** 상세 개요는 KorService2에서 국문만 온다. 요청 언어로 한 번 번역하면 재사용한다. key = contentId|lang */
+    private final Map<String, String> overviewCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     public TourismService(TourApiClient tourApiClient, TourPopularityProvider popularityProvider,
-                          FoodPopularityProvider foodPopularityProvider) {
+                          FoodPopularityProvider foodPopularityProvider, DeeplTranslator deepl) {
         this.tourApiClient = tourApiClient;
         this.popularityProvider = popularityProvider;
         this.foodPopularityProvider = foodPopularityProvider;
+        this.deepl = deepl;
     }
 
     /**
@@ -180,7 +185,22 @@ public class TourismService {
     }
 
     public Map<String, Object> getDetail(String contentId, String contentTypeId, String lang) {
-        return tourApiClient.findDetail(contentId, contentTypeId, lang);
+        Map<String, Object> detail = tourApiClient.findDetail(contentId, contentTypeId, lang);
+        translateOverview(detail, contentId, lang);
+        return detail;
+    }
+
+    /** 비-국문 요청이면 개요를 DeepL로 번역해 끼운다. 실패·한도 초과 시 국문 원문 유지. */
+    private void translateOverview(Map<String, Object> detail, String contentId, String lang) {
+        if (lang == null || "ko".equalsIgnoreCase(lang)) return;
+        Object raw = detail.get("overview");
+        if (!(raw instanceof String ko) || ko.isBlank()) return;
+        String plain = ko.replaceAll("<[^>]+>", " ").trim();   // 화면에서 어차피 태그를 벗기므로 번역 전에 정리
+        String cached = overviewCache.computeIfAbsent(contentId + "|" + lang, k -> {
+            String t = deepl.translate(plain, lang);
+            return t != null ? t : ko;   // 실패해도 캐시(국문) — 같은 장소 재요청 시 DeepL 재호출 방지
+        });
+        detail.put("overview", cached);
     }
 
     /**

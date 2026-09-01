@@ -25,8 +25,9 @@
 .dp-title{flex:1;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap;color:var(--dark);padding:0 4px}
 .dp-header-right{display:flex;gap:2px}
-.summary-save{width:36px;height:36px;border:none;border-radius:50%;background:transparent;
-  color:#bbb;font-size:21px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+/* 저장(하트) 버튼은 헤더가 아니라 장소명 블록 우측 상단에 겹쳐 놓는다. */
+.summary-save{position:absolute;top:12px;right:12px;width:36px;height:36px;border:none;border-radius:50%;background:transparent;
+  color:#bbb;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;z-index:2}
 .summary-save:hover{color:#ef4444;background:#fef2f2}
 .summary-save.saved{color:#ef4444}
 
@@ -46,7 +47,7 @@
 
 /* ── 본문 (스크롤) ── */
 .dp-body{flex:1;overflow-y:auto}
-.dp-summary{padding:16px 16px 14px;border-bottom:1px solid #f0f0f0}
+.dp-summary{position:relative;padding:16px 44px 14px 16px;border-bottom:1px solid #f0f0f0}
 .dp-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .dp-badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:700}
 .dp-badge-detail{background:#f1f5f9;color:var(--mid)}
@@ -88,6 +89,7 @@
 .section-title{font-size:14px;font-weight:800;color:#111;margin-bottom:12px}
 .section-title small{color:#aaa;font-weight:500;font-size:12px}
 .dp-info-row{padding:0 16px;border-bottom:8px solid #f5f7fa}
+.dp-info-row:empty{display:none}
 .dp-info{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid #f5f7fa;align-items:flex-start}
 .dp-info:last-child{border-bottom:0}
 .dp-info-label{font-size:11px;color:#aaa;font-weight:600;min-width:50px;flex:none;padding-top:1px}
@@ -112,6 +114,12 @@
 /* ── 리뷰 카드 ── */
 .review-card{padding:14px 16px;border-bottom:1px solid #f5f7fa}
 .review-card:last-child{border-bottom:0}
+.rv-form{padding:0 16px 14px;border-bottom:8px solid #f5f7fa;margin-bottom:8px}
+.rv-stars{font-size:24px;color:#facc15;letter-spacing:3px;cursor:pointer;user-select:none;margin-bottom:8px}
+.rv-form textarea{width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:9px 11px;font:inherit;font-size:13px;resize:vertical;outline:none}
+.rv-form textarea:focus{border-color:var(--blue)}
+.rv-form .outline-btn{margin-top:8px}
+.rv-del{margin-top:6px;border:none;background:none;color:#ef4444;font-size:12px;cursor:pointer;padding:0}
 .review-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
 .review-author{font-size:13px;font-weight:700;color:#222}
 .review-star{font-size:12px;color:#facc15;font-weight:600}

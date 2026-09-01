@@ -1,5 +1,6 @@
 package com.example.demo.tourism.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -17,10 +18,13 @@ import java.util.Map;
 @RestController
 public class PapagoController {
 
-    private static final String CLIENT_ID     = "tck710640b";
-    private static final String CLIENT_SECRET = "GOws3Sv8ejwp0LDGABAn0DxhlHWWCQnKlBmAvNRl";
-    //private static final String PAPAGO_URL    = "https://naveropenapi.apigw.ntruss.com/nmt/v1/translation";  // 구버전
-    private static final String PAPAGO_URL = "https://papago.apigw.ntruss.com/nmt/v1/translation";  // 신버전
+    /** application-secret.properties(gitignore)에서 주입. 노출된 기존 키는 네이버 클라우드에서 폐기·재발급 필요. */
+    @Value("${papago.client-id:}")
+    private String clientId;
+    @Value("${papago.client-secret:}")
+    private String clientSecret;
+
+    private static final String PAPAGO_URL = "https://papago.apigw.ntruss.com/nmt/v1/translation";
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -37,8 +41,8 @@ public class PapagoController {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            headers.set("X-NCP-APIGW-API-KEY-ID", CLIENT_ID);
-            headers.set("X-NCP-APIGW-API-KEY",    CLIENT_SECRET);
+            headers.set("X-NCP-APIGW-API-KEY-ID", clientId);
+            headers.set("X-NCP-APIGW-API-KEY",    clientSecret);
 
             String reqBody = "source=" + source + "&target=" + target
                     + "&text=" + java.net.URLEncoder.encode(text, java.nio.charset.StandardCharsets.UTF_8);
