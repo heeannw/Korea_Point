@@ -6,6 +6,7 @@ import com.example.demo.common.tourapi.TourApiQuery;
 import com.example.demo.common.tourapi.TourItem;
 import com.example.demo.home.dto.PlaceCardDto;
 import com.example.demo.tourism.config.TourCategoryNames;
+import com.example.demo.tourism.config.TourPlaceI18n;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -30,17 +31,21 @@ public class HomeFoodService {
     /** 한식 중분류 — 소분류가 음식 종류가 아니라 인증 구분이라 따로 다룬다 */
     private static final String KOREAN_FOOD_GROUP = "FD01";
 
+    /** 관광타입 39 = 음식점(카페 포함). 국문 서비스만 쓰므로 국문 코드로 고정한다. */
+    private static final String RESTAURANT = "39";
+
     /** 절반씩 뽑으려면 후보를 넉넉히 받아야 한다 */
     private static final int FETCH_SIZE = 100;
 
     private final TourApiClient tourApiClient;
     private final TourCategoryNames categoryNames;
+    private final TourPlaceI18n placeI18n;
 
     public List<PlaceCardDto> getFoodPlaces(String lang, int limit) {
         List<TourItem> items = tourApiClient.areaBasedList(
                 TourApiQuery.of()
-                        .lang(lang)
-                        .contentTypeId(TourApiLang.contentTypeId(lang, TourApiLang.RESTAURANT))
+                        .lang(TourApiLang.KO)
+                        .contentTypeId(RESTAURANT)
                         .numOfRows(FETCH_SIZE)
                         .build()
                         .withImageOnly());
@@ -81,8 +86,8 @@ public class HomeFoodService {
     private PlaceCardDto toDto(TourItem item, String lang) {
         return PlaceCardDto.builder()
                 .contentId(item.getContentId())
-                .title(item.getTitle())
-                .address(item.getAddress())
+                .title(placeI18n.translateTitle(lang, item.getContentId(), item.getTitle()))
+                .address(placeI18n.translateAddress(lang, item.getContentId(), item.getAddress()))
                 .category(categoryLabel(item, lang))
                 .imageUrl(toHttps(item.getImageUrl()))
                 .imageModifiable(item.isImageModifiable())
@@ -96,10 +101,6 @@ public class HomeFoodService {
      * 그 표가 한국어뿐이라 다른 언어에서는 카페인지 아닌지만 구분해 준다.
      */
     private String categoryLabel(TourItem item, String lang) {
-        if (!TourApiLang.KO.equals(lang)) {
-            return isCafe(item) ? "Cafe" : "Restaurant";
-        }
-
         String small = item.getLclsSystm3();
         String medium = item.getLclsSystm2();
 
@@ -108,7 +109,7 @@ public class HomeFoodService {
         if (medium != null && medium.startsWith(KOREAN_FOOD_GROUP)) {
             small = null;
         }
-        return categoryNames.resolve(small, medium, item.getLclsSystm1());
+        return categoryNames.resolve(lang, small, medium, item.getLclsSystm1());
     }
 
     /** 관광공사 이미지 주소는 http/https가 섞여 온다. https 사이트에서 막히지 않게 맞춘다. */

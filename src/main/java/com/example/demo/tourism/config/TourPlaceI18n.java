@@ -90,4 +90,10 @@ public class TourPlaceI18n {
         Entry e = lookup(lang, contentId);
         return (e != null && e.title() != null && !e.title().isBlank()) ? e.title() : koreanTitle;
     }
+
+    /** 주소만 필요한 경우(홈 카드 등). 번역이 없으면 국문을 돌려준다. */
+    public String translateAddress(String lang, String contentId, String koreanAddress) {
+        Entry e = lookup(lang, contentId);
+        return (e != null && e.addr() != null && !e.addr().isBlank()) ? e.addr() : koreanAddress;
+    }
 }

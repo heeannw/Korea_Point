@@ -5,6 +5,7 @@ import com.example.demo.common.tourapi.TourApiLang;
 import com.example.demo.common.tourapi.TourApiQuery;
 import com.example.demo.common.tourapi.TourItem;
 import com.example.demo.home.dto.PlaceCardDto;
+import com.example.demo.tourism.config.TourPlaceI18n;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,21 +25,24 @@ import java.util.List;
 @RequiredArgsConstructor
 public class HomePlaceService {
 
+    /** 관광타입 12 = 관광지. 국문 서비스만 쓰므로 국문 코드로 고정한다. */
+    private static final String TOURIST_SPOT = "12";
+
     private final TourApiClient tourApiClient;
+    private final TourPlaceI18n placeI18n;
 
     public List<PlaceCardDto> getRecommendedPlaces(String lang, int limit) {
         List<TourItem> items = tourApiClient.areaBasedList(
                 TourApiQuery.of()
-                        .lang(lang)
-                        // 관광타입 코드는 언어마다 다르다 (국문 12, 다국어 76)
-                        .contentTypeId(TourApiLang.contentTypeId(lang, TourApiLang.TOURIST_SPOT))
+                        .lang(TourApiLang.KO)
+                        .contentTypeId(TOURIST_SPOT)
                         .numOfRows(limit * 2)   // 사진 없는 항목이 섞여 와도 채울 수 있게
                         .build()
                         .withImageOnly());
 
         return items.stream()
                 .filter(TourItem::hasImage)
-                .map(this::toDto)
+                .map(item -> toDto(item, lang))
                 .limit(limit)
                 .toList();
     }
@@ -53,8 +57,8 @@ public class HomePlaceService {
     public List<PlaceCardDto> getHeroImages(String lang, int limit) {
         List<TourItem> items = tourApiClient.areaBasedList(
                 TourApiQuery.of()
-                        .lang(lang)
-                        .contentTypeId(TourApiLang.contentTypeId(lang, TourApiLang.TOURIST_SPOT))
+                        .lang(TourApiLang.KO)
+                        .contentTypeId(TOURIST_SPOT)
                         .numOfRows(100)      // 변경 허용 사진이 3건 중 1건꼴이라 넉넉히 받는다
                         .build()
                         .withImageOnly());
@@ -62,16 +66,16 @@ public class HomePlaceService {
         return items.stream()
                 .filter(TourItem::hasImage)
                 .filter(TourItem::isImageModifiable)
-                .map(this::toDto)
+                .map(item -> toDto(item, lang))
                 .limit(limit)
                 .toList();
     }
 
-    private PlaceCardDto toDto(TourItem item) {
+    private PlaceCardDto toDto(TourItem item, String lang) {
         return PlaceCardDto.builder()
                 .contentId(item.getContentId())
-                .title(item.getTitle())
-                .address(item.getAddress())
+                .title(placeI18n.translateTitle(lang, item.getContentId(), item.getTitle()))
+                .address(placeI18n.translateAddress(lang, item.getContentId(), item.getAddress()))
                 .imageUrl(toHttps(item.getImageUrl()))
                 .imageModifiable(item.isImageModifiable())
                 .build();
