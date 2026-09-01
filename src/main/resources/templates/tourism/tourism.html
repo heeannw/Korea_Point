@@ -1118,6 +1118,8 @@
             : `<span style="color:#bbb;font-size:11px">${escapeDetail(I18N.detail.noRating)}</span>`;
     document.getElementById('dpInfoRow').innerHTML = '';   // 주소는 이름 밑에 있으므로 정보 탭엔 운영정보만
     document.getElementById('dpDesc').textContent = I18N.detail.preparing;
+    // 리뷰는 현재 데이터 소스가 없어 항상 빈 배열 → 있을 때만 탭 노출
+    document.querySelector('.dp-tab[data-tab="reviews"]').hidden = !(Array.isArray(p.reviews) && p.reviews.length);
     renderReviews(p);
     loadCommunityPosts(p);
     updateSaveButton(p);
