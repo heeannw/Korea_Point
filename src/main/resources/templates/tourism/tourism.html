@@ -84,7 +84,7 @@
     .place-list::-webkit-scrollbar{width:4px}
     .place-list::-webkit-scrollbar-track{background:transparent}
     .place-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-    .place-card{position:relative;display:flex;gap:12px;padding:12px;border-radius:var(--r);cursor:pointer;transition:background .15s, box-shadow .15s;margin-bottom:4px;border:1.5px solid transparent}
+    .place-card{position:relative;display:flex;gap:12px;padding:12px;border-radius:var(--r);cursor:pointer;transition:background .15s, box-shadow .15s;margin-bottom:4px;border:1.5px solid transparent;content-visibility:auto;contain-intrinsic-size:0 98px}
     .card-save{position:absolute;top:8px;right:8px;width:28px;height:28px;border:none;border-radius:50%;background:rgba(255,255,255,.92);color:#cbd5e1;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.14);z-index:2;transition:color .15s,transform .1s}
     .card-save:hover{color:#ef4444;transform:scale(1.1)}
     .card-save.saved{color:#ef4444}
