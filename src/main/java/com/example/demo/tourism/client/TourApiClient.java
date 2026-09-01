@@ -105,6 +105,8 @@ public class TourApiClient {
 
             List<TourPlaceDto> places = new ArrayList<>(requestAllPages(uri, lang));
             places.removeIf(this::isFestival);
+            // 여행코스는 부산에 1건뿐이라 화면에서 뺐다. 좌표 보정용 경유지 조회(건당 detailCommon2 여러 번)도 생략.
+            places.removeIf(p -> COURSE_CONTENT_TYPE.equals(p.getType()));
             places.addAll(findCurrentBusanFestivals(lang));
             return withResolvedCoordinates(places, lang);
         });
@@ -139,7 +141,6 @@ public class TourApiClient {
      */
     private List<TourPlaceDto> withResolvedCoordinates(List<TourPlaceDto> places, String lang) {
         List<TourPlaceDto> resolved = new ArrayList<>(places);
-        attachCourseWaypoints(resolved, lang);
         resolved.removeIf(place -> place.getLat() == null || place.getLng() == null);
         return resolved;
     }
