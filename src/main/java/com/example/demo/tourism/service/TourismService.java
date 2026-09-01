@@ -6,11 +6,13 @@ import com.example.demo.tourism.dto.FoodPopularityDto;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.example.demo.tourism.dto.TourPopularityDto;
 import com.example.demo.tourism.dto.TourReviewDto;
+import com.example.demo.tourism.repository.PlaceReviewRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,15 +41,37 @@ public class TourismService {
     private final TourPopularityProvider popularityProvider;
     private final FoodPopularityProvider foodPopularityProvider;
     private final DeeplTranslator deepl;
+    private final PlaceReviewRepository placeReviewRepository;
     /** 상세 개요는 KorService2에서 국문만 온다. 요청 언어로 한 번 번역하면 재사용한다. key = contentId|lang */
     private final Map<String, String> overviewCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     public TourismService(TourApiClient tourApiClient, TourPopularityProvider popularityProvider,
-                          FoodPopularityProvider foodPopularityProvider, DeeplTranslator deepl) {
+                          FoodPopularityProvider foodPopularityProvider, DeeplTranslator deepl,
+                          PlaceReviewRepository placeReviewRepository) {
         this.tourApiClient = tourApiClient;
         this.popularityProvider = popularityProvider;
         this.foodPopularityProvider = foodPopularityProvider;
         this.deepl = deepl;
+        this.placeReviewRepository = placeReviewRepository;
+    }
+
+    /**
+     * 우리 사용자 리뷰의 평균 별점·개수를 목록에 얹는다.
+     * place_review 전체 GROUP BY 한 방. 표가 작아 캐시 없이 매 요청 조회한다.
+     * ponytail: place_review가 수만 건 규모로 커지면 짧은 TTL 캐시를 붙일 것.
+     */
+    private void applyUserRatings(List<TourPlaceDto> places) {
+        Map<String, Object[]> byId = new HashMap<>();
+        for (Object[] row : placeReviewRepository.aggregateRatingByContent()) {
+            byId.put((String) row[0], row);
+        }
+        if (byId.isEmpty()) return;
+        for (TourPlaceDto place : places) {
+            Object[] row = byId.get(place.getId());
+            if (row == null) continue;
+            place.setUserRating(Math.round(((Number) row[1]).doubleValue() * 10) / 10.0);
+            place.setUserReviewCount(((Number) row[2]).intValue());
+        }
     }
 
     /**
@@ -75,6 +99,7 @@ public class TourismService {
                 .filter(this::isTourContent)
                 .collect(Collectors.toCollection(ArrayList::new));
         applyPopularity(places, lang);
+        applyUserRatings(places);
         scoreAndSort(places);
         return places;
     }
@@ -96,6 +121,7 @@ public class TourismService {
         // TourAPI 부산 응답에 실제 항목이 없는 주점 분류는 음식점 화면에서 제외한다.
         if (!cafeOnly) places.removeIf(place -> "bar".equals(place.getFoodCategory()));
         applyFoodPopularity(places, lang, cafeOnly, DEFAULT_POPULAR_LIMIT);
+        applyUserRatings(places);
         scoreAndSort(places);
         return places;
     }

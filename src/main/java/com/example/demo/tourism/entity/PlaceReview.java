@@ -59,9 +59,8 @@ public class PlaceReview {
 
     @PrePersist
     void prePersist() {
-        LocalDateTime now = LocalDateTime.now();
-        if (createdAt == null) createdAt = now;
-        updatedAt = now;
+        if (createdAt == null) createdAt = LocalDateTime.now();
+        updatedAt = createdAt;   // 최초 저장 시엔 동일 → 이후 수정돼야 updatedAt > createdAt
     }
 
     @PreUpdate

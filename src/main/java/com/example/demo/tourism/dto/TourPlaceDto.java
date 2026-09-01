@@ -41,6 +41,11 @@ public class TourPlaceDto {
     private String google_addr;
     private Double rating;
     private int    user_ratings_total;
+
+    /** place_review 집계 (우리 사용자 리뷰). 리뷰 없으면 null / 0. */
+    private Double userRating;
+    private int    userReviewCount;
+
     private List<TourReviewDto> reviews;
 
     /** 여행코스일 때만 채워지는 경유지 목록이다. 다른 유형에서는 비어 있다. */
@@ -85,6 +90,7 @@ public class TourPlaceDto {
         this.lat = s.lat; this.lng = s.lng; this.image = s.image;
         this.google_place_id = s.google_place_id; this.google_name = s.google_name; this.google_addr = s.google_addr;
         this.rating = s.rating; this.user_ratings_total = s.user_ratings_total;
+        this.userRating = s.userRating; this.userReviewCount = s.userReviewCount;
         this.reviews = s.reviews; this.coursePoints = s.coursePoints;
         this.foodCategory = s.foodCategory; this.typeName = s.typeName; this.typeDetailName = s.typeDetailName;
         this.popularRank = s.popularRank; this.popularCategory = s.popularCategory;
@@ -129,6 +135,12 @@ public class TourPlaceDto {
 
     public int getUser_ratings_total() { return user_ratings_total; }
     public void setUser_ratings_total(int user_ratings_total) { this.user_ratings_total = user_ratings_total; }
+
+    public Double getUserRating() { return userRating; }
+    public void setUserRating(Double userRating) { this.userRating = userRating; }
+
+    public int getUserReviewCount() { return userReviewCount; }
+    public void setUserReviewCount(int userReviewCount) { this.userReviewCount = userReviewCount; }
 
     public List<TourReviewDto> getReviews() { return reviews; }
     public void setReviews(List<TourReviewDto> reviews) { this.reviews = reviews; }
