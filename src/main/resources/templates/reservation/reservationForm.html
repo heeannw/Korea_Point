@@ -1,22 +1,23 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" th:lang="${lang}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>예약 정보 입력 | KoreaPoint</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <title th:text="#{reservation.form.pageTitle} + ' | KoreaPoint'">예약 정보 입력 | KoreaPoint</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
 </head>
 <body>
 <header>
     <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
     <div class="header-right">
-        <select class="h-btn" id="languageSelect" translate="no" onchange="changeTripLanguage(this.value)" aria-label="언어 선택">
-            <option value="ko">한국어</option>
-            <option value="en">English</option>
-            <option value="ja">日本語</option>
-            <option value="zh-CN">中文</option>
+        <select class="h-btn" id="languageSelect" translate="no" onchange="switchReservationLanguage(this.value)" aria-label="언어 선택">
+            <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
+            <option value="en" th:selected="${lang == 'en'}">English</option>
+            <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
+            <option value="zh-CN" th:selected="${lang == 'zh-CN'}">中文</option>
+            <option value="fr" th:selected="${lang == 'fr'}">Français</option>
         </select>
         <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}">User</a>
     </div>
@@ -26,17 +27,24 @@
     <section class="page-head">
         <div>
             <p class="eyebrow">Reservation</p>
-            <h1>예약 정보 입력</h1>
-            <p class="sub">방문 날짜와 시간, 인원을 선택해주세요.</p>
+            <h1 th:text="#{reservation.form.pageTitle}">예약 정보 입력</h1>
+            <p class="sub" th:text="#{reservation.form.subtitle}">방문 날짜와 시간, 인원을 선택해주세요.</p>
         </div>
-        <a class="btn secondary" th:href="@{/ko/reservation}">목록으로</a>
+        <a class="btn secondary" th:href="@{/ko/reservation(lang=${lang})}" th:text="#{reservation.form.back}">목록으로</a>
     </section>
 
     <section class="panel" style="margin-bottom: 18px;">
         <h2 class="place-title" th:text="${place != null ? place.title : reservationForm.placeTitle}">관광지명</h2>
-        <p class="meta" th:text="${place != null ? place.displayAddress : '상세 주소 정보가 없습니다.'}">주소</p>
-        <p class="meta" th:if="${place != null && place.displayTel != null && !place.displayTel.isBlank()}" th:text="${place.displayTel}">전화번호</p>
+        <p class="meta" th:text="${place != null && place.address != null && !place.address.isBlank() ? place.address : #messages.msg('reservation.list.noAddress')}">주소</p>
+        <p class="meta" th:text="${place != null && place.tel != null && !place.tel.isBlank() ? place.tel : #messages.msg('reservation.list.noTel')}">전화번호</p>
         <p class="meta" th:if="${place != null && place.overview != null && !place.overview.isBlank()}" th:text="${place.overview}">설명</p>
+        <dl class="reservation-operating-info"
+            th:if="${place != null && place.operatingInformation != null && !place.operatingInformation.isEmpty()}">
+            <div th:each="detail : ${place.operatingInformation}">
+                <dt th:text="${detail.key}">운영 정보</dt>
+                <dd th:text="${detail.value}">내용</dd>
+            </div>
+        </dl>
     </section>
 
     <form class="panel" th:action="@{/ko/reservation/complete}" th:object="${reservationForm}" method="post">
@@ -44,16 +52,22 @@
         <input type="hidden" th:field="*{contentId}">
         <input type="hidden" th:field="*{contentTypeId}">
         <input type="hidden" th:field="*{placeTitle}">
+        <input type="hidden" th:field="*{lang}">
 
         <div class="form-grid">
             <label class="field">
-                <span class="label">예약 날짜</span>
-                <input class="input" type="date" th:field="*{reservationDate}" th:min="${today}">
+                <span class="label" th:text="#{reservation.form.date}">예약 날짜</span>
+                <div class="reservation-date-picker" id="reservationDatePicker">
+                    <input class="input" type="text" th:field="*{reservationDate}"
+                           th:placeholder="#{reservation.form.datePlaceholder}" data-input autocomplete="off">
+                    <button class="calendar-toggle" type="button" data-toggle
+                            th:aria-label="#{reservation.form.openCalendar}">📅</button>
+                </div>
                 <span class="error" th:errors="*{reservationDate}"></span>
             </label>
 
             <label class="field">
-                <span class="label">예약 시간</span>
+                <span class="label" th:text="#{reservation.form.time}">예약 시간</span>
                 <select class="select" th:field="*{reservationTime}">
                     <option value="10:00">10:00</option>
                     <option value="11:00">11:00</option>
@@ -66,40 +80,66 @@
             </label>
 
             <label class="field">
-                <span class="label">인원</span>
+                <span class="label" th:text="#{reservation.form.people}">인원</span>
                 <input class="input" type="number" min="1" max="10" th:field="*{peopleCount}">
                 <span class="error" th:errors="*{peopleCount}"></span>
             </label>
 
             <label class="field full">
-                <span class="label">요청 메모</span>
-                <textarea class="textarea" th:field="*{memo}" placeholder="필요한 요청사항을 입력하세요"></textarea>
+                <span class="label" th:text="#{reservation.form.memo}">요청 메모</span>
+                <textarea class="textarea" th:field="*{memo}" th:placeholder="#{reservation.form.memoPlaceholder}"></textarea>
             </label>
         </div>
 
         <div class="deposit-preview">
             <div>
-                <strong>결제할 예약금</strong>
-                <p>전체 이용금액이 아닌 노쇼 방지용 예약금입니다. 현장 이용금액은 별도입니다.</p>
+                <strong th:text="#{reservation.form.deposit}">결제할 예약금</strong>
+                <p th:text="#{reservation.form.depositGuide}">전체 이용금액이 아닌 노쇼 방지용 예약금입니다. 현장 이용금액은 별도입니다.</p>
             </div>
             <strong id="depositAmount">5,000원</strong>
         </div>
 
         <div class="card-actions">
-            <button class="btn" type="submit">예약금 결제로 이동</button>
-            <a class="btn secondary" th:href="@{/ko/reservation}">취소</a>
+            <button class="btn" type="submit" th:text="#{reservation.form.submit}">예약금 결제로 이동</button>
+            <a class="btn secondary" th:href="@{/ko/reservation(lang=${lang})}" th:text="#{reservation.form.cancel}">취소</a>
         </div>
     </form>
 </main>
-<script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ja.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/zh.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"></script>
+<script th:inline="javascript">
+    const PAGE_LOCALE = /*[[${lang}]]*/ "ko";
+    const depositPattern = /*[[#{reservation.form.won('{0}')}]]*/ "{0}원";
+    const minReservationDate = /*[[${today}]]*/ "2026-01-01";
+    const calendarLocales = {ko: "ko", ja: "ja", "zh-CN": "zh", fr: "fr", en: "default"};
+    const calendarFormats = {ko: "Y년 m월 d일", ja: "Y年m月d日", "zh-CN": "Y年m月d日", fr: "d/m/Y", en: "Y-m-d"};
+    if (window.flatpickr) {
+        flatpickr("#reservationDatePicker", {
+            wrap: true,
+            locale: calendarLocales[PAGE_LOCALE] || "default",
+            minDate: minReservationDate,
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: calendarFormats[PAGE_LOCALE] || "Y-m-d",
+            disableMobile: true
+        });
+    }
     const peopleInput = document.querySelector('[name="peopleCount"]');
     const depositAmount = document.getElementById('depositAmount');
     function updateDeposit() {
         const people = Math.max(1, Number(peopleInput.value) || 1);
-        depositAmount.textContent = new Intl.NumberFormat('ko-KR').format(people * 5000) + '원';
+        depositAmount.textContent = depositPattern.replace('{0}', new Intl.NumberFormat(PAGE_LOCALE).format(people * 5000));
     }
     peopleInput.addEventListener('input', updateDeposit);
     updateDeposit();
+    function switchReservationLanguage(lang) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('lang', lang);
+        window.location.href = url.toString();
+    }
 </script>
 </body>
 </html>

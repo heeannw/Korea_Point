@@ -35,6 +35,7 @@ public class ReservationService {
                 .contentId(form.getContentId())
                 .contentTypeId(form.getContentTypeId())
                 .placeTitle(form.getPlaceTitle())
+                .language(form.getLang())
                 .reservationDate(form.getReservationDate())
                 .reservationTime(form.getReservationTime())
                 .peopleCount(form.getPeopleCount())

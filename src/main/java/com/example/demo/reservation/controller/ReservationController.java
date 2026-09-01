@@ -54,9 +54,12 @@ public class ReservationController {
 
     @GetMapping("/ko/reservation")
     public String reservationHome(Model model,
-                                  @RequestParam(required = false) String keyword) {
+                                  @RequestParam(required = false) String keyword,
+                                  @RequestParam(defaultValue = "ko") String lang) {
+        lang = normalizeReservationLang(lang);
         addSessionModel(model);
         model.addAttribute("keyword", keyword == null ? "" : keyword);
+        model.addAttribute("lang", lang);
         model.addAttribute("hasTourApiKey", tourApiReservationService.hasServiceKey());
         addLatestReservationModel(model);
         return "reservation/reservation";
@@ -66,9 +69,12 @@ public class ReservationController {
     public String reservationForm(@RequestParam String contentId,
                                   @RequestParam(required = false) String contentTypeId,
                                   @RequestParam(required = false) String placeTitle,
+                                  @RequestParam(defaultValue = "ko") String lang,
                                   Model model) {
-        TourApiPlaceDto place = tourApiReservationService.findDetail(contentId, contentTypeId);
+        lang = normalizeReservationLang(lang);
+        TourApiPlaceDto place = tourApiReservationService.findDetail(contentId, contentTypeId, lang);
         ReservationFormDto form = new ReservationFormDto();
+        form.setLang(lang);
         form.setContentId(contentId);
         form.setContentTypeId(contentTypeId);
         form.setPlaceTitle(resolvePlaceTitle(place, placeTitle));
@@ -78,6 +84,7 @@ public class ReservationController {
         addSessionModel(model);
         model.addAttribute("place", place);
         model.addAttribute("reservationForm", form);
+        model.addAttribute("lang", lang);
         model.addAttribute("today", LocalDate.now());
         return "reservation/reservationForm";
     }
@@ -86,11 +93,14 @@ public class ReservationController {
     public String reservationComplete(@Valid @ModelAttribute("reservationForm") ReservationFormDto form,
                                       BindingResult bindingResult,
                                       Model model) {
-        TourApiPlaceDto place = tourApiReservationService.findDetail(form.getContentId(), form.getContentTypeId());
+        form.setLang(normalizeReservationLang(form.getLang()));
+        TourApiPlaceDto place = tourApiReservationService.findDetail(
+                form.getContentId(), form.getContentTypeId(), form.getLang());
         if (bindingResult.hasErrors()) {
             addSessionModel(model);
             model.addAttribute("place", place);
             model.addAttribute("today", LocalDate.now());
+            model.addAttribute("lang", form.getLang());
             return "reservation/reservationForm";
         }
 
@@ -112,6 +122,7 @@ public class ReservationController {
         model.addAttribute("payment", reservation.getPayment());
         model.addAttribute("paymentMethods", PaymentMethod.values());
         model.addAttribute("paymentRequest", new ReservationPaymentRequest());
+        model.addAttribute("lang", reservationLanguage(reservation));
         return "reservation/reservationPayment";
     }
 
@@ -126,6 +137,7 @@ public class ReservationController {
             model.addAttribute("reservation", reservation);
             model.addAttribute("payment", reservation.getPayment());
             model.addAttribute("paymentMethods", PaymentMethod.values());
+            model.addAttribute("lang", reservationLanguage(reservation));
             return "reservation/reservationPayment";
         }
 
@@ -144,13 +156,15 @@ public class ReservationController {
         if (reservation.getPayment() != null && reservation.getPayment().getStatus() != PaymentStatus.PAID) {
             return "redirect:/ko/mypage#reservations";
         }
-        TourApiPlaceDto place = tourApiReservationService.findDetail(reservation.getContentId(), reservation.getContentTypeId());
+        TourApiPlaceDto place = tourApiReservationService.findDetail(
+                reservation.getContentId(), reservation.getContentTypeId(), reservationLanguage(reservation));
 
         addSessionModel(model);
         model.addAttribute("place", place);
         model.addAttribute("reservation", reservation);
         model.addAttribute("reservationNo", reservation.getReservationNo());
         model.addAttribute("payment", reservation.getPayment());
+        model.addAttribute("lang", reservationLanguage(reservation));
         return "reservation/reservationComplete";
     }
 
@@ -219,7 +233,8 @@ public class ReservationController {
             model.addAttribute("reservationNo", latestReservation.getReservationNo());
             model.addAttribute("place", tourApiReservationService.findDetail(
                     latestReservation.getContentId(),
-                    latestReservation.getContentTypeId()
+                    latestReservation.getContentTypeId(),
+                    reservationLanguage(latestReservation)
             ));
         }
         return "mypage/mypage";
@@ -252,16 +267,20 @@ public class ReservationController {
     @ResponseBody
     public ResponseEntity<List<TourApiPlaceDto>> places(@RequestParam(required = false) String keyword,
                                                         @RequestParam(required = false) String contentTypeId,
+                                                        @RequestParam(defaultValue = "ko") String lang,
                                                         @RequestParam(defaultValue = "1") int pageNo,
                                                         @RequestParam(defaultValue = "12") int numOfRows) {
-        return ResponseEntity.ok(tourApiReservationService.findPlaces(keyword, contentTypeId, pageNo, numOfRows));
+        return ResponseEntity.ok(tourApiReservationService.findPlaces(
+                keyword, contentTypeId, normalizeReservationLang(lang), pageNo, numOfRows));
     }
 
     @GetMapping("/api/tourapi/places/{contentId}")
     @ResponseBody
     public ResponseEntity<TourApiPlaceDto> place(@PathVariable String contentId,
-                                                 @RequestParam(required = false) String contentTypeId) {
-        TourApiPlaceDto place = tourApiReservationService.findDetail(contentId, contentTypeId);
+                                                 @RequestParam(required = false) String contentTypeId,
+                                                 @RequestParam(defaultValue = "ko") String lang) {
+        TourApiPlaceDto place = tourApiReservationService.findDetail(
+                contentId, contentTypeId, normalizeReservationLang(lang));
         return place == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(place);
     }
 
@@ -285,7 +304,8 @@ public class ReservationController {
             model.addAttribute("reservationNo", latestReservation.getReservationNo());
             model.addAttribute("place", tourApiReservationService.findDetail(
                     latestReservation.getContentId(),
-                    latestReservation.getContentTypeId()
+                    latestReservation.getContentTypeId(),
+                    reservationLanguage(latestReservation)
             ));
         }
     }
@@ -298,5 +318,21 @@ public class ReservationController {
             return fallbackTitle;
         }
         return "선택한 관광지";
+    }
+
+    private String reservationLanguage(TourReservation reservation) {
+        return normalizeReservationLang(reservation.getLanguage());
+    }
+
+    private String normalizeReservationLang(String lang) {
+        if (lang == null || lang.isBlank()) {
+            return "ko";
+        }
+        String normalized = lang.trim().toLowerCase().replace('_', '-');
+        if (normalized.startsWith("en")) return "en";
+        if (normalized.startsWith("ja") || normalized.startsWith("jp")) return "ja";
+        if (normalized.startsWith("zh")) return "zh-CN";
+        if (normalized.startsWith("fr")) return "fr";
+        return "ko";
     }
 }

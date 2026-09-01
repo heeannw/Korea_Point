@@ -3,6 +3,8 @@ package com.example.demo.reservation.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.Map;
+
 @Getter
 @Builder
 public class TourApiPlaceDto {
@@ -16,12 +18,6 @@ public class TourApiPlaceDto {
     private final String mapX;
     private final String mapY;
     private final String overview;
+    private final Map<String, String> operatingInformation;
 
-    public String getDisplayAddress() {
-        return address == null || address.isBlank() ? "주소 정보 없음" : address;
-    }
-
-    public String getDisplayTel() {
-        return tel == null || tel.isBlank() ? "전화번호 정보 없음" : tel;
-    }
 }

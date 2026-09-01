@@ -46,6 +46,10 @@ public class TourReservation {
     @Column(nullable = false, length = 200)
     private String placeTitle;
 
+    @Column(length = 10)
+    @Builder.Default
+    private String language = "ko";
+
     @Column(nullable = false)
     private LocalDate reservationDate;
 

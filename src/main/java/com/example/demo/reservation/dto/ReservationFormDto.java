@@ -15,6 +15,8 @@ import java.time.LocalDate;
 @Setter
 public class ReservationFormDto {
 
+    private String lang = "ko";
+
     @NotBlank
     private String contentId;
 

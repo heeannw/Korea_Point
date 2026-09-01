@@ -4,19 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>예약 완료 | KoreaPoint</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
 <body>
 <header>
     <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
     <div class="header-right">
-        <select class="h-btn" id="languageSelect" translate="no" onchange="changeTripLanguage(this.value)" aria-label="언어 선택">
-            <option value="ko">한국어</option>
-            <option value="en">English</option>
-            <option value="ja">日本語</option>
-            <option value="zh-CN">中文</option>
+        <select class="h-btn" id="languageSelect" translate="no" onchange="switchReservationLanguage(this.value)" aria-label="언어 선택">
+            <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
+            <option value="en" th:selected="${lang == 'en'}">English</option>
+            <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
+            <option value="zh-CN" th:selected="${lang == 'zh-CN'}">中文</option>
+            <option value="fr" th:selected="${lang == 'fr'}">Français</option>
         </select>
         <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}">User</a>
     </div>
@@ -89,5 +89,10 @@
         </div>
     </section>
 </main>
+<script>
+    function switchReservationLanguage(lang) {
+        window.location.href = `/ko/reservation?lang=${encodeURIComponent(lang)}`;
+    }
+</script>
 </body>
 </html>
