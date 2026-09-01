@@ -181,10 +181,15 @@
                     </div>
                     <span class="status-badge danger">주의</span>
                 </div>
+                <div th:if="${withdrawError}" class="notice error inline-notice" th:text="${withdrawError}">다시 확인해 주세요.</div>
                 <form class="settings-form danger-form" th:action="@{/ko/settings/withdraw}" method="post"
-                      onsubmit="return confirm('정말 계정을 탈퇴할까요? 탈퇴 후에도 같은 소셜 계정으로 다시 가입할 수 있어요.');">
+                      onsubmit="return confirm('정말 계정을 탈퇴할까요? 탈퇴 후 다시 가입할 수 있어요.');">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                    <p class="hint">
+                    <p th:if="${isLocalAccount}" class="hint">
+                        탈퇴하면 현재 계정은 비활성화되고 개인정보가 익명화돼요.
+                        같은 아이디와 이메일로 다시 가입할 수 있어요.
+                    </p>
+                    <p th:unless="${isLocalAccount}" class="hint">
                         탈퇴하면 현재 계정은 비활성화되고 개인정보와 소셜 로그인 연결이 해제돼요.
                         같은 Google, 네이버, 카카오 계정으로 다시 로그인하면 새 계정으로 가입할 수 있어요.
                     </p>

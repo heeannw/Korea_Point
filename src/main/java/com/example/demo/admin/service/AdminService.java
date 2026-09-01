@@ -560,8 +560,8 @@ public class AdminService {
 
     private String normalizeRoleValue(String role) {
         String normalized = normalizeRoleFilter(role);
-        if (!"USER".equals(normalized) && !"ADMIN".equals(normalized)) {
-            throw new AdminRequestException("입력값을 확인해 주세요.", Map.of("role", "USER 또는 ADMIN 중 하나를 선택해 주세요."));
+        if (!List.of("USER", "OWNER", "ADMIN").contains(normalized)) {
+            throw new AdminRequestException("입력값을 확인해 주세요.", Map.of("role", "USER, OWNER, ADMIN 중 하나를 선택해 주세요."));
         }
         return normalized;
     }

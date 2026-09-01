@@ -152,12 +152,12 @@ public class UserController {
                                   RedirectAttributes redirectAttributes) {
         try {
             userService.withdrawAccount(SecurityUtil.getCurrentUserId(), currentPassword, confirmationText);
+            redirectAttributes.addFlashAttribute("withdrawMessage", "계정 탈퇴가 완료됐어요. 언제든 다시 가입할 수 있어요.");
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             new SecurityContextLogoutHandler().logout(request, response, authentication);
-            redirectAttributes.addFlashAttribute("withdrawMessage", "계정 탈퇴가 완료됐어요. 언제든 다시 가입할 수 있어요.");
             return "redirect:/login";
         } catch (IllegalArgumentException ex) {
-            redirectAttributes.addFlashAttribute("settingsError", ex.getMessage());
+            redirectAttributes.addFlashAttribute("withdrawError", ex.getMessage());
             return "redirect:/ko/settings#danger";
         }
     }

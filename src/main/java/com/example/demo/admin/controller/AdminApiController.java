@@ -11,12 +11,17 @@ import com.example.demo.community.entity.ContentReportStatus;
 import com.example.demo.community.entity.ReportTargetType;
 import com.example.demo.user.entity.AccountStatus;
 import com.example.demo.user.entity.OwnerRequest;
+import com.example.demo.user.entity.OwnerRequestStatus;
 import com.example.demo.user.service.OwnerRequestService;
 import com.example.demo.user.util.SecurityUtil;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -32,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +90,25 @@ public class AdminApiController {
         return ownerRequestService.findPendingRequests().stream()
                 .map(this::toOwnerRequestItem)
                 .toList();
+    }
+
+    @GetMapping("/owner-applications")
+    public List<Map<String, Object>> ownerRequests(@RequestParam(defaultValue = "PENDING") OwnerRequestStatus status) {
+        return ownerRequestService.findRequestsByStatus(status).stream()
+                .map(this::toOwnerRequestItem)
+                .toList();
+    }
+
+    @GetMapping("/owner-applications/{id}/documents/{type}")
+    public ResponseEntity<Resource> ownerRequestDocument(@PathVariable Long id,
+                                                         @PathVariable String type) {
+        Path documentPath = ownerRequestService.findDocumentPath(id, type);
+        Resource resource = new FileSystemResource(documentPath);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + documentPath.getFileName() + "\"")
+                .body(resource);
     }
 
     @PostMapping("/owner-applications/{id}/approve")
@@ -239,12 +264,16 @@ public class AdminApiController {
         item.put("userId", request.getUser().getId());
         item.put("userName", request.getUser().getName());
         item.put("userEmail", request.getUser().getEmail());
+        item.put("userRole", request.getUser().getRole());
+        item.put("userPoint", request.getUser().getPoint());
         item.put("storeName", request.getStoreName());
         item.put("businessRegistrationNumber", request.getBusinessRegistrationNumber());
         item.put("businessRegistrationFilePath", request.getBusinessRegistrationFilePath());
         item.put("businessLicenseFilePath", request.getBusinessLicenseFilePath());
         item.put("menuFilePath", request.getMenuFilePath());
         item.put("status", request.getStatus().name());
+        item.put("reviewComment", request.getReviewComment());
+        item.put("reviewedAt", request.getReviewedAt());
         item.put("createdAt", request.getCreatedAt());
         return item;
     }

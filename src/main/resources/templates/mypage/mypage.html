@@ -60,7 +60,19 @@
     <div th:if="${ownerRequestMessage}" class="notice success" th:text="${ownerRequestMessage}">신청이 접수됐어요.</div>
     <div th:if="${ownerRequestError}" class="notice error" th:text="${ownerRequestError}">신청 정보를 확인해 주세요.</div>
 
-    <section class="stats">
+    <section th:if="${isOwner}" class="owner-quick">
+        <div>
+            <p class="eyebrow small">Business</p>
+            <h2>사업자 모드</h2>
+            <p th:if="${ownerStatus == 'APPROVED'}">가게 홍보와 사업자 활동을 먼저 관리하고, 기존 여행 활동은 필요할 때 펼쳐서 확인해요.</p>
+            <p th:unless="${ownerStatus == 'APPROVED'}">사업자 신청 상태를 확인하고, 기존 여행 활동은 필요할 때 펼쳐서 확인해요.</p>
+        </div>
+        <button type="button" class="btn secondary" id="personalActivityToggle"
+                aria-expanded="false"
+                onclick="togglePersonalActivity()">내 여행 활동 보기</button>
+    </section>
+
+    <section class="stats personal-activity-section" th:attr="hidden=${isOwner} ? 'hidden' : null">
         <a class="stat stat-link" href="#tripPlans">
             <span>내 여행 일정</span>
             <strong th:text="${tripPlanCount}">0</strong>
@@ -84,7 +96,7 @@
     </section>
 
     <section class="contents">
-        <article id="tripPlans" class="box wide">
+        <article id="tripPlans" class="box wide personal-activity-section" th:attr="hidden=${isOwner} ? 'hidden' : null">
             <div class="box-title">
                 <div>
                     <p class="eyebrow small">Trip Plan</p>
@@ -148,9 +160,12 @@
             </div>
             <div class="menu-list">
                 <a th:href="@{/community/post-list(mine=true)}" class="menu-btn">내가 쓴 글 보기</a>
-                <a href="#savedPlaces" class="menu-btn">내 저장 장소 보기</a>
-                <a href="#tripPlans" class="menu-btn">내 여행 일정 보기</a>
-                <a href="#reservations" class="menu-btn">예약 내역 보기</a>
+                <a th:unless="${isOwner}" href="#savedPlaces" class="menu-btn">내 저장 장소 보기</a>
+                <a th:unless="${isOwner}" href="#tripPlans" class="menu-btn">내 여행 일정 보기</a>
+                <a th:unless="${isOwner}" href="#reservations" class="menu-btn">예약 내역 보기</a>
+                <button th:if="${isOwner}" type="button" class="menu-btn" onclick="showPersonalActivitySection('savedPlaces')">내 저장 장소 보기</button>
+                <button th:if="${isOwner}" type="button" class="menu-btn" onclick="showPersonalActivitySection('tripPlans')">내 여행 일정 보기</button>
+                <button th:if="${isOwner}" type="button" class="menu-btn" onclick="showPersonalActivitySection('reservations')">예약 내역 보기</button>
                 <button th:unless="${isOwner}" type="button" class="menu-btn" onclick="openOwnerApplication()">사업자 전환 신청하기</button>
                 <form th:action="@{/logout}" method="post">
                     <button type="submit" class="menu-btn logout">로그아웃</button>
@@ -158,7 +173,7 @@
             </div>
         </article>
 
-        <article id="reservations" class="box wide">
+        <article id="reservations" class="box wide personal-activity-section" th:attr="hidden=${isOwner} ? 'hidden' : null">
             <div class="box-title">
                 <div>
                     <p class="eyebrow small">Reservation</p>
@@ -174,11 +189,16 @@
                         <p class="reservation-no" th:text="${reservation.reservationNo}">KP-00000000-0000</p>
                         <h3 th:text="${reservation.placeTitle}">관광지명</h3>
                         <p th:text="|${reservation.reservationDate} · ${reservation.reservationTime} · ${reservation.peopleCount}명|">2026-08-12 · 10:00 · 1명</p>
+                        <p class="payment-meta" th:if="${reservation.payment != null}"
+                           th:text="|예약금 ${#numbers.formatInteger(reservation.payment.amount, 3, 'COMMA')}원 · ${reservation.payment.status.label}|">예약금 5,000원 · 결제 대기</p>
                     </div>
                     <div class="reservation-side">
                         <span class="status-badge"
                               th:classappend="${reservation.status == '예약 취소'} ? ' muted' : ''"
                               th:text="${reservation.status}">예약 완료</span>
+                        <a class="mini-btn primary"
+                           th:if="${reservation.payment != null and (reservation.payment.status.name() == 'READY' or reservation.payment.status.name() == 'FAILED')}"
+                           th:href="@{|/ko/reservation/payment/${reservation.id}|}">예약금 결제</a>
                         <div class="kebab-wrap">
                             <button type="button" class="kebab-btn" onclick="toggleActionMenu(this, event)" aria-label="예약 메뉴">⋯</button>
                             <div class="action-menu" hidden>
@@ -210,7 +230,7 @@
             </div>
         </article>
 
-        <article id="savedPlaces" class="box wide">
+        <article id="savedPlaces" class="box wide personal-activity-section" th:attr="hidden=${isOwner} ? 'hidden' : null">
             <div class="box-title">
                 <div>
                     <p class="eyebrow small">Saved Places</p>
@@ -232,18 +252,44 @@
             </div>
         </article>
 
-        <article class="box wide" th:if="${isOwner}">
+        <article class="box wide business-box" th:if="${isOwner}">
             <div class="box-title">
                 <div>
                     <p class="eyebrow small">Business</p>
                     <h2>사업자 관리</h2>
                 </div>
             </div>
-            <div class="owner-box">
-                <span class="owner-mark"
-                      th:text="${ownerStatus == 'APPROVED'} ? '인증 사업자' : '사업자 검토중'">사업자 검토중</span>
-                <p>입점 서류와 메뉴 정보를 검토 중이에요. 승인 후 가게 정보를 관리할 수 있어요.</p>
-                <a class="btn secondary full" th:href="@{/ko/mypage}">입점 정보 확인</a>
+            <div class="owner-box" th:if="${ownerStatus == 'APPROVED'}">
+                <div class="business-summary">
+                    <div>
+                        <span class="owner-mark">인증 사업자</span>
+                        <h3>사업자 활동 관리</h3>
+                        <p>홍보글 작성과 포인트 사용 현황을 이곳에서 빠르게 확인해요.</p>
+                    </div>
+                    <div class="business-point">
+                        <span>홍보 포인트</span>
+                        <strong th:text="|${user.point}P|">1000P</strong>
+                    </div>
+                </div>
+                <div class="business-stats">
+                    <a class="business-stat" th:href="@{/community/post-list(mine=true, categoryId=${promoCategoryId})}">
+                        <span>내 홍보글</span>
+                        <strong th:text="${promoPostCount}">0</strong>
+                    </a>
+                    <a class="business-stat" th:href="@{/community/post-list(mine=true)}">
+                        <span>전체 작성글</span>
+                        <strong th:text="${postCount}">0</strong>
+                    </a>
+                </div>
+                <div class="business-actions">
+                    <a class="btn" th:href="@{/community/post/write}">홍보글 작성하기</a>
+                    <a class="btn secondary" th:href="@{/community/post-list(mine=true, categoryId=${promoCategoryId})}">내 홍보글 보기</a>
+                </div>
+            </div>
+            <div class="owner-box" th:unless="${ownerStatus == 'APPROVED'}">
+                <span class="owner-mark">사업자 검토중</span>
+                <p>입점 서류와 메뉴 정보를 검토 중이에요. 승인되면 홍보글 작성과 사업자 관리 기능을 사용할 수 있어요.</p>
+                <button type="button" class="btn secondary full" onclick="openOwnerApplication()">신청 상태 확인</button>
             </div>
         </article>
     </section>
@@ -382,11 +428,16 @@
                     <p class="reservation-no" th:text="${reservation.reservationNo}">KP-00000000-0000</p>
                     <h3 th:text="${reservation.placeTitle}">관광지명</h3>
                     <p th:text="|${reservation.reservationDate} · ${reservation.reservationTime} · ${reservation.peopleCount}명|">2026-08-12 · 10:00 · 1명</p>
+                    <p class="payment-meta" th:if="${reservation.payment != null}"
+                       th:text="|예약금 ${#numbers.formatInteger(reservation.payment.amount, 3, 'COMMA')}원 · ${reservation.payment.status.label}|">예약금 5,000원 · 결제 대기</p>
                 </div>
                 <div class="reservation-side">
                     <span class="status-badge"
                           th:classappend="${reservation.status == '예약 취소'} ? ' muted' : ''"
                           th:text="${reservation.status}">예약 완료</span>
+                    <a class="mini-btn primary"
+                       th:if="${reservation.payment != null and (reservation.payment.status.name() == 'READY' or reservation.payment.status.name() == 'FAILED')}"
+                       th:href="@{|/ko/reservation/payment/${reservation.id}|}">예약금 결제</a>
                     <div class="kebab-wrap" th:unless="${reservation.status == '예약 취소'}">
                         <button type="button" class="kebab-btn" onclick="toggleActionMenu(this, event)" aria-label="예약 메뉴">⋯</button>
                         <div class="action-menu" hidden>
@@ -461,6 +512,8 @@
 <script th:inline="javascript">
     const currentUserId = /*[[${currentUserId}]]*/ null;
     const savedPlacesKey = currentUserId ? `tourSavedPlaces:${currentUserId}` : 'tourSavedPlaces:guest';
+    const legacySavedPlaceKeys = ['tourSavedPlaces', 'tourSavedPlaces:guest', 'tourSavedPlaces:null', 'tourSavedPlaces:undefined']
+        .filter(key => key !== savedPlacesKey);
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
     const jsonHeaders = {'Content-Type': 'application/json'};
@@ -582,6 +635,29 @@
     function closeOwnerApplication() {
         const modal = document.getElementById('ownerApplicationModal');
         if (modal) modal.hidden = true;
+    }
+
+    function setPersonalActivityVisible(isVisible) {
+        document.querySelectorAll('.personal-activity-section').forEach(section => {
+            section.hidden = !isVisible;
+        });
+        const toggle = document.getElementById('personalActivityToggle');
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', String(isVisible));
+            toggle.textContent = isVisible ? '내 여행 활동 접기' : '내 여행 활동 보기';
+        }
+    }
+
+    function togglePersonalActivity() {
+        const firstSection = document.querySelector('.personal-activity-section');
+        setPersonalActivityVisible(Boolean(firstSection?.hidden));
+    }
+
+    function showPersonalActivitySection(sectionId) {
+        setPersonalActivityVisible(true);
+        requestAnimationFrame(() => {
+            document.getElementById(sectionId)?.scrollIntoView({behavior: 'smooth', block: 'start'});
+        });
     }
 
     function closeAllActionMenus() {
@@ -775,6 +851,32 @@
         }
     }
 
+    function migrateLegacySavedPlaces() {
+        const current = readSavedPlaces(savedPlacesKey);
+        const merged = [...current];
+        const seen = new Set(current.map(place => String(place.id)));
+        let migrated = false;
+
+        legacySavedPlaceKeys.forEach(key => {
+            const places = readSavedPlaces(key);
+            places.forEach(place => {
+                const id = String(place.id);
+                if (!seen.has(id)) {
+                    seen.add(id);
+                    merged.push(place);
+                    migrated = true;
+                }
+            });
+            if (places.length > 0) {
+                localStorage.removeItem(key);
+            }
+        });
+
+        if (migrated) {
+            localStorage.setItem(savedPlacesKey, JSON.stringify(merged));
+        }
+    }
+
     async function fillLegacyTourPlace(place) {
         if (place.title && !/^저장한 관광지/.test(place.title)) return place;
         try {
@@ -793,6 +895,7 @@
     }
 
     async function buildSavedPlaceItems() {
+        migrateLegacySavedPlaces();
         const tourPlaces = readSavedPlaces(savedPlacesKey);
         const items = await Promise.all(tourPlaces.map(async (place, index) => {
             const filled = await fillLegacyTourPlace(place);
