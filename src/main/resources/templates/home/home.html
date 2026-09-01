@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Korea Point | Discover Korea</title>
+    <title>Korea Point | Discover Busan</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Cormorant+Garamond:wght@600;700&family=Sora:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!--
         home.html map
@@ -200,7 +200,7 @@
             animation: fadeUp 0.7s 0.2s ease forwards;
         }
 
-        /* Use a clearer sans-serif title so "Discover Korea" reads quickly on first view. */
+        /* Use a clearer sans-serif title so "Discover Busan" reads quickly on first view. */
         .hero-title {
             max-width: 620px;
             font-family: "Sora", "Noto Sans KR", sans-serif;
@@ -474,6 +474,64 @@
 
 
         /* ── 지금 부산에서: 축제 카드 ──────────────────────────────── */
+
+        /* ── 축제 캐러셀 ─────────────────────────────────────────────
+           카드 수가 많아 한 줄에 다 담기지 않는다. 가로로 넘겨 보게 하되
+           스크롤·스와이프를 그대로 쓰고(모바일에서 자연스럽다), 마우스만 쓰는
+           환경을 위해 화살표를 얹는다. 넘길 게 없으면 화살표는 숨는다. */
+        .festival-rail {
+            position: relative;
+        }
+
+        .festival-track {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+            padding-bottom: 4px;
+        }
+
+        .festival-track::-webkit-scrollbar {
+            display: none;
+        }
+
+        .festival-track .festival-card {
+            flex: 0 0 262px;
+            scroll-snap-align: start;
+        }
+
+        .rail-arrow {
+            position: absolute;
+            top: 95px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--white);
+            color: var(--dark);
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .rail-arrow.left  { left: -18px; }
+        .rail-arrow.right { right: -18px; }
+
+        .rail-arrow:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* 손가락으로 넘길 수 있는 환경에서는 화살표를 띄우지 않는다 */
+        @media (hover: hover) and (min-width: 900px) {
+            .rail-arrow.is-on { display: flex; }
+        }
+
         .festival-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -720,6 +778,29 @@
 
         .community-section .section-title {
             color: #ffffff;
+        }
+
+        .post-empty {
+            padding: 44px 20px;
+            text-align: center;
+            color: var(--gray);
+            font-size: 14px;
+            line-height: 1.7;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--white);
+        }
+
+        .post-empty-btn {
+            display: inline-block;
+            margin-top: 14px;
+            padding: 10px 20px;
+            border-radius: 50px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
         }
 
         .post-list {
@@ -1161,8 +1242,8 @@
     </button>
     <!-- Updated hero copy for stronger first-view readability. -->
     <div class="hero-content">
-        <p class="hero-eyebrow">THE KOREA TRAVEL GUIDE</p>
-        <h1 class="hero-title" th:text="${heroTitle}">Discover Korea</h1>
+        <p class="hero-eyebrow">THE BUSAN TRAVEL GUIDE</p>
+        <h1 class="hero-title" th:text="${heroTitle}">Discover Busan</h1>
         <p class="hero-sub" th:text="${heroDescription}">
             Curated guides to the best attractions, food, and local experiences.
         </p>
@@ -1250,7 +1331,12 @@
         <a class="see-all" th:href="@{/tour/all(lang='en')}" href="/tour/all?lang=en">See all</a>
     </div>
 
-    <div class="festival-grid">
+    <div class="festival-rail">
+        <button class="rail-arrow left" type="button" aria-label="Previous">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="festival-track">
         <a class="festival-card"
            th:each="festival : ${festivals}"
            th:href="@{/tour/all(lang='en',focus=${festival.contentId})}"
@@ -1271,6 +1357,11 @@
                 <div class="festival-address" th:text="${festival.address}">Busan</div>
             </div>
         </a>
+    </div>
+        <button class="rail-arrow right" type="button" aria-label="Next">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
     </div>
 </section>
 
@@ -1352,7 +1443,15 @@
             <a class="see-all" th:href="@{/community/post-list(lang='en')}">See all</a>
         </div>
 
-        <div class="post-list">
+        <!-- Nothing posted yet: invite a first post instead of leaving a blank -->
+        <div class="post-empty" th:if="${#lists.isEmpty(trendingPosts)}">
+            No travel stories yet.<br>
+            Be the first to share what you found in Busan.
+            <a class="post-empty-btn" th:href="@{/community/post-list(lang='en')}"
+               href="/community/post-list?lang=en">Go to community</a>
+        </div>
+
+        <div class="post-list" th:unless="${#lists.isEmpty(trendingPosts)}">
             <a class="post-item"
                th:each="post, iter : ${trendingPosts}"
                th:href="@{/community/post/{id}(id=${post.postId},lang='en')}"
@@ -1388,7 +1487,7 @@
         <div class="footer-top">
             <div>
                 <div class="footer-logo">Korea<span>Point</span></div>
-                <div class="footer-tagline">Your gateway to discovering Korea</div>
+                <div class="footer-tagline">Your gateway to discovering Busan</div>
             </div>
         </div>
 
@@ -1598,6 +1697,29 @@
     if (total > 1) {
         autoPlay = setInterval(() => moveSlide(1), 5000);
     }
+</script>
+
+<script>
+    /* 축제 캐러셀: 넘길 여지가 있을 때만 화살표를 띄운다 */
+    document.querySelectorAll('.festival-rail').forEach(function (rail) {
+        var track = rail.querySelector('.festival-track');
+        var prev  = rail.querySelector('.rail-arrow.left');
+        var next  = rail.querySelector('.rail-arrow.right');
+        if (!track || !prev || !next) return;
+
+        function step() { return Math.max(track.clientWidth * 0.8, 240); }
+        prev.addEventListener('click', function () { track.scrollBy({ left: -step(), behavior: 'smooth' }); });
+        next.addEventListener('click', function () { track.scrollBy({ left:  step(), behavior: 'smooth' }); });
+
+        function update() {
+            var max = track.scrollWidth - track.clientWidth;
+            prev.classList.toggle('is-on', max > 4 && track.scrollLeft > 4);
+            next.classList.toggle('is-on', max > 4 && track.scrollLeft < max - 4);
+        }
+        track.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        update();
+    });
 </script>
 </body>
 </html>
