@@ -3,7 +3,6 @@ package com.example.demo.tourism.client;
 import com.example.demo.tourism.config.TourApiProperties;
 import com.example.demo.tourism.config.TourCategoryNames;
 import com.example.demo.tourism.config.TourPlaceI18n;
-import com.example.demo.tourism.dto.TourCoursePointDto;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,7 +56,6 @@ public class TourApiClient {
 
     /** 카페 페이지로 따로 빠지는 분류들. 음식점 목록에서는 제외한다. */
     public static final Set<String> CAFE_CATEGORIES = Set.of("cafe", "teahouse", "drink");
-    private static final int COURSE_MAX_WAYPOINTS = 50;
     /** 축제는 전국을 받아 부산만 추려내므로 목록 기본값보다 넉넉히 가져온다. */
     private static final int FESTIVAL_FETCH_ROWS = 1000;
     /** 페이지를 무한정 따라가지 않도록 둔 안전장치. */
@@ -75,8 +73,6 @@ public class TourApiClient {
     private final ObjectMapper objectMapper;
     private final TourCategoryNames categoryNames;
     private final TourPlaceI18n placeI18n;
-    /** 경유지는 거의 바뀌지 않는데 조회 비용이 커서 애플리케이션 수명 동안 재사용한다. */
-    private final Map<String, List<TourCoursePointDto>> courseWaypointCache = new ConcurrentHashMap<>();
 
     public TourApiClient(RestClient.Builder restClientBuilder,
                          TourApiProperties properties,
@@ -108,7 +104,7 @@ public class TourApiClient {
             // 여행코스는 부산에 1건뿐이라 화면에서 뺐다. 좌표 보정용 경유지 조회(건당 detailCommon2 여러 번)도 생략.
             places.removeIf(p -> COURSE_CONTENT_TYPE.equals(p.getType()));
             places.addAll(findCurrentBusanFestivals(lang));
-            return withResolvedCoordinates(places, lang);
+            return withResolvedCoordinates(places);
         });
     }
 
@@ -139,73 +135,10 @@ public class TourApiClient {
      * 좌표가 없는 여행코스에 경유지를 붙여 대표 좌표를 세우고,
      * 그래도 좌표를 못 채운 항목은 지도에 찍을 수 없으므로 제외한다.
      */
-    private List<TourPlaceDto> withResolvedCoordinates(List<TourPlaceDto> places, String lang) {
+    private List<TourPlaceDto> withResolvedCoordinates(List<TourPlaceDto> places) {
         List<TourPlaceDto> resolved = new ArrayList<>(places);
         resolved.removeIf(place -> place.getLat() == null || place.getLng() == null);
         return resolved;
-    }
-
-    /**
-     * 여행코스는 경로라서 mapx/mapy가 0으로 온다.
-     * 경유지를 붙이고 첫 경유지를 대표 좌표로 세워 목록·거리·지도가 동작하게 만든다.
-     */
-    private void attachCourseWaypoints(List<TourPlaceDto> places, String lang) {
-        for (TourPlaceDto place : places) {
-            if (!COURSE_CONTENT_TYPE.equals(place.getType())) continue;
-            if (place.getLat() != null && place.getLng() != null) continue;
-
-            List<TourCoursePointDto> points = findCourseWaypoints(place.getId(), lang);
-            if (points.isEmpty()) continue;
-
-            place.setCoursePoints(points);
-            place.setLat(points.get(0).getLat());
-            place.setLng(points.get(0).getLng());
-        }
-    }
-
-    /**
-     * 여행코스의 경유지를 순서대로 조회한다. detailInfo2는 경유지 이름과 subcontentid만 주므로
-     * 좌표는 경유지별로 detailCommon2를 한 번 더 호출해 얻는다. 호출이 많아 결과를 캐시한다.
-     */
-    public List<TourCoursePointDto> findCourseWaypoints(String contentId, String lang) {
-        return courseWaypointCache.computeIfAbsent(contentId + "|" + lang, key -> {
-            try {
-                return loadCourseWaypoints(contentId, lang);
-            } catch (RuntimeException e) {
-                return List.of();
-            }
-        });
-    }
-
-    private List<TourCoursePointDto> loadCourseWaypoints(String contentId, String lang) {
-        UriComponentsBuilder uri = commonUri(lang, "detailInfo2")
-                .queryParam("contentId", contentId)
-                .queryParam("contentTypeId", COURSE_CONTENT_TYPE)
-                .queryParam("numOfRows", COURSE_MAX_WAYPOINTS)
-                .queryParam("pageNo", 1);
-
-        JsonNode items = requestRoot(uri).path("response").path("body").path("items").path("item");
-        if (!items.isArray()) return List.of();
-
-        List<TourCoursePointDto> points = new ArrayList<>();
-        for (JsonNode item : items) {
-            String subContentId = text(item, "subcontentid");
-            if (subContentId == null) continue;
-
-            JsonNode detail = firstItem(requestRoot(
-                    commonUri(lang, "detailCommon2").queryParam("contentId", subContentId)));
-            Double lat = coordinate(detail, "mapy");
-            Double lng = coordinate(detail, "mapx");
-            if (lat == null || lng == null) continue;
-
-            TourCoursePointDto point = new TourCoursePointDto();
-            point.setOrder(points.size() + 1);
-            point.setName(firstNonBlank(text(item, "subname"), text(detail, "title")));
-            point.setLat(lat);
-            point.setLng(lng);
-            points.add(point);
-        }
-        return List.copyOf(points);
     }
 
     /**
@@ -248,7 +181,7 @@ public class TourApiClient {
                     .queryParam("arrange", "Q")
                     .queryParam("numOfRows", properties.getDefaultRows())
                     .queryParam("pageNo", 1);
-            return withResolvedCoordinates(requestAllPages(uri, lang), lang);
+            return withResolvedCoordinates(requestAllPages(uri, lang));
         });
     }
 
@@ -260,7 +193,7 @@ public class TourApiClient {
                 .queryParam("arrange", "Q")
                 .queryParam("numOfRows", properties.getDefaultRows())
                 .queryParam("pageNo", 1);
-        return withResolvedCoordinates(dropEndedFestivals(requestAllPages(uri, lang), lang), lang);
+        return withResolvedCoordinates(dropEndedFestivals(requestAllPages(uri, lang), lang));
     }
 
     /** 좌표 주변 장소를 조회한다. radiusKm는 TourAPI 제한에 맞춰 최대 20km로 제한한다. */
