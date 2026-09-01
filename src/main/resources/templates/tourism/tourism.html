@@ -341,9 +341,17 @@
     },
     reviews: {
       emptyTitle: /*[[#{tour.reviews.emptyTitle}]]*/ 'No visitor reviews yet',
-      emptyBody:  /*[[#{tour.reviews.emptyBody}]]*/ 'Short reviews written after a visit will appear here.',
+      emptyBody:  /*[[#{tour.reviews.emptyBody}]]*/ 'Be the first to leave a review.',
       title:      /*[[#{tour.reviews.title}]]*/ 'Visitor reviews',
-      anonymous:  /*[[#{tour.reviews.anonymous}]]*/ 'Visitor'
+      anonymous:  /*[[#{tour.reviews.anonymous}]]*/ 'Visitor',
+      loading:    /*[[#{tour.reviews.loading}]]*/ 'Loading reviews…',
+      placeholder: /*[[#{tour.reviews.placeholder}]]*/ 'Share your experience',
+      write:      /*[[#{tour.reviews.write}]]*/ 'Post review',
+      edit:       /*[[#{tour.reviews.edit}]]*/ 'Update review',
+      delete:     /*[[#{tour.reviews.delete}]]*/ 'Delete',
+      deleteConfirm: /*[[#{tour.reviews.deleteConfirm}]]*/ 'Delete this review?',
+      pickRating: /*[[#{tour.reviews.pickRating}]]*/ 'Please pick a rating.',
+      saveFail:   /*[[#{tour.reviews.saveFail}]]*/ 'Could not save the review.'
     },
     community: {
       loading:    /*[[#{tour.community.loading}]]*/ 'Loading community stories…',
@@ -976,22 +984,67 @@
   }
 
   // 관광지 리뷰(있으면)를 방문자 리뷰 카드로 보여준다.
-  function renderReviews(p) {
+  let rvRating = 0;   // 쓰기 폼에서 선택한 별점
+
+  async function renderReviews(p) {
     const root = document.getElementById('dpReviews');
-    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
-    if (!reviews.length) {
-      root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">✎</span>
-        <strong>${escapeDetail(I18N.reviews.emptyTitle)}</strong>${escapeDetail(I18N.reviews.emptyBody)}</div>`;
-      return;
-    }
-    root.innerHTML = `<div class="section-card"><div class="section-title">${escapeDetail(I18N.reviews.title)} <small>${reviews.length}</small></div>`
-      + reviews.slice(0, 10).map(r => `<article class="review-card">
-          <div class="review-head">
-            <span class="review-author">${escapeDetail(r.author_name || r.authorName || I18N.reviews.anonymous)}</span>
-            <span class="review-star">${r.rating ? `★ ${escapeDetail(String(r.rating))}` : ''}</span>
-          </div>
-          <p class="review-text">${escapeDetail(r.text || r.content || '')}</p>
-        </article>`).join('') + `</div>`;
+    root.innerHTML = `<div class="section-card empty-state">${escapeDetail(I18N.reviews.loading)}</div>`;
+    let reviews = [];
+    try {
+      const res = await fetch(`/tour/api/reviews/${encodeURIComponent(p.id)}`);
+      if (res.ok) reviews = await res.json();
+    } catch (e) { /* 빈 목록으로 진행 */ }
+    if (currentDetailPlace !== p) return;
+
+    const mine = reviews.find(r => r.mine);
+    rvRating = mine ? mine.rating : 0;
+
+    const form = LOGGED_IN ? `
+      <div class="rv-form" data-content="${escapeDetail(String(p.id))}" data-type="${escapeDetail(p.type ?? '')}">
+        <div class="rv-stars" id="rvStars">${[1,2,3,4,5].map(n =>
+          `<span data-n="${n}" onclick="setRvRating(${n})">${n <= rvRating ? '★' : '☆'}</span>`).join('')}</div>
+        <textarea id="rvText" rows="3" placeholder="${escapeDetail(I18N.reviews.placeholder)}">${mine ? escapeDetail(mine.text || '') : ''}</textarea>
+        <button type="button" class="outline-btn" onclick="submitReview()">${escapeDetail(mine ? I18N.reviews.edit : I18N.reviews.write)}</button>
+      </div>` : '';
+
+    const list = reviews.length ? reviews.map(r => `<article class="review-card">
+        <div class="review-head">
+          <span class="review-author">${escapeDetail(r.authorName || I18N.reviews.anonymous)}</span>
+          <span class="review-star">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+        </div>
+        <p class="review-text">${escapeDetail(r.text || '')}</p>
+        ${r.mine ? `<button type="button" class="rv-del" onclick="deleteReview(${r.id})">${escapeDetail(I18N.reviews.delete)}</button>` : ''}
+      </article>`).join('')
+      : `<div class="empty-state" style="padding:24px 16px"><strong>${escapeDetail(I18N.reviews.emptyTitle)}</strong>${escapeDetail(I18N.reviews.emptyBody)}</div>`;
+
+    root.innerHTML = `<div class="section-card"><div class="section-title">${escapeDetail(I18N.reviews.title)} <small>${reviews.length}</small></div>${form}${list}</div>`;
+  }
+
+  function setRvRating(n) {
+    rvRating = n;
+    document.querySelectorAll('#rvStars span').forEach(s =>
+      s.textContent = Number(s.dataset.n) <= n ? '★' : '☆');
+  }
+
+  async function submitReview() {
+    const box = document.querySelector('.rv-form');
+    if (!box) return;
+    if (!rvRating) { alert(I18N.reviews.pickRating); return; }
+    try {
+      await csrfFetch('/tour/api/reviews', 'POST', {
+        contentId: box.dataset.content, contentTypeId: box.dataset.type,
+        rating: rvRating, text: document.getElementById('rvText').value
+      });
+      if (currentDetailPlace) renderReviews(currentDetailPlace);
+    } catch (e) { alert(I18N.reviews.saveFail); }
+  }
+
+  async function deleteReview(id) {
+    if (!confirm(I18N.reviews.deleteConfirm)) return;
+    try {
+      await csrfFetch(`/tour/api/reviews/${id}`, 'DELETE');
+      if (currentDetailPlace) renderReviews(currentDetailPlace);
+    } catch (e) {}
   }
 
   // 이 장소를 태그한 커뮤니티 글을 불러온다.
@@ -1118,8 +1171,6 @@
             : `<span style="color:#bbb;font-size:11px">${escapeDetail(I18N.detail.noRating)}</span>`;
     document.getElementById('dpInfoRow').innerHTML = '';   // 주소는 이름 밑에 있으므로 정보 탭엔 운영정보만
     document.getElementById('dpDesc').textContent = I18N.detail.preparing;
-    // 리뷰는 현재 데이터 소스가 없어 항상 빈 배열 → 있을 때만 탭 노출
-    document.querySelector('.dp-tab[data-tab="reviews"]').hidden = !(Array.isArray(p.reviews) && p.reviews.length);
     renderReviews(p);
     loadCommunityPosts(p);
     updateSaveButton(p);

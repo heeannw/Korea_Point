@@ -114,6 +114,12 @@
 /* ── 리뷰 카드 ── */
 .review-card{padding:14px 16px;border-bottom:1px solid #f5f7fa}
 .review-card:last-child{border-bottom:0}
+.rv-form{padding:0 16px 14px;border-bottom:8px solid #f5f7fa;margin-bottom:8px}
+.rv-stars{font-size:24px;color:#facc15;letter-spacing:3px;cursor:pointer;user-select:none;margin-bottom:8px}
+.rv-form textarea{width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:9px 11px;font:inherit;font-size:13px;resize:vertical;outline:none}
+.rv-form textarea:focus{border-color:var(--blue)}
+.rv-form .outline-btn{margin-top:8px}
+.rv-del{margin-top:6px;border:none;background:none;color:#ef4444;font-size:12px;cursor:pointer;padding:0}
 .review-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
 .review-author{font-size:13px;font-weight:700;color:#222}
 .review-star{font-size:12px;color:#facc15;font-weight:600}
