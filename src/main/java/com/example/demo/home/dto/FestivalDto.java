@@ -23,6 +23,12 @@ public class FestivalDto {
     /** 대표 이미지 (https 로 맞춰둔 주소) */
     private final String imageUrl;
 
+    /**
+     * 썸네일 (약 150x100). 카드 뒤에 흐리게 까는 용도라 화질이 필요 없고,
+     * 배경 이미지는 lazy 로딩이 안 되므로 작은 파일을 써야 첫 로딩이 늦지 않는다.
+     */
+    private final String thumbnailUrl;
+
     /** 행사 기간 원본 (yyyyMMdd) — 정렬에 쓴다 */
     private final String startDate;
     private final String endDate;

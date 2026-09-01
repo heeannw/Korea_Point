@@ -4,6 +4,8 @@ import com.example.demo.common.tourapi.TourApiClient;
 import com.example.demo.common.tourapi.TourApiQuery;
 import com.example.demo.common.tourapi.TourItem;
 import com.example.demo.home.dto.FestivalDto;
+import com.example.demo.common.tourapi.TourApiLang;
+import com.example.demo.tourism.config.TourPlaceI18n;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -42,6 +44,7 @@ public class HomeFestivalService {
                     .thenComparing((FestivalDto f) -> f.isOngoing() ? f.getEndDate() : f.getStartDate());
 
     private final TourApiClient tourApiClient;
+    private final TourPlaceI18n placeI18n;
 
     /**
      * 지금 열리고 있거나 곧 열리는 부산 축제.
@@ -56,7 +59,7 @@ public class HomeFestivalService {
         // 오늘을 기준으로 주면 아직 안 끝난 행사(진행중 + 예정)가 함께 온다.
         List<TourItem> items = tourApiClient.searchFestival(
                 TourApiQuery.of()
-                        .lang(lang)
+                        .lang(TourApiLang.KO)
                         .numOfRows(FETCH_SIZE)
                         .build());
 
@@ -68,13 +71,13 @@ public class HomeFestivalService {
                 .filter(this::hasPeriod)
                 // 이미 끝난 행사가 섞여 오는 경우가 있어 한 번 더 거른다.
                 .filter(it -> it.getEventEndDate().compareTo(today) >= 0)
-                .map(it -> toDto(it, today))
+                .map(it -> toDto(it, today, lang))
                 .sorted(DISPLAY_ORDER)
                 .limit(limit)
                 .toList();
     }
 
-    private FestivalDto toDto(TourItem item, String today) {
+    private FestivalDto toDto(TourItem item, String today, String lang) {
         String start = item.getEventStartDate();
         String end = item.getEventEndDate();
         boolean ongoing = start.compareTo(today) <= 0;
@@ -82,9 +85,10 @@ public class HomeFestivalService {
 
         return FestivalDto.builder()
                 .contentId(item.getContentId())
-                .title(item.getTitle())
-                .address(item.getAddress())
+                .title(placeI18n.translateTitle(lang, item.getContentId(), item.getTitle()))
+                .address(placeI18n.translateAddress(lang, item.getContentId(), item.getAddress()))
                 .imageUrl(toHttps(item.getImageUrl()))
+                .thumbnailUrl(toHttps(item.getThumbnailUrl()))
                 .startDate(start)
                 .endDate(end)
                 .period(formatPeriod(start, end))

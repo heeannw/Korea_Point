@@ -36,7 +36,10 @@ public class SecurityConfig {
                 .requestMatchers("/transport/**").authenticated()
                 .requestMatchers("/foodmap/**").authenticated()
                 .requestMatchers("/cafe/**").authenticated()
-                .requestMatchers("/ko", "/kr").permitAll()
+                // 홈은 로그인 없이 열어 둔다. 국문 홈만 공개이고 영문 홈이 막혀 있어
+                // 브라우저 언어가 en 인 방문자는 /en <-> /ko 를 오가며 무한 새로고침에 걸렸다.
+                // (/en/** 하위 화면은 아래 규칙대로 로그인이 필요하다)
+                .requestMatchers("/ko", "/kr", "/en").permitAll()
                 .requestMatchers("/en/**").authenticated()
                 .requestMatchers("/ko/**").authenticated()
                 .anyRequest().permitAll()

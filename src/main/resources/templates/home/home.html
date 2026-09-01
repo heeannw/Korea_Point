@@ -22,14 +22,21 @@
             --primary: #3b9eff;
             --primary-dark: #1a7de0;
             --accent: #38bdf8;
-            --dark: #0f172a;
-            --gray: #64748b;
-            --light: #f0f7ff;
+            --dark: #16181d;          /* 제목 */
+            --gray: #5b6270;          /* 본문 */
+            --light: #f4f9ff;         /* 아이콘 타일 — 흰색에 파랑을 아주 조금 */
+            --muted: #8b919c;         /* 주소·보조 텍스트 */
             --white: #ffffff;
-            --border: #dbeafe;
-            --radius: 14px;
-            --radius-lg: 24px;
-            --shadow: 0 8px 26px rgba(59, 158, 255, 0.12);
+            /* 페이지 바탕은 흰색. 흰 바탕에서는 그림자를 깔면 얼룩처럼 번져 보여서,
+               카드를 평소엔 테두리로만 구분하고 그림자는 hover 에서만 쓴다.
+               UI 는 무채색으로 두고 색은 사진이 내게 한다. 파랑(--primary)은
+               누를 수 있는 것에만 쓴다. */
+            --surface: #ffffff;
+            --border: #e8eaed;        /* 경계선 — 무채색 */
+            --radius: 12px;
+            --radius-lg: 16px;
+            /* 그림자는 검정 기반으로 둔다. 색이 있는 그림자는 사진과 섞여 탁해진다. */
+            --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 6px 16px rgba(16, 24, 40, 0.06);
         }
 
         * {
@@ -45,7 +52,7 @@
 
         body {
             font-family: "Sora", "Noto Sans KR", sans-serif;
-            background: var(--white);
+            background: var(--surface);
             color: var(--dark);
             overflow-x: hidden;
         }
@@ -68,7 +75,7 @@
             justify-content: space-between;
             background: #ffffff;
             border-bottom: 1px solid var(--border);
-            box-shadow: 0 2px 20px rgba(59, 158, 255, 0.08);
+            box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
         }
 
         .logo {
@@ -137,8 +144,10 @@
         /* ===== 3. Hero ===== */
         .hero {
             position: relative;
-            height: 100vh;
-            min-height: 640px;
+            /* 화면을 꽉 채우면 첫 화면에 콘텐츠가 하나도 안 보인다.
+               아래 내용이 살짝 걸치게 두어 스크롤을 유도한다. */
+            height: 78vh;
+            min-height: 560px;
             background: var(--dark);
             overflow: hidden;
         }
@@ -204,7 +213,7 @@
         .hero-title {
             max-width: 620px;
             font-family: "Sora", "Noto Sans KR", sans-serif;
-            font-size: clamp(54px, 7vw, 92px);
+            font-size: clamp(40px, 5.5vw, 68px);
             font-weight: 700;
             line-height: 0.96;
             letter-spacing: -0.06em;
@@ -304,7 +313,7 @@
         }
 
         .hero-arrow:hover {
-            background: rgba(59, 158, 255, 0.25);
+            background: rgba(255, 255, 255, 0.45);
             border-color: var(--primary);
         }
 
@@ -326,12 +335,13 @@
         .categories {
             background: var(--white);
             border-bottom: 1px solid var(--border);
-            padding: 36px 56px 40px;
+            /* 좌우 여백을 .section 과 맞춰 카드들과 끝선이 어긋나지 않게 한다 */
+            padding: 36px 80px 40px;
             scroll-margin-top: 92px;
         }
 
         .category-grid {
-            max-width: 980px;
+            max-width: 1280px;
             margin: 0 auto;
             display: flex;
             justify-content: space-between;
@@ -375,11 +385,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 18px;
-            background: #eff6ff;
+            border-radius: var(--radius-lg);
+            background: var(--light);
             color: var(--primary);
             font-size: 28px;
-            box-shadow: inset 0 0 0 1px rgba(59, 158, 255, 0.08);
+            box-shadow: inset 0 0 0 1px rgba(59, 158, 255, 0.16);   /* 타일이 연해서 테두리로 형태를 잡는다 */
         }
 
         .category-item span:last-child {
@@ -395,7 +405,7 @@
         .section {
             max-width: 1440px;
             margin: 0 auto;
-            padding: 72px 80px;
+            padding: 56px 80px;
         }
 
         .section-header-row {
@@ -430,15 +440,15 @@
 
         .section-title {
             font-family: "Cormorant Garamond", serif;
-            font-size: clamp(34px, 4vw, 50px);
+            font-size: clamp(26px, 2.2vw, 32px);
             font-weight: 700;
             line-height: 1.1;
             color: var(--dark);
         }
 
         .section-sub {
-            margin-top: 12px;
-            font-size: 14px;
+            margin-top: 10px;
+            font-size: 15px;
             color: var(--gray);
         }
 
@@ -478,7 +488,7 @@
         /* ── 축제 캐러셀 ─────────────────────────────────────────────
            카드 수가 많아 한 줄에 다 담기지 않는다. 가로로 넘겨 보게 하되
            스크롤·스와이프를 그대로 쓰고(모바일에서 자연스럽다), 마우스만 쓰는
-           환경을 위해 화살표를 얹는다. 넘길 게 없으면 화살표는 숨는다. */
+           환경을 위해 헤더에 화살표를 둔다. */
         .festival-rail {
             position: relative;
         }
@@ -497,39 +507,65 @@
             display: none;
         }
 
+        /* 화면 폭에 맞춰 카드 크기를 계산한다. 다음 카드가 늘 같은 비율(4분의 1)만
+           보이게 해서 "더 있다"는 신호는 남기되 잘린 게 실수처럼 보이지 않게 한다. */
         .festival-track .festival-card {
-            flex: 0 0 262px;
+            flex: 0 0 calc((100% - 80px) / 4.25);
             scroll-snap-align: start;
         }
 
+        @media (max-width: 1200px) {
+            .festival-track .festival-card { flex-basis: calc((100% - 60px) / 3.25); }
+        }
+
+        @media (max-width: 900px) {
+            .festival-track .festival-card { flex-basis: calc((100% - 40px) / 2.25); }
+        }
+
+        @media (max-width: 600px) {
+            .festival-track .festival-card { flex-basis: calc((100% - 20px) / 1.25); }
+        }
+
+        /* 화살표는 평소에 숨겨 둔다. 기능이지 장식이 아니라서, 안 보일수록
+           화면에 사진과 카드만 남아 정돈돼 보인다. 섹션 좌우 여백(80px)에
+           띄우므로 카드를 가리지도 않는다. */
         .rail-arrow {
             position: absolute;
-            top: 95px;
+            top: 30%;
+            transform: translateY(-50%);
             width: 40px;
             height: 40px;
             border-radius: 50%;
             border: 1px solid var(--border);
             background: var(--white);
             color: var(--dark);
-            box-shadow: var(--shadow);
+            box-shadow: 0 2px 8px rgba(16, 24, 40, 0.10);
             cursor: pointer;
             display: none;
             align-items: center;
             justify-content: center;
+            padding: 0;
+            opacity: 0;
+            transition: opacity .2s ease, color .2s ease, border-color .2s ease;
             z-index: 2;
         }
 
-        .rail-arrow.left  { left: -18px; }
-        .rail-arrow.right { right: -18px; }
+        .rail-arrow.left  { left: -52px; }
+        .rail-arrow.right { right: -52px; }
 
         .rail-arrow:hover {
             color: var(--primary);
             border-color: var(--primary);
         }
 
-        /* 손가락으로 넘길 수 있는 환경에서는 화살표를 띄우지 않는다 */
-        @media (hover: hover) and (min-width: 900px) {
-            .rail-arrow.is-on { display: flex; }
+        /* 마우스를 올렸을 때만, 그리고 넘길 게 있을 때만 나타난다 */
+        .festival-rail:hover .rail-arrow:not(:disabled) {
+            opacity: 1;
+        }
+
+        /* 손가락으로 넘기는 환경에서는 화살표가 필요 없다 */
+        @media (hover: hover) and (min-width: 1100px) {
+            .rail-arrow { display: flex; }
         }
 
         .festival-grid {
@@ -546,7 +582,6 @@
             overflow: hidden;
             background: var(--white);
             border: 1px solid var(--border);
-            box-shadow: var(--shadow);
             color: inherit;
             text-decoration: none;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -555,14 +590,33 @@
         .festival-card:hover,
         .place-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(59, 158, 255, 0.20);
+            box-shadow: 0 2px 4px rgba(16, 24, 40, 0.05), 0 12px 28px rgba(16, 24, 40, 0.10);
         }
 
         .festival-media,
         .place-media {
             position: relative;
-            height: 190px;
-            background: #f4f6f8;
+            /* 높이를 고정하면 카드 폭에 따라 비율이 제각각이 된다.
+               폭이 달라져도 사진 비율은 늘 같도록 비율로 잡는다. */
+            aspect-ratio: 3 / 2;
+            overflow: hidden;
+            /* 세로 포스터가 섞여 있어 원본을 자르지 않고(contain) 보여준다.
+               남는 여백을 회색으로 두면 허전해서, 같은 사진을 흐리게 깔아
+               사진의 색으로 채운다. */
+            background-color: #eceef1;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .festival-media::after,
+        .place-media::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            backdrop-filter: blur(22px) saturate(1.15);
+            -webkit-backdrop-filter: blur(22px) saturate(1.15);
+            background: rgba(255, 255, 255, 0.18);
         }
 
         /*
@@ -571,6 +625,8 @@
         */
         .festival-image,
         .place-image {
+            position: relative;
+            z-index: 1;
             width: 100%;
             height: 100%;
             display: block;
@@ -586,7 +642,7 @@
             position: absolute;
             top: 12px;
             left: 12px;
-            z-index: 1;
+            z-index: 2;
             padding: 4px 12px;
             border-radius: 50px;
             font-size: 12px;
@@ -623,7 +679,7 @@
         .festival-address,
         .place-address {
             font-size: 13px;
-            color: var(--gray);
+            color: var(--muted);
         }
 
         @media (max-width: 900px) {
@@ -639,7 +695,7 @@
             position: absolute;
             top: 12px;
             left: 12px;
-            z-index: 1;
+            z-index: 2;
             padding: 4px 12px;
             border-radius: 50px;
             font-size: 12px;
@@ -650,8 +706,17 @@
 
         .place-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            /* 6장을 3 x 2 로 둔다. auto-fit 이면 넓은 화면에서 4열이 되어 4 + 2 로 깨진다. */
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 20px;
+        }
+
+        @media (max-width: 1100px) {
+            .place-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 700px) {
+            .place-grid { grid-template-columns: 1fr; }
         }
 
         .place-media {
@@ -691,7 +756,7 @@
 
         .popular-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(59, 158, 255, 0.20);
+            box-shadow: 0 2px 4px rgba(16, 24, 40, 0.05), 0 12px 28px rgba(16, 24, 40, 0.10);
         }
 
         .popular-media {
@@ -831,7 +896,7 @@
             right: -80px;
             bottom: 0;
             left: -80px;
-            background: rgba(59, 158, 255, 0.04);
+            background: #fafbfc;
             opacity: 0;
             transition: opacity 0.2s ease;
         }
@@ -864,7 +929,7 @@
         }
 
         .cat-review {
-            background: rgba(59, 158, 255, 0.15);
+            background: rgba(255, 255, 255, 0.10);
             color: var(--accent);
         }
 
@@ -919,7 +984,7 @@
         footer {
             background: #ffffff;
             padding: 32px 80px 28px;
-            border-top: 1px solid #dbe5f2;
+            border-top: 1px solid var(--border);
         }
 
         .footer-inner {
@@ -1336,12 +1401,13 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
-        <div class="festival-track">
+
+                <div class="festival-track">
         <a class="festival-card"
            th:each="festival : ${festivals}"
            th:href="@{/tour/all(lang='en',focus=${festival.contentId})}"
            href="/tour/all?lang=en">
-            <div class="festival-media">
+            <div class="festival-media" th:style="|background-image:url('${festival.thumbnailUrl ?: festival.imageUrl}')|">
                 <span class="festival-badge"
                       th:classappend="${festival.ongoing} ? ' is-on'"
                       th:text="${festival.badgeEn}">Now on</span>
@@ -1358,7 +1424,7 @@
             </div>
         </a>
     </div>
-        <button class="rail-arrow right" type="button" aria-label="Next">
+            <button class="rail-arrow right" type="button" aria-label="Next">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
         </button>
@@ -1382,7 +1448,7 @@
            th:each="place : ${places}"
            th:href="@{/tour/all(lang='en',focus=${place.contentId})}"
            href="/tour/all?lang=en">
-            <div class="place-media">
+            <div class="place-media" th:style="|background-image:url('${place.thumbnailUrl ?: place.imageUrl}')|">
                 <img class="place-image"
                      th:classappend="${place.imageModifiable} ? ' can-crop'"
                      th:src="${place.imageUrl}"
@@ -1412,7 +1478,7 @@
            th:each="food : ${foods}"
            th:href="@{/tour/food(lang='en',focus=${food.contentId})}"
            href="/tour/food?lang=en">
-            <div class="place-media">
+            <div class="place-media" th:style="|background-image:url('${food.thumbnailUrl ?: food.imageUrl}')|">
                 <span class="place-badge" th:if="${food.category}" th:text="${food.category}">Restaurant</span>
                 <img class="place-image"
                      th:classappend="${food.imageModifiable} ? ' can-crop'"
@@ -1701,7 +1767,7 @@
 
 <script>
     /* 축제 캐러셀: 넘길 여지가 있을 때만 화살표를 띄운다 */
-    document.querySelectorAll('.festival-rail').forEach(function (rail) {
+    document.querySelectorAll('.festival-section').forEach(function (rail) {
         var track = rail.querySelector('.festival-track');
         var prev  = rail.querySelector('.rail-arrow.left');
         var next  = rail.querySelector('.rail-arrow.right');
@@ -1713,8 +1779,8 @@
 
         function update() {
             var max = track.scrollWidth - track.clientWidth;
-            prev.classList.toggle('is-on', max > 4 && track.scrollLeft > 4);
-            next.classList.toggle('is-on', max > 4 && track.scrollLeft < max - 4);
+            prev.disabled = !(max > 4 && track.scrollLeft > 4);
+            next.disabled = !(max > 4 && track.scrollLeft < max - 4);
         }
         track.addEventListener('scroll', update, { passive: true });
         window.addEventListener('resize', update);
