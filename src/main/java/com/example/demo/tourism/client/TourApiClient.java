@@ -96,16 +96,41 @@ public class TourApiClient {
      * 행사만 걷어내고 searchFestival2로 오늘 기준 진행/예정 축제를 다시 채운다.
      */
     public List<TourPlaceDto> findBusanPlaces(String lang) {
-        UriComponentsBuilder uri = commonUri(lang, "areaBasedList2")
-                .queryParam("lDongRegnCd", properties.getBusanLegalDongCode())
-                .queryParam("arrange", "Q")
-                .queryParam("numOfRows", properties.getDefaultRows())
-                .queryParam("pageNo", 1);
+        return cachedList("all|" + lang, () -> {
+            UriComponentsBuilder uri = commonUri(lang, "areaBasedList2")
+                    .queryParam("lDongRegnCd", properties.getBusanLegalDongCode())
+                    .queryParam("arrange", "Q")
+                    .queryParam("numOfRows", properties.getDefaultRows())
+                    .queryParam("pageNo", 1);
 
-        List<TourPlaceDto> places = new ArrayList<>(requestAllPages(uri, lang));
-        places.removeIf(this::isFestival);
-        places.addAll(findCurrentBusanFestivals(lang));
-        return withResolvedCoordinates(places, lang);
+            List<TourPlaceDto> places = new ArrayList<>(requestAllPages(uri, lang));
+            places.removeIf(this::isFestival);
+            places.addAll(findCurrentBusanFestivals(lang));
+            return withResolvedCoordinates(places, lang);
+        });
+    }
+
+    /**
+     * 부산 목록은 요청마다 KorService2에 순차 호출이 여러 번 나가 느리다.
+     * 언어별 결과를 짧게 캐시하고, 요청별 mutation(순위·점수·거리)이 원본을 건드리지 않도록
+     * 언제나 복사본을 돌려준다.
+     * ponytail: 프로세스 로컬 TTL 맵. 인스턴스가 여러 개면 각자 캐시 — 트래픽 커지면 공용 캐시로.
+     */
+    private static final long LIST_TTL_MS = 5 * 60_000;
+    private final Map<String, Cached> listCache = new ConcurrentHashMap<>();
+    private record Cached(List<TourPlaceDto> value, long expiresAt) { }
+
+    private List<TourPlaceDto> cachedList(String key, java.util.function.Supplier<List<TourPlaceDto>> loader) {
+        Cached hit = listCache.get(key);
+        List<TourPlaceDto> src = (hit != null && hit.expiresAt() > System.currentTimeMillis())
+                ? hit.value()
+                : store(key, loader.get());
+        return src.stream().map(TourPlaceDto::new).collect(Collectors.toList());
+    }
+
+    private List<TourPlaceDto> store(String key, List<TourPlaceDto> fresh) {
+        listCache.put(key, new Cached(fresh, System.currentTimeMillis() + LIST_TTL_MS));
+        return fresh;
     }
 
     /**
@@ -215,13 +240,15 @@ public class TourApiClient {
      * 음식점과 카페가 한 번의 호출로 함께 들어온다.
      */
     public List<TourPlaceDto> findBusanFoodPlaces(String lang) {
-        UriComponentsBuilder uri = commonUri(lang, "areaBasedList2")
-                .queryParam("lDongRegnCd", properties.getBusanLegalDongCode())
-                .queryParam("contentTypeId", FOOD_CONTENT_TYPE)
-                .queryParam("arrange", "Q")
-                .queryParam("numOfRows", properties.getDefaultRows())
-                .queryParam("pageNo", 1);
-        return withResolvedCoordinates(requestAllPages(uri, lang), lang);
+        return cachedList("food|" + lang, () -> {
+            UriComponentsBuilder uri = commonUri(lang, "areaBasedList2")
+                    .queryParam("lDongRegnCd", properties.getBusanLegalDongCode())
+                    .queryParam("contentTypeId", FOOD_CONTENT_TYPE)
+                    .queryParam("arrange", "Q")
+                    .queryParam("numOfRows", properties.getDefaultRows())
+                    .queryParam("pageNo", 1);
+            return withResolvedCoordinates(requestAllPages(uri, lang), lang);
+        });
     }
 
     /** 부산으로 범위를 제한한 키워드 검색이다. */

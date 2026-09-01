@@ -71,6 +71,29 @@ public class TourPlaceDto {
     private Float  score;
     private Double distance;
 
+    public TourPlaceDto() { }
+
+    /**
+     * 얕은 복사. 목록 캐시가 요청마다 이 복사본을 넘겨, 순위·점수·거리 같은
+     * 요청별 mutation이 캐시된 원본을 오염시키지 않게 한다.
+     * (reviews·coursePoints 리스트는 캐시 후 변경되지 않아 참조만 공유한다)
+     */
+    // ponytail: 새 필드가 요청마다 값이 바뀌는 종류(순위·점수·거리 류)면 아래에도 추가할 것.
+    //           단순 정적 필드면 빠뜨려도 무해하다.
+    public TourPlaceDto(TourPlaceDto s) {
+        this.id = s.id; this.title = s.title; this.type = s.type; this.addr = s.addr;
+        this.lat = s.lat; this.lng = s.lng; this.image = s.image;
+        this.google_place_id = s.google_place_id; this.google_name = s.google_name; this.google_addr = s.google_addr;
+        this.rating = s.rating; this.user_ratings_total = s.user_ratings_total;
+        this.reviews = s.reviews; this.coursePoints = s.coursePoints;
+        this.foodCategory = s.foodCategory; this.typeName = s.typeName; this.typeDetailName = s.typeDetailName;
+        this.popularRank = s.popularRank; this.popularCategory = s.popularCategory;
+        this.popularityScore = s.popularityScore; this.popularityBasis = s.popularityBasis;
+        this.popularityCalculatedAt = s.popularityCalculatedAt;
+        this.eventStartDate = s.eventStartDate; this.eventEndDate = s.eventEndDate;
+        this.score = s.score; this.distance = s.distance;
+    }
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
