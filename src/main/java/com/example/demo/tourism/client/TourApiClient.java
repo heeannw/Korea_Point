@@ -6,6 +6,8 @@ import com.example.demo.tourism.config.TourPlaceI18n;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -25,6 +27,8 @@ import java.util.stream.Collectors;
 
 @Component("tourismTourApiClient")
 public class TourApiClient {
+
+    private static final Logger log = LoggerFactory.getLogger(TourApiClient.class);
 
     public static final String FOOD_CONTENT_TYPE = "39";
     private static final String FESTIVAL_CONTENT_TYPE = "15";
@@ -120,15 +124,21 @@ public class TourApiClient {
 
     private List<TourPlaceDto> cachedList(String key, java.util.function.Supplier<List<TourPlaceDto>> loader) {
         Cached hit = listCache.get(key);
-        List<TourPlaceDto> src = (hit != null && hit.expiresAt() > System.currentTimeMillis())
-                ? hit.value()
-                : store(key, loader.get());
-        return src.stream().map(TourPlaceDto::new).collect(Collectors.toList());
+        if (hit != null && hit.expiresAt() > System.currentTimeMillis()) return copies(hit.value());
+        try {
+            List<TourPlaceDto> fresh = loader.get();
+            listCache.put(key, new Cached(fresh, System.currentTimeMillis() + LIST_TTL_MS));
+            return copies(fresh);
+        } catch (RuntimeException e) {
+            // TourAPI 실패: 만료된 캐시라도 있으면 그걸로 응답한다(첫 조회 전이면 그대로 던짐).
+            if (hit == null) throw e;
+            log.warn("TourAPI 조회 실패, 만료 캐시로 응답 [{}]: {}", key, e.getMessage());
+            return copies(hit.value());
+        }
     }
 
-    private List<TourPlaceDto> store(String key, List<TourPlaceDto> fresh) {
-        listCache.put(key, new Cached(fresh, System.currentTimeMillis() + LIST_TTL_MS));
-        return fresh;
+    private static List<TourPlaceDto> copies(List<TourPlaceDto> src) {
+        return src.stream().map(TourPlaceDto::new).collect(Collectors.toList());
     }
 
     /**
