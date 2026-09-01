@@ -189,11 +189,16 @@
                         <p class="reservation-no" th:text="${reservation.reservationNo}">KP-00000000-0000</p>
                         <h3 th:text="${reservation.placeTitle}">관광지명</h3>
                         <p th:text="|${reservation.reservationDate} · ${reservation.reservationTime} · ${reservation.peopleCount}명|">2026-08-12 · 10:00 · 1명</p>
+                        <p class="payment-meta" th:if="${reservation.payment != null}"
+                           th:text="|예약금 ${#numbers.formatInteger(reservation.payment.amount, 3, 'COMMA')}원 · ${reservation.payment.status.label}|">예약금 5,000원 · 결제 대기</p>
                     </div>
                     <div class="reservation-side">
                         <span class="status-badge"
                               th:classappend="${reservation.status == '예약 취소'} ? ' muted' : ''"
                               th:text="${reservation.status}">예약 완료</span>
+                        <a class="mini-btn primary"
+                           th:if="${reservation.payment != null and (reservation.payment.status.name() == 'READY' or reservation.payment.status.name() == 'FAILED')}"
+                           th:href="@{|/ko/reservation/payment/${reservation.id}|}">예약금 결제</a>
                         <div class="kebab-wrap">
                             <button type="button" class="kebab-btn" onclick="toggleActionMenu(this, event)" aria-label="예약 메뉴">⋯</button>
                             <div class="action-menu" hidden>
@@ -423,11 +428,16 @@
                     <p class="reservation-no" th:text="${reservation.reservationNo}">KP-00000000-0000</p>
                     <h3 th:text="${reservation.placeTitle}">관광지명</h3>
                     <p th:text="|${reservation.reservationDate} · ${reservation.reservationTime} · ${reservation.peopleCount}명|">2026-08-12 · 10:00 · 1명</p>
+                    <p class="payment-meta" th:if="${reservation.payment != null}"
+                       th:text="|예약금 ${#numbers.formatInteger(reservation.payment.amount, 3, 'COMMA')}원 · ${reservation.payment.status.label}|">예약금 5,000원 · 결제 대기</p>
                 </div>
                 <div class="reservation-side">
                     <span class="status-badge"
                           th:classappend="${reservation.status == '예약 취소'} ? ' muted' : ''"
                           th:text="${reservation.status}">예약 완료</span>
+                    <a class="mini-btn primary"
+                       th:if="${reservation.payment != null and (reservation.payment.status.name() == 'READY' or reservation.payment.status.name() == 'FAILED')}"
+                       th:href="@{|/ko/reservation/payment/${reservation.id}|}">예약금 결제</a>
                     <div class="kebab-wrap" th:unless="${reservation.status == '예약 취소'}">
                         <button type="button" class="kebab-btn" onclick="toggleActionMenu(this, event)" aria-label="예약 메뉴">⋯</button>
                         <div class="action-menu" hidden>

@@ -714,6 +714,13 @@ h2 {
     font-weight: 800;
 }
 
+.reservation-card .payment-meta {
+    margin-top: 7px;
+    color: #1a7de0;
+    font-size: 13px;
+    font-weight: 800;
+}
+
 .status-badge {
     flex: 0 0 auto;
     border: 1px solid #bae6fd;

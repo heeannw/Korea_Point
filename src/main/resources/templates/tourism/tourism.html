@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${lang}" lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="_csrf" th:content="${_csrf.token}"/>
   <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-  <title>Explore — KoreaPoint</title>
+  <title th:text="#{tour.pageTitle}">Explore — KoreaPoint</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-  <!-- 상세 패널 공용 스타일 (tourismKo/tourismEN 공용) -->
+  <!-- 상세 패널 공용 스타일 -->
   <link rel="stylesheet" th:href="@{/css/tourism/detail-panel.css}">
   <style>
     :root {
@@ -65,12 +65,12 @@
     .chip:hover{border-color:var(--blue);color:var(--blue)}
     .chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
     .chip[data-cat="All"].active{background:var(--blue);border-color:var(--blue);color:#fff}
-    .chip[data-cat="관광지"]:hover,.chip[data-cat="관광지"].active{background:#ef4444;border-color:#ef4444;color:#fff}
-    .chip[data-cat="문화시설"]:hover,.chip[data-cat="문화시설"].active{background:#f59e0b;border-color:#f59e0b;color:#fff}
-    .chip[data-cat="축제·행사"]:hover,.chip[data-cat="축제·행사"].active{background:#ec4899;border-color:#ec4899;color:#fff}
-    .chip[data-cat="여행코스"]:hover,.chip[data-cat="여행코스"].active{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
-    .chip[data-cat="레저·액티비티"]:hover,.chip[data-cat="레저·액티비티"].active{background:#22c55e;border-color:#22c55e;color:#fff}
-    .chip[data-cat="쇼핑"]:hover,.chip[data-cat="쇼핑"].active{background:#3b9eff;border-color:#3b9eff;color:#fff}
+    .chip[data-cat="attraction"]:hover,.chip[data-cat="attraction"].active{background:#ef4444;border-color:#ef4444;color:#fff}
+    .chip[data-cat="culture"]:hover,.chip[data-cat="culture"].active{background:#f59e0b;border-color:#f59e0b;color:#fff}
+    .chip[data-cat="festival"]:hover,.chip[data-cat="festival"].active{background:#ec4899;border-color:#ec4899;color:#fff}
+    .chip[data-cat="course"]:hover,.chip[data-cat="course"].active{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
+    .chip[data-cat="leisure"]:hover,.chip[data-cat="leisure"].active{background:#22c55e;border-color:#22c55e;color:#fff}
+    .chip[data-cat="shopping"]:hover,.chip[data-cat="shopping"].active{background:#3b9eff;border-color:#3b9eff;color:#fff}
     .sort-row{padding:10px 16px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
     .result-count{font-size:13px;color:var(--gray)}
     .result-count strong{color:var(--dark)}
@@ -101,32 +101,32 @@
     .loc-btn{position:absolute;bottom:24px;right:16px;background:#fff;border:1px solid var(--border);border-radius:50px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--sh);color:var(--dark);font-family:'DM Sans',sans-serif;z-index:30;transition:all .2s}
     .loc-btn:hover{border-color:var(--blue);color:var(--blue)}
     /* 상세 패널(.detail-panel / .dp-* / .rev-* / .review-* / .ri-*) 스타일은
-       /css/tourism/detail-panel.css 로 이동 (tourismEN.html 과 공용) */
+       /css/tourism/detail-panel.css 로 분리 */
   </style>
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
+  <!-- 관광/음식/카페 화면은 TourAPI 다국어 응답 + messages_*.properties 를 쓰고
+       Google 자동번역(trip-translate.js)은 싣지 않는다. 홈에서 넘어올 때 섞여 번역되는 것을 막는다. -->
 </head>
 <body>
 <header>
-  <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
+  <a class="logo" translate="no" th:href="${lang == 'en'} ? @{/en} : @{/ko}">Korea<span>Point</span></a>
   <div class="header-right">
-    <th:block th:if="${lang == 'en'}">
-      <button class="h-btn active">EN</button>
-      <button class="h-btn"        onclick="switchLang('ko')">KR</button>
-    </th:block>
-    <th:block th:unless="${lang == 'en'}">
-      <button class="h-btn"        onclick="switchLang('en')">EN</button>
-      <button class="h-btn active">KR</button>
-    </th:block>
+    <select class="h-btn" translate="no" onchange="switchLang(this.value)" aria-label="Language">
+      <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
+      <option value="en" th:selected="${lang == 'en'}">English</option>
+      <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
+      <option value="zh" th:selected="${lang == 'zh'}">中文</option>
+      <option value="fr" th:selected="${lang == 'fr'}">Français</option>
+    </select>
 
     <th:block th:if="${isLoggedIn}">
       <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
       <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
       <form th:action="@{/logout}" method="post">
-        <button type="submit" class="h-btn h-btn-fill">Logout</button>
+        <button type="submit" class="h-btn h-btn-fill" th:text="#{tour.nav.logout}">Logout</button>
       </form>
     </th:block>
     <th:block th:unless="${isLoggedIn}">
-      <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
+      <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill" th:text="#{tour.nav.login}">Login</a>
     </th:block>
   </div>
 </header>
@@ -135,17 +135,17 @@
     <div class="search-bar">
       <form action="/tour/search/" method="get" id="searchForm">
         <div class="search-wrap">
-          <input type="text" placeholder="부산 관광지를 검색하세요..." name="keyword" id="searchInput"
+          <input type="text" th:placeholder="#{tour.search.placeholder}" placeholder="Search attractions in Busan..." name="keyword" id="searchInput"
                  th:value="${keyword}" autocomplete="off"
                  onfocus="onSearchFocus()" onblur="onSearchBlur()" oninput="onSearchInput(this.value)">
-          <input name="lang" value="KO" type="hidden">
+          <input name="lang" th:value="${lang}" value="ko" type="hidden">
           <button class="si" type="submit">🔍</button>
           <div class="suggest-dropdown" id="suggestDropdown"></div>
           <div class="recent-dropdown" id="recentDropdown">
             <div th:if="${recentKeywords != null and !#lists.isEmpty(recentKeywords)}">
               <div class="recent-header">
-                <span>Recent</span>
-                <button type="button" onmousedown="clearAllKeywords()">Clear all</button>
+                <span th:text="#{tour.search.recent}">Recent</span>
+                <button type="button" onmousedown="clearAllKeywords()" th:text="#{tour.search.clearAll}">Clear all</button>
               </div>
               <div th:each="kw : ${recentKeywords}">
                 <div class="recent-item">
@@ -158,7 +158,8 @@
               </div>
             </div>
             <div class="recent-empty"
-                 th:if="${recentKeywords == null or #lists.isEmpty(recentKeywords)}">
+                 th:if="${recentKeywords == null or #lists.isEmpty(recentKeywords)}"
+                 th:text="#{tour.search.noRecent}">
               No recent searches
             </div>
           </div>
@@ -169,25 +170,25 @@
     <div class="filter-wrap">
       <button class="scroll-btn left" id="scrollLeft" onclick="scrollFilter(-1)" disabled>‹</button>
       <div class="filter-row" id="filterRow">
-        <div class="chip active" data-cat="All" id="chipAll" onclick="setCategory('All')">🗺️ 전체</div>
-        <div class="chip" data-cat="관광지" onclick="setCategory('관광지')">📍 관광지</div>
-        <div class="chip" data-cat="문화시설" onclick="setCategory('문화시설')">🏛️ 문화시설</div>
-        <div class="chip" data-cat="레저·액티비티" onclick="setCategory('레저·액티비티')">🏄 레저·액티비티</div>
-        <div class="chip" data-cat="쇼핑" onclick="setCategory('쇼핑')">🛍️ 쇼핑</div>
-        <div class="chip" data-cat="여행코스" onclick="setCategory('여행코스')">🗺️ 여행코스</div>
-        <div class="chip" data-cat="축제·행사" onclick="setCategory('축제·행사')">🎉 축제·행사</div>
+        <div class="chip active" data-cat="All" id="chipAll" onclick="setCategory('All')">🗺️ <span th:text="#{tour.cat.all}">All</span></div>
+        <div class="chip" data-cat="attraction" onclick="setCategory('attraction')">📍 <span th:text="#{tour.cat.attraction}">Attractions</span></div>
+        <div class="chip" data-cat="culture" onclick="setCategory('culture')">🏛️ <span th:text="#{tour.cat.culture}">Culture</span></div>
+        <div class="chip" data-cat="leisure" onclick="setCategory('leisure')">🏄 <span th:text="#{tour.cat.leisure}">Leisure &amp; Activities</span></div>
+        <div class="chip" data-cat="shopping" onclick="setCategory('shopping')">🛍️ <span th:text="#{tour.cat.shopping}">Shopping</span></div>
+        <div class="chip" data-cat="course" onclick="setCategory('course')">🗺️ <span th:text="#{tour.cat.course}">Travel Courses</span></div>
+        <div class="chip" data-cat="festival" onclick="setCategory('festival')">🎉 <span th:text="#{tour.cat.festival}">Festivals &amp; Events</span></div>
       </div>
       <button class="scroll-btn right" id="scrollRight" onclick="scrollFilter(1)">›</button>
     </div>
 
     <div class="sort-row">
-      <div class="result-count"><strong id="countDisplay">0</strong> places found</div>
+      <div class="result-count"><strong id="countDisplay">0</strong> <span th:text="#{tour.list.placesFound}">places found</span></div>
       <div class="sort-btns">
-        <button class="sort-btn" id="sortPopular" onclick="setSort('popular')" hidden>🔥 인기 TOP 20</button>
-        <button class="sort-btn" id="sortRating" onclick="setSort('rating')" hidden>★ 별점순</button>
-        <button class="sort-btn" id="sortReviews" onclick="setSort('reviews')" hidden>💬 리뷰순</button>
-        <button class="sort-btn active" id="sortRecommended" onclick="setSort('recommended')">⭐ 추천순</button>
-        <button class="sort-btn" id="sortDistance" onclick="setSort('distance')">📍 거리순</button>
+        <button class="sort-btn" id="sortPopular" onclick="setSort('popular')" hidden>🔥 <span th:text="#{tour.sort.popular}">Popular TOP 20</span></button>
+        <button class="sort-btn" id="sortRating" onclick="setSort('rating')" hidden>★ <span th:text="#{tour.sort.rating}">Rating</span></button>
+        <button class="sort-btn" id="sortReviews" onclick="setSort('reviews')" hidden>💬 <span th:text="#{tour.sort.reviews}">Reviews</span></button>
+        <button class="sort-btn active" id="sortRecommended" onclick="setSort('recommended')">⭐ <span th:text="#{tour.sort.recommended}">Recommended</span></button>
+        <button class="sort-btn" id="sortDistance" onclick="setSort('distance')">📍 <span th:text="#{tour.sort.distance}">Distance</span></button>
       </div>
     </div>
 
@@ -197,7 +198,7 @@
 
   <div class="map-area" id="mapArea">
     <div id="kakaoMap" style="position:absolute;inset:0;z-index:0;"></div>
-    <button class="loc-btn" onclick="getLocation()">📍 My Location</button>
+    <button class="loc-btn" onclick="getLocation()">📍 <span th:text="#{tour.map.myLocation}">My Location</span></button>
     <div class="map-controls" style="z-index:30;">
       <div class="mc" onclick="map&&map.setLevel(map.getLevel()-1)">＋</div>
       <div class="mc" onclick="map&&map.setLevel(map.getLevel()+1)">－</div>
@@ -208,12 +209,12 @@
         <button class="dp-back" onclick="closeDetail()">←</button>
         <div class="dp-title" id="dpTitle"></div>
         <div class="dp-header-right">
-          <button class="summary-save" id="btnSave" type="button" aria-label="장소 저장">♡</button>
+          <button class="summary-save" id="btnSave" type="button" th:attr="aria-label=#{tour.detail.savePlace}" aria-label="Save place">♡</button>
         </div>
       </div>
       <div class="dp-hero no-image" id="dpHero">
-        <button class="dp-hero-nav dp-hero-prev dp-hero-hidden" id="dpImgPrev" type="button" onclick="moveDetailImage(-1)" aria-label="이전 이미지">‹</button>
-        <button class="dp-hero-nav dp-hero-next dp-hero-hidden" id="dpImgNext" type="button" onclick="moveDetailImage(1)" aria-label="다음 이미지">›</button>
+        <button class="dp-hero-nav dp-hero-prev dp-hero-hidden" id="dpImgPrev" type="button" onclick="moveDetailImage(-1)" th:attr="aria-label=#{tour.detail.prevImage}" aria-label="Previous image">‹</button>
+        <button class="dp-hero-nav dp-hero-next dp-hero-hidden" id="dpImgNext" type="button" onclick="moveDetailImage(1)" th:attr="aria-label=#{tour.detail.nextImage}" aria-label="Next image">›</button>
         <div class="dp-hero-count dp-hero-hidden" id="dpImgCount"></div>
       </div>
       <div class="dp-body">
@@ -225,26 +226,26 @@
         </section>
         <div class="quick-actions">
           <button class="quick-btn" id="itineraryBtn2" type="button">
-            <div class="qb-icon">🚊</div><span class="qb-label">길찾기</span>
+            <div class="qb-icon">🚊</div><span class="qb-label" th:text="#{tour.detail.directions}">Directions</span>
           </button>
           <button class="quick-btn" id="itineraryBtn" type="button">
-            <div class="qb-icon">🍽️</div><span class="qb-label">근처 맛집</span>
+            <div class="qb-icon">🍽️</div><span class="qb-label" th:text="#{tour.detail.nearbyFood}">Food</span>
           </button>
           <button class="quick-btn" id="itineraryBtn1" type="button">
-            <div class="qb-icon">☕</div><span class="qb-label">근처 카페</span>
+            <div class="qb-icon">☕</div><span class="qb-label" th:text="#{tour.detail.nearbyCafe}">Cafés</span>
           </button>
           <button class="quick-btn" id="btnShare" type="button">
-            <div class="qb-icon">🔗</div><span class="qb-label">공유</span>
+            <div class="qb-icon">🔗</div><span class="qb-label" th:text="#{tour.detail.share}">Share</span>
           </button>
         </div>
         <nav class="dp-tabs">
-          <button class="dp-tab active" type="button" data-tab="info" onclick="showDetailTab('info')">정보</button>
-          <button class="dp-tab" type="button" data-tab="reviews" onclick="showDetailTab('reviews')">리뷰</button>
-          <button class="dp-tab" type="button" data-tab="community" onclick="showDetailTab('community')">커뮤니티</button>
+          <button class="dp-tab active" type="button" data-tab="info" onclick="showDetailTab('info')" th:text="#{tour.detail.tabInfo}">Info</button>
+          <button class="dp-tab" type="button" data-tab="reviews" onclick="showDetailTab('reviews')" th:text="#{tour.detail.tabReviews}">Reviews</button>
+          <button class="dp-tab" type="button" data-tab="community" onclick="showDetailTab('community')" th:text="#{tour.detail.tabCommunity}">Community</button>
         </nav>
         <section class="tab-panel" id="tab-info">
           <div class="dp-info-row" id="dpInfoRow"></div>
-          <div class="section-card"><div class="section-title">장소 소개</div><div class="dp-desc" id="dpDesc"></div></div>
+          <div class="section-card"><div class="section-title" th:text="#{tour.detail.about}">About</div><div class="dp-desc" id="dpDesc"></div></div>
           <div id="dpApiInfo"></div>
           <div class="dp-course" id="dpCourse" hidden></div>
         </section>
@@ -262,11 +263,91 @@
   const centerLat = /*[[${centerLat}]]*/ 35.1796;
   const centerLon = /*[[${centerLon}]]*/ 129.0756;
   const currentUserId = /*[[${currentUserId}]]*/ null;
-  let spotName = /*[[${spotname}]]*/ '내위치';
+  let spotName = /*[[${spotname}]]*/ 'My Location';
+  let lang = /*[[${lang}]]*/ 'ko';
+
+  /** 화면 문자열은 messages_*.properties(tour.*)에서 온다. {0}은 JS에서 replace. */
+  const I18N = {
+    cat: {
+      all:        /*[[#{tour.cat.all}]]*/ 'All',
+      attraction: /*[[#{tour.cat.attraction}]]*/ 'Attraction',
+      culture:    /*[[#{tour.cat.culture}]]*/ 'Cultural Facility',
+      festival:   /*[[#{tour.cat.festival}]]*/ 'Festival & Event',
+      course:     /*[[#{tour.cat.course}]]*/ 'Travel Course',
+      leisure:    /*[[#{tour.cat.leisure}]]*/ 'Leisure & Activities',
+      shopping:   /*[[#{tour.cat.shopping}]]*/ 'Shopping',
+      other:      /*[[#{tour.cat.other}]]*/ 'Other'
+    },
+    chipPopular:  /*[[#{tour.chip.popular}]]*/ 'Popular',
+    detailLabels: {
+      hours:          /*[[#{tour.dl.hours}]]*/ 'Hours',
+      bizHours:       /*[[#{tour.dl.bizHours}]]*/ 'Hours',
+      closed:         /*[[#{tour.dl.closed}]]*/ 'Closed',
+      contact:        /*[[#{tour.dl.contact}]]*/ 'Contact',
+      parking:        /*[[#{tour.dl.parking}]]*/ 'Parking',
+      fee:            /*[[#{tour.dl.fee}]]*/ 'Admission',
+      eventStart:     /*[[#{tour.dl.eventStart}]]*/ 'Starts',
+      eventEnd:       /*[[#{tour.dl.eventEnd}]]*/ 'Ends',
+      eventPlace:     /*[[#{tour.dl.eventPlace}]]*/ 'Venue',
+      playtime:       /*[[#{tour.dl.playtime}]]*/ 'Schedule',
+      festivalDuration: /*[[#{tour.dl.festivalDuration}]]*/ 'Duration',
+      courseDistance: /*[[#{tour.dl.courseDistance}]]*/ 'Course distance',
+      schedule:       /*[[#{tour.dl.schedule}]]*/ 'Itinerary',
+      taketime:       /*[[#{tour.dl.taketime}]]*/ 'Duration',
+      courseContact:  /*[[#{tour.dl.courseContact}]]*/ 'Contact',
+      openperiod:     /*[[#{tour.dl.openperiod}]]*/ 'Operating period',
+      reservation:    /*[[#{tour.dl.reservation}]]*/ 'Reservation',
+      ageRange:       /*[[#{tour.dl.ageRange}]]*/ 'Age range',
+      checkin:        /*[[#{tour.dl.checkin}]]*/ 'Check-in',
+      checkout:       /*[[#{tour.dl.checkout}]]*/ 'Check-out',
+      reservationUrl: /*[[#{tour.dl.reservationUrl}]]*/ 'Reservation',
+      roomcount:      /*[[#{tour.dl.roomcount}]]*/ 'Rooms',
+      saleitem:       /*[[#{tour.dl.saleitem}]]*/ 'Items',
+      firstmenu:      /*[[#{tour.dl.firstmenu}]]*/ 'Signature menu',
+      treatmenu:      /*[[#{tour.dl.treatmenu}]]*/ 'Menu'
+    },
+    detail: {
+      loading:      /*[[#{tour.detail.loading}]]*/ 'Loading Korea Tourism Organization details...',
+      noOverview:   /*[[#{tour.detail.noOverview}]]*/ 'No description is currently available.',
+      tel:          /*[[#{tour.detail.tel}]]*/ 'Tel',
+      usageInfo:    /*[[#{tour.detail.usageInfo}]]*/ 'Visitor info',
+      loadFail:     /*[[#{tour.detail.loadFail}]]*/ 'Unable to load details. Please try again later.',
+      noId:         /*[[#{tour.detail.noId}]]*/ 'No detail identifier is available.',
+      preparing:    /*[[#{tour.detail.preparing}]]*/ 'Preparing details...',
+      noRating:     /*[[#{tour.detail.noRating}]]*/ 'No visitor ratings yet',
+      scoreSuffix:  /*[[#{tour.detail.scoreSuffix}]]*/ '',
+      reviewsCount: /*[[#{tour.detail.reviewsCount}]]*/ '{0} reviews',
+      address:      /*[[#{tour.detail.address}]]*/ 'Address',
+      distance:     /*[[#{tour.detail.distance}]]*/ 'Distance',
+      score:        /*[[#{tour.detail.score}]]*/ 'Score',
+      category:     /*[[#{tour.detail.category}]]*/ 'Category',
+      waypoints:    /*[[#{tour.detail.waypoints}]]*/ '{0} stops'
+    },
+    reviews: {
+      emptyTitle: /*[[#{tour.reviews.emptyTitle}]]*/ 'No visitor reviews yet',
+      emptyBody:  /*[[#{tour.reviews.emptyBody}]]*/ 'Short reviews written after a visit will appear here.',
+      title:      /*[[#{tour.reviews.title}]]*/ 'Visitor reviews',
+      anonymous:  /*[[#{tour.reviews.anonymous}]]*/ 'Visitor'
+    },
+    community: {
+      loading:    /*[[#{tour.community.loading}]]*/ 'Loading community stories…',
+      emptyTitle: /*[[#{tour.community.emptyTitle}]]*/ 'Be the first to share this place',
+      emptyBody:  /*[[#{tour.community.emptyBody}]]*/ 'Stories that tag this place in Community appear here.',
+      write:      /*[[#{tour.community.write}]]*/ 'Write a story',
+      writeThis:  /*[[#{tour.community.writeThis}]]*/ 'Write about this place',
+      title:      /*[[#{tour.community.title}]]*/ 'Community stories',
+      views:      /*[[#{tour.community.views}]]*/ 'views',
+      comments:   /*[[#{tour.community.comments}]]*/ 'comments',
+      loadFail:   /*[[#{tour.community.loadFail}]]*/ 'Could not load Community stories.'
+    },
+    share:   { copied: /*[[#{tour.share.copied}]]*/ 'Link copied.' },
+    noCoords:  /*[[#{tour.common.noCoords}]]*/ 'No coordinates available for this place.',
+    untitled:  /*[[#{tour.common.untitled}]]*/ 'Untitled attraction'
+  };
+  function i18nFmt(tpl, v) { return String(tpl).replace('{0}', v); }
 </script>
 
-<script>
-  let lang = /*[[${lang}]]*/ 'KO';
+<script th:inline="javascript">
   /** 부산 전역이 한 화면에 들어오는 축척. */
   const BUSAN_MAP_LEVEL = 8;
   /** 이 축척보다 넓게 보면 마커를 묶는다. 더 당기면 개별 핀으로 펼쳐진다. */
@@ -304,7 +385,7 @@
    */
   function applyAllChipLabel() {
     const chip = document.getElementById('chipAll');
-    if (chip) chip.textContent = hasPopularityData() ? '🔥 인기' : '🗺️ 전체';
+    if (chip) chip.textContent = (hasPopularityData() ? '🔥 ' + I18N.chipPopular : '🗺️ ' + I18N.cat.all);
   }
 
   /**
@@ -503,9 +584,13 @@
   document.getElementById('filterRow').addEventListener('scroll', updateScrollBtns);
   window.addEventListener('load', updateScrollBtns);
 
+  // 콘텐츠 유형 코드 ↔ 안정 슬러그(필터·칩 키). 화면 라벨은 I18N.cat에서 온다.
+  const TYPE_SLUG = { '12':'attraction','14':'culture','15':'festival','25':'course','28':'leisure','38':'shopping' };
+  function typeSlug(type) {
+    return TYPE_SLUG[String(type)] ?? 'other';
+  }
   function typeName(type) {
-    const m = { '12':'관광지','14':'문화시설','15':'축제·행사','25':'여행코스','28':'레저·액티비티','38':'쇼핑' };
-    return m[String(type)] ?? '기타';
+    return I18N.cat[typeSlug(type)] ?? I18N.cat.other;
   }
   // 카드에는 대분류(관광지) 대신 TourAPI 분류체계의 세부 타입명을 쓴다.
   // 카테고리 칩 필터는 그대로 콘텐츠 유형(typeName) 기준이다.
@@ -553,7 +638,7 @@
     let list = [...PLACES];
     const q = document.getElementById('searchInput').value.toLowerCase();
     if (activeCategory !== 'All') {
-      list = list.filter(p => typeName(p.type) === activeCategory);
+      list = list.filter(p => typeSlug(p.type) === activeCategory);
     }
     if (q) {
       list = list.filter(p =>
@@ -759,17 +844,18 @@
             ? `${text.slice(0,4)}.${text.slice(4,6)}.${text.slice(6,8)}` : text;
   }
 
-  const DETAIL_LABELS_KO = {
-    usetime:'이용시간', restdate:'휴무일', infocenter:'문의', parking:'주차',
-    usetimeculture:'이용시간', restdateculture:'휴무일', usefee:'이용요금', parkingculture:'주차',
-    eventstartdate:'행사 시작', eventenddate:'행사 종료', eventplace:'행사 장소', playtime:'공연 시간',
-    usetimefestival:'이용요금', spendtimefestival:'관람 소요시간',
-    distance:'코스 거리', schedule:'일정', taketime:'소요시간', infocentertourcourse:'코스 문의',
-    openperiod:'운영 기간', usetimeleports:'이용시간', restdateleports:'휴무일', reservation:'예약',
-    expagerangeleports:'이용 연령', usefeeleports:'이용요금', checkintime:'체크인', checkouttime:'체크아웃',
-    reservationurl:'예약 안내', roomcount:'객실 수', parkinglodging:'주차', opentime:'영업시간',
-    restdateshopping:'휴무일', saleitem:'판매 품목', firstmenu:'대표 메뉴', opentimefood:'영업시간',
-    restdatefood:'휴무일', reservationfood:'예약', treatmenu:'취급 메뉴'
+  const DL = I18N.detailLabels;
+  const DETAIL_LABELS = {
+    usetime:DL.hours, restdate:DL.closed, infocenter:DL.contact, parking:DL.parking,
+    usetimeculture:DL.hours, restdateculture:DL.closed, usefee:DL.fee, parkingculture:DL.parking,
+    eventstartdate:DL.eventStart, eventenddate:DL.eventEnd, eventplace:DL.eventPlace, playtime:DL.playtime,
+    usetimefestival:DL.fee, spendtimefestival:DL.festivalDuration,
+    distance:DL.courseDistance, schedule:DL.schedule, taketime:DL.taketime, infocentertourcourse:DL.courseContact,
+    openperiod:DL.openperiod, usetimeleports:DL.hours, restdateleports:DL.closed, reservation:DL.reservation,
+    expagerangeleports:DL.ageRange, usefeeleports:DL.fee, checkintime:DL.checkin, checkouttime:DL.checkout,
+    reservationurl:DL.reservationUrl, roomcount:DL.roomcount, parkinglodging:DL.parking, opentime:DL.bizHours,
+    restdateshopping:DL.closed, saleitem:DL.saleitem, firstmenu:DL.firstmenu, opentimefood:DL.bizHours,
+    restdatefood:DL.closed, reservationfood:DL.reservation, treatmenu:DL.treatmenu
   };
 
   // 코스는 경유지가 핵심 정보라 상세 패널 '정보' 탭에 순서대로 펼쳐준다.
@@ -779,7 +865,7 @@
     box.hidden = false;
     const color = getCatColor(p.type);
     box.innerHTML = `
-      <div class="section-title">경유지 ${p.coursePoints.length}곳</div>
+      <div class="section-title">${i18nFmt(I18N.detail.waypoints, p.coursePoints.length)}</div>
       <div class="dp-course-list">
         ${p.coursePoints.map(pt => `
           <button type="button" class="dp-course-item" onclick="focusCoursePoint(${pt.order - 1})">
@@ -802,27 +888,27 @@
     const desc = document.getElementById('dpDesc');
     const apiInfo = document.getElementById('dpApiInfo');
     if (!p.id || !p.type) {
-      desc.textContent = '상세정보 식별자가 없습니다.';
+      desc.textContent = I18N.detail.noId;
       return;
     }
-    desc.textContent = '한국관광공사 상세정보를 불러오는 중...';
+    desc.textContent = I18N.detail.loading;
     try {
-      const response = await fetch(`/tour/api/detail/${encodeURIComponent(p.id)}?contentTypeId=${encodeURIComponent(p.type)}&lang=ko`);
+      const response = await fetch(`/tour/api/detail/${encodeURIComponent(p.id)}?contentTypeId=${encodeURIComponent(p.type)}&lang=${encodeURIComponent(lang)}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const detail = await response.json();
       if (currentDetailPlace !== p) return;   // 그 사이 다른 곳을 눌렀으면 버린다
       const rows = Object.entries(detail.details || {}).map(([key, value]) => {
         const shown = key.includes('date') ? detailDate(value) : detailText(value);
-        return `<div class="dp-info"><div class="dp-info-label">${escapeDetail(DETAIL_LABELS_KO[key] || key)}</div><div class="dp-info-val">${escapeDetail(shown)}</div></div>`;
+        return `<div class="dp-info"><div class="dp-info-label">${escapeDetail(DETAIL_LABELS[key] || key)}</div><div class="dp-info-val">${escapeDetail(shown)}</div></div>`;
       }).join('');
-      const overview = escapeDetail(detail.overview || '등록된 관광지 설명이 없습니다.');
-      const tel = detail.tel ? `<p style="margin-top:10px"><b>전화:</b> ${escapeDetail(detail.tel)}</p>` : '';
+      const overview = escapeDetail(detail.overview || I18N.detail.noOverview);
+      const tel = detail.tel ? `<p style="margin-top:10px"><b>${escapeDetail(I18N.detail.tel)}:</b> ${escapeDetail(detail.tel)}</p>` : '';
       desc.innerHTML = `<p style="line-height:1.75;white-space:pre-line">${overview}</p>${tel}`;
       apiInfo.innerHTML = rows
-        ? `<div class="section-card"><div class="section-title">이용 정보</div><div class="dp-info-row" style="margin:0">${rows}</div></div>` : '';
+        ? `<div class="section-card"><div class="section-title">${escapeDetail(I18N.detail.usageInfo)}</div><div class="dp-info-row" style="margin:0">${rows}</div></div>` : '';
       setDetailImages(detail.images?.length ? detail.images : [detail.image || p.image]);
     } catch (error) {
-      desc.textContent = '상세정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+      desc.textContent = I18N.detail.loadFail;
       console.error('TourAPI detail error', error);
     }
   }
@@ -841,13 +927,13 @@
     const reviews = Array.isArray(p.reviews) ? p.reviews : [];
     if (!reviews.length) {
       root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">✎</span>
-        <strong>아직 방문자 리뷰가 없어요</strong>직접 방문한 사용자의 짧은 리뷰가 이곳에 표시돼요.</div>`;
+        <strong>${escapeDetail(I18N.reviews.emptyTitle)}</strong>${escapeDetail(I18N.reviews.emptyBody)}</div>`;
       return;
     }
-    root.innerHTML = `<div class="section-card"><div class="section-title">방문자 리뷰 <small>${reviews.length}</small></div>`
+    root.innerHTML = `<div class="section-card"><div class="section-title">${escapeDetail(I18N.reviews.title)} <small>${reviews.length}</small></div>`
       + reviews.slice(0, 10).map(r => `<article class="review-card">
           <div class="review-head">
-            <span class="review-author">${escapeDetail(r.author_name || r.authorName || '방문자')}</span>
+            <span class="review-author">${escapeDetail(r.author_name || r.authorName || I18N.reviews.anonymous)}</span>
             <span class="review-star">${r.rating ? `★ ${escapeDetail(String(r.rating))}` : ''}</span>
           </div>
           <p class="review-text">${escapeDetail(r.text || r.content || '')}</p>
@@ -859,7 +945,7 @@
     const root = document.getElementById('dpCommunity');
     const writeUrl = `/community/post/write?placeContentId=${encodeURIComponent(p.id || '')}`
       + `&placeContentTypeId=${encodeURIComponent(p.type || '')}&placeTitle=${encodeURIComponent(p.title || '')}`;
-    root.innerHTML = `<div class="section-card empty-state">커뮤니티 이야기를 불러오는 중…</div>`;
+    root.innerHTML = `<div class="section-card empty-state">${escapeDetail(I18N.community.loading)}</div>`;
     try {
       const res = await fetch(`/tour/api/community/${encodeURIComponent(p.id)}`);
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -867,64 +953,80 @@
       if (currentDetailPlace !== p) return;
       if (!posts.length) {
         root.innerHTML = `<div class="section-card empty-state"><span style="font-size:25px">💬</span>
-          <strong>이 장소의 첫 이야기를 남겨보세요</strong>
-          커뮤니티에서 이 장소를 태그한 여행기와 후기가 모여요.<br>
-          <a class="outline-btn" href="${writeUrl}">커뮤니티 글쓰기</a></div>`;
+          <strong>${escapeDetail(I18N.community.emptyTitle)}</strong>
+          ${escapeDetail(I18N.community.emptyBody)}<br>
+          <a class="outline-btn" href="${writeUrl}">${escapeDetail(I18N.community.write)}</a></div>`;
         return;
       }
-      root.innerHTML = `<div class="section-card"><div class="section-title">커뮤니티 이야기 <small>${posts.length}</small></div>`
+      root.innerHTML = `<div class="section-card"><div class="section-title">${escapeDetail(I18N.community.title)} <small>${posts.length}</small></div>`
         + posts.map(post => `<a class="community-card" href="/community/post/${post.postId}">
-            <div class="community-meta"><span>${escapeDetail(post.authorName || '')}</span><span>조회 ${Number(post.viewCount || 0).toLocaleString()} · 댓글 ${Number(post.commentCount || 0).toLocaleString()}</span></div>
+            <div class="community-meta"><span>${escapeDetail(post.authorName || '')}</span><span>${escapeDetail(I18N.community.views)} ${Number(post.viewCount || 0).toLocaleString()} · ${escapeDetail(I18N.community.comments)} ${Number(post.commentCount || 0).toLocaleString()}</span></div>
             <div class="community-title">${escapeDetail(post.title || '')}</div>
             <p class="community-preview">${escapeDetail(post.contentPreview || '')}</p>
-          </a>`).join('') + `<a class="outline-btn" href="${writeUrl}">이 장소 글쓰기</a></div>`;
+          </a>`).join('') + `<a class="outline-btn" href="${writeUrl}">${escapeDetail(I18N.community.writeThis)}</a></div>`;
     } catch (e) {
-      root.innerHTML = `<div class="section-card empty-state">커뮤니티 글을 불러오지 못했어요.</div>`;
+      root.innerHTML = `<div class="section-card empty-state">${escapeDetail(I18N.community.loadFail)}</div>`;
       console.error('community posts error', e);
     }
   }
 
+  // 로그인 사용자는 서버(saved_place)에 저장한다. 비로그인은 기존처럼 localStorage.
+  const LOGGED_IN = currentUserId != null;
   const SAVED_KEY = currentUserId ? `tourSavedPlaces:${currentUserId}` : 'tourSavedPlaces:guest';
-  function savedPlaces() {
+  let savedIds = new Set();
+
+  function localSavedIds() {
     try {
       const value = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
-      if (!Array.isArray(value)) return [];
-      return value.map(item => typeof item === 'object' && item !== null ? item : { id: String(item) })
-        .filter(item => item.id != null);
-    } catch (e) {
-      return [];
-    }
+      return new Set((Array.isArray(value) ? value : [])
+        .map(item => String(typeof item === 'object' && item ? item.id : item))
+        .filter(id => id && id !== 'undefined'));
+    } catch (e) { return new Set(); }
   }
-  function savedSet() {
-    return new Set(savedPlaces().map(item => String(item.id)));
+  async function loadSavedIds() {
+    if (!LOGGED_IN) { savedIds = localSavedIds(); return; }
+    try {
+      const res = await fetch('/tour/api/saved-places/ids');
+      savedIds = new Set((await res.json()).map(String));
+    } catch (e) { savedIds = new Set(); }
   }
-  function savePayload(p) {
-    return {
-      id: String(p.id),
-      title: p.title ?? p.google_name ?? '이름 없는 관광지',
-      addr: p.addr ?? p.google_addr ?? '',
-      type: p.type ?? '',
-      lat: p.lat ?? null,
-      lng: p.lng ?? null
-    };
-  }
+  function savedSet() { return savedIds; }
   function updateSaveButton(p) {
     const btn = document.getElementById('btnSave');
-    const on = p && p.id != null && savedSet().has(String(p.id));
+    const on = p && p.id != null && savedIds.has(String(p.id));
     btn.classList.toggle('saved', on);
     btn.textContent = on ? '♥' : '♡';
   }
-  function toggleSave(p) {
+  async function toggleSave(p) {
     if (!p || p.id == null) return;
-    let places = savedPlaces();
     const key = String(p.id);
-    if (places.some(item => String(item.id) === key)) {
-      places = places.filter(item => String(item.id) !== key);
+    const wasOn = savedIds.has(key);
+    if (wasOn) savedIds.delete(key); else savedIds.add(key);
+    updateSaveButton(p);   // 낙관적 반영
+
+    if (LOGGED_IN) {
+      try {
+        if (wasOn) {
+          await csrfFetch(`/tour/api/saved-places/${encodeURIComponent(key)}`, 'DELETE');
+        } else {
+          await csrfFetch('/tour/api/saved-places', 'POST',
+            { contentId: key, contentTypeId: p.type ?? '' });
+        }
+      } catch (e) {
+        if (wasOn) savedIds.add(key); else savedIds.delete(key);  // 실패 시 롤백
+        updateSaveButton(p);
+      }
     } else {
-      places.unshift(savePayload(p));
+      // 비로그인: 기존 항목의 이름·주소는 보존하고 이 장소만 넣고 뺀다.
+      let stored = [];
+      try { stored = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); } catch (e) {}
+      stored = (Array.isArray(stored) ? stored : []).filter(it => String(it && it.id ? it.id : it) !== key);
+      if (!wasOn) {
+        stored.unshift({ id: key, title: p.title ?? I18N.untitled, addr: p.addr ?? '',
+          contentTypeId: p.type ?? '', lat: p.lat ?? null, lng: p.lng ?? null });
+      }
+      try { localStorage.setItem(SAVED_KEY, JSON.stringify(stored)); } catch (e) {}
     }
-    try { localStorage.setItem(SAVED_KEY, JSON.stringify(places)); } catch (e) {}
-    updateSaveButton(p);
   }
 
   function openDetail(p) {
@@ -939,20 +1041,20 @@
     document.getElementById('dpSub').textContent = p.addr ?? '';
     document.getElementById('dpBadges').innerHTML =
             `<span class="dp-badge" style="background:${color}22;color:${color}">${typeName(p.type)}</span>
-       <span class="dp-badge db-gold">🏆 ${p.score?.toFixed(1) ?? '-'}점</span>`;
+       <span class="dp-badge db-gold">🏆 ${p.score?.toFixed(1) ?? '-'}${I18N.detail.scoreSuffix}</span>`;
     const rc = Number(p.user_ratings_total || 0);
     const rating = Number(p.rating || 0);
     document.getElementById('dpRating').innerHTML = rating > 0
             ? `<span class="dp-rating-stars">★</span>
        <span class="dp-rating-score">${rating.toFixed(1)}</span>
-       <span class="dp-rating-count">${rc.toLocaleString()}개 리뷰</span>`
-            : `<span style="color:#bbb;font-size:11px">아직 방문자 평점이 없어요</span>`;
+       <span class="dp-rating-count">${i18nFmt(I18N.detail.reviewsCount, rc.toLocaleString())}</span>`
+            : `<span style="color:#bbb;font-size:11px">${escapeDetail(I18N.detail.noRating)}</span>`;
     document.getElementById('dpInfoRow').innerHTML = `
-      <div class="dp-info"><div class="dp-info-label">주소</div><div class="dp-info-val">${escapeDetail(p.addr ?? '-')}</div></div>
-      <div class="dp-info"><div class="dp-info-label">거리</div><div class="dp-info-val">${distStr(p.distance)}</div></div>
-      <div class="dp-info"><div class="dp-info-label">점수</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
-      <div class="dp-info"><div class="dp-info-label">분류</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
-    document.getElementById('dpDesc').textContent = '상세정보를 준비하는 중...';
+      <div class="dp-info"><div class="dp-info-label">${escapeDetail(I18N.detail.address)}</div><div class="dp-info-val">${escapeDetail(p.addr ?? '-')}</div></div>
+      <div class="dp-info"><div class="dp-info-label">${escapeDetail(I18N.detail.distance)}</div><div class="dp-info-val">${distStr(p.distance)}</div></div>
+      <div class="dp-info"><div class="dp-info-label">${escapeDetail(I18N.detail.score)}</div><div class="dp-info-val">🏆 ${p.score?.toFixed(1) ?? '-'} / 100</div></div>
+      <div class="dp-info"><div class="dp-info-label">${escapeDetail(I18N.detail.category)}</div><div class="dp-info-val">${typeName(p.type)}</div></div>`;
+    document.getElementById('dpDesc').textContent = I18N.detail.preparing;
     document.getElementById('dpApiInfo').innerHTML = '';
     renderReviews(p);
     loadCommunityPosts(p);
@@ -962,7 +1064,7 @@
     function goTaste(path) {
       if (!(p.lat && p.lng)) return;
       const params = new URLSearchParams({
-        lang: 'ko', lat: p.lat, lon: p.lng, near: p.title ?? ''
+        lang: lang, lat: p.lat, lon: p.lng, near: p.title ?? ''
       });
       location.href = path + '?' + params.toString();
     }
@@ -974,7 +1076,7 @@
       const shareData = { title: p.title || 'KoreaPoint', text: p.title || '', url: location.href };
       try {
         if (navigator.share) await navigator.share(shareData);
-        else { await navigator.clipboard.writeText(location.href); alert('현재 페이지 링크를 복사했어요.'); }
+        else { await navigator.clipboard.writeText(location.href); alert(I18N.share.copied); }
       } catch (e) {
         if (e?.name !== 'AbortError') console.error('share error', e);
       }
@@ -982,7 +1084,7 @@
 
     // ✅ 중복 없이 한 번만 선언
     document.getElementById('itineraryBtn2').onclick = function() {
-      if (!(p.lat && p.lng)) { alert("관광지 좌표가 없습니다."); return; }
+      if (!(p.lat && p.lng)) { alert(I18N.noCoords); return; }
       const endTitle = encodeURIComponent(p.title ?? '');
       navigator.geolocation.getCurrentPosition(
               function(pos) {
@@ -1107,6 +1209,19 @@
       body: body
     });
   }
+  /** JSON 본문 + CSRF 헤더로 fetch. 2xx 아니면 throw. */
+  async function csrfFetch(url, method, jsonBody) {
+    const token  = document.querySelector('meta[name="_csrf"]')?.content ?? '';
+    const header = document.querySelector('meta[name="_csrf_header"]')?.content ?? 'X-CSRF-TOKEN';
+    const opts = { method, headers: { [header]: token } };
+    if (jsonBody !== undefined) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(jsonBody);
+    }
+    const res = await fetch(url, opts);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res;
+  }
   function deleteKeyword(kw, event) {
     event.preventDefault();
     event.stopPropagation();
@@ -1133,6 +1248,7 @@
 
   applyAllChipLabel();
   render();
+  loadSavedIds().then(() => { if (currentDetailPlace) updateSaveButton(currentDetailPlace); });
 </script>
 
 <script th:src="'//dapi.kakao.com/v2/maps/sdk.js?appkey=' + ${kakaoKey} + '&autoload=false&libraries=clusterer'"></script>

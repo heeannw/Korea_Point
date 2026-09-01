@@ -1,11 +1,13 @@
 package com.example.demo.reservation.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,6 +46,10 @@ public class TourReservation {
     @Column(nullable = false, length = 200)
     private String placeTitle;
 
+    @Column(length = 10)
+    @Builder.Default
+    private String language = "ko";
+
     @Column(nullable = false)
     private LocalDate reservationDate;
 
@@ -58,7 +64,11 @@ public class TourReservation {
 
     @Column(nullable = false, length = 20)
     @Builder.Default
-    private String status = "예약 완료";
+    private String status = "결제 대기";
+
+    @OneToOne(mappedBy = "reservation")
+    @JsonIgnore
+    private ReservationPayment payment;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

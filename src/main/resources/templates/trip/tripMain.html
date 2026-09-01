@@ -122,7 +122,7 @@
                         <option value="PUS">김해국제공항</option><option value="ICN">인천국제공항</option><option value="GMP">김포국제공항</option><option value="OTHER">기타</option>
                     </select>
                 </div>
-                <div class="field-group"><label class="field-label">한국 도착 시각</label><input class="field-input" id="arrivalTime" type="time"></div>
+                <div class="field-group"><label class="field-label">한국 도착 시각 (선택)</label><input class="field-input" id="arrivalTime" type="time"></div>
                 <div class="field-group">
                     <label class="field-label">도착 후 일정 시작까지</label>
                     <select class="field-input" id="arrivalTransport" style="display:none;margin-bottom:6px" onchange="applyTransportDefault('arrival')">
@@ -146,7 +146,7 @@
                         <option value="PUS">김해국제공항</option><option value="ICN">인천국제공항</option><option value="GMP">김포국제공항</option><option value="OTHER">기타</option>
                     </select>
                 </div>
-                <div class="field-group"><label class="field-label">한국 출발 시각</label><input class="field-input" id="departureTime" type="time"></div>
+                <div class="field-group"><label class="field-label">한국 출발 시각 (선택)</label><input class="field-input" id="departureTime" type="time"></div>
                 <div class="field-group">
                     <label class="field-label">출발 전 일정 종료 여유</label>
                     <select class="field-input" id="departureTransport" style="display:none;margin-bottom:6px" onchange="applyTransportDefault('departure')">
@@ -456,8 +456,8 @@
             if (!document.getElementById('age').value)       { alert('나이를 입력해주세요'); return; }
             if (!document.getElementById('companion').value) { alert('동행 유형을 선택해주세요'); return; }
             if (!document.getElementById('travelDays').value){ alert('여행 일수를 입력해주세요'); return; }
-            if (!document.getElementById('arrivalTime').value){ alert('한국 도착 시각을 입력해주세요'); return; }
-            if (!document.getElementById('departureTime').value){ alert('한국 출발 시각을 입력해주세요'); return; }
+            // 도착/출발 시각은 선택 입력으로 바꿈 — 안 채우면 그냥 기본 시작/종료 시간으로 일정을 짠다.
+            // (백엔드 TripRecommendService는 이미 이 값이 없어도 정상 동작하게 돼 있었음)
         }
         if (from === 2) {
             if (document.querySelectorAll('#slotList .slot-item').length === 0) {

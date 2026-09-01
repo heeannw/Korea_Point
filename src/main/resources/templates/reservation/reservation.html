@@ -4,19 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>예약하기 | KoreaPoint</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
 <body>
 <header>
     <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
     <div class="header-right">
-        <select class="h-btn" id="languageSelect" translate="no" onchange="changeTripLanguage(this.value)" aria-label="언어 선택">
-            <option value="ko">한국어</option>
-            <option value="en">English</option>
-            <option value="ja">日本語</option>
-            <option value="zh-CN">中文</option>
+        <select class="h-btn" id="languageSelect" translate="no" onchange="switchReservationLanguage(this.value)" aria-label="언어 선택">
+            <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
+            <option value="en" th:selected="${lang == 'en'}">English</option>
+            <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
+            <option value="zh-CN" th:selected="${lang == 'zh-CN'}">中文</option>
+            <option value="fr" th:selected="${lang == 'fr'}">Français</option>
         </select>
         <th:block th:if="${isLoggedIn}">
             <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}">User</a>
@@ -29,36 +29,38 @@
 </header>
 
 <main class="page">
-    <section class="page-head">
-        <div>
-            <p class="eyebrow">Busan Travel</p>
-            <h1>관광지 예약</h1>
-            <p class="sub">부산의 관광지를 둘러보고 방문 일정을 예약해보세요.</p>
+    <section class="reservation-search-panel">
+        <div class="page-head reservation-page-head">
+            <div>
+                <p class="eyebrow">Busan Travel</p>
+                <h1 id="reservationTitle">관광지 예약</h1>
+                <p class="sub" id="reservationSubtitle">부산의 관광지를 둘러보고 방문 일정을 예약해보세요.</p>
+            </div>
         </div>
+
+        <div class="notice warning" th:unless="${hasTourApiKey}">
+            관광지 목록을 불러오기 위한 TourAPI 서비스 키 설정이 필요합니다.
+        </div>
+
+        <form class="toolbar" id="searchForm">
+            <div class="search-row">
+                <input class="input" id="keyword" name="keyword" th:value="${keyword}" placeholder="관광지명 또는 주소로 검색">
+                <button class="btn" id="searchButton" type="submit">검색</button>
+            </div>
+            <input type="hidden" id="contentTypeId" name="contentTypeId" th:value="${contentTypeId}">
+            <div class="category-buttons" role="group" aria-label="카테고리 선택">
+                <button type="button" class="category-btn" data-content-type="" data-label-key="all">전체</button>
+                <button type="button" class="category-btn" data-content-type="tourist_spot" data-label-key="tourist">관광지</button>
+                <button type="button" class="category-btn" data-content-type="culture" data-label-key="culture">문화시설</button>
+                <button type="button" class="category-btn" data-content-type="festival" data-label-key="festival">행사/공연/축제</button>
+                <button type="button" class="category-btn" data-content-type="course" data-label-key="course">여행코스</button>
+                <button type="button" class="category-btn" data-content-type="leports" data-label-key="leports">레포츠</button>
+                <button type="button" class="category-btn" data-content-type="lodging" data-label-key="lodging">숙박</button>
+                <button type="button" class="category-btn" data-content-type="shopping" data-label-key="shopping">쇼핑</button>
+                <button type="button" class="category-btn" data-content-type="restaurant" data-label-key="restaurant">음식점</button>
+            </div>
+        </form>
     </section>
-
-    <div class="notice warning" th:unless="${hasTourApiKey}">
-        관광지 목록을 불러오기 위한 TourAPI 서비스 키 설정이 필요합니다.
-    </div>
-
-    <form class="toolbar" id="searchForm">
-        <div class="search-row">
-            <input class="input" id="keyword" name="keyword" th:value="${keyword}" placeholder="관광지명 또는 주소로 검색">
-            <button class="btn" type="submit">검색</button>
-        </div>
-        <input type="hidden" id="contentTypeId" name="contentTypeId" th:value="${contentTypeId}">
-        <div class="category-buttons" role="group" aria-label="카테고리 선택">
-            <button type="button" class="category-btn" data-content-type="">전체</button>
-            <button type="button" class="category-btn" data-content-type="12">관광지</button>
-            <button type="button" class="category-btn" data-content-type="14">문화시설</button>
-            <button type="button" class="category-btn" data-content-type="15">행사/공연/축제</button>
-            <button type="button" class="category-btn" data-content-type="25">여행코스</button>
-            <button type="button" class="category-btn" data-content-type="28">레포츠</button>
-            <button type="button" class="category-btn" data-content-type="32">숙박</button>
-            <button type="button" class="category-btn" data-content-type="38">쇼핑</button>
-            <button type="button" class="category-btn" data-content-type="39">음식점</button>
-        </div>
-    </form>
 
     <section id="placeGrid" class="grid" aria-live="polite"></section>
     <div id="emptyState" class="empty">부산 관광지 목록을 불러오는 중입니다.</div>
@@ -67,7 +69,45 @@
     </div>
 </main>
 
-<script>
+<dialog id="placeDetailDialog" class="reservation-detail-dialog">
+    <div class="reservation-detail-head">
+        <h2 id="detailTitle" th:text="#{reservation.list.detailTitle}">장소 상세정보</h2>
+        <button type="button" class="detail-close" id="detailCloseButton" th:aria-label="#{reservation.list.close}">×</button>
+    </div>
+    <div id="detailContent" class="reservation-detail-content"></div>
+</dialog>
+
+<script th:inline="javascript">
+    const PAGE_LANG = /*[[${lang}]]*/ "ko";
+    const T = {
+        title: /*[[#{reservation.list.title}]]*/ "관광지 예약",
+        subtitle: /*[[#{reservation.list.subtitle}]]*/ "부산 관광지 예약",
+        placeholder: /*[[#{reservation.list.placeholder}]]*/ "검색",
+        search: /*[[#{reservation.list.search}]]*/ "검색",
+        all: /*[[#{reservation.list.all}]]*/ "전체",
+        tourist: /*[[#{reservation.list.tourist}]]*/ "관광지",
+        culture: /*[[#{reservation.list.culture}]]*/ "문화시설",
+        festival: /*[[#{reservation.list.festival}]]*/ "축제",
+        course: /*[[#{reservation.list.course}]]*/ "여행코스",
+        leports: /*[[#{reservation.list.leports}]]*/ "레포츠",
+        lodging: /*[[#{reservation.list.lodging}]]*/ "숙박",
+        shopping: /*[[#{reservation.list.shopping}]]*/ "쇼핑",
+        restaurant: /*[[#{reservation.list.restaurant}]]*/ "음식점",
+        loading: /*[[#{reservation.list.loading}]]*/ "불러오는 중",
+        loadingMore: /*[[#{reservation.list.loadingMore}]]*/ "더 불러오는 중",
+        empty: /*[[#{reservation.list.empty}]]*/ "결과 없음",
+        failed: /*[[#{reservation.list.failed}]]*/ "불러오기 실패",
+        reserve: /*[[#{reservation.list.reserve}]]*/ "예약하기",
+        detail: /*[[#{reservation.list.detail}]]*/ "상세보기",
+        detailLoading: /*[[#{reservation.list.detailLoading}]]*/ "상세정보를 불러오는 중입니다.",
+        detailFailed: /*[[#{reservation.list.detailFailed}]]*/ "상세정보를 불러오지 못했습니다.",
+        noOverview: /*[[#{reservation.list.noOverview}]]*/ "등록된 상세 설명이 없습니다.",
+        noTitle: /*[[#{reservation.list.noTitle}]]*/ "관광지명 없음",
+        noAddress: /*[[#{reservation.list.noAddress}]]*/ "주소 정보 없음",
+        noTel: /*[[#{reservation.list.noTel}]]*/ "전화번호 정보 없음",
+        imageAlt: /*[[#{reservation.list.imageAlt}]]*/ "부산 관광지",
+        more: /*[[#{reservation.list.more}]]*/ "더보기"
+    };
     const grid = document.getElementById("placeGrid");
     const emptyState = document.getElementById("emptyState");
     const form = document.getElementById("searchForm");
@@ -75,11 +115,30 @@
     const contentTypeInput = document.getElementById("contentTypeId");
     const categoryButtons = document.querySelectorAll(".category-btn");
     const loadMoreBtn = document.getElementById("loadMoreBtn");
+    const detailDialog = document.getElementById("placeDetailDialog");
+    const detailContent = document.getElementById("detailContent");
     const pageSize = 30;
     let currentPage = 1;
     let currentKeyword = "";
     let currentContentTypeId = "";
     let activeRequestController = null;
+
+    document.documentElement.lang = PAGE_LANG;
+    document.getElementById("reservationTitle").textContent = T.title;
+    document.getElementById("reservationSubtitle").textContent = T.subtitle;
+    keywordInput.placeholder = T.placeholder;
+    document.getElementById("searchButton").textContent = T.search;
+    emptyState.textContent = T.loading;
+    loadMoreBtn.textContent = T.more;
+    categoryButtons.forEach(button => {
+        button.textContent = T[button.dataset.labelKey] || button.textContent;
+    });
+
+    function switchReservationLanguage(lang) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("lang", lang);
+        window.location.href = url.toString();
+    }
 
     function escapeHtml(value) {
         return String(value || "")
@@ -90,18 +149,38 @@
             .replaceAll("'", "&#039;");
     }
 
-    function imageMarkup(place) {
-        if (!place.imageUrl) {
-            return `<div class="place-image image-missing"><span>BUSAN</span></div>`;
-        }
+    function defaultImageUrl(contentTypeId) {
+        const images = {
+            "12": "/images/reservation/defaults/tourist-attraction.jpg",
+            "14": "/images/reservation/defaults/culture.jpg",
+            "15": "/images/reservation/defaults/festival.jpg",
+            "25": "/images/reservation/defaults/travel-course.jpg",
+            "28": "/images/reservation/defaults/leports.jpg",
+            "32": "/images/reservation/defaults/lodging.jpg",
+            "38": "/images/reservation/defaults/shopping.jpg",
+            "39": "/images/reservation/defaults/food.jpg"
+            ,"75": "/images/reservation/defaults/leports.jpg"
+            ,"76": "/images/reservation/defaults/tourist-attraction.jpg"
+            ,"77": "/images/reservation/defaults/travel-course.jpg"
+            ,"78": "/images/reservation/defaults/culture.jpg"
+            ,"79": "/images/reservation/defaults/shopping.jpg"
+            ,"80": "/images/reservation/defaults/lodging.jpg"
+            ,"82": "/images/reservation/defaults/food.jpg"
+            ,"85": "/images/reservation/defaults/festival.jpg"
+        };
+        return images[String(contentTypeId || "")] || images["12"];
+    }
 
+    function imageMarkup(place) {
+        const fallbackUrl = defaultImageUrl(place.contentTypeId);
+        const imageUrl = place.imageUrl || fallbackUrl;
         return `
             <div class="place-image">
-                <img src="${escapeHtml(place.imageUrl)}"
-                     alt="${escapeHtml(place.title || "부산 관광지")}"
+                <img src="${escapeHtml(imageUrl)}"
+                     data-fallback="${escapeHtml(fallbackUrl)}"
+                     alt="${escapeHtml(place.title || T.imageAlt)}"
                      loading="lazy"
-                     onerror="this.parentElement.classList.add('image-missing'); this.remove();">
-                <span>BUSAN</span>
+                     onerror="this.onerror=null; this.src=this.dataset.fallback;">
             </div>
         `;
     }
@@ -113,23 +192,24 @@
 
         if (!places.length && !append) {
             emptyState.style.display = "block";
-            emptyState.textContent = "표시할 관광지가 없습니다. 검색어를 바꿔 다시 시도해주세요.";
+            emptyState.textContent = T.empty;
             loadMoreBtn.style.display = "none";
             return;
         }
 
         emptyState.style.display = "none";
         grid.insertAdjacentHTML("beforeend", places.map(place => {
-            const detailUrl = `/ko/reservation/new?contentId=${encodeURIComponent(place.contentId || "")}&contentTypeId=${encodeURIComponent(place.contentTypeId || "")}&placeTitle=${encodeURIComponent(place.title || "")}`;
+            const detailUrl = `/ko/reservation/new?contentId=${encodeURIComponent(place.contentId || "")}&contentTypeId=${encodeURIComponent(place.contentTypeId || "")}&placeTitle=${encodeURIComponent(place.title || "")}&lang=${encodeURIComponent(PAGE_LANG)}`;
             return `
-                <article class="place-card">
+                <article class="place-card" data-content-id="${escapeHtml(place.contentId)}" data-content-type-id="${escapeHtml(place.contentTypeId)}" tabindex="0">
                     ${imageMarkup(place)}
                     <div class="place-body">
-                        <h2 class="place-title">${escapeHtml(place.title || "관광지명 없음")}</h2>
-                        <p class="meta">${escapeHtml(place.displayAddress || place.address || "주소 정보 없음")}</p>
-                        <p class="meta">${escapeHtml(place.displayTel || place.tel || "전화번호 정보 없음")}</p>
+                        <h2 class="place-title">${escapeHtml(place.title || T.noTitle)}</h2>
+                        <p class="meta">${escapeHtml(place.address || T.noAddress)}</p>
+                        <p class="meta">${escapeHtml(place.tel || T.noTel)}</p>
                         <div class="card-actions">
-                            <a class="btn" href="${detailUrl}">예약하기</a>
+                            <button class="btn secondary detail-button" type="button">${T.detail}</button>
+                            <a class="btn" href="${detailUrl}">${T.reserve}</a>
                         </div>
                     </div>
                 </article>
@@ -139,6 +219,62 @@
         loadMoreBtn.style.display = places.length >= pageSize ? "inline-flex" : "none";
     }
 
+    async function openPlaceDetail(card) {
+        const contentId = card.dataset.contentId;
+        const contentTypeId = card.dataset.contentTypeId;
+        detailContent.textContent = T.detailLoading;
+        detailDialog.showModal();
+        const params = new URLSearchParams({lang: PAGE_LANG});
+        if (contentTypeId) params.set("contentTypeId", contentTypeId);
+        try {
+            const response = await fetch(`/api/tourapi/places/${encodeURIComponent(contentId)}?${params}`);
+            if (!response.ok) throw new Error("detail request failed");
+            const place = await response.json();
+            detailContent.innerHTML = "";
+            const title = document.createElement("h3");
+            title.textContent = place.title || T.noTitle;
+            const address = document.createElement("p");
+            address.className = "meta";
+            address.textContent = place.address || T.noAddress;
+            const overview = document.createElement("p");
+            overview.className = "reservation-detail-overview";
+            overview.textContent = place.overview || T.noOverview;
+            detailContent.append(title, address, overview);
+            if (place.operatingInformation) {
+                const list = document.createElement("dl");
+                list.className = "reservation-operating-info";
+                Object.entries(place.operatingInformation).forEach(([label, value]) => {
+                    const row = document.createElement("div");
+                    const term = document.createElement("dt");
+                    const description = document.createElement("dd");
+                    term.textContent = label;
+                    description.textContent = value;
+                    row.append(term, description);
+                    list.append(row);
+                });
+                detailContent.append(list);
+            }
+        } catch (error) {
+            detailContent.textContent = T.detailFailed;
+        }
+    }
+
+    grid.addEventListener("click", event => {
+        const card = event.target.closest(".place-card");
+        if (!card || event.target.closest("a")) return;
+        openPlaceDetail(card);
+    });
+    grid.addEventListener("keydown", event => {
+        if ((event.key === "Enter" || event.key === " ") && !event.target.closest("a")) {
+            event.preventDefault();
+            openPlaceDetail(event.target.closest(".place-card"));
+        }
+    });
+    document.getElementById("detailCloseButton").addEventListener("click", () => detailDialog.close());
+    detailDialog.addEventListener("click", event => {
+        if (event.target === detailDialog) detailDialog.close();
+    });
+
     async function loadPlaces(keyword = "", contentTypeId = "", pageNo = 1, append = false) {
         if (activeRequestController) {
             activeRequestController.abort();
@@ -146,13 +282,14 @@
         const requestController = new AbortController();
         activeRequestController = requestController;
         emptyState.style.display = "block";
-        emptyState.textContent = append ? "다음 관광지 목록을 불러오는 중입니다." : "부산 관광지 목록을 불러오는 중입니다.";
+        emptyState.textContent = append ? T.loadingMore : T.loading;
         loadMoreBtn.disabled = true;
         if (!append) {
             grid.innerHTML = "";
         }
 
         const params = new URLSearchParams({pageNo: String(pageNo), numOfRows: String(pageSize)});
+        params.set("lang", PAGE_LANG);
         if (keyword.trim()) {
             params.set("keyword", keyword.trim());
         }
@@ -171,7 +308,7 @@
         } catch (error) {
             if (error.name === "AbortError") return;
             emptyState.style.display = "block";
-            emptyState.textContent = "관광지 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.";
+            emptyState.textContent = T.failed;
             loadMoreBtn.style.display = "none";
         } finally {
             if (activeRequestController === requestController) {
