@@ -63,6 +63,10 @@ public class TourPlaceDto {
     private String popularityBasis;
     private LocalDateTime popularityCalculatedAt;
 
+    /** 축제·행사(type 15)일 때만 채워지는 행사 기간(yyyyMMdd). 다른 유형은 null. */
+    private String eventStartDate;
+    private String eventEndDate;
+
     // 계산 필드
     private Float  score;
     private Double distance;
@@ -142,4 +146,10 @@ public class TourPlaceDto {
 
     public Double getDistance() { return distance; }
     public void setDistance(Double distance) { this.distance = distance; }
+
+    public String getEventStartDate() { return eventStartDate; }
+    public void setEventStartDate(String eventStartDate) { this.eventStartDate = eventStartDate; }
+
+    public String getEventEndDate() { return eventEndDate; }
+    public void setEventEndDate(String eventEndDate) { this.eventEndDate = eventEndDate; }
 }

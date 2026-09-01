@@ -460,6 +460,10 @@ public class TourApiClient {
         if (FOOD_CONTENT_TYPE.equals(type)) {
             place.setFoodCategory(resolveFoodCategory(item));
         }
+        if (FESTIVAL_CONTENT_TYPE.equals(type)) {
+            place.setEventStartDate(text(item, "eventstartdate"));
+            place.setEventEndDate(text(item, "eventenddate"));
+        }
         place.setRating(null);
         place.setUser_ratings_total(0);
         place.setReviews(List.of());
