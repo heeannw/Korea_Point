@@ -5,7 +5,6 @@ import com.example.demo.trip.dto.TripRecommendRequest;
 import com.example.demo.trip.dto.TripRecommendRequest.SlotOrder;
 import com.example.demo.trip.dto.TripRecommendResponse;
 import com.example.demo.trip.dto.TripRecommendResponse.*;
-import com.example.demo.tourism.service.UnsplashImageService;
 import com.example.demo.tourism.service.TourismService;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.example.demo.trip.client.BusanFestivalClient;
@@ -38,7 +37,6 @@ import java.util.stream.Collectors;
 public class TripRecommendService {
 
     private final ObjectMapper objectMapper;
-    private final UnsplashImageService unsplashImageService;
     private final TourismService tourismService;
     private final BusanFestivalClient busanFestivalClient;
     private final WeatherForecastService weatherForecastService;
@@ -379,16 +377,37 @@ public class TripRecommendService {
         };
     }
 
-    /** curated(손으로 고른 목록)를 우선하고, 이름이 겹치지 않는 live 항목만 뒤에 더한다. */
+    /**
+     * curated(손으로 고른 목록)를 우선하고, 이름이 겹치지 않는 live 항목만 뒤에 더한다.
+     * 이름이 겹치는데 curated 쪽에 사진이 없으면, 같은 장소의 live(TourAPI) 사진으로 보충한다 —
+     * curated는 평점 등은 손질돼 있지만 사진은 없는 경우가 많아서(범어사 등).
+     */
     private List<PlaceData> mergeByName(List<PlaceData> curated, List<PlaceData> live) {
+        Map<String, PlaceData> liveByName = new HashMap<>();
+        for (PlaceData p : live) {
+            if (p.name() != null && !p.name().isBlank()) liveByName.putIfAbsent(p.name(), p);
+        }
+
+        List<PlaceData> merged = new ArrayList<>();
+        for (PlaceData p : curated) {
+            PlaceData liveMatch = liveByName.get(p.name());
+            boolean needsImage = p.imageUrl() == null || p.imageUrl().isBlank();
+            boolean liveHasImage = liveMatch != null && liveMatch.imageUrl() != null && !liveMatch.imageUrl().isBlank();
+            merged.add(needsImage && liveHasImage ? withImage(p, liveMatch.imageUrl()) : p);
+        }
+
         Set<String> existingNames = curated.stream().map(PlaceData::name).collect(Collectors.toSet());
-        List<PlaceData> merged = new ArrayList<>(curated);
         for (PlaceData p : live) {
             if (p.name() != null && !p.name().isBlank() && existingNames.add(p.name())) {
                 merged.add(p);
             }
         }
         return merged;
+    }
+
+    private PlaceData withImage(PlaceData p, String imageUrl) {
+        return new PlaceData(p.name(), p.category(), p.lat(), p.lng(), p.score(), p.avgRating(), p.reviewCount(),
+                p.area(), p.foodCategory(), p.address(), imageUrl, p.nameEn(), p.categoryEn(), p.adventure(), p.typeName());
     }
 
     private PlaceData busanFood(String name, double lat, double lng, String area, String foodCategory) {
@@ -1013,17 +1032,10 @@ public class TripRecommendService {
         s.setLat(pl.lat());
         s.setLng(pl.lng());
         s.setAddress(pl.address());
-        // imageUrl: JSON에 있으면 사용, 없으면 Unsplash 카테고리별 이미지에서 보충
-        String imgUrl = pl.imageUrl();
-        if (imgUrl == null || imgUrl.isBlank()) {
-            String unsplashCat = resolveUnsplashCategory(cat, pl.foodCategory());
-            List<String> imgs = unsplashImageService.getThumbList(unsplashCat);
-            if (!imgs.isEmpty()) {
-                // 장소 이름 해시로 항상 같은 이미지 선택 (랜덤하지 않게)
-                imgUrl = imgs.get(Math.abs(pl.name().hashCode()) % imgs.size());
-            }
-        }
-        s.setImageUrl(imgUrl);
+        // imageUrl: 큐레이션/TourAPI 원본 사진이 있으면 그대로, 없으면 그냥 비워둔다.
+        // 예전엔 Unsplash 스톡 이미지로 채웠는데, 실제 장소랑 안 어울리는 사진이 뜨는 문제가 있어서
+        // (예: 범어사에 반찬 사진) 뺐다 — 프론트가 이미지 없으면 카테고리 아이콘을 보여준다.
+        s.setImageUrl(pl.imageUrl());
         // 베이즈 별점 보정 (리뷰 수 적으면 전체 평균 쪽으로 당김)
         double correctedRating = bayesRating(pl.avgRating(), pl.reviewCount());
         s.setAvgRating(Math.round(correctedRating * 10.0) / 10.0);
@@ -1114,39 +1126,14 @@ public class TripRecommendService {
             rp.setScore(Math.round(sp.score * 10000.0) / 10000.0);
             rp.setReason(sp.reason); rp.setLat(sp.place.lat()); rp.setLng(sp.place.lng());
             rp.setAddress(sp.place.address());
-            // imageUrl: JSON에 있으면 사용, 없으면 Unsplash fallback
-            String recImg = sp.place.imageUrl();
-            if (recImg == null || recImg.isBlank()) {
-                String unsplashCat = resolveUnsplashCategory(sp.place.category(), sp.place.foodCategory());
-                List<String> imgs = unsplashImageService.getThumbList(unsplashCat);
-                if (!imgs.isEmpty()) {
-                    recImg = imgs.get(Math.abs(sp.place.name().hashCode()) % imgs.size());
-                }
-            }
-            rp.setImageUrl(recImg);
+            // 큐레이션/TourAPI 원본 사진만 쓰고, 없으면 비워둔다(Unsplash 대체 안 함 — 사진 불일치 방지).
+            rp.setImageUrl(sp.place.imageUrl());
             rp.setAvgRating(sp.place.avgRating()); rp.setReviewCount(sp.place.reviewCount());
             return rp;
         }).collect(Collectors.toList());
     }
 
     public PlaceDetailDto getPlaceDetail(Long placeId) { return null; }
-
-    /** Unsplash 카테고리 키 매핑 (UnsplashImageService.KEYWORD_MAP 키와 일치) */
-    private String resolveUnsplashCategory(String slotCategory, String foodCategory) {
-        if ("cafe".equals(slotCategory)) return "카페";
-        if ("bar".equals(slotCategory))  return "바";
-        if (foodCategory != null) {
-            return switch (foodCategory) {
-                case "한식"       -> "한식";
-                case "일식"       -> "일식";
-                case "양식"       -> "양식";
-                case "중식"       -> "중식";
-                case "고기_해산물" -> "고기_해산물";
-                default           -> "기타";
-            };
-        }
-        return "기타";
-    }
 
     // ────────────────────────────────────────────
     //  유틸
