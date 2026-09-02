@@ -293,40 +293,38 @@
            위치를 .hero-content 의 좌우 여백(64px)에 맞춰 세로선을 나란히 뒀다.
            예전 값 right: calc(18% + 40px) 는 배너가 64% 폭이던 시절의 잔재라
            사진 3장을 꽉 채우는 지금은 세 번째 사진 한가운데에 떠 있었다. */
+        /* 오른쪽 아래 모서리. 문구가 왼쪽 아래에 있으니 대각으로 마주 본다.
+           여백을 .hero-content 와 같은 64px 로 맞춰 아래 선이 나란하다.
+           예전 값 right: calc(18% + 40px) 는 배너가 64% 폭이던 시절의 잔재라
+           사진 3장을 꽉 채우는 지금은 세 번째 사진 한가운데에 떠 있었다. */
         .hero-counter {
             position: absolute;
             right: 64px;
             bottom: 64px;
             z-index: 3;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 7px 14px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.92);
-            box-shadow: 0 2px 12px rgba(16, 24, 40, 0.18);
+            text-align: right;
         }
 
         .counter-num {
-            font-size: 13px;
+            font-family: "Cormorant Garamond", serif;
+            font-size: 44px;
             font-weight: 600;
-            color: var(--dark);
+            color: #ffffff;
             line-height: 1;
             font-variant-numeric: tabular-nums;
         }
 
         .counter-bar {
-            width: 1px;
-            height: 11px;
-            margin: 0;
-            background: rgba(16, 24, 40, 0.22);
+            width: 28px;
+            height: 1px;
+            margin: 8px 0 8px auto;
+            background: rgba(255, 255, 255, 0.35);
         }
 
         .counter-total {
-            font-size: 13px;
-            line-height: 1;
-            color: rgba(16, 24, 40, 0.45);
-            letter-spacing: 0;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.55);
+            letter-spacing: 0.1em;
             font-variant-numeric: tabular-nums;
         }
 
