@@ -42,6 +42,52 @@
             color: var(--blue, #3b9eff);
             border-bottom: 2px solid var(--blue, #3b9eff);
         }
+
+        /* Mode tabs (bus/subway/walk/taxi) — replaces the mixed fast/comfort/recommend list */
+        .mode-tabs {
+            display: flex;
+            gap: 6px;
+            margin: 4px 0 16px;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 10px 4px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gray);
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .mode-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+        .mode-panel { display: none; }
+        .mode-panel.active { display: block; }
+        .empty-state.small {
+            padding: 32px 16px;
+            text-align: center;
+            color: var(--gray);
+            background: white;
+            border-radius: 14px;
+        }
+        .empty-state.small .icon { font-size: 28px; margin-bottom: 8px; }
+        .empty-state.small p { font-size: 13px; margin: 0; }
+        .kakao-map-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            background: #FEE500;
+            color: #191600;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .kakao-map-btn:hover { background: #f5da00; }
     </style>
     <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
@@ -116,50 +162,122 @@
         ⚠️ <span th:text="${error}"></span>
     </div>
 
-    <div th:if="${routes != null and !#lists.isEmpty(routes)}">
+    <div th:if="${routes != null}">
         <a class="re-search" th:href="@{/en/transport/search}">← Search again</a>
-        <div class="result-header">
+
+        <div class="result-header" th:if="${!#lists.isEmpty(routes)}">
             <b th:text="${start}"></b> → <b th:text="${end}"></b> ·
             Depart at <span th:text="${routes[0].departTime}"></span>
         </div>
-        <div th:each="route : ${routes}">
-            <div class="route-card" th:data-route-id="${route.routeId}" onclick="goDetail(this)">
-                <div class="route-type"
-                     th:text="${route.type == 'fast'} ? '⚡ Fastest Route' :
-                       (${route.type == 'comfort'} ? '😊 Comfortable Route' : '⭐ Recommended Route')">
-                </div>
-                <div class="route-time" th:data-minutes="${route.totalTime}"></div>
-                <div class="route-info">
-                    <span th:text="${route.transferCount}"></span> transfer(s) ·
-                    <span th:text="${#numbers.formatDecimal(route.walkTime, 1, 1)}"></span> min walk
-                </div>
-                <div class="route-stations">
-            <span th:each="step, stat : ${route.steps}"
-                  th:if="${step.type == 'subway' or step.type == 'bus'}">
-                <span th:if="${!stat.first}"> → </span>
-                <span th:text="${step.fromStation}"></span>
-                <span th:text="'(' + ${step.line} + ')'"></span>
-            </span>
-                    <span th:if="${!#lists.isEmpty(route.steps)}">
-                → <span th:text="${route.steps[route.steps.size()-1].toStation}"></span>
-            </span>
-                </div>
-                <div class="step-pills">
-            <span th:each="step, stat : ${route.steps}"
-                  th:if="${step.type == 'subway' or step.type == 'bus'}">
-                <span th:if="${!stat.first}" class="pill-arrow">›</span>
-                <span class="pill" th:style="'background:' + ${step.color}"
-                      th:text="${step.line}"></span>
-            </span>
+
+        <div class="mode-tabs">
+            <button type="button" class="mode-tab active" onclick="switchMode('bus', this)">🚌 Bus</button>
+            <button type="button" class="mode-tab" onclick="switchMode('subway', this)">🚇 Subway</button>
+            <button type="button" class="mode-tab" onclick="switchMode('walk', this)">🚶 Walk</button>
+            <button type="button" class="mode-tab" onclick="switchMode('taxi', this)">🚕 Taxi</button>
+        </div>
+
+        <div class="mode-panel active" id="mode-bus" th:with="modeRoutes=${routes.?[type=='bus']}">
+            <div th:each="route : ${modeRoutes}">
+                <div class="route-card" th:data-route-id="${route.routeId}" th:data-route-type="${route.type}" onclick="goDetail(this)">
+                    <div class="route-time" th:data-minutes="${route.totalTime}"></div>
+                    <div class="route-info">
+                        <span th:text="${route.transferCount}"></span> transfer(s) ·
+                        <span th:text="${#numbers.formatDecimal(route.walkTime, 1, 1)}"></span> min walk
+                    </div>
+                    <div class="route-stations">
+                        <span th:each="step, stat : ${route.steps}"
+                              th:if="${step.type == 'subway' or step.type == 'bus'}">
+                            <span th:if="${!stat.first}"> → </span>
+                            <span th:text="${step.fromStation}"></span>
+                            <span th:text="'(' + ${step.line} + ')'"></span>
+                        </span>
+                        <span th:if="${!#lists.isEmpty(route.steps)}">
+                            → <span th:text="${route.steps[route.steps.size()-1].toStation}"></span>
+                        </span>
+                    </div>
+                    <div class="step-pills">
+                        <span th:each="step, stat : ${route.steps}"
+                              th:if="${step.type == 'subway' or step.type == 'bus'}">
+                            <span th:if="${!stat.first}" class="pill-arrow">›</span>
+                            <span class="pill" th:style="'background:' + ${step.color}"
+                                  th:text="${step.line}"></span>
+                        </span>
+                    </div>
                 </div>
             </div>
+            <div class="empty-state small" th:if="${#lists.isEmpty(modeRoutes)}">
+                <div class="icon">🚌</div>
+                <p>No bus route found</p>
+            </div>
         </div>
-    </div>
 
-    <div class="empty-state" th:if="${routes != null and #lists.isEmpty(routes)}">
-        <div class="icon">🔍</div>
-        <h3>No routes found</h3>
-        <p>Please check your departure and destination</p>
+        <div class="mode-panel" id="mode-subway" th:with="modeRoutes=${routes.?[type=='subway']}">
+            <div th:each="route : ${modeRoutes}">
+                <div class="route-card" th:data-route-id="${route.routeId}" th:data-route-type="${route.type}" onclick="goDetail(this)">
+                    <div class="route-time" th:data-minutes="${route.totalTime}"></div>
+                    <div class="route-info">
+                        <span th:text="${route.transferCount}"></span> transfer(s) ·
+                        <span th:text="${#numbers.formatDecimal(route.walkTime, 1, 1)}"></span> min walk
+                    </div>
+                    <div class="route-stations">
+                        <span th:each="step, stat : ${route.steps}"
+                              th:if="${step.type == 'subway' or step.type == 'bus'}">
+                            <span th:if="${!stat.first}"> → </span>
+                            <span th:text="${step.fromStation}"></span>
+                            <span th:text="'(' + ${step.line} + ')'"></span>
+                        </span>
+                        <span th:if="${!#lists.isEmpty(route.steps)}">
+                            → <span th:text="${route.steps[route.steps.size()-1].toStation}"></span>
+                        </span>
+                    </div>
+                    <div class="step-pills">
+                        <span th:each="step, stat : ${route.steps}"
+                              th:if="${step.type == 'subway' or step.type == 'bus'}">
+                            <span th:if="${!stat.first}" class="pill-arrow">›</span>
+                            <span class="pill" th:style="'background:' + ${step.color}"
+                                  th:text="${step.line}"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="empty-state small" th:if="${#lists.isEmpty(modeRoutes)}">
+                <div class="icon">🚇</div>
+                <p>No subway route found</p>
+            </div>
+        </div>
+
+        <div class="mode-panel" id="mode-walk" th:with="modeRoutes=${routes.?[type=='walk']}">
+            <div th:each="route : ${modeRoutes}">
+                <div class="route-card" th:data-route-id="${route.routeId}" th:data-route-type="${route.type}" onclick="goDetail(this)">
+                    <div class="route-time" th:data-minutes="${route.totalTime}"></div>
+                    <div class="route-info">🚶 Walking route</div>
+                </div>
+            </div>
+            <div class="empty-state small" th:if="${#lists.isEmpty(modeRoutes)}">
+                <div class="icon">🚶</div>
+                <p>No walking route found</p>
+            </div>
+        </div>
+
+        <div class="mode-panel" id="mode-taxi" th:with="modeRoutes=${routes.?[type=='taxi']}">
+            <div th:each="route : ${modeRoutes}">
+                <div class="route-card" style="cursor:default">
+                    <div class="route-time" th:data-minutes="${route.totalTime}"></div>
+                    <div class="route-info">
+                        💰 Estimated fare about <b th:text="${#numbers.formatInteger(route.fareWon, 0, 'COMMA')}"></b> KRW
+                        <span style="color:#94a3b8">(book &amp; confirm exact fare in Kakao Map)</span>
+                    </div>
+                    <a class="kakao-map-btn"
+                       th:href="'http://m.map.kakao.com/scheme/route?sp=' + ${route.startLat} + ',' + ${route.startLng} + '&ep=' + ${route.endLat} + ',' + ${route.endLng} + '&by=car'"
+                       target="_blank" rel="noopener">🗺️ View on Kakao Map</a>
+                </div>
+            </div>
+            <div class="empty-state small" th:if="${#lists.isEmpty(modeRoutes)}">
+                <div class="icon">🚕</div>
+                <p>Couldn't get a taxi fare estimate</p>
+            </div>
+        </div>
     </div>
 
     <div th:if="${routes == null and error == null}">
@@ -180,8 +298,11 @@
                 <div class="recent-info">
                     <div class="recent-route" th:text="${r.startPlace} + ' → ' + ${r.endPlace}"></div>
                     <div class="recent-meta"
-                         th:text="${r.routeType == 'fast'} ? '⚡ Fastest' :
-                                   (${r.routeType == 'comfort'} ? '😊 Comfortable' : '⭐ Recommended')">
+                         th:text="${r.routeType == 'bus'} ? '🚌 Bus' :
+                                   (${r.routeType == 'subway'} ? '🚇 Subway' :
+                                   (${r.routeType == 'walk'} ? '🚶 Walk' :
+                                   (${r.routeType == 'fast'} ? '⚡ Fastest' :
+                                   (${r.routeType == 'comfort'} ? '😊 Comfortable' : '⭐ Recommended'))))">
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -340,18 +461,23 @@
         if(p.get('end'))   document.getElementById('endInput').value   = p.get('end');
         if(p.get('start')) document.getElementById('startInput').value = p.get('start'); })();
 
+    // Bus/subway/walk/taxi tab switching — each panel already only has that mode's best route.
+    function switchMode(mode, btn) {
+        document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('mode-' + mode)?.classList.add('active');
+    }
+
     function goDetail(el) {
         const routeId = el.getAttribute('data-route-id');
-        const typeText = el.querySelector('.route-type').textContent.trim();
+        const routeType = el.getAttribute('data-route-type') || 'recommend';
         const minutes  = parseInt(el.querySelector('.route-time').getAttribute('data-minutes'));
-        const infoText = el.querySelector('.route-info').textContent.trim();
+        const infoEl = el.querySelector('.route-info');
+        const infoText = infoEl ? infoEl.textContent.trim() : '';
 
         const transferMatch = infoText.match(/(\d+)\s*transfer/);
         const transferCount = transferMatch ? parseInt(transferMatch[1]) : 0;
-
-        let routeType = 'recommend';
-        if (typeText.includes('Fastest'))     routeType = 'fast';
-        if (typeText.includes('Comfortable')) routeType = 'comfort';
 
         const startEl = document.getElementById('startInput');
         const endEl   = document.getElementById('endInput');

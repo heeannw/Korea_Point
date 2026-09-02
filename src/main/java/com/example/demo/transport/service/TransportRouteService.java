@@ -4,7 +4,6 @@ import com.example.demo.transport.dto.TransportRouteDto;
 import com.example.demo.transport.dto.TransportStepDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +19,7 @@ import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 public class TransportRouteService {
@@ -27,11 +27,22 @@ public class TransportRouteService {
     @Value("${TRANSPORT_KAKAO_API_KEY}")
     private String kakaoKey;
 
-    @Value("${TRANSPORT_ODSAY_API_KEY}")
-    private String odsayKey;
+    // ODsay는 서버 호출마다 IP를 화이트리스트에 등록해야 하는 번거로움 때문에
+    // TMAP 대중교통 API(SK Open API, appKey 헤더 인증 — IP 등록 불필요)로 교체했다.
+    @Value("${TRANSPORT_TMAP_API_KEY}")
+    private String tmapKey;
 
-    @Autowired
-    private TransportMlService transportMlService;
+    private static final String TMAP_TRANSIT_URL = "https://apis.openapi.sk.com/transit/routes";
+    // TMAP 대중교통 API가 한 번에 줄 수 있는 최대 경로 후보 수(문서 기준 1~10, count 파라미터).
+    private static final int MAX_RAW_ROUTES = 10;
+    // 버스/지하철 탭 하나당 보여줄 최대 경로 개수. 전체 후보(MAX_RAW_ROUTES)를 버스/지하철로
+    // 나눠 담기 때문에, 상황에 따라 이 개수를 못 채울 수도 있다(그 수단 경로가 그만큼 없을 때).
+    private static final int MAX_PER_MODE = 6;
+    // 도보 탭 전용 — 대중교통 API와 별개로 항상 조회해서, 버스/지하철 탭과 나란히 보여준다.
+    private static final String TMAP_PEDESTRIAN_URL = "https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1";
+    // 택시 탭 전용 — 실제 호출 API는 없어서(카카오T는 비즈니스 파트너 계약이 필요), 자동차
+    // 경로안내 API가 같이 계산해주는 예상 택시요금(taxiFare)만 가져와서 보여준다.
+    private static final String TMAP_CAR_ROUTE_URL = "https://apis.openapi.sk.com/tmap/routes?version=1";
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -39,18 +50,6 @@ public class TransportRouteService {
     private static final Duration ROUTE_CACHE_TTL = Duration.ofMinutes(30);
     private static final int ROUTE_CACHE_MAX_SIZE = 500;
     private final Map<String, CachedRoute> transportRouteStore = new ConcurrentHashMap<>();
-
-    private static final Map<Integer, String> SUBWAY_COLORS = new HashMap<>() {{
-        put(1, "#0052A4"); put(2, "#00A84D"); put(3, "#EF7C1C");
-        put(4, "#00A5DE"); put(5, "#996CAC"); put(6, "#CD7C2F");
-        put(7, "#747F00"); put(8, "#E6186C"); put(9, "#BDB092");
-        put(101, "#F5A200"); put(104, "#6789CA");
-    }};
-
-    private static final Map<Integer, String> BUS_COLORS = new HashMap<>() {{
-        put(1, "#3D5BAB"); put(2, "#5BB025");
-        put(3, "#F99D1C"); put(4, "#F72F08");
-    }};
 
     // -----------------------------------------------
     // 카카오 API → 좌표 조회
@@ -122,12 +121,16 @@ public class TransportRouteService {
                 start, end
         );
 
-        // 출발지 좌표 저장 → detail 페이지 지도에서 사용
+        // 출발지/도착지 좌표 저장 → detail 페이지 지도, 택시 탭의 "카카오맵에서 보기" 링크에서 사용
         final double startLng = startCoords[0];
         final double startLat = startCoords[1];
+        final double endLng2  = endCoords[0];
+        final double endLat2  = endCoords[1];
         result.forEach(dto -> {
             dto.setStartLat(startLat);
             dto.setStartLng(startLng);
+            dto.setEndLat(endLat2);
+            dto.setEndLng(endLng2);
         });
 
         return result;
@@ -150,9 +153,13 @@ public class TransportRouteService {
         );
 
         //GPS 좌표 저장
+        final double endLng2 = endCoords[0];
+        final double endLat2 = endCoords[1];
         result.forEach(dto -> {
             dto.setStartLat(lat);
             dto.setStartLng(lng);
+            dto.setEndLat(endLat2);
+            dto.setEndLng(endLng2);
         });
 
         return result;
@@ -180,142 +187,262 @@ public class TransportRouteService {
         result.forEach(dto -> {
             dto.setStartLat(startLat);
             dto.setStartLng(startLng);
+            dto.setEndLat(endLat);
+            dto.setEndLng(endLng);
         });
 
         return result;
     }
 
     // -----------------------------------------------
-    // ODsay 검색 + ML 분류 (공통 로직)
+    // TMAP 대중교통 검색 + ML 분류 (공통 로직)
     // -----------------------------------------------
     private List<TransportRouteDto> searchAndClassify(
             double startX, double startY,
             double endX, double endY,
             String startLabel, String end) throws Exception {
 
-        String url = "https://api.odsay.com/v1/api/searchPubTransPathT"
-                + "?SX=" + startX
-                + "&SY=" + startY
-                + "&EX=" + endX
-                + "&EY=" + endY
-                + "&apiKey=" + URLEncoder.encode(odsayKey, StandardCharsets.UTF_8);
+        // 화면을 버스/지하철/도보/택시 탭으로 나누기로 해서, 이제 "빠른/편한/추천" 식으로 여러 개를
+        // 섞어 보여주는 대신 탭(수단)마다 가장 좋은 경로 딱 하나만 고른다. 택시는 아직 연동한
+        // API가 없어서 이 메서드에서는 안 만든다(프론트에서 "준비 중"으로 표시).
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("startX", String.valueOf(startX));
+        body.put("startY", String.valueOf(startY));
+        body.put("endX", String.valueOf(endX));
+        body.put("endY", String.valueOf(endY));
+        body.put("count", MAX_RAW_ROUTES);
+        body.put("lang", 0);
+        body.put("format", "json");
 
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .GET().build();
+                .uri(URI.create(TMAP_TRANSIT_URL))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .header("appKey", tmapKey)
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
+                .build();
 
         HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
         JsonNode root = mapper.readTree(res.body());
 
-        if (root.has("error") || !root.has("result")) return List.of();
-
-        JsonNode paths = root.get("result").get("path");
-        if (paths == null || paths.isEmpty()) return List.of();
-
-        System.out.println("ODsay 경로 개수: " + paths.size());
-
-        List<Map<String, Object>> rawRoutes = new ArrayList<>();
-        float minTime = Float.MAX_VALUE;
-
-        for (int i = 0; i < Math.min(paths.size(), 5); i++) {
-            JsonNode path = paths.get(i);
-            JsonNode info = path.get("info");
-
-            // info 또는 필수 필드가 없는 경로는 스킵
-            if (info == null || info.get("totalTime") == null
-                    || info.get("busTransitCount") == null
-                    || info.get("subwayTransitCount") == null
-                    || info.get("totalWalk") == null) {
-                System.out.println("경로 " + i + ": info 필드 누락 → 스킵");
-                continue;
-            }
-
-            float time     = info.get("totalTime").asInt();
-            float transfer = info.get("busTransitCount").asInt()
-                    + info.get("subwayTransitCount").asInt();
-            float walk     = (float)(info.get("totalWalk").asDouble() / 60.0);
-
-            System.out.println("경로 " + i + ": " + time + "분, 환승 " + (int)transfer + "회");
-
-            List<TransportStepDto> steps = parseTransportSteps(path.get("subPath"));
-
-            float transferTime = calcAvgTransferTime(steps);
-            float subwayRatio  = calcSubwayRatio(steps, time);
-            float busRatio     = calcBusRatio(steps, time);
-            float nSegments    = calcNSegments(steps);
-            float avgStopCount = calcAvgStopCount(steps);
-
-            float mlProb = transportMlService.getMlProb(
-                    time, transfer, walk, transferTime,
-                    subwayRatio, busRatio, nSegments, avgStopCount
-            );
-
-            if (time < minTime) minTime = time;
-
-            Map<String, Object> raw = new HashMap<>();
-            raw.put("steps",       steps);
-            raw.put("time",        time);
-            raw.put("transfer",    transfer);
-            raw.put("walk",        walk);
-            raw.put("subwayRatio", subwayRatio);
-            raw.put("mlProb",      mlProb);
-            rawRoutes.add(raw);
-        }
-
         String departTime = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-        String[] typeLabels = {"fast", "comfort", "recommend"};
         List<TransportRouteDto> result = new ArrayList<>();
 
-        if (rawRoutes.size() >= 3) {
-            Set<Integer> usedIndexes = new HashSet<>();
+        // 실패 응답은 {"result":{"message":...,"status":...}} 형태로 오고, 성공은 metaData.plan.itineraries.
+        // (예: 출발/도착이 너무 가까우면 "출발지와 도착지가 너무 가까움" 에러가 온다.) 버스/지하철 탭은
+        // 이 경우 그냥 비게 두고, 도보 탭은 아래에서 대중교통 결과와 무관하게 항상 따로 채운다.
+        boolean hasTransit = root.has("metaData") && !root.has("result");
+        if (!hasTransit) {
+            System.out.println("TMAP 대중교통 응답 오류: " + res.body());
+        } else {
+            JsonNode itineraries = root.path("metaData").path("plan").path("itineraries");
+            if (itineraries.isArray() && !itineraries.isEmpty()) {
+                System.out.println("TMAP 경로 개수: " + itineraries.size());
 
-            for (String routeType : List.of("fast", "comfort", "recommend")) {
-                float bestScore = -1f;
-                int bestIdx = 0;
+                List<Map<String, Object>> busCandidates = new ArrayList<>();
+                List<Map<String, Object>> subwayCandidates = new ArrayList<>();
 
-                for (int i = 0; i < rawRoutes.size(); i++) {
-                    if (usedIndexes.contains(i)) continue;
-
-                    Map<String, Object> r = rawRoutes.get(i);
-                    float score = transportMlService.calcScore(
-                            (float) r.get("time"),
-                            (float) r.get("transfer"),
-                            (float) r.get("walk"),
-                            (float) r.get("subwayRatio"),
-                            (float) r.get("mlProb"),
-                            minTime,
-                            routeType
-                    );
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestIdx = i;
+                for (int i = 0; i < Math.min(itineraries.size(), MAX_RAW_ROUTES); i++) {
+                    JsonNode itin = itineraries.get(i);
+                    if (itin.get("totalTime") == null || itin.get("legs") == null) {
+                        System.out.println("경로 " + i + ": 필드 누락 → 스킵");
+                        continue;
                     }
+
+                    // TMAP은 초 단위로 준다 — 화면/저장은 전부 "분" 단위를 전제로 하므로 여기서 변환한다.
+                    float time     = itin.get("totalTime").asInt() / 60f;
+                    float transfer = itin.path("transferCount").asInt();
+                    float walk     = itin.path("totalWalkTime").asInt() / 60f;
+                    List<TransportStepDto> steps = parseTmapLegs(itin.get("legs"));
+
+                    boolean hasSubway = steps.stream().anyMatch(s -> "subway".equals(s.getType()));
+                    boolean hasBus    = steps.stream().anyMatch(s -> "bus".equals(s.getType()));
+                    if (!hasSubway && !hasBus) continue; // 대중교통 구간이 없는 경로는 여기서 다룰 게 아니다.
+
+                    Map<String, Object> raw = new HashMap<>();
+                    raw.put("steps", steps);
+                    raw.put("time", time);
+                    raw.put("transfer", transfer);
+                    raw.put("walk", walk);
+
+                    // 지하철 구간이 하나라도 있으면 지하철 탭, 없으면(버스만) 버스 탭.
+                    if (hasSubway) subwayCandidates.add(raw); else busCandidates.add(raw);
                 }
 
-                usedIndexes.add(bestIdx);
-                final int finalBestIdx = bestIdx;
-
-                boolean isDuplicate = result.stream()
-                        .anyMatch(r -> r.getTotalTime() == ((Float) rawRoutes.get(finalBestIdx).get("time")).intValue()
-                                && r.getTransferCount() == ((Float) rawRoutes.get(finalBestIdx).get("transfer")).intValue()
-                                && r.getSteps().size() == ((List<?>) rawRoutes.get(finalBestIdx).get("steps")).size());
-
-                if (!isDuplicate) {
-                    TransportRouteDto dto = buildDto(routeType, rawRoutes.get(finalBestIdx), startLabel, end, departTime);
+                for (Map<String, Object> r : pickTopByTime(busCandidates, MAX_PER_MODE)) {
+                    TransportRouteDto dto = buildDto("bus", r, startLabel, end, departTime);
+                    cacheRoute(dto);
+                    result.add(dto);
+                }
+                for (Map<String, Object> r : pickTopByTime(subwayCandidates, MAX_PER_MODE)) {
+                    TransportRouteDto dto = buildDto("subway", r, startLabel, end, departTime);
                     cacheRoute(dto);
                     result.add(dto);
                 }
             }
-
-        } else {
-            for (int i = 0; i < rawRoutes.size(); i++) {
-                TransportRouteDto dto = buildDto(typeLabels[i], rawRoutes.get(i), startLabel, end, departTime);
-                cacheRoute(dto);
-                result.add(dto);
-            }
         }
 
+        // 도보 탭은 대중교통 결과가 있든 없든 항상 따로 채운다(요청 좌표만 있으면 되는 별개 API라서).
+        result.addAll(searchPedestrianRoute(startX, startY, endX, endY, startLabel, end));
+        // 택시 탭도 마찬가지로 항상 따로 채운다 — 실제 호출은 안 되고 예상 요금/시간만 보여준다.
+        result.addAll(searchTaxiEstimate(startX, startY, endX, endY, startLabel, end));
+
         return result;
+    }
+
+    /** 소요시간이 짧은(같으면 환승이 적은) 순으로 그 수단(버스/지하철) 탭에 최대 MAX_PER_MODE개까지 보여준다. */
+    private List<Map<String, Object>> pickTopByTime(List<Map<String, Object>> candidates, int max) {
+        return candidates.stream()
+                .sorted(Comparator
+                        .comparingDouble((Map<String, Object> r) -> (float) r.get("time"))
+                        .thenComparingDouble(r -> (float) r.get("transfer")))
+                .limit(max)
+                .collect(Collectors.toList());
+    }
+
+    // -----------------------------------------------
+    // 도보 탭 전용 경로 — 대중교통 결과와 무관하게 항상 따로 조회한다.
+    // -----------------------------------------------
+    private List<TransportRouteDto> searchPedestrianRoute(
+            double startX, double startY, double endX, double endY,
+            String startLabel, String end) {
+        try {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("startX", String.valueOf(startX));
+            body.put("startY", String.valueOf(startY));
+            body.put("endX", String.valueOf(endX));
+            body.put("endY", String.valueOf(endY));
+            body.put("startName", (startLabel == null || startLabel.isBlank()) ? "출발지" : startLabel);
+            body.put("endName", (end == null || end.isBlank()) ? "도착지" : end);
+            body.put("reqCoordType", "WGS84GEO");
+            body.put("resCoordType", "WGS84GEO");
+            body.put("searchOption", "0");
+            body.put("sort", "index");
+
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(TMAP_PEDESTRIAN_URL))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .header("appKey", tmapKey)
+                    .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
+                    .build();
+
+            HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            JsonNode root = mapper.readTree(res.body());
+            JsonNode features = root.get("features");
+            if (features == null || !features.isArray() || features.isEmpty()) return List.of();
+
+            // 맨 처음(출발점, pointType=SP) feature의 properties에 도보 경로 전체의 총 시간/거리가 들어있다.
+            int totalTimeSec = features.get(0).path("properties").path("totalTime").asInt(0);
+            if (totalTimeSec <= 0) return List.of();
+            float timeMin = totalTimeSec / 60f;
+
+            // LineString 구간들을 이어 붙여서 지도에 그릴 좌표열을 만든다.
+            List<Map<String, Double>> path = new ArrayList<>();
+            for (JsonNode feature : features) {
+                JsonNode geometry = feature.path("geometry");
+                if (!"LineString".equals(geometry.path("type").asText(""))) continue;
+                for (JsonNode coord : geometry.path("coordinates")) {
+                    if (coord.size() < 2) continue;
+                    Map<String, Double> p = new HashMap<>();
+                    p.put("lng", coord.get(0).asDouble());
+                    p.put("lat", coord.get(1).asDouble());
+                    path.add(p);
+                }
+            }
+
+            TransportStepDto step = new TransportStepDto();
+            step.setType("walk");
+            step.setColor("#f59e0b");
+            step.setFromStation(startLabel);
+            step.setToStation(end);
+            step.setDuration(Math.round(timeMin));
+            step.setPath(path);
+
+            TransportRouteDto dto = new TransportRouteDto();
+            dto.setRouteId(UUID.randomUUID().toString());
+            dto.setType("walk");
+            dto.setStart(startLabel);
+            dto.setEnd(end);
+            dto.setTotalTime(Math.round(timeMin));
+            dto.setTransferCount(0);
+            dto.setWalkTime(timeMin);
+            dto.setSteps(List.of(step));
+            dto.setDepartTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
+            cacheRoute(dto);
+
+            System.out.println("도보 경로: " + Math.round(timeMin) + "분");
+            return List.of(dto);
+        } catch (Exception e) {
+            System.out.println("보행자 경로 조회 실패: " + e.getMessage());
+            return List.of();
+        }
+    }
+
+    // -----------------------------------------------
+    // 택시 탭 전용 예상 요금 — 실제 호출 API가 없어(카카오T는 비즈니스 계약 필요) 대신
+    // TMAP 자동차 경로안내가 같이 계산해주는 taxiFare로 "예상 요금/시간"만 안내한다.
+    // -----------------------------------------------
+    private List<TransportRouteDto> searchTaxiEstimate(
+            double startX, double startY, double endX, double endY,
+            String startLabel, String end) {
+        try {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("startX", String.valueOf(startX));
+            body.put("startY", String.valueOf(startY));
+            body.put("endX", String.valueOf(endX));
+            body.put("endY", String.valueOf(endY));
+            body.put("reqCoordType", "WGS84GEO");
+            body.put("resCoordType", "WGS84GEO");
+            body.put("carType", "0");
+            body.put("searchOption", "0");
+            body.put("totalValue", "2"); // 요약 정보(총 거리/시간/요금)만 받는다.
+
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(TMAP_CAR_ROUTE_URL))
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .header("appKey", tmapKey)
+                    .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
+                    .build();
+
+            HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            JsonNode root = mapper.readTree(res.body());
+            JsonNode features = root.get("features");
+            if (features == null || !features.isArray() || features.isEmpty()) return List.of();
+
+            JsonNode props = features.get(0).path("properties");
+            int totalTimeSec = props.path("totalTime").asInt(0);
+            int taxiFare = props.path("taxiFare").asInt(0);
+            if (totalTimeSec <= 0 || taxiFare <= 0) return List.of();
+            float timeMin = totalTimeSec / 60f;
+
+            TransportStepDto step = new TransportStepDto();
+            step.setType("taxi");
+            step.setColor("#facc15");
+            step.setFromStation(startLabel);
+            step.setToStation(end);
+            step.setDuration(Math.round(timeMin));
+
+            TransportRouteDto dto = new TransportRouteDto();
+            dto.setRouteId(UUID.randomUUID().toString());
+            dto.setType("taxi");
+            dto.setStart(startLabel);
+            dto.setEnd(end);
+            dto.setTotalTime(Math.round(timeMin));
+            dto.setTransferCount(0);
+            dto.setWalkTime(0);
+            dto.setFareWon(taxiFare);
+            dto.setSteps(List.of(step));
+            dto.setDepartTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
+            cacheRoute(dto);
+
+            System.out.println("택시 예상 요금: " + taxiFare + "원, " + Math.round(timeMin) + "분");
+            return List.of(dto);
+        } catch (Exception e) {
+            System.out.println("택시 요금 조회 실패: " + e.getMessage());
+            return List.of();
+        }
     }
 
     // -----------------------------------------------
@@ -337,47 +464,44 @@ public class TransportRouteService {
     }
 
     // -----------------------------------------------
-    // subPath 파싱
+    // TMAP legs 파싱 (ODsay의 subPath 파싱을 대체)
     // -----------------------------------------------
-    private List<TransportStepDto> parseTransportSteps(JsonNode subPaths) {
+    private List<TransportStepDto> parseTmapLegs(JsonNode legs) {
         List<TransportStepDto> steps = new ArrayList<>();
-        if (subPaths == null) return steps;
+        if (legs == null) return steps;
 
-        for (JsonNode sp : subPaths) {
-            if (sp.get("trafficType") == null || sp.get("sectionTime") == null) continue;
-            int trafficType = sp.get("trafficType").asInt();
-            int sectionTime = sp.get("sectionTime").asInt();
-            JsonNode stations = sp.has("passStopList")
-                    ? sp.get("passStopList").get("stations") : null;
+        for (JsonNode leg : legs) {
+            String mode = leg.path("mode").asText("");
+            if (mode.isBlank() || leg.get("sectionTime") == null) continue;
+            // TMAP은 초 단위 — 기존(ODsay, 분 단위) 로직과 맞추려고 분으로 반올림한다.
+            int sectionTime = Math.round(leg.get("sectionTime").asInt() / 60f);
+
+            JsonNode stations = leg.has("passStopList")
+                    ? leg.get("passStopList").get("stations") : null;
 
             List<Map<String, Double>> pathCoords = new ArrayList<>();
             if (stations != null) {
                 for (JsonNode s : stations) {
-                    if (s.get("y") == null || s.get("x") == null) continue;
+                    if (s.get("lat") == null || s.get("lon") == null) continue;
                     Map<String, Double> point = new HashMap<>();
-                    point.put("lat", s.get("y").asDouble());
-                    point.put("lng", s.get("x").asDouble());
+                    point.put("lat", s.get("lat").asDouble());
+                    point.put("lng", s.get("lon").asDouble());
                     pathCoords.add(point);
                 }
             }
 
-            if (trafficType == 1) {
-                JsonNode laneArr  = sp.get("lane");
-                if (laneArr == null || laneArr.isEmpty()) continue;
-                JsonNode lane     = laneArr.get(0);
-                if (lane.get("subwayCode") == null || lane.get("name") == null) continue;
-                int    subwayCode = lane.get("subwayCode").asInt();
-                String color      = SUBWAY_COLORS.getOrDefault(subwayCode, "#888888");
-                String lineName   = lane.get("name").asText();
-                String fromSt     = stations != null ? stations.get(0).get("stationName").asText() : "";
-                String toSt       = stations != null ? stations.get(stations.size()-1).get("stationName").asText() : "";
-                Integer fromStationId = stations != null ? readStationId(stations.get(0)) : null;
-                Integer toStationId = stations != null ? readStationId(stations.get(stations.size()-1)) : null;
+            if ("SUBWAY".equals(mode) || "BUS".equals(mode) || "EXPRESSBUS".equals(mode)) {
+                String type    = "SUBWAY".equals(mode) ? "subway" : "bus";
+                String line    = leg.path("route").asText("");
+                String color   = tmapLegColor(leg);
+                String fromSt  = leg.path("start").path("name").asText("");
+                String toSt    = leg.path("end").path("name").asText("");
+                Integer fromStationId = stations != null && !stations.isEmpty() ? readStationId(stations.get(0)) : null;
+                Integer toStationId   = stations != null && !stations.isEmpty() ? readStationId(stations.get(stations.size() - 1)) : null;
 
                 TransportStepDto step = new TransportStepDto();
-                step.setType("subway");
-                step.setLine(lineName);
-                step.setSubwayCode(subwayCode);
+                step.setType(type);
+                step.setLine(line);
                 step.setColor(color);
                 step.setFromStation(fromSt);
                 step.setToStation(toSt);
@@ -387,77 +511,42 @@ public class TransportRouteService {
                 step.setPath(pathCoords);
                 steps.add(step);
 
-            } else if (trafficType == 2) {
-                JsonNode laneArr = sp.get("lane");
-                if (laneArr == null || laneArr.isEmpty()) continue;
-                JsonNode lane  = laneArr.get(0);
-                if (lane.get("busNo") == null) continue;
-                int    busType = lane.has("type") ? lane.get("type").asInt() : 1;
-                String color   = BUS_COLORS.getOrDefault(busType, "#3A7BD5");
-                String busNo   = lane.get("busNo").asText();
-                String fromSt  = stations != null ? stations.get(0).get("stationName").asText() : "";
-                String toSt    = stations != null ? stations.get(stations.size()-1).get("stationName").asText() : "";
-                Integer fromStationId = stations != null ? readStationId(stations.get(0)) : null;
-                Integer toStationId = stations != null ? readStationId(stations.get(stations.size()-1)) : null;
-
-                TransportStepDto step = new TransportStepDto();
-                step.setType("bus");
-                step.setLine(busNo);
-                step.setColor(color);
-                step.setFromStation(fromSt);
-                step.setToStation(toSt);
-                step.setFromStationId(fromStationId);
-                step.setToStationId(toStationId);
-                step.setDuration(sectionTime);
-                step.setPath(pathCoords);
-                steps.add(step);
-
-            } else if (trafficType == 3 && sectionTime > 0) {
+            } else if ("WALK".equals(mode) && sectionTime > 0) {
                 List<Map<String, Double>> walkPath = new ArrayList<>();
-
-                if (sp.has("startExitX") && !sp.get("startExitX").isNull()
-                        && sp.get("startExitX").asDouble() != 0) {
+                JsonNode startPt = leg.get("start");
+                JsonNode endPt   = leg.get("end");
+                if (startPt != null && startPt.get("lat") != null) {
                     Map<String, Double> p = new HashMap<>();
-                    p.put("lat", sp.get("startExitY").asDouble());
-                    p.put("lng", sp.get("startExitX").asDouble());
+                    p.put("lat", startPt.get("lat").asDouble());
+                    p.put("lng", startPt.get("lon").asDouble());
                     walkPath.add(p);
                 }
-                if (sp.has("endExitX") && !sp.get("endExitX").isNull()
-                        && sp.get("endExitX").asDouble() != 0) {
+                if (endPt != null && endPt.get("lat") != null) {
                     Map<String, Double> p = new HashMap<>();
-                    p.put("lat", sp.get("endExitY").asDouble());
-                    p.put("lng", sp.get("endExitX").asDouble());
+                    p.put("lat", endPt.get("lat").asDouble());
+                    p.put("lng", endPt.get("lon").asDouble());
                     walkPath.add(p);
-                }
-
-                if (walkPath.isEmpty()) {
-                    if (sp.has("startX") && !sp.get("startX").isNull()
-                            && sp.get("startX").asDouble() != 0) {
-                        Map<String, Double> p = new HashMap<>();
-                        p.put("lat", sp.get("startY").asDouble());
-                        p.put("lng", sp.get("startX").asDouble());
-                        walkPath.add(p);
-                    }
-                    if (sp.has("endX") && !sp.get("endX").isNull()
-                            && sp.get("endX").asDouble() != 0) {
-                        Map<String, Double> p = new HashMap<>();
-                        p.put("lat", sp.get("endY").asDouble());
-                        p.put("lng", sp.get("endX").asDouble());
-                        walkPath.add(p);
-                    }
                 }
 
                 TransportStepDto step = new TransportStepDto();
                 step.setType("walk");
                 step.setColor("#f59e0b");
-                step.setFromStation(sp.has("startName") ? sp.get("startName").asText() : "");
-                step.setToStation(sp.has("endName")     ? sp.get("endName").asText()   : "");
+                step.setFromStation(startPt != null ? startPt.path("name").asText("") : "");
+                step.setToStation(endPt != null ? endPt.path("name").asText("") : "");
                 step.setDuration(sectionTime);
                 step.setPath(walkPath);
                 steps.add(step);
             }
+            // TRAIN/AIRPLANE/FERRY 등 그 외 모드는 부산 시내 검색에서는 거의 안 나오는 구간이라 스킵한다.
         }
         return steps;
+    }
+
+    /** TMAP은 노선 색상(routeColor, "#" 없는 hex)을 직접 내려주므로 별도 색상표가 필요 없다. */
+    private String tmapLegColor(JsonNode leg) {
+        String hex = leg.path("routeColor").asText("");
+        if (hex.isBlank()) return "#888888";
+        return hex.startsWith("#") ? hex : "#" + hex;
     }
 
     private Integer readStationId(JsonNode station) {
@@ -474,61 +563,12 @@ public class TransportRouteService {
                 try {
                     return Integer.parseInt(value.asText().trim());
                 } catch (NumberFormatException ignored) {
-                    // Try the next ODsay station id field.
+                    // Try the next station id field.
                 }
             }
         }
 
         return null;
-    }
-
-    // -----------------------------------------------
-    // 헬퍼 메서드들
-    // -----------------------------------------------
-    private float calcAvgTransferTime(List<TransportStepDto> steps) {
-        List<Float> times = new ArrayList<>();
-        for (TransportStepDto step : steps) {
-            if ("subway".equals(step.getType()) && step.getFromStation() != null) {
-                times.add(transportMlService.getTransferTime(step.getFromStation()));
-            }
-        }
-        if (times.isEmpty()) return 5.0f;
-        return (float) times.stream().mapToDouble(Float::doubleValue).average().orElse(5.0);
-    }
-
-    private float calcSubwayRatio(List<TransportStepDto> steps, float totalTime) {
-        if (totalTime == 0) return 0f;
-        float subwayTime = steps.stream()
-                .filter(s -> "subway".equals(s.getType()))
-                .mapToInt(TransportStepDto::getDuration)
-                .sum();
-        return subwayTime / totalTime;
-    }
-
-    private float calcBusRatio(List<TransportStepDto> steps, float totalTime) {
-        if (totalTime == 0) return 0f;
-        float busTime = steps.stream()
-                .filter(s -> "bus".equals(s.getType()))
-                .mapToInt(TransportStepDto::getDuration)
-                .sum();
-        return busTime / totalTime;
-    }
-
-    private float calcNSegments(List<TransportStepDto> steps) {
-        return (float) steps.stream()
-                .filter(s -> "subway".equals(s.getType()) || "bus".equals(s.getType()))
-                .count();
-    }
-
-    private float calcAvgStopCount(List<TransportStepDto> steps) {
-        List<TransportStepDto> transitSteps = steps.stream()
-                .filter(s -> "subway".equals(s.getType()) || "bus".equals(s.getType()))
-                .toList();
-        if (transitSteps.isEmpty()) return 0f;
-        float totalStops = transitSteps.stream()
-                .mapToInt(s -> s.getPath() != null ? s.getPath().size() : 0)
-                .sum();
-        return totalStops / transitSteps.size();
     }
 
     public TransportRouteDto getTransportRouteDetail(String routeId) {
