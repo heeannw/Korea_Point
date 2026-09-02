@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TourPlaceDto {
@@ -67,6 +68,8 @@ public class TourPlaceDto {
     /** 예약·사용자 행동·관광 빅데이터 등 순위 산정 근거. */
     private String popularityBasis;
     private LocalDateTime popularityCalculatedAt;
+    /** 세대별 인기 비율(%). key = "20"|"30"|"40"|"50"|"60". 인기 관광지가 아니면 null. */
+    private Map<String, Double> popularRatioByAge;
 
     /** 축제·행사(type 15)일 때만 채워지는 행사 기간(yyyyMMdd). 다른 유형은 null. */
     private String eventStartDate;
@@ -96,6 +99,7 @@ public class TourPlaceDto {
         this.popularRank = s.popularRank; this.popularCategory = s.popularCategory;
         this.popularityScore = s.popularityScore; this.popularityBasis = s.popularityBasis;
         this.popularityCalculatedAt = s.popularityCalculatedAt;
+        this.popularRatioByAge = s.popularRatioByAge;
         this.eventStartDate = s.eventStartDate; this.eventEndDate = s.eventEndDate;
         this.score = s.score; this.distance = s.distance;
     }
@@ -170,6 +174,9 @@ public class TourPlaceDto {
 
     public String getPopularityBasis() { return popularityBasis; }
     public void setPopularityBasis(String popularityBasis) { this.popularityBasis = popularityBasis; }
+
+    public Map<String, Double> getPopularRatioByAge() { return popularRatioByAge; }
+    public void setPopularRatioByAge(Map<String, Double> popularRatioByAge) { this.popularRatioByAge = popularRatioByAge; }
 
     public LocalDateTime getPopularityCalculatedAt() { return popularityCalculatedAt; }
     public void setPopularityCalculatedAt(LocalDateTime popularityCalculatedAt) {
