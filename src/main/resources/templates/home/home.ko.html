@@ -194,19 +194,15 @@
             .hero-content { padding: 0 24px 48px; }
         }
 
+        /* 문구가 읽히도록 사진을 살짝 눌러 주는 막.
+           inset 을 사진 영역(콘텐츠 박스)에 정확히 맞춘다. 예전엔 inset:0 이라
+           좌우 4px 틈까지 덮어서 흰 틈이 어둡게 보였다. 모서리도 각지게 둔다. */
         .slide::after {
             content: "";
             position: absolute;
-            inset: 0 8px;
-            border-radius: var(--radius-lg);
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+            inset: 0 4px;
+            border-radius: 0;
             pointer-events: none;
-        }
-
-        .slide::after {
-            content: "";
-            position: absolute;
-            inset: 0;
             background: linear-gradient(
                     135deg,
                     rgba(15, 23, 42, 0.36) 0%,
@@ -354,24 +350,26 @@
             z-index: 3;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.25s ease, background 0.25s ease;
-            width: 52px;
-            height: 52px;
+            transition: opacity 0.25s ease, background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
+            /* 사진이 밝든 어둡든 보이도록 흰 버튼에 어두운 화살표를 쓴다.
+               반투명 흰색이던 예전 것은 밝은 사진 위에서 아예 안 보였다. */
             border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(255, 255, 255, 0.08);
-            color: #ffffff;
+            border: none;
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--dark);
+            box-shadow: 0 2px 12px rgba(16, 24, 40, 0.18);
             cursor: pointer;
-            backdrop-filter: blur(8px);
-            transition: all 0.3s ease;
         }
 
         .hero-arrow:hover {
-            background: rgba(255, 255, 255, 0.45);
-            border-color: var(--primary);
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 4px 16px rgba(16, 24, 40, 0.26);
         }
 
         /* 화살표는 글씨를 가리므로 평소엔 감춰 두고 마우스를 올렸을 때만 띄운다 */
