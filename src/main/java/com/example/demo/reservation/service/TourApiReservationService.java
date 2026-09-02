@@ -386,6 +386,10 @@ public class TourApiReservationService {
     }
 
     private String detailLabel(String key, String lang) {
+        String normalized = overlayLanguage(lang);
+        if ("ko".equals(normalized)) {
+            return koreanDetailLabel(key);
+        }
         String group = switch (key) {
             case "usetime", "usetimeculture", "usetimeleports", "opentime", "opentimefood", "playtime" -> "hours";
             case "restdate", "restdateculture", "restdateleports", "restdateshopping", "restdatefood" -> "closed";
@@ -396,7 +400,6 @@ public class TourApiReservationService {
             case "firstmenu" -> "menu";
             default -> key;
         };
-        String normalized = overlayLanguage(lang);
         Map<String, Map<String, String>> labels = Map.of(
                 "en", Map.of("hours", "Hours", "closed", "Closed", "fee", "Fee", "parking", "Parking", "contact", "Contact", "reservation", "Reservation", "menu", "Signature menu"),
                 "ja", Map.of("hours", "利用時間", "closed", "休業日", "fee", "利用料金", "parking", "駐車", "contact", "お問い合わせ", "reservation", "予約案内", "menu", "代表メニュー"),
@@ -404,6 +407,33 @@ public class TourApiReservationService {
                 "fr", Map.of("hours", "Horaires", "closed", "Fermeture", "fee", "Tarif", "parking", "Parking", "contact", "Contact", "reservation", "Réservation", "menu", "Menu signature"),
                 "ko", Map.of("hours", "이용 시간", "closed", "휴무일", "fee", "이용 요금", "parking", "주차", "contact", "문의", "reservation", "예약 안내", "menu", "대표 메뉴"));
         return labels.getOrDefault(normalized, labels.get("ko")).getOrDefault(group, key);
+    }
+
+    private String koreanDetailLabel(String key) {
+        return switch (key) {
+            case "usetime", "usetimeculture", "usetimeleports", "opentime", "opentimefood", "playtime" -> "이용 시간";
+            case "restdate", "restdateculture", "restdateleports", "restdateshopping", "restdatefood" -> "휴무일";
+            case "usefee", "usetimefestival", "usefeeleports" -> "이용 요금";
+            case "parking", "parkingculture", "parkinglodging" -> "주차";
+            case "infocenter", "infocentertourcourse" -> "문의";
+            case "reservation", "reservationfood", "reservationurl" -> "예약 안내";
+            case "firstmenu" -> "대표 메뉴";
+            case "treatmenu" -> "취급 메뉴";
+            case "eventstartdate" -> "행사 시작일";
+            case "eventenddate" -> "행사 종료일";
+            case "eventplace" -> "행사 장소";
+            case "spendtimefestival" -> "관람 소요 시간";
+            case "distance" -> "코스 총거리";
+            case "schedule" -> "코스 일정";
+            case "taketime" -> "소요 시간";
+            case "openperiod" -> "개장 기간";
+            case "expagerangeleports" -> "체험 가능 연령";
+            case "checkintime" -> "입실 시간";
+            case "checkouttime" -> "퇴실 시간";
+            case "roomcount" -> "객실 수";
+            case "saleitem" -> "판매 품목";
+            default -> key;
+        };
     }
 
     private String overlayLanguage(String lang) {
