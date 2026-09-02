@@ -96,7 +96,7 @@ public class HomeController {
         // 예전에는 서울 사진 3장(남산타워·북촌·광화문)이 위키미디어 주소로 박혀 있었다.
         // 부산 관광지 사진으로 바꾸되, 히어로는 배경이 잘리므로 저작권상
         // 변경이 허용된 사진만 쓴다(HomePlaceService 참고).
-        model.addAttribute("slides", homePlaceService.getHeroImages(lang, 3));
+        model.addAttribute("slides", homePlaceService.getHeroImages(lang, 9));
 
         // ── 가볼 만한 곳 ─────────────────────────────────────────────────
         // 부산 관광지를 관광공사 API에서 받아온다. 예전에는 서울 3곳이 코드에

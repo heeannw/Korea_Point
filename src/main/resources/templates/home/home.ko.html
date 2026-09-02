@@ -159,14 +159,17 @@
             display: flex;
             height: 100%;
             width: 100%;
-            transform: none !important;
-            transition: none !important;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
         }
+
+        .slider-track::-webkit-scrollbar { display: none; }
 
         .slide {
             position: relative;
-            flex: 1 1 0;
-            min-width: 0;
+            flex: 0 0 33.3333%;
+            scroll-snap-align: start;
             height: 100%;
             /* padding 으로 사진 사이 간격을 만든다 */
             padding: 0 4px;
@@ -176,6 +179,16 @@
             background-clip: content-box;
             background-color: rgba(255, 255, 255, 0.14);
             background-blend-mode: screen;
+        }
+
+        /* 좁은 화면에서는 한 장만 보여준다 */
+        @media (max-width: 900px) {
+            .slide { flex-basis: 50%; }
+        }
+
+        @media (max-width: 640px) {
+            .slide { flex-basis: 100%; }
+            .hero-content { padding: 0 24px 48px; }
         }
 
         .slide::after {
@@ -314,11 +327,6 @@
             width: 28px;
             border-radius: 3px;
             background: var(--primary);
-        }
-
-        .hero-arrow,
-        .hero-counter {
-            display: none !important;
         }
 
         .hero-arrow {
@@ -1654,100 +1662,62 @@
         });
     }
 
-    let current = 0;
-    let currentPosition = 0;
-    let isTransitioning = false;
-    const track = document.getElementById("sliderTrack");
-    const dots = document.querySelectorAll(".hero-dot");
-    const counterEl = document.getElementById("counterNum");
-    const totalEl = document.getElementById("counterTotal");
-    const total = dots.length;
-    const trackTransition = "transform 0.9s cubic-bezier(0.77, 0, 0.175, 1)";
-    let autoPlay = null;
-
-    if (totalEl) {
-        totalEl.textContent = String(total).padStart(2, "0");
-    }
-
-    function updateUi(index) {
-        current = index;
-        dots.forEach((dot, dotIndex) => dot.classList.toggle("active", dotIndex === current));
-        if (counterEl) {
-            counterEl.textContent = String(current + 1).padStart(2, "0");
-        }
-    }
-
-    function resetAutoPlay() {
-        if (total <= 1) return;
-        clearInterval(autoPlay);
-        autoPlay = setInterval(() => moveSlide(1), 5000);
-    }
-
-    function setTrackPosition(position, animate = true) {
+    /* 히어로 배너: 한 번에 3장, 가로 스크롤로 넘긴다.
+       예전에는 transform 으로 옮기며 무한루프용 복제본을 앞뒤에 끼웠는데,
+       3분할에서는 그 복제본까지 보여서 5칸이 됐다. 스크롤 방식으로 바꿔 복제를 없앴다. */
+    (function () {
+        const track = document.getElementById("sliderTrack");
         if (!track) return;
-        track.style.transition = animate ? trackTransition : "none";
-        track.style.transform = `translateX(-${position * 100}%)`;
-        if (!animate) {
-            void track.offsetWidth;
-            track.style.transition = trackTransition;
+
+        const slides = Array.from(track.children);
+        const total = slides.length;
+        const counterEl = document.getElementById("counterNum");
+        const totalEl = document.getElementById("counterTotal");
+        const dots = Array.from(document.querySelectorAll(".hero-dot"));
+        let autoPlay = null;
+
+        if (totalEl) totalEl.textContent = String(total).padStart(2, "0");
+
+        function step() {
+            return slides.length ? slides[0].getBoundingClientRect().width : track.clientWidth;
         }
-    }
 
-    if (track && total > 1) {
-        const originalSlides = Array.from(track.children);
-        const firstClone = originalSlides[0].cloneNode(true);
-        const lastClone = originalSlides[originalSlides.length - 1].cloneNode(true);
+        function currentIndex() {
+            const w = step();
+            return w ? Math.round(track.scrollLeft / w) : 0;
+        }
 
-        firstClone.setAttribute("aria-hidden", "true");
-        lastClone.setAttribute("aria-hidden", "true");
+        function updateUi() {
+            const index = currentIndex();
+            if (counterEl) counterEl.textContent = String(index + 1).padStart(2, "0");
+            dots.forEach((dot, i) => dot.classList.toggle("active", i === index));
+        }
 
-        track.insertBefore(lastClone, originalSlides[0]);
-        track.appendChild(firstClone);
+        function goTo(index) {
+            const max = total - 1;
+            const target = index < 0 ? max : (index > max ? 0 : index);
+            track.scrollTo({ left: target * step(), behavior: "smooth" });
+        }
 
-        currentPosition = 1;
-        setTrackPosition(currentPosition, false);
+        window.moveSlide = function (delta) {
+            resetAutoPlay();
+            goTo(currentIndex() + delta);
+        };
+        window.goSlide = function (index) {
+            resetAutoPlay();
+            goTo(index);
+        };
 
-        track.addEventListener("transitionend", (event) => {
-            if (event.target !== track || event.propertyName !== "transform") return;
-            if (currentPosition === total + 1) {
-                currentPosition = 1;
-                setTrackPosition(currentPosition, false);
-            } else if (currentPosition === 0) {
-                currentPosition = total;
-                setTrackPosition(currentPosition, false);
-            }
-            updateUi((currentPosition - 1 + total) % total);
-            isTransitioning = false;
-        });
-    } else if (track) {
-        setTrackPosition(0, false);
-    }
+        function resetAutoPlay() {
+            clearInterval(autoPlay);
+            if (total > 1) autoPlay = setInterval(() => goTo(currentIndex() + 1), 5000);
+        }
 
-    updateUi(0);
-
-    function goSlide(index) {
-        if (total === 0 || !track || isTransitioning) return;
+        track.addEventListener("scroll", updateUi, { passive: true });
+        window.addEventListener("resize", updateUi);
+        updateUi();
         resetAutoPlay();
-        if (total === 1) { updateUi(0); return; }
-        currentPosition = index + 1;
-        isTransitioning = true;
-        updateUi(index);
-        setTrackPosition(currentPosition);
-    }
-
-    function moveSlide(direction) {
-        if (total === 0 || !track || isTransitioning) return;
-        resetAutoPlay();
-        if (total === 1) { updateUi(0); return; }
-        currentPosition += direction;
-        isTransitioning = true;
-        updateUi((currentPosition - 1 + total) % total);
-        setTrackPosition(currentPosition);
-    }
-
-    if (total > 1) {
-        autoPlay = setInterval(() => moveSlide(1), 5000);
-    }
+    })();
 </script>
 
 <script>
