@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -73,7 +75,9 @@ public class TourApiReservationService {
         URI uri = builder.build(true).toUri();
 
         JsonNode root = request(uri);
-        List<TourApiPlaceDto> places = parseItems(root, lang);
+        List<TourApiPlaceDto> koreanPlaces = parseItems(root, TourApiLang.KO);
+        List<TourApiPlaceDto> places = isKorean(lang)
+                ? koreanPlaces : localizePlaces(koreanPlaces, contentTypeId, lang, pageNo, numOfRows);
         if (keyword == null || keyword.isBlank()) {
             return places;
         }
@@ -101,11 +105,30 @@ public class TourApiReservationService {
         if (resolvedContentTypeId == null || resolvedContentTypeId.isBlank()) {
             resolvedContentTypeId = text(commonItem, "contenttypeid");
         }
-        Map<String, String> operatingInformation = findOperatingInformation(contentId, resolvedContentTypeId);
-        ReservationDetailTranslationService.TranslationResult detail = detailTranslationService.translate(
-                contentId, lang, text(commonItem, "overview"), operatingInformation);
-        return toPlace(commonItem, lang, detail.overview(),
-                localizeOperatingLabels(detail.operatingInformation(), lang));
+        Map<String, String> operatingInformation = findOperatingInformation(
+                contentId, resolvedContentTypeId, TourApiLang.KO);
+        if (isKorean(lang)) {
+            return toPlace(commonItem, TourApiLang.KO, text(commonItem, "overview"), operatingInformation);
+        }
+
+        JsonNode officialItem = firstItem(request(commonBuilder(apiBase(lang) + detailPath)
+                .queryParam("contentId", contentId).build(true).toUri()));
+        String officialType = foreignContentTypeId(resolvedContentTypeId, lang);
+        Map<String, String> officialDetails = officialItem == null ? Map.of()
+                : findOperatingInformation(contentId, officialType, lang);
+        String koreanOverview = text(commonItem, "overview");
+        String officialOverview = officialItem == null ? "" : text(officialItem, "overview");
+        Map<String, String> missingDetails = new LinkedHashMap<>();
+        operatingInformation.forEach((key, value) -> {
+            if (!officialDetails.containsKey(key) || officialDetails.get(key).isBlank()) missingDetails.put(key, value);
+        });
+        ReservationDetailTranslationService.TranslationResult fallback = detailTranslationService.translate(
+                contentId, lang, officialOverview.isBlank() ? koreanOverview : "", missingDetails);
+        Map<String, String> mergedDetails = new LinkedHashMap<>(fallback.operatingInformation());
+        mergedDetails.putAll(officialDetails);
+        TourApiPlaceDto korean = toPlace(commonItem, TourApiLang.KO,
+                officialOverview.isBlank() ? fallback.overview() : officialOverview, mergedDetails);
+        return mergeOfficial(korean, officialItem == null ? null : toPlace(officialItem, TourApiLang.KO), lang);
     }
 
     public boolean hasServiceKey() {
@@ -201,9 +224,9 @@ public class TourApiReservationService {
                 .build();
     }
 
-    private Map<String, String> findOperatingInformation(String contentId, String contentTypeId) {
+    private Map<String, String> findOperatingInformation(String contentId, String contentTypeId, String lang) {
         if (contentTypeId == null || contentTypeId.isBlank()) return Map.of();
-        UriComponentsBuilder introBuilder = commonBuilder(baseUrl + "/detailIntro2")
+        UriComponentsBuilder introBuilder = commonBuilder(apiBase(lang) + "/detailIntro2")
                 .queryParam("contentId", contentId)
                 .queryParam("contentTypeId", contentTypeId);
         JsonNode intro = firstItem(request(introBuilder.build(true).toUri()));
@@ -218,10 +241,92 @@ public class TourApiReservationService {
             case "28" -> addFields(details, intro, "openperiod", "usetimeleports", "restdateleports", "reservation", "expagerangeleports", "usefeeleports");
             case "32" -> addFields(details, intro, "checkintime", "checkouttime", "reservationurl", "roomcount", "parkinglodging");
             case "38" -> addFields(details, intro, "opentime", "restdateshopping", "saleitem", "parking");
-            case "39" -> addFields(details, intro, "firstmenu", "opentimefood", "restdatefood", "reservationfood", "treatmenu");
+            case "39", "82" -> addFields(details, intro, "firstmenu", "opentimefood", "restdatefood", "reservationfood", "treatmenu");
+            case "76" -> addFields(details, intro, "usetime", "restdate", "infocenter", "parking");
+            case "78" -> addFields(details, intro, "usetimeculture", "restdateculture", "usefee", "parkingculture");
+            case "85" -> addFields(details, intro, "eventstartdate", "eventenddate", "eventplace", "playtime", "usetimefestival", "spendtimefestival");
+            case "75" -> addFields(details, intro, "openperiod", "usetimeleports", "restdateleports", "reservation", "expagerangeleports", "usefeeleports");
+            case "80" -> addFields(details, intro, "checkintime", "checkouttime", "reservationurl", "roomcount", "parkinglodging");
+            case "79" -> addFields(details, intro, "opentime", "restdateshopping", "saleitem", "parking");
             default -> { }
         }
         return details;
+    }
+
+    private List<TourApiPlaceDto> localizePlaces(List<TourApiPlaceDto> koreanPlaces, String requestedType,
+                                                  String lang, int pageNo, int numOfRows) {
+        String foreignType = requestedContentTypeId(requestedType, lang);
+        if ("unsupported".equals(foreignType)) {
+            return koreanPlaces.stream().map(place -> mergeOfficial(place, null, lang)).toList();
+        }
+        UriComponentsBuilder builder = commonBuilder(apiBase(lang) + listPath)
+                .queryParam("pageNo", Math.max(pageNo, 1))
+                .queryParam("numOfRows", Math.max(numOfRows, 1))
+                .queryParam("arrange", "A")
+                .queryParam("areaCode", areaCode);
+        if (foreignType != null && !foreignType.isBlank()) builder.queryParam("contentTypeId", foreignType);
+        Map<String, TourApiPlaceDto> officialById = parseItems(request(builder.build(true).toUri()), TourApiLang.KO)
+                .stream().collect(Collectors.toMap(TourApiPlaceDto::getContentId, Function.identity(), (a, b) -> a));
+        return koreanPlaces.stream()
+                .map(place -> mergeOfficial(place, officialById.get(place.getContentId()), lang))
+                .toList();
+    }
+
+    private TourApiPlaceDto mergeOfficial(TourApiPlaceDto korean, TourApiPlaceDto official, String lang) {
+        TourPlaceDto fallback = new TourPlaceDto();
+        fallback.setId(korean.getContentId());
+        fallback.setTitle(korean.getTitle());
+        fallback.setAddr(korean.getAddress());
+        placeI18n.apply(overlayLanguage(lang), fallback);
+        return TourApiPlaceDto.builder()
+                .contentId(korean.getContentId()).contentTypeId(korean.getContentTypeId())
+                .title(nonBlank(official == null ? null : official.getTitle(), fallback.getTitle()))
+                .address(nonBlank(official == null ? null : official.getAddress(), fallback.getAddr()))
+                .tel(nonBlank(official == null ? null : official.getTel(), korean.getTel()))
+                .imageUrl(nonBlank(official == null ? null : official.getImageUrl(), korean.getImageUrl()))
+                .mapX(korean.getMapX()).mapY(korean.getMapY()).overview(korean.getOverview())
+                .operatingInformation(localizeOperatingLabels(korean.getOperatingInformation(), lang)).build();
+    }
+
+    private String requestedContentTypeId(String requestedType, String lang) {
+        String logical = logicalType(requestedType);
+        if (logical == null) return requestedType == null ? "" : requestedType;
+        String value = TourApiLang.contentTypeId(lang, logical);
+        return value == null ? "unsupported" : value;
+    }
+
+    private String foreignContentTypeId(String koreanType, String lang) {
+        String logical = logicalType(koreanType);
+        if (logical == null) return koreanType;
+        return TourApiLang.contentTypeId(lang, logical);
+    }
+
+    private String logicalType(String type) {
+        if (type == null || type.isBlank()) return null;
+        return switch (type) {
+            case "tourist_spot", "12" -> TourApiLang.TOURIST_SPOT;
+            case "culture", "14" -> TourApiLang.CULTURE;
+            case "festival", "15" -> TourApiLang.FESTIVAL;
+            case "course", "25" -> TourApiLang.COURSE;
+            case "leports", "28" -> TourApiLang.LEPORTS;
+            case "lodging", "32" -> TourApiLang.LODGING;
+            case "shopping", "38" -> TourApiLang.SHOPPING;
+            case "restaurant", "39" -> TourApiLang.RESTAURANT;
+            default -> null;
+        };
+    }
+
+    private String apiBase(String lang) {
+        int slash = baseUrl.lastIndexOf('/');
+        return (slash < 0 ? baseUrl : baseUrl.substring(0, slash)) + "/" + TourApiLang.serviceId(lang);
+    }
+
+    private boolean isKorean(String lang) {
+        return "KorService2".equals(TourApiLang.serviceId(lang));
+    }
+
+    private String nonBlank(String preferred, String fallback) {
+        return preferred == null || preferred.isBlank() ? fallback : preferred;
     }
 
     private JsonNode firstItem(JsonNode root) {

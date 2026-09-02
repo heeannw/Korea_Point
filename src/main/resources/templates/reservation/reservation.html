@@ -36,6 +36,10 @@
                 <h1 id="reservationTitle">관광지 예약</h1>
                 <p class="sub" id="reservationSubtitle">부산의 관광지를 둘러보고 방문 일정을 예약해보세요.</p>
             </div>
+            <button type="button" class="saved-places-heart" id="savedPlacesButton" aria-pressed="false">
+                <span aria-hidden="true">♥</span>
+                <span class="sr-only" id="savedPlacesLabel">찜한 곳</span>
+            </button>
         </div>
 
         <div class="notice warning" th:unless="${hasTourApiKey}">
@@ -93,6 +97,10 @@
         lodging: /*[[#{reservation.list.lodging}]]*/ "숙박",
         shopping: /*[[#{reservation.list.shopping}]]*/ "쇼핑",
         restaurant: /*[[#{reservation.list.restaurant}]]*/ "음식점",
+        saved: /*[[#{reservation.list.saved}]]*/ "찜한 곳",
+        savedEmpty: /*[[#{reservation.list.savedEmpty}]]*/ "찜한 장소가 없습니다.",
+        savedLogin: /*[[#{reservation.list.savedLogin}]]*/ "로그인하면 찜한 장소를 모아볼 수 있습니다.",
+        savedFailed: /*[[#{reservation.list.savedFailed}]]*/ "찜한 장소를 불러오지 못했습니다.",
         loading: /*[[#{reservation.list.loading}]]*/ "불러오는 중",
         loadingMore: /*[[#{reservation.list.loadingMore}]]*/ "더 불러오는 중",
         empty: /*[[#{reservation.list.empty}]]*/ "결과 없음",
@@ -114,6 +122,8 @@
     const keywordInput = document.getElementById("keyword");
     const contentTypeInput = document.getElementById("contentTypeId");
     const categoryButtons = document.querySelectorAll(".category-btn");
+    const placeCategoryButtons = document.querySelectorAll(".category-btn[data-content-type]");
+    const savedPlacesButton = document.getElementById("savedPlacesButton");
     const loadMoreBtn = document.getElementById("loadMoreBtn");
     const detailDialog = document.getElementById("placeDetailDialog");
     const detailContent = document.getElementById("detailContent");
@@ -122,6 +132,9 @@
     let currentKeyword = "";
     let currentContentTypeId = "";
     let activeRequestController = null;
+    let showingSavedPlaces = false;
+    let savedPlaces = [];
+    const IS_LOGGED_IN = /*[[${isLoggedIn}]]*/ false;
 
     document.documentElement.lang = PAGE_LANG;
     document.getElementById("reservationTitle").textContent = T.title;
@@ -130,6 +143,9 @@
     document.getElementById("searchButton").textContent = T.search;
     emptyState.textContent = T.loading;
     loadMoreBtn.textContent = T.more;
+    savedPlacesButton.title = T.saved;
+    savedPlacesButton.setAttribute("aria-label", T.saved);
+    document.getElementById("savedPlacesLabel").textContent = T.saved;
     categoryButtons.forEach(button => {
         button.textContent = T[button.dataset.labelKey] || button.textContent;
     });
@@ -185,6 +201,25 @@
         `;
     }
 
+    function imageKey(place) {
+        return place.imageUrl || defaultImageUrl(place.contentTypeId);
+    }
+
+    function arrangePlacesForDistinctImages(places) {
+        const remaining = [...places];
+        const arranged = [];
+        const cardsPerRow = window.matchMedia("(max-width: 900px)").matches ? 1 : 3;
+
+        while (remaining.length) {
+            const rowStart = Math.floor(arranged.length / cardsPerRow) * cardsPerRow;
+            const rowImageKeys = new Set(arranged.slice(rowStart).map(imageKey));
+            let nextIndex = remaining.findIndex(place => !rowImageKeys.has(imageKey(place)));
+            if (nextIndex < 0) nextIndex = 0;
+            arranged.push(remaining.splice(nextIndex, 1)[0]);
+        }
+        return arranged;
+    }
+
     function renderPlaces(places, append = false) {
         if (!append) {
             grid.innerHTML = "";
@@ -198,7 +233,8 @@
         }
 
         emptyState.style.display = "none";
-        grid.insertAdjacentHTML("beforeend", places.map(place => {
+        const arrangedPlaces = arrangePlacesForDistinctImages(places);
+        grid.insertAdjacentHTML("beforeend", arrangedPlaces.map(place => {
             const detailUrl = `/ko/reservation/new?contentId=${encodeURIComponent(place.contentId || "")}&contentTypeId=${encodeURIComponent(place.contentTypeId || "")}&placeTitle=${encodeURIComponent(place.title || "")}&lang=${encodeURIComponent(PAGE_LANG)}`;
             return `
                 <article class="place-card" data-content-id="${escapeHtml(place.contentId)}" data-content-type-id="${escapeHtml(place.contentTypeId)}" tabindex="0">
@@ -217,6 +253,51 @@
         }).join(""));
 
         loadMoreBtn.style.display = places.length >= pageSize ? "inline-flex" : "none";
+    }
+
+    function normalizedSavedPlaces(places) {
+        return places.map(place => ({
+            contentId: place.contentId,
+            contentTypeId: place.contentTypeId,
+            title: place.title,
+            address: place.addr,
+            imageUrl: place.imageUrl,
+            tel: ""
+        }));
+    }
+
+    function renderSavedPlaces() {
+        const keyword = keywordInput.value.trim().toLocaleLowerCase();
+        const filtered = keyword
+            ? savedPlaces.filter(place => `${place.title || ""} ${place.address || ""}`.toLocaleLowerCase().includes(keyword))
+            : savedPlaces;
+        renderPlaces(filtered, false);
+        loadMoreBtn.style.display = "none";
+        if (!filtered.length) {
+            emptyState.textContent = T.savedEmpty;
+        }
+    }
+
+    async function loadSavedPlaces() {
+        showingSavedPlaces = true;
+        if (activeRequestController) activeRequestController.abort();
+        grid.innerHTML = "";
+        loadMoreBtn.style.display = "none";
+        emptyState.style.display = "block";
+        if (!IS_LOGGED_IN) {
+            emptyState.textContent = T.savedLogin;
+            return;
+        }
+        emptyState.textContent = T.loading;
+        try {
+            const response = await fetch("/tour/api/saved-places", {headers: {"Accept": "application/json"}});
+            if (!response.ok) throw new Error("saved places request failed");
+            savedPlaces = normalizedSavedPlaces(await response.json());
+            renderSavedPlaces();
+        } catch (error) {
+            emptyState.style.display = "block";
+            emptyState.textContent = T.savedFailed;
+        }
     }
 
     async function openPlaceDetail(card) {
@@ -320,17 +401,24 @@
 
     form.addEventListener("submit", event => {
         event.preventDefault();
+        if (showingSavedPlaces) {
+            renderSavedPlaces();
+            return;
+        }
         currentKeyword = keywordInput.value;
         currentContentTypeId = contentTypeInput.value;
         loadPlaces(currentKeyword, currentContentTypeId, 1, false);
     });
 
-    categoryButtons.forEach(button => {
+    placeCategoryButtons.forEach(button => {
         const isSelected = button.dataset.contentType === contentTypeInput.value;
         button.classList.toggle("active", isSelected);
         button.setAttribute("aria-pressed", String(isSelected));
 
         button.addEventListener("click", () => {
+            showingSavedPlaces = false;
+            savedPlacesButton.classList.remove("active");
+            savedPlacesButton.setAttribute("aria-pressed", "false");
             contentTypeInput.value = button.dataset.contentType;
             categoryButtons.forEach(categoryButton => {
                 const isActive = categoryButton === button;
@@ -341,6 +429,16 @@
             currentContentTypeId = contentTypeInput.value;
             loadPlaces(currentKeyword, currentContentTypeId, 1, false);
         });
+    });
+
+    savedPlacesButton.addEventListener("click", () => {
+        categoryButtons.forEach(button => {
+            button.classList.remove("active");
+            button.setAttribute("aria-pressed", "false");
+        });
+        savedPlacesButton.classList.add("active");
+        savedPlacesButton.setAttribute("aria-pressed", "true");
+        loadSavedPlaces();
     });
 
     loadMoreBtn.addEventListener("click", () => {

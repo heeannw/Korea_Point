@@ -23,10 +23,7 @@ body {
     margin: 0;
     font-family: "Sora", "Noto Sans KR", sans-serif;
     color: var(--reservation-ink);
-    background:
-        radial-gradient(circle at 8% 8%, rgba(35, 136, 232, 0.11), transparent 28%),
-        radial-gradient(circle at 92% 24%, rgba(91, 127, 241, 0.10), transparent 24%),
-        linear-gradient(180deg, #f7fbff 0%, #eef7fc 52%, #f9fcff 100%);
+    background: #ffffff;
     min-height: 100vh;
 }
 
@@ -306,6 +303,49 @@ h1 {
     background: #ffffff;
     color: var(--reservation-primary-dark);
     box-shadow: none;
+}
+
+.saved-places-heart {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--reservation-border);
+    border-radius: 50%;
+    background: #ffffff;
+    color: #94a3b8;
+    font-size: 25px;
+    cursor: pointer;
+    transition: transform 0.18s ease, color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.saved-places-heart:hover,
+.saved-places-heart.active {
+    transform: translateY(-1px);
+    border-color: #fb7185;
+    background: #fff1f2;
+    color: #f43f5e;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.btn.secondary:hover {
+    border-color: var(--reservation-primary-dark);
+    background: var(--reservation-primary-dark);
+    color: #ffffff;
+    box-shadow: 0 11px 22px rgba(35, 136, 232, 0.24);
 }
 
 .btn.full { width: 100%; }
