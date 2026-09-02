@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Korea Point | 부산 여행 가이드</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Cormorant+Garamond:wght@600;700&family=Sora:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
     <!--
         home.ko.html 구조 안내
         1. style: 전체 CSS
@@ -146,40 +145,78 @@
         /* ===== 3. 히어로 ===== */
         .hero {
             position: relative;
-            /* 화면을 꽉 채우면 첫 화면에 콘텐츠가 하나도 안 보인다.
-               아래 내용이 살짝 걸치게 두어 스크롤을 유도한다. */
-            height: 78vh;
-            min-height: 560px;
-            background: var(--dark);
+            /* 배너형 슬라이더. 화면을 꽉 채우지 않고 아래 내용이 걸치게 둔다. */
+            /* 헤더(76px)와 카테고리 줄(약 116px)을 뺀 나머지를 배너가 다 차지한다.
+               첫 화면이 배너 + 카테고리로 딱 떨어지고 아래 섹션은 안 보인다. */
+            height: calc(100vh - 192px);
+            min-height: 320px;
+            /* 사진 사이 틈으로 비치는 색. 아래 본문이 흰색이라 배너만 검은 띠로
+               떨어져 보이지 않게 같은 흰색을 쓴다. */
+            background: var(--surface);
             overflow: hidden;
         }
 
+        /* 사진 3장을 1/3 씩 나란히 놓는다. 넘기지 않으므로 슬라이더 이동은 끈다
+           (기존 스크립트가 transform 을 넣어도 !important 로 무시한다). */
         .slider-track {
             display: flex;
             height: 100%;
-            transition: transform 0.9s cubic-bezier(0.77, 0, 0.175, 1);
+            width: 100%;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
         }
+
+        .slider-track::-webkit-scrollbar { display: none; }
 
         .slide {
             position: relative;
-            min-width: 100%;
+            flex: 0 0 33.3333%;
+            scroll-snap-align: start;
             height: 100%;
+            /* padding 으로 사진 사이 간격을 만든다 */
+            padding: 0 4px;
             background-size: cover;
             background-position: center;
+            background-origin: content-box;
+            background-clip: content-box;
             background-color: rgba(255, 255, 255, 0.14);
             background-blend-mode: screen;
         }
 
+        /* 좁은 화면에서는 한 장만 보여준다 */
+        @media (max-width: 900px) {
+            .slide { flex-basis: 50%; }
+        }
+
+        @media (max-width: 640px) {
+            .slide { flex-basis: 100%; }
+            .hero-content { padding: 0 24px 48px; }
+        }
+
+        /* 문구가 읽히도록 사진을 살짝 눌러 주는 막.
+           inset 을 사진 영역(콘텐츠 박스)에 정확히 맞춘다. 예전엔 inset:0 이라
+           좌우 4px 틈까지 덮어서 흰 틈이 어둡게 보였다. 모서리도 각지게 둔다. */
         .slide::after {
             content: "";
             position: absolute;
-            inset: 0;
+            inset: 0 4px;
+            border-radius: 0;
+            pointer-events: none;
             background: linear-gradient(
                     135deg,
                     rgba(15, 23, 42, 0.36) 0%,
                     rgba(15, 23, 42, 0.12) 55%,
                     rgba(15, 23, 42, 0.32) 100%
             );
+        }
+
+        .hero-content::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(15, 18, 24, 0.62) 0%, rgba(15, 18, 24, 0.18) 42%, rgba(15, 18, 24, 0) 70%);
+            pointer-events: none;
         }
 
         .hero-content {
@@ -189,8 +226,27 @@
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
-            padding: 0 80px 92px;
+            /* 가운데 배너 안쪽에 문구가 놓이도록 트랙 폭(64%)에 맞춘다 */
+            padding: 0 64px 64px;
         }
+
+        /* 틈이 흰색이 되면서, 문구가 틈을 가로지르면 흰 글씨가 묻혀 끊겨 보인다.
+           문구를 첫 칸 안에 가두고 그림자를 얹어 어떤 배경 위에서도 읽히게 한다. */
+        .hero-content > * {
+            max-width: calc(33.3333% - 64px);
+        }
+
+        @media (max-width: 900px) {
+            .hero-content > * { max-width: calc(50% - 48px); }
+        }
+
+        @media (max-width: 640px) {
+            .hero-content > * { max-width: 100%; }
+        }
+
+        .hero-eyebrow,
+        .hero-title,
+        .hero-sub { position: relative; z-index: 1; }
 
         .hero-eyebrow {
             font-size: 11px;
@@ -211,6 +267,7 @@
             line-height: 1.02;
             letter-spacing: -0.045em;
             color: #ffffff;
+            text-shadow: 0 2px 18px rgba(15, 23, 42, 0.45);
             margin-bottom: 24px;
             opacity: 0;
             transform: translateY(24px);
@@ -232,10 +289,18 @@
             animation: fadeUp 0.7s 0.5s ease forwards;
         }
 
+        /* 오른쪽 아래 모서리. 문구가 왼쪽 아래에 있으니 대각으로 마주 본다.
+           위치를 .hero-content 의 좌우 여백(64px)에 맞춰 세로선을 나란히 뒀다.
+           예전 값 right: calc(18% + 40px) 는 배너가 64% 폭이던 시절의 잔재라
+           사진 3장을 꽉 채우는 지금은 세 번째 사진 한가운데에 떠 있었다. */
+        /* 오른쪽 아래 모서리. 문구가 왼쪽 아래에 있으니 대각으로 마주 본다.
+           여백을 .hero-content 와 같은 64px 로 맞춰 아래 선이 나란하다.
+           예전 값 right: calc(18% + 40px) 는 배너가 64% 폭이던 시절의 잔재라
+           사진 3장을 꽉 채우는 지금은 세 번째 사진 한가운데에 떠 있었다. */
         .hero-counter {
             position: absolute;
-            right: 80px;
-            bottom: 92px;
+            right: 64px;
+            bottom: 64px;
             z-index: 3;
             text-align: right;
         }
@@ -246,6 +311,7 @@
             font-weight: 600;
             color: #ffffff;
             line-height: 1;
+            font-variant-numeric: tabular-nums;
         }
 
         .counter-bar {
@@ -259,6 +325,7 @@
             font-size: 11px;
             color: rgba(255, 255, 255, 0.55);
             letter-spacing: 0.1em;
+            font-variant-numeric: tabular-nums;
         }
 
         .hero-dots {
@@ -291,31 +358,42 @@
             top: 50%;
             transform: translateY(-50%);
             z-index: 3;
-            width: 52px;
-            height: 52px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
+            /* 사진이 밝든 어둡든 보이도록 흰 버튼에 어두운 화살표를 쓴다.
+               반투명 흰색이던 예전 것은 밝은 사진 위에서 아예 안 보였다. */
             border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(255, 255, 255, 0.08);
-            color: #ffffff;
+            border: none;
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--dark);
+            box-shadow: 0 2px 12px rgba(16, 24, 40, 0.18);
             cursor: pointer;
-            backdrop-filter: blur(8px);
-            transition: all 0.3s ease;
         }
 
         .hero-arrow:hover {
-            background: rgba(255, 255, 255, 0.45);
-            border-color: var(--primary);
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 4px 16px rgba(16, 24, 40, 0.26);
+        }
+
+        /* 화살표는 글씨를 가리므로 평소엔 감춰 두고 마우스를 올렸을 때만 띄운다 */
+        .hero:hover .hero-arrow {
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .hero-arrow.left {
-            left: 32px;
+            left: 20px;
         }
 
         .hero-arrow.right {
-            right: 32px;
+            right: 20px;
         }
 
         @keyframes fadeUp {
@@ -329,7 +407,7 @@
             background: var(--white);
             border-bottom: 1px solid var(--border);
             /* 좌우 여백을 .section 과 맞춰 카드들과 끝선이 어긋나지 않게 한다 */
-            padding: 36px 80px 40px;
+            padding: 18px 80px 22px;
             scroll-margin-top: 92px;
         }
 
@@ -351,11 +429,11 @@
         .category-item {
             flex: 1 0 auto;
             min-width: 84px;
-            padding: 10px 4px;
+            padding: 6px 4px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             color: var(--dark);
             text-decoration: none;
             border-radius: 18px;
@@ -368,13 +446,13 @@
         }
 
         .category-icon svg {
-            width: 26px;
-            height: 26px;
+            width: 24px;
+            height: 24px;
         }
 
         .category-icon {
-            width: 56px;
-            height: 56px;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1236,36 +1314,11 @@
             }
         }
     </style>
+    <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
 </head>
 <body>
-<div id="google_translate_element" style="display:none"></div>
 <!-- 헤더: 상단 로고와 언어 버튼 -->
-<header>
-    <a class="logo" th:href="@{/ko}" href="/ko">Korea<span>Point</span></a>
-
-    <div class="header-right">
-        <select class="h-btn" id="languageSelect" translate="no" onchange="changeTripLanguage(this.value)" aria-label="언어 선택">
-            <option value="ko">한국어</option>
-            <option value="en">English</option>
-            <option value="ja">日本語</option>
-            <option value="zh-CN">中文</option>
-        </select>
-        <th:block th:if="${isLoggedIn}">
-            <a class="h-btn"
-               th:href="@{/ko/mypage}"
-               th:text="${currentUserName}"
-               aria-label="마이페이지로 이동">사용자</a>
-            <a th:if="${isAdmin}" th:href="@{/admin}" href="/admin" class="h-btn">Admin</a>
-            <form th:action="@{/logout}" method="post">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                <button type="submit" class="h-btn h-btn-fill">Logout</button>
-            </form>
-        </th:block>
-        <th:block th:unless="${isLoggedIn}">
-            <a th:href="@{/login}" href="/login" class="h-btn h-btn-fill">로그인</a>
-        </th:block>
-    </div>
-</header>
+<div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <!-- 히어로: 메인 문구가 들어가는 전체 폭 슬라이더 -->
 <section class="hero">
@@ -1644,100 +1697,88 @@
         });
     }
 
-    let current = 0;
-    let currentPosition = 0;
-    let isTransitioning = false;
-    const track = document.getElementById("sliderTrack");
-    const dots = document.querySelectorAll(".hero-dot");
-    const counterEl = document.getElementById("counterNum");
-    const totalEl = document.getElementById("counterTotal");
-    const total = dots.length;
-    const trackTransition = "transform 0.9s cubic-bezier(0.77, 0, 0.175, 1)";
-    let autoPlay = null;
-
-    if (totalEl) {
-        totalEl.textContent = String(total).padStart(2, "0");
-    }
-
-    function updateUi(index) {
-        current = index;
-        dots.forEach((dot, dotIndex) => dot.classList.toggle("active", dotIndex === current));
-        if (counterEl) {
-            counterEl.textContent = String(current + 1).padStart(2, "0");
-        }
-    }
-
-    function resetAutoPlay() {
-        if (total <= 1) return;
-        clearInterval(autoPlay);
-        autoPlay = setInterval(() => moveSlide(1), 5000);
-    }
-
-    function setTrackPosition(position, animate = true) {
+    /* 히어로 배너: 한 화면에 3장, 한 번 누르면 보이는 만큼 넘어간다.
+       목록을 한 벌 복제해 뒤에 이어 붙이고, 복제 구간에 들어서면 스크롤 위치만
+       조용히 되돌린다. 그래서 마지막에서 다음을 눌러도 되감기지 않고 계속
+       앞으로 흐르며 처음이 이어진다. */
+    (function () {
+        const track = document.getElementById("sliderTrack");
         if (!track) return;
-        track.style.transition = animate ? trackTransition : "none";
-        track.style.transform = `translateX(-${position * 100}%)`;
-        if (!animate) {
-            void track.offsetWidth;
-            track.style.transition = trackTransition;
+
+        const originals = Array.from(track.children);
+        const counterEl = document.getElementById("counterNum");
+        const totalEl = document.getElementById("counterTotal");
+        const dots = Array.from(document.querySelectorAll(".hero-dot"));
+        let autoPlay = null;
+        let looped = false;
+
+        function pageWidth() { return track.clientWidth || 1; }
+        function setWidth() { return looped ? track.scrollWidth / 2 : track.scrollWidth; }
+        function pageCount() { return Math.max(1, Math.round(setWidth() / pageWidth())); }
+        function currentPage() { return Math.round(track.scrollLeft / pageWidth()) % pageCount(); }
+
+        function buildLoop() {
+            if (looped || originals.length <= 1) return;
+            if (track.scrollWidth <= track.clientWidth + 4) return;   // 넘길 게 없으면 복제도 없다
+            originals.forEach(node => {
+                const clone = node.cloneNode(true);
+                clone.setAttribute("aria-hidden", "true");
+                track.appendChild(clone);
+            });
+            looped = true;
         }
-    }
 
-    if (track && total > 1) {
-        const originalSlides = Array.from(track.children);
-        const firstClone = originalSlides[0].cloneNode(true);
-        const lastClone = originalSlides[originalSlides.length - 1].cloneNode(true);
-
-        firstClone.setAttribute("aria-hidden", "true");
-        lastClone.setAttribute("aria-hidden", "true");
-
-        track.insertBefore(lastClone, originalSlides[0]);
-        track.appendChild(firstClone);
-
-        currentPosition = 1;
-        setTrackPosition(currentPosition, false);
-
-        track.addEventListener("transitionend", (event) => {
-            if (event.target !== track || event.propertyName !== "transform") return;
-            if (currentPosition === total + 1) {
-                currentPosition = 1;
-                setTrackPosition(currentPosition, false);
-            } else if (currentPosition === 0) {
-                currentPosition = total;
-                setTrackPosition(currentPosition, false);
+        function normalize() {
+            if (!looped) return;
+            const width = setWidth();
+            if (track.scrollLeft >= width) {
+                track.scrollTo({ left: track.scrollLeft - width, behavior: "auto" });
             }
-            updateUi((currentPosition - 1 + total) % total);
-            isTransitioning = false;
-        });
-    } else if (track) {
-        setTrackPosition(0, false);
-    }
+        }
 
-    updateUi(0);
+        function updateUi() {
+            const page = currentPage();
+            if (counterEl) counterEl.textContent = String(page + 1).padStart(2, "0");
+            if (totalEl) totalEl.textContent = String(pageCount()).padStart(2, "0");
+            dots.forEach((dot, i) => dot.classList.toggle("active", i === page));
+        }
 
-    function goSlide(index) {
-        if (total === 0 || !track || isTransitioning) return;
+        function move(delta) {
+            if (delta > 0) {
+                track.scrollBy({ left: pageWidth() * delta, behavior: "smooth" });
+                return;
+            }
+            // 처음에서 이전을 누르면, 복제 구간 끝으로 조용히 옮긴 뒤 앞으로 흐르게 한다
+            if (looped && track.scrollLeft < 4) {
+                track.scrollTo({ left: setWidth(), behavior: "auto" });
+            }
+            track.scrollBy({ left: pageWidth() * delta, behavior: "smooth" });
+        }
+
+        window.moveSlide = function (delta) { resetAutoPlay(); move(delta); };
+        window.goSlide = function (index) {
+            resetAutoPlay();
+            track.scrollTo({ left: index * pageWidth(), behavior: "smooth" });
+        };
+
+        function resetAutoPlay() {
+            clearInterval(autoPlay);
+            if (pageCount() > 1) autoPlay = setInterval(() => move(1), 5000);
+        }
+
+        let settle = null;
+        track.addEventListener("scroll", () => {
+            updateUi();
+            clearTimeout(settle);
+            settle = setTimeout(normalize, 140);   // 애니메이션이 끝난 뒤에 조용히 되돌린다
+        }, { passive: true });
+
+        window.addEventListener("resize", () => { updateUi(); });
+
+        buildLoop();
+        updateUi();
         resetAutoPlay();
-        if (total === 1) { updateUi(0); return; }
-        currentPosition = index + 1;
-        isTransitioning = true;
-        updateUi(index);
-        setTrackPosition(currentPosition);
-    }
-
-    function moveSlide(direction) {
-        if (total === 0 || !track || isTransitioning) return;
-        resetAutoPlay();
-        if (total === 1) { updateUi(0); return; }
-        currentPosition += direction;
-        isTransitioning = true;
-        updateUi((currentPosition - 1 + total) % total);
-        setTrackPosition(currentPosition);
-    }
-
-    if (total > 1) {
-        autoPlay = setInterval(() => moveSlide(1), 5000);
-    }
+    })();
 </script>
 
 <script>
@@ -1762,5 +1803,6 @@
         update();
     });
 </script>
+<script th:src="@{/js/common/header-menu.js}"></script>
 </body>
 </html>
