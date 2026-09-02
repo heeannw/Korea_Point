@@ -1,0 +1,46 @@
+/* ============================================================
+   header-menu.css — 공용 헤더 (로고 · 유저 메뉴 · 언어 드롭다운)
+   fragment: templates/fragments/app-header.html
+   JS:       /js/common/header-menu.js
+
+   <header> 요소의 position/height/padding/background 는 페이지 레이아웃마다
+   달라서 여기서 정하지 않는다. 쓰는 쪽 <style> 에 아래처럼 직접 둔다:
+
+     header{position:sticky;top:0;height:60px;display:flex;align-items:center;
+       justify-content:space-between;padding:0 32px 0 20px;background:#fff;
+       border-bottom:1px solid #dbeafe;box-shadow:0 1px 3px rgba(16,24,40,.06);z-index:100}
+
+   색상 변수(--blue, --blue-dk, --border, --dark, --light)가 없으면 폴백값이 쓰인다.
+   ============================================================ */
+
+.logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--blue-dk,#1a7de0);text-decoration:none}
+.logo span{color:var(--dark,#0f172a)}
+.header-right{display:flex;gap:8px;align-items:center}
+.h-btn{min-height:36px;padding:7px 16px;border-radius:50px;border:1.5px solid var(--border,#dbeafe);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--dark,#0f172a);transition:all .2s}
+.h-btn:hover,.h-btn.active{border-color:var(--blue,#3b9eff);color:var(--blue,#3b9eff)}
+.h-btn-fill{background:var(--blue,#3b9eff);color:#fff;border-color:var(--blue,#3b9eff)}
+.h-btn-fill:hover{background:var(--blue-dk,#1a7de0);color:#fff}
+.user-menu,.lang-menu{position:relative;display:inline-flex}
+.lang-menu{margin-left:6px}
+.user-menu-btn,.lang-menu-btn{display:inline-flex;align-items:center;gap:7px}
+.user-menu-btn .um-avatar,.lang-menu-btn .um-globe{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.user-menu-btn .um-caret,.lang-menu-btn .um-caret{font-size:10px;opacity:.5;transition:transform .18s ease}
+.user-menu.open .user-menu-btn,.lang-menu.open .lang-menu-btn{border-color:var(--blue,#3b9eff);color:var(--blue,#3b9eff)}
+.user-menu.open .um-caret,.lang-menu.open .um-caret{transform:rotate(180deg)}
+.user-menu-pop{position:absolute;top:100%;right:-5px;margin-top:7px;min-width:100%;width:max-content;background:#fff;
+  border:1px solid var(--border,#dbeafe);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;z-index:200;
+  transform-origin:top right;box-shadow:0 12px 32px -6px rgba(16,24,40,.18),0 4px 10px -4px rgba(16,24,40,.10);
+  animation:umPop .13s ease}
+@keyframes umPop{from{opacity:0;transform:translateY(-5px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.user-menu-pop{animation:none}.um-caret{transition:none}}
+.user-menu-pop[hidden]{display:none}
+.user-menu-pop a,.user-menu-pop button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+  padding:10px 16px;border:0;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--dark,#0f172a);
+  text-decoration:none;cursor:pointer;white-space:nowrap;transition:background .12s}
+.user-menu-pop a:hover,.user-menu-pop button:hover{background:var(--light,#f0f7ff)}
+.user-menu-pop svg{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;opacity:.72}
+.user-menu-pop.lang-pop button{justify-content:center;text-align:center}
+.user-menu-pop.lang-pop button.on{color:var(--blue-dk,#1a7de0);background:var(--light,#f0f7ff)}
+.user-menu-logout{border-top:1px solid var(--border,#dbeafe)}
+.user-menu-logout button{color:#ef4444}
+.user-menu-logout button svg{opacity:.9}
