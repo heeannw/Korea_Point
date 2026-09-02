@@ -98,6 +98,10 @@ public class BusinessNumberValidator {
      */
     private void checkExistsAtNts(String businessNumber) {
         if (serviceKey == null || serviceKey.isBlank()) {
+            // 조용히 넘어가면 "체크섬은 맞지만 실재하지 않는 번호"가 그대로 통과해
+            // 검증이 고장 난 것처럼 보인다. 어느 쪽인지 로그로 남긴다.
+            log.info("국세청 키가 없어 사업자번호를 체크섬까지만 검사한다 "
+                    + "(TOUR_API_SERVICE_KEY 또는 NTS_BUSINESS_SERVICE_KEY 를 설정하면 조회까지 한다)");
             return;
         }
 
