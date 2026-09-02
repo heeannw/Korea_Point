@@ -13,6 +13,8 @@ import com.example.demo.community.repository.CategoryRepository;
 import com.example.demo.community.repository.PostRepository;
 import com.example.demo.trip.dto.TripPlanDto;
 import com.example.demo.trip.service.TripPlanService;
+import com.example.demo.tourism.dto.SavedPlaceDto;
+import com.example.demo.tourism.service.SavedPlaceService;
 import com.example.demo.user.entity.OwnerRequest;
 import com.example.demo.user.entity.User;
 import com.example.demo.user.service.OwnerRequestService;
@@ -51,6 +53,7 @@ public class ReservationController {
     private final UserService userService;
     private final OwnerRequestService ownerRequestService;
     private final TripPlanService tripPlanService;
+    private final SavedPlaceService savedPlaceService;
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
 
@@ -206,6 +209,7 @@ public class ReservationController {
                 .filter(reservation -> !"예약 취소".equals(reservation.getStatus()))
                 .toList();
         List<TripPlanDto.Summary> tripPlans = tripPlanService.listByUser(String.valueOf(userId));
+        List<SavedPlaceDto> savedPlaces = savedPlaceService.list(userId, null);
         long postCount = postRepository.countByUser_IdAndDeletedAtIsNull(userId);
         long promoPostCount = postRepository.countByUser_IdAndCategory_NameAndDeletedAtIsNull(userId, "홍보");
         Long promoCategoryId = categoryRepository.findByName("홍보")
@@ -228,6 +232,8 @@ public class ReservationController {
         model.addAttribute("hasTripPlans", !tripPlans.isEmpty());
         model.addAttribute("tripPlanCount", tripPlans.size());
         model.addAttribute("reservationCount", reservations.size());
+        model.addAttribute("savedPlaces", savedPlaces);
+        model.addAttribute("savedPlaceCount", savedPlaces.size());
         model.addAttribute("postCount", postCount);
         model.addAttribute("promoPostCount", promoPostCount);
         model.addAttribute("promoCategoryId", promoCategoryId);

@@ -38,6 +38,7 @@
             <h2>설정 메뉴</h2>
             <div class="menu-list">
                 <a href="#profile" class="menu-btn">프로필 정보</a>
+                <a href="#nationality" class="menu-btn">국적 설정</a>
                 <a href="#email" class="menu-btn">이메일 변경</a>
                 <a href="#password" class="menu-btn">비밀번호 변경</a>
                 <a href="#danger" class="menu-btn muted">계정 탈퇴</a>
@@ -63,6 +64,43 @@
                         <input class="input" type="text" th:value="${loginProviderName}" readonly>
                     </label>
                     <button class="btn" type="submit">프로필 저장</button>
+                </form>
+            </article>
+
+            <article id="nationality" class="box">
+                <div class="box-title">
+                    <div>
+                        <p class="eyebrow small">Nationality</p>
+                        <h2>국적 설정</h2>
+                    </div>
+                </div>
+                <form class="settings-form" th:action="@{/ko/settings/nationality}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <label class="field full">
+                        <span class="label">국적</span>
+                        <select class="select" name="nationality">
+                            <option value="">선택 안 함</option>
+                            <option value="KR" th:selected="${user.nationality == 'KR'}">대한민국</option>
+                            <option value="US" th:selected="${user.nationality == 'US'}">미국</option>
+                            <option value="JP" th:selected="${user.nationality == 'JP'}">일본</option>
+                            <option value="CN" th:selected="${user.nationality == 'CN'}">중국</option>
+                            <option value="TW" th:selected="${user.nationality == 'TW'}">대만</option>
+                            <option value="HK" th:selected="${user.nationality == 'HK'}">홍콩</option>
+                            <option value="TH" th:selected="${user.nationality == 'TH'}">태국</option>
+                            <option value="VN" th:selected="${user.nationality == 'VN'}">베트남</option>
+                            <option value="PH" th:selected="${user.nationality == 'PH'}">필리핀</option>
+                            <option value="ID" th:selected="${user.nationality == 'ID'}">인도네시아</option>
+                            <option value="MY" th:selected="${user.nationality == 'MY'}">말레이시아</option>
+                            <option value="SG" th:selected="${user.nationality == 'SG'}">싱가포르</option>
+                            <option value="FR" th:selected="${user.nationality == 'FR'}">프랑스</option>
+                            <option value="DE" th:selected="${user.nationality == 'DE'}">독일</option>
+                            <option value="GB" th:selected="${user.nationality == 'GB'}">영국</option>
+                            <option value="CA" th:selected="${user.nationality == 'CA'}">캐나다</option>
+                            <option value="AU" th:selected="${user.nationality == 'AU'}">호주</option>
+                        </select>
+                    </label>
+                    <p class="hint">선택하지 않아도 서비스를 계속 이용할 수 있어요.</p>
+                    <button class="btn" type="submit">국적 저장</button>
                 </form>
             </article>
 

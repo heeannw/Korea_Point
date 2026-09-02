@@ -35,6 +35,7 @@ public class UserService {
                                 .email(email)
                                 .name(name)
                                 .profileImage(profileImage)
+                                .nationalityPrompted(false)
                                 .point(0)
                                 .build()
                 ));
@@ -58,6 +59,7 @@ public class UserService {
                 .password(passwordEncoder.encode(normalizedPassword))
                 .name(requireText(name, "이름을 입력해 주세요."))
                 .email(requireText(email, "이메일을 입력해 주세요."))
+                .nationalityPrompted(false)
                 .role("USER")
                 .point(0)
                 .build());
@@ -125,6 +127,25 @@ public class UserService {
     public void updateProfile(Long userId, String name) {
         User user = findById(userId);
         user.setName(requireText(name, "이름을 입력해 주세요."));
+    }
+
+    @Transactional
+    public void updateNationality(Long userId, String nationality) {
+        User user = findById(userId);
+        user.setNationality(normalizeNationality(nationality));
+        user.setNationalityPrompted(true);
+    }
+
+    @Transactional
+    public void skipNationalityPrompt(Long userId) {
+        User user = findById(userId);
+        user.setNationalityPrompted(true);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean shouldShowNationalityPrompt(Long userId) {
+        User user = findById(userId);
+        return Boolean.FALSE.equals(user.getNationalityPrompted());
     }
 
     @Transactional
@@ -224,5 +245,16 @@ public class UserService {
             throw new IllegalArgumentException(message);
         }
         return value.trim();
+    }
+
+    private String normalizeNationality(String nationality) {
+        if (!StringUtils.hasText(nationality)) {
+            return null;
+        }
+        String normalized = nationality.trim().toUpperCase();
+        if (!normalized.matches("^[A-Z]{2}$")) {
+            throw new IllegalArgumentException("국적을 다시 선택해 주세요.");
+        }
+        return normalized;
     }
 }

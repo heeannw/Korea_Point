@@ -38,13 +38,14 @@ public class SavedPlaceController {
         return Map.of("count", savedPlaceService.count(SecurityUtil.getCurrentUserId()));
     }
 
-    /** body: { "contentId": "...", "contentTypeId": "39" }. 이미 있으면 그 행을 돌려준다. */
+    /** body: { "contentId": "...", "contentTypeId": "39", "kind": "cafe" }. 이미 있으면 그 행을 돌려준다. */
     @PostMapping
     public SavedPlaceDto save(@RequestBody Map<String, String> body) {
         return savedPlaceService.save(
                 SecurityUtil.getCurrentUserId(),
                 body.get("contentId"),
-                body.get("contentTypeId"));
+                body.get("contentTypeId"),
+                body.get("kind"));
     }
 
     @DeleteMapping("/{contentId}")

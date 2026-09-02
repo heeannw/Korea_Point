@@ -90,7 +90,7 @@
         </a>
         <a class="stat stat-link" href="#savedPlaces">
             <span>저장한 장소</span>
-            <strong id="savedPlaceCount">0</strong>
+            <strong id="savedPlaceCount" th:text="${savedPlaceCount}">0</strong>
             <p>관광지 · 음식점 · 카페</p>
         </a>
     </section>
@@ -240,15 +240,51 @@
 
             <div class="saved-filter" aria-label="저장 장소 분류">
                 <button type="button" class="saved-filter-btn active" data-saved-filter="all">전체</button>
-                <button type="button" class="saved-filter-btn" data-saved-filter="tour">관광지</button>
+                <button type="button" class="saved-filter-btn" data-saved-filter="tourism">관광지</button>
                 <button type="button" class="saved-filter-btn" data-saved-filter="food">음식점</button>
                 <button type="button" class="saved-filter-btn" data-saved-filter="cafe">카페</button>
             </div>
 
-            <div id="savedPlaceList" class="saved-place-list"></div>
-            <div id="savedPlaceEmpty" class="empty">
+            <div id="savedPlaceActions" class="saved-place-actions" th:hidden="${#lists.isEmpty(savedPlaces)}">
+                <button type="button" class="mini-btn" id="removeSelectedSavedPlaces" onclick="removeSelectedSavedPlaces()" disabled>선택 해제</button>
+                <button type="button" class="mini-btn danger" id="removeVisibleSavedPlaces" onclick="removeVisibleSavedPlaces()">전체 해제</button>
+            </div>
+
+            <div id="savedPlaceList" class="saved-place-list" th:hidden="${#lists.isEmpty(savedPlaces)}">
+                <article class="saved-place-card"
+                         th:each="place : ${savedPlaces}"
+                         th:data-saved-kind="${place.kind}"
+                         th:data-content-id="${place.contentId}">
+                    <label class="saved-place-check" aria-label="저장 장소 선택">
+                        <input type="checkbox" onchange="updateSavedPlaceSelection()" onclick="event.stopPropagation()">
+                    </label>
+                    <button type="button" class="saved-place-main" onclick="openSavedPlace(this.closest('.saved-place-card'), event)">
+                        <span class="saved-place-thumb" th:if="${place.imageUrl != null and !#strings.isEmpty(place.imageUrl)}">
+                            <img th:src="${place.imageUrl}" alt="">
+                        </span>
+                        <span class="saved-place-thumb placeholder" th:unless="${place.imageUrl != null and !#strings.isEmpty(place.imageUrl)}">
+                            <span th:text="${place.kind == 'food'} ? '식' : (${place.kind == 'cafe'} ? '카' : '관')">관</span>
+                        </span>
+                        <span class="saved-place-text">
+                            <span class="chip"
+                                  th:text="${place.kind == 'food'} ? '음식점' : (${place.kind == 'cafe'} ? '카페' : '관광지')">관광지</span>
+                            <strong th:text="${place.title != null and !#strings.isEmpty(place.title) ? place.title : '저장한 장소'}">저장한 장소</strong>
+                            <p th:text="${place.addr != null and !#strings.isEmpty(place.addr) ? place.addr : '주소 정보 없음'}">주소 정보 없음</p>
+                        </span>
+                    </button>
+                    <div class="kebab-wrap">
+                        <button type="button" class="kebab-btn" onclick="toggleActionMenu(this, event)" aria-label="저장 장소 메뉴">⋯</button>
+                        <div class="action-menu" hidden>
+                            <button type="button" onclick="openSavedPlace(this.closest('.saved-place-card'), event)">보기</button>
+                            <button type="button" class="danger" onclick="removeSavedPlace(this.closest('.saved-place-card'), event)">저장 해제</button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            <button type="button" id="savedPlaceMoreButton" class="text-link text-button saved-more-btn" onclick="toggleSavedPlaceMore()" hidden>더보기</button>
+            <div id="savedPlaceEmpty" class="empty" th:hidden="${!#lists.isEmpty(savedPlaces)}">
                 아직 저장한 장소가 없어요.<br>
-                관광지 · 음식점 · 카페 상세창에서 하트를 누르면 이곳에 모아볼 수 있게 연결될 예정이에요.
+                관광지 · 음식점 · 카페 상세창에서 하트를 누르면 이곳에 모아볼 수 있어요.
             </div>
         </article>
 
@@ -510,10 +546,6 @@
     </section>
 </div>
 <script th:inline="javascript">
-    const currentUserId = /*[[${currentUserId}]]*/ null;
-    const savedPlacesKey = currentUserId ? `tourSavedPlaces:${currentUserId}` : 'tourSavedPlaces:guest';
-    const legacySavedPlaceKeys = ['tourSavedPlaces', 'tourSavedPlaces:guest', 'tourSavedPlaces:null', 'tourSavedPlaces:undefined']
-        .filter(key => key !== savedPlacesKey);
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
     const jsonHeaders = {'Content-Type': 'application/json'};
@@ -815,109 +847,93 @@
         location.reload();
     }
 
-    function openSavedPlace(button, event) {
+    const SAVED_PLACE_LIMIT = 4;
+    let savedPlaceExpanded = false;
+
+    function openSavedPlace(card, event) {
         event?.stopPropagation();
-        const href = button.dataset.href;
-        if (href) location.href = href;
-    }
-
-    function removeSavedPlace(button, event) {
-        event?.stopPropagation();
-        if (!confirm('이 장소를 저장 목록에서 해제할까요?')) return;
-        const id = String(button.dataset.id || '');
-        savedPlaceState.places = savedPlaceState.places.filter(place => String(place.id) !== id);
-        try {
-            const saved = readSavedPlaces(savedPlacesKey)
-                .filter(place => String(place.id) !== id);
-            localStorage.setItem(savedPlacesKey, JSON.stringify(saved));
-        } catch (error) {}
-        renderSavedPlaces();
-    }
-
-    const savedPlaceState = {
-        activeFilter: 'all',
-        places: []
-    };
-
-    function readSavedPlaces(key) {
-        try {
-            const value = JSON.parse(localStorage.getItem(key) || '[]');
-            if (!Array.isArray(value)) return [];
-            return value
-                .map(item => typeof item === 'object' && item !== null ? item : {id: String(item)})
-                .filter(item => item.id != null);
-        } catch (error) {
-            return [];
-        }
-    }
-
-    function migrateLegacySavedPlaces() {
-        const current = readSavedPlaces(savedPlacesKey);
-        const merged = [...current];
-        const seen = new Set(current.map(place => String(place.id)));
-        let migrated = false;
-
-        legacySavedPlaceKeys.forEach(key => {
-            const places = readSavedPlaces(key);
-            places.forEach(place => {
-                const id = String(place.id);
-                if (!seen.has(id)) {
-                    seen.add(id);
-                    merged.push(place);
-                    migrated = true;
-                }
-            });
-            if (places.length > 0) {
-                localStorage.removeItem(key);
-            }
+        if (!card?.dataset.contentId) return;
+        const kind = card.dataset.savedKind;
+        const path = kind === 'food' ? '/tour/food' : (kind === 'cafe' ? '/tour/cafe' : '/tour/all');
+        const params = new URLSearchParams({
+            lang: 'ko',
+            focus: card.dataset.contentId
         });
+        location.href = `${path}?${params.toString()}`;
+    }
 
-        if (migrated) {
-            localStorage.setItem(savedPlacesKey, JSON.stringify(merged));
+    async function removeSavedPlace(card, event) {
+        event?.stopPropagation();
+        if (!card) return;
+        if (!confirm('이 장소를 저장 목록에서 해제할까요?')) return;
+        const ok = await deleteSavedPlaceCards([card]);
+        if (!ok) {
+            alert('저장 해제에 실패했습니다.');
         }
     }
 
-    async function fillLegacyTourPlace(place) {
-        if (place.title && !/^저장한 관광지/.test(place.title)) return place;
-        try {
-            const response = await fetch(`/tour/api/detail/${encodeURIComponent(place.id)}?contentTypeId=${encodeURIComponent(place.contentTypeId || '12')}&lang=ko`);
-            if (!response.ok) return place;
-            const detail = await response.json();
-            return {
-                ...place,
-                title: detail.title || place.title,
-                image: detail.image || place.image,
-                contentTypeId: detail.contentTypeId || place.contentTypeId || '12'
-            };
-        } catch (error) {
-            return place;
-        }
+    async function removeSelectedSavedPlaces() {
+        const selectedCards = savedPlaceCards().filter(card => card.querySelector('input[type="checkbox"]')?.checked);
+        if (selectedCards.length === 0) return;
+        if (!confirm(`선택한 장소 ${selectedCards.length}개를 저장 목록에서 해제할까요?`)) return;
+        const ok = await deleteSavedPlaceCards(selectedCards);
+        if (!ok) alert('일부 장소를 저장 해제하지 못했습니다.');
     }
 
-    async function buildSavedPlaceItems() {
-        migrateLegacySavedPlaces();
-        const tourPlaces = readSavedPlaces(savedPlacesKey);
-        const items = await Promise.all(tourPlaces.map(async (place, index) => {
-            const filled = await fillLegacyTourPlace(place);
-            return {
-            id: String(filled.id),
-            type: 'tour',
-            typeLabel: '관광지',
-            title: filled.title || `저장한 관광지 ${index + 1}`,
-            meta: filled.addr || `관광지 ID ${filled.id}`,
-            href: `/tour/all?lang=ko&focus=${encodeURIComponent(filled.id)}`
-            };
+    async function removeVisibleSavedPlaces() {
+        const targets = filteredSavedPlaceCards();
+        if (targets.length === 0) return;
+        const activeLabel = document.querySelector('[data-saved-filter].active')?.textContent?.trim() || '전체';
+        if (!confirm(`${activeLabel} 저장 장소 ${targets.length}개를 모두 해제할까요?`)) return;
+        const ok = await deleteSavedPlaceCards(targets);
+        if (!ok) alert('일부 장소를 저장 해제하지 못했습니다.');
+    }
+
+    async function deleteSavedPlaceCards(cards) {
+        const results = await Promise.all(cards.map(async card => {
+            const contentId = card.dataset.contentId || '';
+            try {
+                const response = await fetch(`/tour/api/saved-places/${encodeURIComponent(contentId)}`, {
+                    method: 'DELETE',
+                    headers: csrfHeaders
+                });
+                if (response.ok) {
+                    card.remove();
+                    return true;
+                }
+            } catch (error) {}
+            return false;
         }));
+        renderSavedPlaces();
+        return results.every(Boolean);
+    }
 
-        savedPlaceState.places = items;
-        try {
-            localStorage.setItem(savedPlacesKey, JSON.stringify(items.map(item => ({
-                id: item.id,
-                title: item.title,
-                addr: item.meta.startsWith('관광지 ID ') ? '' : item.meta,
-                type: item.type
-            }))));
-        } catch (error) {}
+    function activeSavedPlaceFilter() {
+        return document.querySelector('[data-saved-filter].active')?.dataset.savedFilter || 'all';
+    }
+
+    function savedPlaceCards() {
+        return [...document.querySelectorAll('.saved-place-card')];
+    }
+
+    function filteredSavedPlaceCards() {
+        const activeFilter = activeSavedPlaceFilter();
+        return savedPlaceCards().filter(card => activeFilter === 'all' || card.dataset.savedKind === activeFilter);
+    }
+
+    function updateSavedPlaceSelection() {
+        const selectedCount = savedPlaceCards()
+            .filter(card => card.querySelector('input[type="checkbox"]')?.checked)
+            .length;
+        const button = document.getElementById('removeSelectedSavedPlaces');
+        if (button) {
+            button.disabled = selectedCount === 0;
+            button.textContent = selectedCount > 0 ? `선택 해제 (${selectedCount})` : '선택 해제';
+        }
+    }
+
+    function toggleSavedPlaceMore() {
+        savedPlaceExpanded = !savedPlaceExpanded;
         renderSavedPlaces();
     }
 
@@ -925,41 +941,46 @@
         const list = document.getElementById('savedPlaceList');
         const empty = document.getElementById('savedPlaceEmpty');
         const count = document.getElementById('savedPlaceCount');
-        const filtered = savedPlaceState.activeFilter === 'all'
-            ? savedPlaceState.places
-            : savedPlaceState.places.filter(place => place.type === savedPlaceState.activeFilter);
-
-        count.textContent = savedPlaceState.places.length;
-        list.innerHTML = filtered.map(place => `
-            <article class="saved-place-card" onclick="location.href='${escapeHtml(place.href || '/tour/all?lang=ko')}'">
-                <div>
-                    <strong>${escapeHtml(place.title)}</strong>
-                    <p>${escapeHtml(place.meta)}</p>
-                </div>
-                <div class="kebab-wrap">
-                    <button type="button" class="kebab-btn" onclick="toggleActionMenu(this, event)" aria-label="저장 장소 메뉴">⋯</button>
-                    <div class="action-menu" hidden>
-                        <button type="button" data-href="${escapeHtml(place.href || '/tour/all?lang=ko')}" onclick="openSavedPlace(this, event)">보기</button>
-                        <button type="button" class="danger" data-id="${escapeHtml(place.id)}" onclick="removeSavedPlace(this, event)">저장 해제</button>
-                    </div>
-                </div>
-            </article>
-        `).join('');
+        const actions = document.getElementById('savedPlaceActions');
+        const moreButton = document.getElementById('savedPlaceMoreButton');
+        const cards = savedPlaceCards();
+        const filtered = filteredSavedPlaceCards();
+        const visibleIds = new Set(filtered
+            .slice(0, savedPlaceExpanded ? filtered.length : SAVED_PLACE_LIMIT)
+            .map(card => card.dataset.contentId));
+        cards.forEach(card => {
+            const visible = visibleIds.has(card.dataset.contentId);
+            card.hidden = !visible;
+            if (!visible) {
+                const checkbox = card.querySelector('input[type="checkbox"]');
+                if (checkbox) checkbox.checked = false;
+            }
+        });
+        count.textContent = cards.length;
+        if (actions) actions.hidden = cards.length === 0;
+        if (moreButton) {
+            moreButton.hidden = filtered.length <= SAVED_PLACE_LIMIT;
+            moreButton.textContent = savedPlaceExpanded ? '접기' : `더보기 (${filtered.length - SAVED_PLACE_LIMIT})`;
+        }
         empty.hidden = filtered.length > 0;
-        list.hidden = filtered.length === 0;
+        empty.innerHTML = cards.length === 0
+            ? '아직 저장한 장소가 없어요.<br>관광지 · 음식점 · 카페 상세창에서 하트를 누르면 이곳에 모아볼 수 있어요.'
+            : '선택한 분류에 저장한 장소가 없어요.';
+        list.hidden = cards.length === 0 || filtered.length === 0;
+        updateSavedPlaceSelection();
     }
 
     document.querySelectorAll('[data-saved-filter]').forEach(button => {
         button.addEventListener('click', () => {
-            savedPlaceState.activeFilter = button.dataset.savedFilter;
             document.querySelectorAll('[data-saved-filter]').forEach(item => {
                 item.classList.toggle('active', item === button);
             });
+            savedPlaceExpanded = false;
             renderSavedPlaces();
         });
     });
 
-    buildSavedPlaceItems();
+    renderSavedPlaces();
 
 </script>
 </body>
