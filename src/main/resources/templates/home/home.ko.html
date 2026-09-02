@@ -150,7 +150,9 @@
                첫 화면이 배너 + 카테고리로 딱 떨어지고 아래 섹션은 안 보인다. */
             height: calc(100vh - 192px);
             min-height: 320px;
-            background: var(--dark);
+            /* 사진 사이 틈으로 비치는 색. 아래 본문이 흰색이라 배너만 검은 띠로
+               떨어져 보이지 않게 같은 흰색을 쓴다. */
+            background: var(--surface);
             overflow: hidden;
         }
 
@@ -232,6 +234,20 @@
             padding: 0 64px 64px;
         }
 
+        /* 틈이 흰색이 되면서, 문구가 틈을 가로지르면 흰 글씨가 묻혀 끊겨 보인다.
+           문구를 첫 칸 안에 가두고 그림자를 얹어 어떤 배경 위에서도 읽히게 한다. */
+        .hero-content > * {
+            max-width: calc(33.3333% - 64px);
+        }
+
+        @media (max-width: 900px) {
+            .hero-content > * { max-width: calc(50% - 48px); }
+        }
+
+        @media (max-width: 640px) {
+            .hero-content > * { max-width: 100%; }
+        }
+
         .hero-eyebrow,
         .hero-title,
         .hero-sub { position: relative; z-index: 1; }
@@ -255,6 +271,7 @@
             line-height: 1.02;
             letter-spacing: -0.045em;
             color: #ffffff;
+            text-shadow: 0 2px 18px rgba(15, 23, 42, 0.45);
             margin-bottom: 24px;
             opacity: 0;
             transform: translateY(24px);
