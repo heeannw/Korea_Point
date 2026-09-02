@@ -146,9 +146,11 @@
         .hero {
             position: relative;
             /* 배너형 슬라이더. 화면을 꽉 채우지 않고 아래 내용이 걸치게 둔다. */
-            height: 60vh;
-            min-height: 460px;
-            max-height: 620px;
+            /* 첫 화면에서 아래 카테고리까지 보이도록 낮춘다.
+               헤더 76px + 배너 + 카테고리가 한 화면에 들어가는 높이다. */
+            height: 44vh;
+            min-height: 340px;
+            max-height: 480px;
             background: var(--dark);
             overflow: hidden;
         }
@@ -372,7 +374,7 @@
             background: var(--white);
             border-bottom: 1px solid var(--border);
             /* 좌우 여백을 .section 과 맞춰 카드들과 끝선이 어긋나지 않게 한다 */
-            padding: 36px 80px 40px;
+            padding: 18px 80px 22px;
             scroll-margin-top: 92px;
         }
 
@@ -394,11 +396,11 @@
         .category-item {
             flex: 1 0 auto;
             min-width: 84px;
-            padding: 10px 4px;
+            padding: 6px 4px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             color: var(--dark);
             text-decoration: none;
             border-radius: 18px;
@@ -411,13 +413,13 @@
         }
 
         .category-icon svg {
-            width: 26px;
-            height: 26px;
+            width: 24px;
+            height: 24px;
         }
 
         .category-icon {
-            width: 56px;
-            height: 56px;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
