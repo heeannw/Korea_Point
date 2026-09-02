@@ -10,23 +10,17 @@
   <style>
     :root{
       --blue:#3b9eff; --blue-dk:#1a7de0; --dark:#0f172a; --mid:#334155; --gray:#64748b;
-      --border:#dbeafe; --white:#fff; --light:#f0f7ff; --r:12px;
+      --border:#dbeafe; --white:#fff; --light:#f0f7ff; --r:12px; --hdr-h:60px;
     }
     *{margin:0;padding:0;box-sizing:border-box}
     html,body{height:100%;overflow:hidden}
     body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);display:flex;flex-direction:column}
-    header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;
-      border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;z-index:100}
-    .logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--blue-dk);text-decoration:none}
-    .logo span{color:var(--dark)}
-    .header-right{display:flex;gap:8px;align-items:center}
-    .h-btn{padding:7px 16px;border-radius:50px;border:1.5px solid var(--border);background:transparent;
-      font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--dark);text-decoration:none}
-    .h-btn:hover,.h-btn.active{border-color:var(--blue);color:var(--blue)}
+    header{position:absolute;top:0;left:0;right:0;height:var(--hdr-h);display:flex;align-items:center;justify-content:space-between;padding:0 32px 0 20px;
+      background:var(--white);border-bottom:1px solid var(--border);box-shadow:0 1px 3px rgba(16,24,40,.06);z-index:100}
 
     .body-row{flex:1;display:flex;min-height:0}
     .sidebar{width:380px;flex-shrink:0;display:flex;flex-direction:column;
-      border-right:1px solid var(--border);background:var(--white)}
+      border-right:1px solid var(--border);background:var(--white);padding-top:var(--hdr-h)}
     .search-wrap{padding:12px}
     .search-box{display:flex;gap:6px}
     .search-box input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:50px;
@@ -35,7 +29,7 @@
     .search-box button{padding:10px 16px;border:none;border-radius:50px;background:var(--blue);
       color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
 
-    .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:0 12px 12px;padding:4px;
+    .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:12px 12px 0;padding:4px;
       border-radius:12px;background:var(--light);border:1px solid var(--border)}
     .mode-tab{padding:8px 10px;border-radius:9px;text-align:center;text-decoration:none;color:var(--gray);
       font-size:12px;font-weight:700;transition:background .15s,color .15s,box-shadow .15s}
@@ -93,7 +87,7 @@
     #map{width:100%;height:100%}
 
     /* ── Detail Panel (Naver-style) ── */
-    .detail-panel{position:absolute;top:0;left:0;width:390px;max-width:50%;height:100%;
+    .detail-panel{position:absolute;top:var(--hdr-h);left:0;width:390px;max-width:50%;height:calc(100% - var(--hdr-h));
       background:#fff;transform:translateX(-100%);transition:transform .25s ease;
       z-index:60;display:flex;flex-direction:column;box-shadow:2px 0 20px rgba(0,0,0,.12)}
     .detail-panel.open{transform:translateX(0)}
@@ -205,34 +199,19 @@
     .media-viewer-close{border:0;background:transparent;font-size:25px;cursor:pointer}.media-viewer-grid{padding:12px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}
     .media-viewer-grid img,.media-viewer-grid video{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:9px;background:#e8eef5}
   </style>
+  <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
 </head>
 <body>
-<header>
-  <a class="logo" translate="no" th:href="${lang == 'en'} ? @{/en} : @{/ko}">Korea<span>Point</span></a>
-  <div class="header-right">
-    <th:block th:if="${isLoggedIn}">
-      <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
-      <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
-      <form th:action="@{/logout}" method="post">
-        <button type="submit" class="h-btn h-btn-fill" th:text="#{tour.nav.logout}">Logout</button>
-      </form>
-    </th:block>
-    <th:block th:unless="${isLoggedIn}">
-      <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill" th:text="#{tour.nav.login}">Login</a>
-    </th:block>
-
-    <select class="h-btn" translate="no" style="margin-left:6px" onchange="switchLang(this.value)" aria-label="Language" id="langSelect">
-      <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
-      <option value="en" th:selected="${lang == 'en'}">English</option>
-      <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
-      <option value="zh" th:selected="${lang == 'zh'}">中文</option>
-      <option value="fr" th:selected="${lang == 'fr'}">Français</option>
-    </select>
-  </div>
-</header>
+<div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <div class="body-row">
   <aside class="sidebar">
+    <nav class="mode-tabs" aria-label="맛집 유형">
+      <a class="mode-tab" th:classappend="${cafeOnly} ? '' : 'active'"
+         th:href="@{/tour/food(lang=${lang}, lat=${userlat}, lon=${userlon}, near=${near})}" id="tabFood">음식점</a>
+      <a class="mode-tab" th:classappend="${cafeOnly} ? 'active' : ''"
+         th:href="@{/tour/cafe(lang=${lang}, lat=${userlat}, lon=${userlon}, near=${near})}" id="tabCafe">카페</a>
+    </nav>
     <div class="search-wrap">
       <form class="search-box" th:action="@{/tour/food/search}" method="get" id="searchForm">
         <input type="hidden" name="lang" th:value="${lang}">
@@ -241,12 +220,6 @@
         <button type="submit" id="searchBtn">검색</button>
       </form>
     </div>
-    <nav class="mode-tabs" aria-label="맛집 유형">
-      <a class="mode-tab" th:classappend="${cafeOnly} ? '' : 'active'"
-         th:href="@{/tour/food(lang=${lang}, lat=${userlat}, lon=${userlon}, near=${near})}" id="tabFood">음식점</a>
-      <a class="mode-tab" th:classappend="${cafeOnly} ? 'active' : ''"
-         th:href="@{/tour/cafe(lang=${lang}, lat=${userlat}, lon=${userlon}, near=${near})}" id="tabCafe">카페</a>
-    </nav>
     <div class="filter-wrap" th:hidden="${cafeOnly}">
       <button class="scroll-btn left" id="scrollLeft" type="button" onclick="scrollFilter(-1)" disabled>‹</button>
       <div class="filter-row" id="filterRow"></div>
@@ -737,7 +710,10 @@
 
   function centerPlaceBesideDetail(p) {
     if (!map || !p?.lat || !p?.lng) return;
-    map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
+    const pos = new kakao.maps.LatLng(p.lat, p.lng);
+    // 멀리 축소돼 있으면 위치가 보이도록 확대. 이미 가까우면 그대로 둔다.
+    if (map.getLevel() > 5) map.setLevel(5, { anchor: pos });
+    map.panTo(pos);
     // 상세 패널이 왼쪽을 덮으므로 남은 지도 영역의 가운데로 핀을 옮긴다.
     setTimeout(() => {
       const panelWidth = document.getElementById('detailPanel').getBoundingClientRect().width;
@@ -1034,19 +1010,23 @@
     return (holder.textContent || '').trim();
   }
 
-  function switchLang(newLang) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('lang', newLang || (isEn ? 'ko' : 'en'));
-    window.location.href = url.toString();
-  }
 
   document.getElementById('btnRoute').onclick = function () {
     const p = currentDetailPlace;
     if (!p) return;
     const end = encodeURIComponent(p.title ?? '');
     const base = isEn ? '/en/transport/search' : '/ko/transport/search';
-    if (userLat && userLon) location.href = `${base}?startLat=${userLat}&startLng=${userLon}&end=${end}`;
-    else location.href = `${base}?end=${end}`;
+    const go = (lat, lon) => { location.href = (lat && lon)
+      ? `${base}?startLat=${lat}&startLng=${lon}&end=${end}`
+      : `${base}?end=${end}`; };
+    // 현위치를 출발지로. 권한 거부/실패 시 세션에 저장된 내 위치, 그것도 없으면 목적지만.
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => go(pos.coords.latitude, pos.coords.longitude),
+        () => go(userLat, userLon));
+    } else {
+      go(userLat, userLon);
+    }
   };
 
   document.getElementById('btnNearTour').onclick = function () {
@@ -1181,5 +1161,6 @@
     focusInitialPlace();
   }
 </script>
+<script th:src="@{/js/common/header-menu.js}"></script>
 </body>
 </html>

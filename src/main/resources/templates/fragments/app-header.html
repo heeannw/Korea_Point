@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  공용 헤더 fragment (로고 · 유저 메뉴 드롭다운 · 로그인 · 언어 드롭다운)
+
+  쓰는 법:
+    <head> 안:   <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
+    </body> 앞:  <script th:src="@{/js/common/header-menu.js}"></script>
+    본문:        <div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
+
+  <header> 요소의 position/height/padding 은 페이지에서 직접 지정한다
+  (예시는 header-menu.css 상단 주석 참고).
+
+  필요한 모델 속성:
+    - isAdmin        : 전역(ViewModelAdvice) — 자동
+    - isLoggedIn     : 컨트롤러에서 model.addAttribute
+    - currentUserName: 컨트롤러에서 model.addAttribute
+    - lang           : 컨트롤러에서 model.addAttribute (없으면 ko 취급, 언어 라벨은 "Language")
+-->
+<body>
+<header th:fragment="header(lang, isLoggedIn, currentUserName)">
+  <a class="logo" translate="no" th:href="${lang == 'en'} ? @{/en} : @{/ko}">Korea<span>Point</span></a>
+  <div class="header-right">
+    <div class="user-menu" th:if="${isLoggedIn}">
+      <button type="button" class="h-btn user-menu-btn"
+              aria-haspopup="true" aria-expanded="false" onclick="toggleHeaderMenu(event, this)">
+        <svg class="um-avatar" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+        <span th:text="${currentUserName}">User</span>
+        <span class="um-caret" aria-hidden="true">&#9662;</span>
+      </button>
+      <div class="user-menu-pop" role="menu" hidden>
+        <a role="menuitem" th:href="@{/ko/mypage}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c.7-3.6 3.5-5.2 6.5-5.2s5.8 1.6 6.5 5.2"/></svg><span>My Page</span></a>
+        <a role="menuitem" th:href="@{/ko/trip/plans}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>My Trips</span></a>
+        <a role="menuitem" th:href="@{/community/post-list(mine=true)}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg><span>My Posts</span></a>
+        <a role="menuitem" th:if="${isAdmin}" th:href="@{/admin}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4.6-3 7.6-7 9-4-1.4-7-4.4-7-9V6z"/></svg><span>Admin</span></a>
+        <form th:action="@{/logout}" method="post" class="user-menu-logout">
+          <button type="submit" role="menuitem" translate="no">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span>Logout</span></button>
+        </form>
+      </div>
+    </div>
+    <th:block th:unless="${isLoggedIn}">
+      <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill" translate="no">Login</a>
+    </th:block>
+
+    <div class="lang-menu">
+      <button type="button" class="h-btn lang-menu-btn" translate="no"
+              aria-haspopup="true" aria-expanded="false" onclick="toggleHeaderMenu(event, this)">
+        <svg class="um-globe" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.7 3 4 6 4 9s-1.3 6-4 9c-2.7-3-4-6-4-9s1.3-6 4-9z"/></svg>
+        <span th:text="${lang == 'en' ? 'English' : (lang == 'ja' ? '日本語' : (lang == 'zh' ? '中文' : (lang == 'fr' ? 'Français' : '한국어')))}">한국어</span>
+        <span class="um-caret" aria-hidden="true">&#9662;</span>
+      </button>
+      <div class="user-menu-pop lang-pop" role="menu" hidden translate="no">
+        <button type="button" role="menuitem" onclick="switchLang('ko')" th:classappend="${lang == 'ko'} ? 'on'">한국어</button>
+        <button type="button" role="menuitem" onclick="switchLang('en')" th:classappend="${lang == 'en'} ? 'on'">English</button>
+        <button type="button" role="menuitem" onclick="switchLang('ja')" th:classappend="${lang == 'ja'} ? 'on'">日本語</button>
+        <button type="button" role="menuitem" onclick="switchLang('zh')" th:classappend="${lang == 'zh'} ? 'on'">中文</button>
+        <button type="button" role="menuitem" onclick="switchLang('fr')" th:classappend="${lang == 'fr'} ? 'on'">Français</button>
+      </div>
+    </div>
+  </div>
+</header>
+</body>
+</html>
