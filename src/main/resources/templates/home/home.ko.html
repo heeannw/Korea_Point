@@ -145,17 +145,21 @@
         /* ===== 3. 히어로 ===== */
         .hero {
             position: relative;
-            /* 화면을 꽉 채우면 첫 화면에 콘텐츠가 하나도 안 보인다.
-               아래 내용이 살짝 걸치게 두어 스크롤을 유도한다. */
-            height: 78vh;
-            min-height: 560px;
+            /* 배너형 슬라이더. 화면을 꽉 채우지 않고 아래 내용이 걸치게 둔다. */
+            height: 60vh;
+            min-height: 460px;
+            max-height: 620px;
             background: var(--dark);
             overflow: hidden;
         }
 
+        /* 트랙을 화면보다 좁게 두면 좌우 슬라이드가 히어로 가장자리까지 걸쳐 보인다.
+           슬라이드 폭은 여전히 '트랙의 100%' 라 이동 계산(JS)은 그대로 쓴다. */
         .slider-track {
             display: flex;
             height: 100%;
+            width: 64%;
+            margin: 0 auto;
             transition: transform 0.9s cubic-bezier(0.77, 0, 0.175, 1);
         }
 
@@ -163,10 +167,23 @@
             position: relative;
             min-width: 100%;
             height: 100%;
+            /* padding 으로 슬라이드 사이 간격을 만들되 폭은 100% 를 유지한다 */
+            padding: 0 8px;
             background-size: cover;
             background-position: center;
+            background-origin: content-box;
+            background-clip: content-box;
             background-color: rgba(255, 255, 255, 0.14);
             background-blend-mode: screen;
+        }
+
+        .slide::after {
+            content: "";
+            position: absolute;
+            inset: 0 8px;
+            border-radius: var(--radius-lg);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+            pointer-events: none;
         }
 
         .slide::after {
@@ -188,7 +205,8 @@
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
-            padding: 0 80px 92px;
+            /* 가운데 배너 안쪽에 문구가 놓이도록 트랙 폭(64%)에 맞춘다 */
+            padding: 0 calc(18% + 40px) 72px;
         }
 
         .hero-eyebrow {
@@ -233,8 +251,8 @@
 
         .hero-counter {
             position: absolute;
-            right: 80px;
-            bottom: 92px;
+            right: calc(18% + 40px);
+            bottom: 72px;
             z-index: 3;
             text-align: right;
         }
@@ -310,11 +328,11 @@
         }
 
         .hero-arrow.left {
-            left: 32px;
+            left: calc(18% - 26px);
         }
 
         .hero-arrow.right {
-            right: 32px;
+            right: calc(18% - 26px);
         }
 
         @keyframes fadeUp {
