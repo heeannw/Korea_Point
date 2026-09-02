@@ -3,18 +3,31 @@ function googleTranslateElementInit() {
     applyGoogleLanguage(localStorage.getItem('tripLanguage') || 'ko');
 }
 
+/**
+ * 이동할 주소에 ?lang= 을 실어 준다.
+ *
+ * 서버의 LocaleChangeInterceptor 가 이 값을 보고 세션 로케일을 바꾼다.
+ * 이걸 빼면 홈에서 언어를 바꿔도 세션은 그대로라, 다른 페이지로 넘어가는 순간
+ * 이전 언어로 돌아간다.
+ */
+function withLang(url, language) {
+    const target = new URL(url, location.origin);
+    target.searchParams.set('lang', language);
+    return target.pathname + target.search + target.hash;
+}
+
 function changeTripLanguage(language) {
     localStorage.setItem('tripLanguage', language);
 
     const isHomePage = ['/', '/ko', '/kr', '/en'].includes(location.pathname);
     if (language === 'ko') {
         document.cookie = 'googtrans=; Max-Age=0; path=/';
-        location.href = isHomePage ? '/ko' : location.href;
+        location.href = withLang(isHomePage ? '/ko' : location.href, 'ko');
         return;
     }
     if (language === 'en' && isHomePage) {
         document.cookie = 'googtrans=; Max-Age=0; path=/';
-        location.href = '/en';
+        location.href = withLang('/en', 'en');
         return;
     }
 
@@ -22,10 +35,12 @@ function changeTripLanguage(language) {
 
     // 일본어와 중국어는 한국어 원문 페이지를 기준으로 자동 번역한다.
     if (isHomePage && location.pathname !== '/ko' && location.pathname !== '/kr') {
-        location.href = '/ko';
+        location.href = withLang('/ko', language);
         return;
     }
-    applyGoogleLanguage(language);
+    // 다른 페이지에서도 세션 로케일을 맞춰야 해서 한 번 이동한다.
+    // googtrans 는 쿠키라 이동해도 번역 상태가 유지된다.
+    location.href = withLang(location.href, language);
 }
 
 function applyGoogleLanguage(language, attempt = 0) {

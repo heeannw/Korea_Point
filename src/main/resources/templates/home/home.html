@@ -1267,8 +1267,8 @@
     <a class="logo" th:href="@{/}" href="/">Korea<span>Point</span></a>
 
     <div class="header-right">
-        <a class="h-btn active" th:href="@{/}" href="/">EN</a>
-        <a class="h-btn" th:href="@{/ko}" href="/ko">KR</a>
+        <a class="h-btn active" th:href="@{/(lang='en')}" href="/?lang=en">EN</a>
+        <a class="h-btn" th:href="@{/ko(lang='ko')}" href="/ko?lang=ko">KR</a>
         <th:block th:if="${isLoggedIn}">
             <a class="h-btn"
                th:href="@{/ko/mypage}"
