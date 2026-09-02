@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <!-- 상세 패널 공용 스타일 -->
   <link rel="stylesheet" th:href="@{/css/tourism/detail-panel.css}">
+  <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
   <style>
     :root {
       --blue:#3b9eff; --blue-dk:#1a7de0; --blue-lt:#eff6ff;
@@ -16,20 +17,16 @@
       --border:#dbeafe; --white:#fff; --light:#f0f7ff;
       --gold:#f59e0b; --green:#16a34a;
       --r:12px; --sh:0 2px 16px rgba(59,158,255,.10);
+      --hdr-h:60px;
     }
     *{margin:0;padding:0;box-sizing:border-box}
     html,body{height:100%;overflow:hidden}
     body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);display:flex;flex-direction:column}
-    header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;z-index:100}
-    .logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:var(--blue-dk);text-decoration:none}
-    .logo span{color:var(--dark)}
-    .header-right{display:flex;gap:8px;align-items:center}
-    .h-btn{padding:7px 16px;border-radius:50px;border:1.5px solid var(--border);background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--dark);transition:all .2s}
-    .h-btn:hover,.h-btn.active{border-color:var(--blue);color:var(--blue)}
-    .h-btn-fill{background:var(--blue);color:#fff;border-color:var(--blue)}
-    .h-btn-fill:hover{background:var(--blue-dk);color:#fff}
+    header{position:absolute;top:0;left:0;right:0;height:var(--hdr-h);display:flex;align-items:center;justify-content:space-between;padding:0 32px 0 20px;background:var(--white);border-bottom:1px solid var(--border);box-shadow:0 1px 3px rgba(16,24,40,.06);z-index:100}
     .app-body{flex:1;display:flex;overflow:hidden}
-    .sidebar{width:380px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--white)}
+    .sidebar{width:380px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--white);padding-top:var(--hdr-h)}
+    /* 헤더가 지도 위에 반투명으로 떠 있으므로 상세 패널·지도 컨트롤은 그만큼 내려서 안 가리게 */
+    .detail-panel{top:var(--hdr-h);height:calc(100% - var(--hdr-h))}
     .search-bar{padding:14px 16px 0;flex-shrink:0;position:relative}
     .search-wrap{position:relative}
     .search-wrap input{width:100%;padding:10px 42px 10px 16px;border:1.5px solid var(--border);border-radius:50px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--light);transition:border .2s;color:var(--dark)}
@@ -106,7 +103,7 @@
     .stars-s{color:var(--gold);font-size:11px}
     .card-dist{font-size:11px;color:var(--gray);background:var(--light);padding:2px 8px;border-radius:50px;white-space:nowrap}
     .map-area{flex:1;position:relative;background:#e8f0fe;overflow:hidden}
-    .map-controls{position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:30}
+    .map-controls{position:absolute;top:calc(var(--hdr-h) + 12px);right:16px;display:flex;flex-direction:column;gap:4px;z-index:30}
     .mc{width:36px;height:36px;background:#fff;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;box-shadow:var(--sh);transition:background .2s}
     .mc:hover{background:var(--light)}
     .loc-btn{position:absolute;bottom:24px;right:16px;background:#fff;border:1px solid var(--border);border-radius:50px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--sh);color:var(--dark);font-family:'DM Sans',sans-serif;z-index:30;transition:all .2s}
@@ -118,29 +115,7 @@
        Google 자동번역(trip-translate.js)은 싣지 않는다. 홈에서 넘어올 때 섞여 번역되는 것을 막는다. -->
 </head>
 <body>
-<header>
-  <a class="logo" translate="no" th:href="${lang == 'en'} ? @{/en} : @{/ko}">Korea<span>Point</span></a>
-  <div class="header-right">
-    <th:block th:if="${isLoggedIn}">
-      <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
-      <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
-      <form th:action="@{/logout}" method="post">
-        <button type="submit" class="h-btn h-btn-fill" th:text="#{tour.nav.logout}">Logout</button>
-      </form>
-    </th:block>
-    <th:block th:unless="${isLoggedIn}">
-      <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill" th:text="#{tour.nav.login}">Login</a>
-    </th:block>
-
-    <select class="h-btn" translate="no" style="margin-left:6px" onchange="switchLang(this.value)" aria-label="Language">
-      <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
-      <option value="en" th:selected="${lang == 'en'}">English</option>
-      <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
-      <option value="zh" th:selected="${lang == 'zh'}">中文</option>
-      <option value="fr" th:selected="${lang == 'fr'}">Français</option>
-    </select>
-  </div>
-</header>
+<div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 <div class="app-body">
   <div class="sidebar">
     <div class="search-bar">
@@ -683,7 +658,10 @@
 
   function centerPlaceBesideTourDetail(p) {
     if (!map || !p?.lat || !p?.lng || isCourse(p)) return;
-    map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
+    const pos = new kakao.maps.LatLng(p.lat, p.lng);
+    // 멀리 축소돼 있으면 위치가 보이도록 확대. 이미 가까우면 그대로 둔다.
+    if (map.getLevel() > 5) map.setLevel(5, { anchor: pos });
+    map.panTo(pos);
     // 음식점 화면과 같이 상세 패널이 왼쪽을 덮으므로 남은 지도 영역 가운데로 옮긴다.
     setTimeout(() => {
       const panelWidth = document.getElementById('detailPanel').getBoundingClientRect().width;
@@ -857,7 +835,7 @@
       highlightMarkerByTitle(p.title);
     }
     render();
-    if (!isCourse(p) && p.lat && p.lng && map) map.panTo(new kakao.maps.LatLng(p.lat, p.lng));
+    centerPlaceBesideTourDetail(p);
     setTimeout(() => {
       const card = document.getElementById('card-' + idx);
       if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1311,11 +1289,6 @@
 
   let hideTimer;
 
-  function switchLang(newLang) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('lang', newLang);
-    window.location.href = url.toString();
-  }
 
   function onSearchFocus() {
     const val = document.getElementById('searchInput').value;
@@ -1489,19 +1462,25 @@
 
     // 축척이 바뀌면 강조할 인기 개수(TOP 3 ↔ TOP 5)가 달라진다.
     kakao.maps.event.addListener(map, 'zoom_changed', () => {
-      if (courseMarkers.length === 0) {
-        markerMap.forEach(item => {
-          const color = CATEGORY_COLOR[String(item.type)] ?? '#64748b';
-          const emoji = CATEGORY_EMOJI[String(item.type)] ?? '📍';
-          item.marker.setImage(createMarkerImage(color, emoji));
-        });
-        syncClusteredMarkers();
+      if (courseMarkers.length > 0) return;
+      const activeTitle = (activePinId != null)
+        ? ((window._currentList || PLACES)[activePinId] || {}).title : null;
+      if (activeTitle) {
+        highlightMarkerByTitle(activeTitle);   // 전체 리셋 후 활성 핀은 다시 강조
+        return;
       }
+      markerMap.forEach(item => {
+        const color = CATEGORY_COLOR[String(item.type)] ?? '#64748b';
+        const emoji = CATEGORY_EMOJI[String(item.type)] ?? '📍';
+        item.marker.setImage(createMarkerImage(color, emoji));
+      });
+      syncClusteredMarkers();
     });
 
     focusInitialPlace();
   });
 </script>
 
+<script th:src="@{/js/common/header-menu.js}"></script>
 </body>
 </html>
