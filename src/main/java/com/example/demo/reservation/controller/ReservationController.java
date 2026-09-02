@@ -23,6 +23,7 @@ import com.example.demo.user.util.SecurityUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -40,6 +41,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Locale;
 
 @Controller
 @RequiredArgsConstructor
@@ -60,6 +62,7 @@ public class ReservationController {
                                   @RequestParam(required = false) String keyword,
                                   @RequestParam(defaultValue = "ko") String lang) {
         lang = normalizeReservationLang(lang);
+        applyReservationLocale(lang);
         addSessionModel(model);
         model.addAttribute("keyword", keyword == null ? "" : keyword);
         model.addAttribute("lang", lang);
@@ -75,6 +78,7 @@ public class ReservationController {
                                   @RequestParam(defaultValue = "ko") String lang,
                                   Model model) {
         lang = normalizeReservationLang(lang);
+        applyReservationLocale(lang);
         TourApiPlaceDto place = tourApiReservationService.findDetail(contentId, contentTypeId, lang);
         ReservationFormDto form = new ReservationFormDto();
         form.setLang(lang);
@@ -100,6 +104,7 @@ public class ReservationController {
         TourApiPlaceDto place = tourApiReservationService.findDetail(
                 form.getContentId(), form.getContentTypeId(), form.getLang());
         if (bindingResult.hasErrors()) {
+            applyReservationLocale(form.getLang());
             addSessionModel(model);
             model.addAttribute("place", place);
             model.addAttribute("today", LocalDate.now());
@@ -126,6 +131,7 @@ public class ReservationController {
         model.addAttribute("paymentMethods", PaymentMethod.values());
         model.addAttribute("paymentRequest", new ReservationPaymentRequest());
         model.addAttribute("lang", reservationLanguage(reservation));
+        applyReservationLocale(reservationLanguage(reservation));
         return "reservation/reservationPayment";
     }
 
@@ -136,6 +142,7 @@ public class ReservationController {
                                             Model model) {
         TourReservation reservation = reservationService.findMine(reservationId, SecurityUtil.getCurrentUserId());
         if (bindingResult.hasErrors()) {
+            applyReservationLocale(reservationLanguage(reservation));
             addSessionModel(model);
             model.addAttribute("reservation", reservation);
             model.addAttribute("payment", reservation.getPayment());
@@ -168,6 +175,7 @@ public class ReservationController {
         model.addAttribute("reservationNo", reservation.getReservationNo());
         model.addAttribute("payment", reservation.getPayment());
         model.addAttribute("lang", reservationLanguage(reservation));
+        applyReservationLocale(reservationLanguage(reservation));
         return "reservation/reservationComplete";
     }
 
@@ -340,5 +348,17 @@ public class ReservationController {
         if (normalized.startsWith("zh")) return "zh-CN";
         if (normalized.startsWith("fr")) return "fr";
         return "ko";
+    }
+
+    private void applyReservationLocale(String lang) {
+        String normalized = normalizeReservationLang(lang);
+        Locale locale = switch (normalized) {
+            case "en" -> Locale.ENGLISH;
+            case "ja" -> Locale.JAPANESE;
+            case "zh-CN" -> Locale.SIMPLIFIED_CHINESE;
+            case "fr" -> Locale.FRENCH;
+            default -> Locale.KOREAN;
+        };
+        LocaleContextHolder.setLocale(locale);
     }
 }

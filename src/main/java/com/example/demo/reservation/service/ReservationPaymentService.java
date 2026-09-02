@@ -4,7 +4,9 @@ import com.example.demo.reservation.dto.ReservationPaymentRequest;
 import com.example.demo.reservation.entity.PaymentStatus;
 import com.example.demo.reservation.entity.ReservationPayment;
 import com.example.demo.reservation.entity.TourReservation;
+import com.example.demo.reservation.event.ReservationConfirmedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ import java.util.UUID;
 public class ReservationPaymentService {
 
     private final ReservationService reservationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ReservationPayment process(Long reservationId, Long userId, ReservationPaymentRequest request) {
@@ -38,6 +41,14 @@ public class ReservationPaymentService {
         payment.setPaidAt(LocalDateTime.now());
         payment.setApprovalNo(createApprovalNo());
         reservation.setStatus("예약 완료");
+        eventPublisher.publishEvent(new ReservationConfirmedEvent(
+                reservation.getUserId(),
+                reservation.getReservationNo(),
+                reservation.getPlaceTitle(),
+                reservation.getReservationDate(),
+                reservation.getReservationTime(),
+                reservation.getPeopleCount(),
+                payment.getAmount()));
         return payment;
     }
 
