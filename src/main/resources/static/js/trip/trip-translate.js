@@ -3,31 +3,18 @@ function googleTranslateElementInit() {
     applyGoogleLanguage(localStorage.getItem('tripLanguage') || 'ko');
 }
 
-/**
- * 이동할 주소에 ?lang= 을 실어 준다.
- *
- * 서버의 LocaleChangeInterceptor 가 이 값을 보고 세션 로케일을 바꾼다.
- * 이걸 빼면 홈에서 언어를 바꿔도 세션은 그대로라, 다른 페이지로 넘어가는 순간
- * 이전 언어로 돌아간다.
- */
-function withLang(url, language) {
-    const target = new URL(url, location.origin);
-    target.searchParams.set('lang', language);
-    return target.pathname + target.search + target.hash;
-}
-
 function changeTripLanguage(language) {
     localStorage.setItem('tripLanguage', language);
 
     const isHomePage = ['/', '/ko', '/kr', '/en'].includes(location.pathname);
     if (language === 'ko') {
         document.cookie = 'googtrans=; Max-Age=0; path=/';
-        location.href = withLang(isHomePage ? '/ko' : location.href, 'ko');
+        location.href = isHomePage ? '/ko' : location.href;
         return;
     }
     if (language === 'en' && isHomePage) {
         document.cookie = 'googtrans=; Max-Age=0; path=/';
-        location.href = withLang('/en', 'en');
+        location.href = '/en';
         return;
     }
 
@@ -35,12 +22,10 @@ function changeTripLanguage(language) {
 
     // 일본어와 중국어는 한국어 원문 페이지를 기준으로 자동 번역한다.
     if (isHomePage && location.pathname !== '/ko' && location.pathname !== '/kr') {
-        location.href = withLang('/ko', language);
+        location.href = '/ko';
         return;
     }
-    // 다른 페이지에서도 세션 로케일을 맞춰야 해서 한 번 이동한다.
-    // googtrans 는 쿠키라 이동해도 번역 상태가 유지된다.
-    location.href = withLang(location.href, language);
+    applyGoogleLanguage(language);
 }
 
 function applyGoogleLanguage(language, attempt = 0) {
@@ -56,11 +41,24 @@ function applyGoogleLanguage(language, attempt = 0) {
 
 document.addEventListener('DOMContentLoaded', () => {
     const savedLanguage = localStorage.getItem('tripLanguage') || 'ko';
+    const isHomePage = ['/', '/ko', '/kr', '/en'].includes(location.pathname);
 
-    // 홈의 언어 판단은 서버 세션 로케일이 맡는다(HomeController).
-    // 예전에는 여기서 localStorage 를 보고 홈을 강제로 옮겼는데, 공용 헤더는
-    // 세션만 갱신하므로 두 기억이 어긋나 "다른 페이지에서 바꾼 언어가 홈에서 되돌아가는"
-    // 문제가 있었다.
+    // 저장된 언어와 실제 홈 템플릿이 다르면 올바른 원문 페이지로 이동한다.
+    if (isHomePage) {
+        if (savedLanguage === 'ko' && location.pathname !== '/ko' && location.pathname !== '/kr') {
+            location.replace('/ko');
+            return;
+        }
+        if (savedLanguage === 'en' && location.pathname !== '/en') {
+            location.replace('/en');
+            return;
+        }
+        if (['ja', 'zh-CN'].includes(savedLanguage)
+            && location.pathname !== '/ko' && location.pathname !== '/kr') {
+            location.replace('/ko');
+            return;
+        }
+    }
 
     let select = document.getElementById('languageSelect');
     if (!select) {
