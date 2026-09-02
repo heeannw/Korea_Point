@@ -145,11 +145,10 @@
         .hero {
             position: relative;
             /* 배너형 슬라이더. 화면을 꽉 채우지 않고 아래 내용이 걸치게 둔다. */
-            /* 첫 화면에서 아래 카테고리까지 보이도록 낮춘다.
-               헤더 76px + 배너 + 카테고리가 한 화면에 들어가는 높이다. */
-            height: 44vh;
-            min-height: 340px;
-            max-height: 480px;
+            /* 헤더(76px)와 카테고리 줄(약 116px)을 뺀 나머지를 배너가 다 차지한다.
+               첫 화면이 배너 + 카테고리로 딱 떨어지고 아래 섹션은 안 보인다. */
+            height: calc(100vh - 192px);
+            min-height: 320px;
             background: var(--dark);
             overflow: hidden;
         }
@@ -1678,56 +1677,58 @@
     }
 
     // Slider state shared by arrows, dots, and autoplay.
-    /* 히어로 배너: 한 번에 3장, 가로 스크롤로 넘긴다.
+    /* 히어로 배너: 한 화면에 3장, 한 번 누르면 3장씩 넘어가고 끝에서 처음으로 돈다.
        예전에는 transform 으로 옮기며 무한루프용 복제본을 앞뒤에 끼웠는데,
        3분할에서는 그 복제본까지 보여서 5칸이 됐다. 스크롤 방식으로 바꿔 복제를 없앴다. */
     (function () {
         const track = document.getElementById("sliderTrack");
         if (!track) return;
 
-        const slides = Array.from(track.children);
-        const total = slides.length;
         const counterEl = document.getElementById("counterNum");
         const totalEl = document.getElementById("counterTotal");
         const dots = Array.from(document.querySelectorAll(".hero-dot"));
         let autoPlay = null;
 
-        if (totalEl) totalEl.textContent = String(total).padStart(2, "0");
-
-        function step() {
-            return slides.length ? slides[0].getBoundingClientRect().width : track.clientWidth;
+        /* 한 번에 넘기는 단위는 '보이는 만큼'이다. 화면이 좁아 2장·1장만 보이면
+           그만큼만 넘어간다. */
+        function pageWidth() {
+            return track.clientWidth || 1;
         }
 
-        function currentIndex() {
-            const w = step();
-            return w ? Math.round(track.scrollLeft / w) : 0;
+        function pageCount() {
+            return Math.max(1, Math.round(track.scrollWidth / pageWidth()));
+        }
+
+        function currentPage() {
+            return Math.round(track.scrollLeft / pageWidth());
         }
 
         function updateUi() {
-            const index = currentIndex();
-            if (counterEl) counterEl.textContent = String(index + 1).padStart(2, "0");
-            dots.forEach((dot, i) => dot.classList.toggle("active", i === index));
+            const page = currentPage();
+            if (counterEl) counterEl.textContent = String(page + 1).padStart(2, "0");
+            if (totalEl) totalEl.textContent = String(pageCount()).padStart(2, "0");
+            dots.forEach((dot, i) => dot.classList.toggle("active", i === page));
         }
 
-        function goTo(index) {
-            const max = total - 1;
-            const target = index < 0 ? max : (index > max ? 0 : index);
-            track.scrollTo({ left: target * step(), behavior: "smooth" });
+        function goTo(page) {
+            const last = pageCount() - 1;
+            const target = page < 0 ? last : (page > last ? 0 : page);
+            track.scrollTo({ left: target * pageWidth(), behavior: "smooth" });
+        }
+
+        function resetAutoPlay() {
+            clearInterval(autoPlay);
+            if (pageCount() > 1) autoPlay = setInterval(() => goTo(currentPage() + 1), 5000);
         }
 
         window.moveSlide = function (delta) {
             resetAutoPlay();
-            goTo(currentIndex() + delta);
+            goTo(currentPage() + delta);
         };
         window.goSlide = function (index) {
             resetAutoPlay();
             goTo(index);
         };
-
-        function resetAutoPlay() {
-            clearInterval(autoPlay);
-            if (total > 1) autoPlay = setInterval(() => goTo(currentIndex() + 1), 5000);
-        }
 
         track.addEventListener("scroll", updateUi, { passive: true });
         window.addEventListener("resize", updateUi);
