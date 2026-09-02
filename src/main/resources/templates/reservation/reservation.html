@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" th:lang="${lang}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>예약하기 | KoreaPoint</title>
+    <title th:text="#{reservation.list.title} + ' | KoreaPoint'">관광지 예약 | KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
 </head>
@@ -22,7 +22,7 @@
             <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}">User</a>
             <form th:action="@{/logout}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                <button type="submit" class="h-btn h-btn-fill">Logout</button>
+                <button type="submit" class="h-btn h-btn-fill" th:text="#{reservation.list.logout}">로그아웃</button>
             </form>
         </th:block>
     </div>
@@ -32,7 +32,7 @@
     <section class="reservation-search-panel">
         <div class="page-head reservation-page-head">
             <div>
-                <p class="eyebrow">Busan Travel</p>
+                <p class="eyebrow" th:text="#{reservation.list.eyebrow}">부산 여행</p>
                 <h1 id="reservationTitle">관광지 예약</h1>
                 <p class="sub" id="reservationSubtitle">부산의 관광지를 둘러보고 방문 일정을 예약해보세요.</p>
             </div>
@@ -42,7 +42,8 @@
             </button>
         </div>
 
-        <div class="notice warning" th:unless="${hasTourApiKey}">
+        <div class="notice warning" th:unless="${hasTourApiKey}"
+             th:text="#{reservation.list.apiKeyRequired}">
             관광지 목록을 불러오기 위한 TourAPI 서비스 키 설정이 필요합니다.
         </div>
 

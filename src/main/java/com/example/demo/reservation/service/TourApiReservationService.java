@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -18,6 +19,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 public class TourApiReservationService {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final Set<String> unavailableServices = ConcurrentHashMap.newKeySet();
     private final TourPlaceI18n placeI18n;
     private final ReservationDetailTranslationService detailTranslationService;
 
@@ -108,7 +112,8 @@ public class TourApiReservationService {
         Map<String, String> operatingInformation = findOperatingInformation(
                 contentId, resolvedContentTypeId, TourApiLang.KO);
         if (isKorean(lang)) {
-            return toPlace(commonItem, TourApiLang.KO, text(commonItem, "overview"), operatingInformation);
+            return toPlace(commonItem, TourApiLang.KO, text(commonItem, "overview"),
+                    localizeOperatingLabels(operatingInformation, TourApiLang.KO));
         }
 
         JsonNode officialItem = firstItem(request(commonBuilder(apiBase(lang) + detailPath)
@@ -167,12 +172,42 @@ public class TourApiReservationService {
     }
 
     private JsonNode request(URI uri) {
-        try {
-            return restTemplate.getForObject(uri, JsonNode.class);
-        } catch (RestClientException e) {
-            log.warn("TourAPI request failed: {}", uri, e);
+        String serviceId = serviceIdOf(uri);
+        if (unavailableServices.contains(serviceId)) {
             return null;
         }
+        try {
+            return restTemplate.getForObject(uri, JsonNode.class);
+        } catch (HttpClientErrorException.Forbidden e) {
+            if (e.getResponseBodyAsString().contains("SERVICE_KEY_IS_NOT_REGISTERED_ERROR")) {
+                unavailableServices.add(serviceId);
+                log.warn("TourAPI service is not approved for the configured key: {}. Falling back to cached/DeepL translation.",
+                        serviceId);
+                return null;
+            }
+            log.warn("TourAPI request forbidden: {} (status={})", safeUri(uri), e.getStatusCode());
+            return null;
+        } catch (RestClientException e) {
+            log.warn("TourAPI request failed: {} ({})", safeUri(uri), e.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    private String serviceIdOf(URI uri) {
+        String path = uri.getPath();
+        if (path == null) return "unknown";
+        for (String serviceId : List.of("KorService2", "EngService2", "JpnService2", "ChsService2",
+                "ChtService2", "GerService2", "FreService2", "SpnService2", "RusService2")) {
+            if (path.contains("/" + serviceId + "/")) return serviceId;
+        }
+        return "unknown";
+    }
+
+    private String safeUri(URI uri) {
+        return UriComponentsBuilder.fromUri(uri)
+                .replaceQueryParam("serviceKey", "***")
+                .build(true)
+                .toUriString();
     }
 
     private List<TourApiPlaceDto> parseItems(JsonNode root, String lang) {
@@ -351,6 +386,10 @@ public class TourApiReservationService {
     }
 
     private String detailLabel(String key, String lang) {
+        String normalized = overlayLanguage(lang);
+        if ("ko".equals(normalized)) {
+            return koreanDetailLabel(key);
+        }
         String group = switch (key) {
             case "usetime", "usetimeculture", "usetimeleports", "opentime", "opentimefood", "playtime" -> "hours";
             case "restdate", "restdateculture", "restdateleports", "restdateshopping", "restdatefood" -> "closed";
@@ -361,7 +400,6 @@ public class TourApiReservationService {
             case "firstmenu" -> "menu";
             default -> key;
         };
-        String normalized = overlayLanguage(lang);
         Map<String, Map<String, String>> labels = Map.of(
                 "en", Map.of("hours", "Hours", "closed", "Closed", "fee", "Fee", "parking", "Parking", "contact", "Contact", "reservation", "Reservation", "menu", "Signature menu"),
                 "ja", Map.of("hours", "利用時間", "closed", "休業日", "fee", "利用料金", "parking", "駐車", "contact", "お問い合わせ", "reservation", "予約案内", "menu", "代表メニュー"),
@@ -369,6 +407,33 @@ public class TourApiReservationService {
                 "fr", Map.of("hours", "Horaires", "closed", "Fermeture", "fee", "Tarif", "parking", "Parking", "contact", "Contact", "reservation", "Réservation", "menu", "Menu signature"),
                 "ko", Map.of("hours", "이용 시간", "closed", "휴무일", "fee", "이용 요금", "parking", "주차", "contact", "문의", "reservation", "예약 안내", "menu", "대표 메뉴"));
         return labels.getOrDefault(normalized, labels.get("ko")).getOrDefault(group, key);
+    }
+
+    private String koreanDetailLabel(String key) {
+        return switch (key) {
+            case "usetime", "usetimeculture", "usetimeleports", "opentime", "opentimefood", "playtime" -> "이용 시간";
+            case "restdate", "restdateculture", "restdateleports", "restdateshopping", "restdatefood" -> "휴무일";
+            case "usefee", "usetimefestival", "usefeeleports" -> "이용 요금";
+            case "parking", "parkingculture", "parkinglodging" -> "주차";
+            case "infocenter", "infocentertourcourse" -> "문의";
+            case "reservation", "reservationfood", "reservationurl" -> "예약 안내";
+            case "firstmenu" -> "대표 메뉴";
+            case "treatmenu" -> "취급 메뉴";
+            case "eventstartdate" -> "행사 시작일";
+            case "eventenddate" -> "행사 종료일";
+            case "eventplace" -> "행사 장소";
+            case "spendtimefestival" -> "관람 소요 시간";
+            case "distance" -> "코스 총거리";
+            case "schedule" -> "코스 일정";
+            case "taketime" -> "소요 시간";
+            case "openperiod" -> "개장 기간";
+            case "expagerangeleports" -> "체험 가능 연령";
+            case "checkintime" -> "입실 시간";
+            case "checkouttime" -> "퇴실 시간";
+            case "roomcount" -> "객실 수";
+            case "saleitem" -> "판매 품목";
+            default -> key;
+        };
     }
 
     private String overlayLanguage(String lang) {
