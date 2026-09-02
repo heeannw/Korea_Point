@@ -6,6 +6,7 @@ import com.example.demo.home.service.HomePlaceService;
 import com.example.demo.home.service.HomeService;
 import com.example.demo.user.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,22 +28,45 @@ public class HomeController {
     // Model model: 뷰(HTML)에 넘길 데이터를 담는 그릇
     @GetMapping({"/", "/en"})
     public String homeEn(Model model) {
+        String lang = currentLang();
+        // 언어 판단은 세션 로케일 하나로 통일한다. 공용 헤더가 ?lang= 으로 세션을 바꾸므로
+        // 경로와 세션이 어긋나면 맞는 홈으로 보낸다.
+        if (!"en".equals(lang)) {
+            return "redirect:/ko";
+        }
         session(model);
-        populateModel(model, "en");  // 공통 데이터 세팅 (영문 축제)
+        model.addAttribute("lang", lang);
+        populateModel(model, lang);
         return "home/home";         // templates/home/home.html 을 찾아서 렌더링
     }
 
     // @GetMapping: "/ko" 또는 "/kr" 접속 시 이 메서드 실행 (한국어 버전)
     @GetMapping({"/ko", "/kr"})
     public String homeKo(Model model) {
+        String lang = currentLang();
+        if ("en".equals(lang)) {
+            return "redirect:/en";
+        }
         session(model);
-        populateModel(model, "ko");  // 공통 데이터 세팅 (국문 축제)
+        model.addAttribute("lang", lang);
+        // 일본어·중국어·불어는 국문 화면을 쓰되 장소 이름·주소는 해당 언어로 바꿔 끼운다
+        // (TourPlaceI18n 오버레이가 en/ja/zh/fr 을 갖고 있다).
+        populateModel(model, lang);
         return "home/home.ko";      // templates/home/home.ko.html 을 찾아서 렌더링
     }
 
     // homeEn, homeKo 두 메서드가 공통으로 사용하는 데이터 세팅 메서드
     // private: 이 클래스 내부에서만 사용하는 메서드
     // void: 반환값 없음 (Model 객체에 직접 데이터를 추가하는 방식이라 반환 불필요)
+    /** 세션 로케일 → 우리가 다루는 언어 코드. 모르는 언어는 국문으로 본다. */
+    private String currentLang() {
+        String language = LocaleContextHolder.getLocale().getLanguage();
+        return switch (language) {
+            case "en", "ja", "zh", "fr" -> language;
+            default -> "ko";
+        };
+    }
+
     private void session(Model model) {
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());

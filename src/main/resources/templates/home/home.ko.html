@@ -1236,36 +1236,12 @@
             }
         }
     </style>
+    <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
 </head>
 <body>
 <div id="google_translate_element" style="display:none"></div>
 <!-- 헤더: 상단 로고와 언어 버튼 -->
-<header>
-    <a class="logo" th:href="@{/ko}" href="/ko">Korea<span>Point</span></a>
-
-    <div class="header-right">
-        <select class="h-btn" id="languageSelect" translate="no" onchange="changeTripLanguage(this.value)" aria-label="언어 선택">
-            <option value="ko">한국어</option>
-            <option value="en">English</option>
-            <option value="ja">日本語</option>
-            <option value="zh-CN">中文</option>
-        </select>
-        <th:block th:if="${isLoggedIn}">
-            <a class="h-btn"
-               th:href="@{/ko/mypage}"
-               th:text="${currentUserName}"
-               aria-label="마이페이지로 이동">사용자</a>
-            <a th:if="${isAdmin}" th:href="@{/admin}" href="/admin" class="h-btn">Admin</a>
-            <form th:action="@{/logout}" method="post">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                <button type="submit" class="h-btn h-btn-fill">Logout</button>
-            </form>
-        </th:block>
-        <th:block th:unless="${isLoggedIn}">
-            <a th:href="@{/login}" href="/login" class="h-btn h-btn-fill">로그인</a>
-        </th:block>
-    </div>
-</header>
+<div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <!-- 히어로: 메인 문구가 들어가는 전체 폭 슬라이더 -->
 <section class="hero">
@@ -1762,5 +1738,6 @@
         update();
     });
 </script>
+<script th:src="@{/js/common/header-menu.js}"></script>
 </body>
 </html>

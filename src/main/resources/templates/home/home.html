@@ -1260,31 +1260,11 @@
         }
     </style>
     <script defer th:src="@{/js/trip/trip-translate.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
 </head>
 <body>
 <!-- Header: top navigation and language buttons -->
-<header>
-    <a class="logo" th:href="@{/}" href="/">Korea<span>Point</span></a>
-
-    <div class="header-right">
-        <a class="h-btn active" th:href="@{/(lang='en')}" href="/?lang=en">EN</a>
-        <a class="h-btn" th:href="@{/ko(lang='ko')}" href="/ko?lang=ko">KR</a>
-        <th:block th:if="${isLoggedIn}">
-            <a class="h-btn"
-               th:href="@{/ko/mypage}"
-               th:text="${currentUserName}"
-               aria-label="Go to My Page">User</a>
-            <a th:if="${isAdmin}" th:href="@{/admin}" href="/admin" class="h-btn">Admin</a>
-            <form th:action="@{/logout}" method="post">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                <button type="submit" class="h-btn h-btn-fill">Logout</button>
-            </form>
-        </th:block>
-        <th:block th:unless="${isLoggedIn}">
-            <a th:href="@{/login}" href="/login" class="h-btn h-btn-fill">Login</a>
-        </th:block>
-    </div>
-</header>
+<div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <!-- Hero: full-width slider with the main home message -->
 <section class="hero">
@@ -1787,6 +1767,7 @@
         update();
     });
 </script>
+<script th:src="@{/js/common/header-menu.js}"></script>
 </body>
 </html>
 

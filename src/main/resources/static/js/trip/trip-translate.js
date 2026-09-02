@@ -56,24 +56,11 @@ function applyGoogleLanguage(language, attempt = 0) {
 
 document.addEventListener('DOMContentLoaded', () => {
     const savedLanguage = localStorage.getItem('tripLanguage') || 'ko';
-    const isHomePage = ['/', '/ko', '/kr', '/en'].includes(location.pathname);
 
-    // 저장된 언어와 실제 홈 템플릿이 다르면 올바른 원문 페이지로 이동한다.
-    if (isHomePage) {
-        if (savedLanguage === 'ko' && location.pathname !== '/ko' && location.pathname !== '/kr') {
-            location.replace('/ko');
-            return;
-        }
-        if (savedLanguage === 'en' && location.pathname !== '/en') {
-            location.replace('/en');
-            return;
-        }
-        if (['ja', 'zh-CN'].includes(savedLanguage)
-            && location.pathname !== '/ko' && location.pathname !== '/kr') {
-            location.replace('/ko');
-            return;
-        }
-    }
+    // 홈의 언어 판단은 서버 세션 로케일이 맡는다(HomeController).
+    // 예전에는 여기서 localStorage 를 보고 홈을 강제로 옮겼는데, 공용 헤더는
+    // 세션만 갱신하므로 두 기억이 어긋나 "다른 페이지에서 바꾼 언어가 홈에서 되돌아가는"
+    // 문제가 있었다.
 
     let select = document.getElementById('languageSelect');
     if (!select) {
