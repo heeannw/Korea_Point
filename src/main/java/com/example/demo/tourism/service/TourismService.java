@@ -90,6 +90,7 @@ public class TourismService {
             place.setPopularRank(popularity.getPopularRank());
             place.setPopularCategory(popularity.getPopularCategory());
             place.setPopularityScore(popularity.getPopularityScore());
+            place.setPopularRatioByAge(popularity.getRatioByAge());
         }
     }
 
