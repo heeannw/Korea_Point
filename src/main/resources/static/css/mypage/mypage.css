@@ -457,9 +457,26 @@ h2 {
     color: #1a7de0;
 }
 
+.saved-place-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: -2px 0 14px;
+    flex-wrap: wrap;
+}
+
+.saved-place-actions[hidden] {
+    display: none;
+}
+
 .saved-place-list {
     display: grid;
     gap: 10px;
+}
+
+.saved-place-list[hidden],
+.saved-place-card[hidden] {
+    display: none;
 }
 
 .saved-place-card {
@@ -473,12 +490,73 @@ h2 {
     background: #ffffff;
 }
 
+.saved-place-check {
+    width: 26px;
+    height: 58px;
+    flex: 0 0 26px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+
+.saved-place-check input {
+    width: 17px;
+    height: 17px;
+    accent-color: #1a7de0;
+    cursor: pointer;
+}
+
+.saved-place-main {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.saved-place-thumb {
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1a7de0;
+    font-size: 16px;
+    font-weight: 900;
+}
+
+.saved-place-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.saved-place-text {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.saved-place-text .chip {
+    width: fit-content;
+    justify-self: start;
+}
+
 .saved-place-card:hover {
     border-color: #bae6fd;
     background: #f8fbff;
 }
 
-.saved-place-card > div {
+.saved-place-card > div,
+.saved-place-card > button {
     min-width: 0;
 }
 
@@ -496,6 +574,15 @@ h2 {
     color: #64748b;
     font-size: 13px;
     line-height: 1.6;
+}
+
+.saved-more-btn {
+    display: block;
+    margin: 14px auto 0;
+}
+
+.saved-more-btn[hidden] {
+    display: none;
 }
 
 .trip-plan-card {

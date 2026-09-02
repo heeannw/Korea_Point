@@ -19,7 +19,8 @@ a {
 }
 
 button,
-input {
+input,
+select {
     font: inherit;
 }
 
@@ -328,7 +329,8 @@ h2 {
     font-weight: 800;
 }
 
-.input {
+.input,
+.select {
     width: 100%;
     min-height: 42px;
     border: 1px solid #dbeafe;
@@ -339,7 +341,8 @@ h2 {
     outline: none;
 }
 
-.input:focus {
+.input:focus,
+.select:focus {
     border-color: #3b9eff;
 }
 

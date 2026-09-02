@@ -11,7 +11,6 @@ import com.example.demo.user.util.SecurityUtil;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -64,6 +63,9 @@ public class UserController {
                 : ("ko".equals(selected) ? "/ko" : "/");
         model.addAttribute("targetUrl", targetUrl);
         model.addAttribute("provider", provider);
+        model.addAttribute("showNationalityPrompt",
+                SecurityUtil.isLoggedIn()
+                        && userService.shouldShowNationalityPrompt(SecurityUtil.getCurrentUserId()));
         return "user/login-success";
     }
 
@@ -79,6 +81,31 @@ public class UserController {
         model.addAttribute("loginProviderName", userService.loginProviderName(user));
         model.addAttribute("pendingEmail", emailVerificationService.getPendingEmail(session));
         return "user/settings";
+    }
+
+    @PostMapping("/ko/settings/nationality")
+    public String updateNationality(@RequestParam(required = false) String nationality,
+                                    @RequestParam(required = false) String skip,
+                                    @RequestParam(required = false) String redirect,
+                                    RedirectAttributes redirectAttributes) {
+        try {
+            if ("true".equals(skip)) {
+                userService.skipNationalityPrompt(SecurityUtil.getCurrentUserId());
+            } else {
+                userService.updateNationality(SecurityUtil.getCurrentUserId(), nationality);
+            }
+            if (!isSafeRedirectPath(redirect)) {
+                redirectAttributes.addFlashAttribute("settingsMessage", "국적 설정이 저장됐어요.");
+            }
+        } catch (IllegalArgumentException ex) {
+            if (!isSafeRedirectPath(redirect)) {
+                redirectAttributes.addFlashAttribute("settingsError", ex.getMessage());
+            }
+        }
+        if (isSafeRedirectPath(redirect)) {
+            return "redirect:" + redirect;
+        }
+        return "redirect:/ko/settings#nationality";
     }
 
     @PostMapping("/ko/settings/profile")
@@ -163,7 +190,6 @@ public class UserController {
     }
 
     @PostMapping("/signup")
-    @Transactional
     public String signup(@RequestParam(defaultValue = "personal") String accountType,
                          @RequestParam String loginId,
                          @RequestParam String password,

@@ -58,6 +58,15 @@ public class User {
     // 프로필 이미지
     private String profileImage;
 
+    // 선택 입력: 사용자의 국적/국가 코드
+    @Column(length = 2)
+    private String nationality;
+
+    // 첫 가입 후 국적 선택 모달을 이미 처리했는지 여부
+    @Column(name = "nationality_prompted")
+    @Builder.Default
+    private Boolean nationalityPrompted = true;
+
     // 권한 ('USER', 'ADMIN')
     @Column(nullable = false, length = 10)
     @Builder.Default

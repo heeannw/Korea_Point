@@ -1102,7 +1102,7 @@
         await csrfFetch(`/tour/api/saved-places/${encodeURIComponent(key)}`, 'DELETE');
       } else {
         await csrfFetch('/tour/api/saved-places', 'POST',
-          { contentId: key, contentTypeId: p.type ?? '39' });
+          { contentId: key, contentTypeId: p.type ?? '39', kind: CAFE_ONLY ? 'cafe' : 'food' });
       }
     } catch (e) {
       if (wasOn) savedIds.add(key); else savedIds.delete(key);

@@ -586,15 +586,18 @@
 
     const list = window._currentList || PLACES;
     const idx = list.findIndex(p => String(p.id) === String(focusId));
-    if (idx < 0) return;
+    const target = idx >= 0 ? list[idx] : PLACES.find(p => String(p.id) === String(focusId));
+    if (!target) return;
 
-    selectPlace(idx);
-    const target = list[idx];
+    if (idx >= 0) {
+      selectPlace(idx);
+    } else {
+      openDetail(target);
+    }
     if (map && target.lat && target.lng) {
       map.setLevel(Math.min(map.getLevel(), POPULAR_EXPAND_LEVEL));
       map.panTo(new kakao.maps.LatLng(target.lat, target.lng));
     }
-    openDetail(target);
   }
 
   function scrollFilter(dir) {
@@ -1182,7 +1185,7 @@
           await csrfFetch(`/tour/api/saved-places/${encodeURIComponent(key)}`, 'DELETE');
         } else {
           await csrfFetch('/tour/api/saved-places', 'POST',
-            { contentId: key, contentTypeId: p.type ?? '' });
+            { contentId: key, contentTypeId: p.type ?? '', kind: 'tourism' });
         }
       } catch (e) {
         if (wasOn) savedIds.add(key); else savedIds.delete(key);  // 실패 시 롤백
