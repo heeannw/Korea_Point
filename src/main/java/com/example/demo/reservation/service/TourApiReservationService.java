@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -18,6 +19,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 public class TourApiReservationService {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final Set<String> unavailableServices = ConcurrentHashMap.newKeySet();
     private final TourPlaceI18n placeI18n;
     private final ReservationDetailTranslationService detailTranslationService;
 
@@ -108,7 +112,8 @@ public class TourApiReservationService {
         Map<String, String> operatingInformation = findOperatingInformation(
                 contentId, resolvedContentTypeId, TourApiLang.KO);
         if (isKorean(lang)) {
-            return toPlace(commonItem, TourApiLang.KO, text(commonItem, "overview"), operatingInformation);
+            return toPlace(commonItem, TourApiLang.KO, text(commonItem, "overview"),
+                    localizeOperatingLabels(operatingInformation, TourApiLang.KO));
         }
 
         JsonNode officialItem = firstItem(request(commonBuilder(apiBase(lang) + detailPath)
@@ -167,12 +172,42 @@ public class TourApiReservationService {
     }
 
     private JsonNode request(URI uri) {
-        try {
-            return restTemplate.getForObject(uri, JsonNode.class);
-        } catch (RestClientException e) {
-            log.warn("TourAPI request failed: {}", uri, e);
+        String serviceId = serviceIdOf(uri);
+        if (unavailableServices.contains(serviceId)) {
             return null;
         }
+        try {
+            return restTemplate.getForObject(uri, JsonNode.class);
+        } catch (HttpClientErrorException.Forbidden e) {
+            if (e.getResponseBodyAsString().contains("SERVICE_KEY_IS_NOT_REGISTERED_ERROR")) {
+                unavailableServices.add(serviceId);
+                log.warn("TourAPI service is not approved for the configured key: {}. Falling back to cached/DeepL translation.",
+                        serviceId);
+                return null;
+            }
+            log.warn("TourAPI request forbidden: {} (status={})", safeUri(uri), e.getStatusCode());
+            return null;
+        } catch (RestClientException e) {
+            log.warn("TourAPI request failed: {} ({})", safeUri(uri), e.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    private String serviceIdOf(URI uri) {
+        String path = uri.getPath();
+        if (path == null) return "unknown";
+        for (String serviceId : List.of("KorService2", "EngService2", "JpnService2", "ChsService2",
+                "ChtService2", "GerService2", "FreService2", "SpnService2", "RusService2")) {
+            if (path.contains("/" + serviceId + "/")) return serviceId;
+        }
+        return "unknown";
+    }
+
+    private String safeUri(URI uri) {
+        return UriComponentsBuilder.fromUri(uri)
+                .replaceQueryParam("serviceKey", "***")
+                .build(true)
+                .toUriString();
     }
 
     private List<TourApiPlaceDto> parseItems(JsonNode root, String lang) {
