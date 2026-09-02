@@ -88,7 +88,9 @@ public class TripRecommendService {
             String nameEn,    // 로마자 변환 이름 (EN용)
             String categoryEn, // 영어 카테고리 (EN용)
             boolean adventure, // TourAPI 레포츠(contentTypeId=28) — "액티비티" 취향 가산에 사용
-            String typeName   // 세부 유형(해수욕장/시장/공원 …) — 같은 유형 연속 배치 방지에 사용
+            String typeName,  // 세부 유형(해수욕장/시장/공원 …) — 같은 유형 연속 배치 방지에 사용
+            String contentId,     // TourAPI contentId — 운영시간/전화번호/메뉴 등 상세조회에 사용 (큐레이션 장소는 빈 값)
+            String contentTypeId  // TourAPI contentTypeId — 상세조회 시 콘텐츠 유형별 필드를 고르는 데 필요
     ) {}
 
     private enum PlaceEnvironment { INDOOR, OUTDOOR, MIXED, WEATHER_SENSITIVE }
@@ -309,32 +311,43 @@ public class TripRecommendService {
     }
 
     /**
-     * 사용자의 실제 여행 기간과 겹치는 부산 축제(드론쇼·불꽃축제 등)를 가져와 관광 후보 풀에 얹는다.
-     * 날짜 의존적이라 앱 시작 시 한 번 캐시하는 tourismPlacesKo 자체는 건드리지 않고,
-     * 이번 요청에서만 쓸 새 리스트를 만든다. 실패해도 원래 목록 그대로 진행한다.
+     * 사용자의 실제 여행 기간과 겹치는 부산 축제(드론쇼·불꽃축제 등)를 조회한다. 날짜 의존적이라
+     * 앱 시작 시 한 번 캐시하는 tourismPlacesKo와 달리 요청마다 새로 가져온다.
+     * 일정에 실제로 뽑히는지와 무관하게 응답에 그대로 실어서 "이 기간에 이런 축제가 있어요"를
+     * 항상 보여줄 수 있게 한다 — 실패해도 예외 없이 빈 목록.
      */
-    private List<PlaceData> withFestivals(List<PlaceData> tourismPlaces, TripRecommendRequest req) {
+    private List<BusanFestivalDto> fetchTripFestivals(TripRecommendRequest req) {
         java.time.LocalDate startDate = req.getStartDate() != null
                 ? req.getStartDate() : java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"));
         java.time.LocalDate endDate = startDate.plusDays(Math.max(1, req.getTravelDays()) - 1L);
-
-        List<BusanFestivalDto> festivals;
         try {
-            festivals = busanFestivalClient.findOverlapping(startDate, endDate);
+            return busanFestivalClient.findOverlapping(startDate, endDate);
         } catch (Exception e) {
             log.warn("[TripService] 축제 조회 실패 — 축제 없이 진행", e);
-            return tourismPlaces;
+            return List.of();
         }
-        if (festivals.isEmpty()) return tourismPlaces;
+    }
 
+    /** 조회한 축제를 관광 후보 풀에 얹는다(점수 가산 대상이 되어 일정에 뽑힐 수도 있게). */
+    private List<PlaceData> mergeFestivalsIntoPool(List<PlaceData> tourismPlaces, List<BusanFestivalDto> festivals) {
+        if (festivals.isEmpty()) return tourismPlaces;
         Set<String> existingNames = tourismPlaces.stream().map(PlaceData::name).collect(Collectors.toSet());
         List<PlaceData> merged = new ArrayList<>(tourismPlaces);
         for (BusanFestivalDto f : festivals) {
             if (f.title() == null || f.title().isBlank() || !existingNames.add(f.title())) continue;
             merged.add(new PlaceData(f.title(), "tourism", f.lat(), f.lng(), 4.3, 4.3, 0,
-                    areaFromCoord(f.lat(), f.lng()), "", f.address(), f.imageUrl(), "", "", false, "축제"));
+                    areaFromCoord(f.lat(), f.lng()), "", f.address(), f.imageUrl(), "", "", false, "축제", "", ""));
         }
         return merged;
+    }
+
+    private List<FestivalDto> toFestivalDtos(List<BusanFestivalDto> festivals) {
+        return festivals.stream().map(f -> {
+            FestivalDto d = new FestivalDto();
+            d.setTitle(f.title()); d.setStartDate(f.startDate()); d.setEndDate(f.endDate());
+            d.setAddress(f.address()); d.setImageUrl(f.imageUrl()); d.setLat(f.lat()); d.setLng(f.lng());
+            return d;
+        }).collect(Collectors.toList());
     }
 
     private PlaceData toPlaceData(TourPlaceDto p, String category) {
@@ -348,7 +361,8 @@ public class TripRecommendService {
         String typeName = resolveTypeLabel(p.getTitle(), p.getTypeName());
         return new PlaceData(p.getTitle(), category, lat, lng, rating, rating, p.getUser_ratings_total(),
                 areaFromCoord(lat, lng), foodCategory, address == null ? "" : address,
-                p.getImage() == null ? "" : p.getImage(), "", "", adventure, typeName);
+                p.getImage() == null ? "" : p.getImage(), "", "", adventure, typeName,
+                p.getId() == null ? "" : p.getId(), p.getType() == null ? "" : p.getType());
     }
 
     /** 같은 유형(해수욕장/시장/공원 …)이 연속 배치되지 않게 쓸 세부 유형 라벨.
@@ -391,9 +405,22 @@ public class TripRecommendService {
         List<PlaceData> merged = new ArrayList<>();
         for (PlaceData p : curated) {
             PlaceData liveMatch = liveByName.get(p.name());
+            // 이름이 완전히 똑같지 않아도("고등어" vs "부산에 뜬 고등어 해운대점 본점"처럼 지점명/수식어가
+            // 붙는 경우) 최대한 TourAPI 정보를 끌어와야 하므로, 정확 일치가 실패하면 이름 정규화 +
+            // 근접 거리(300m 이내) 조건으로 한 번 더 찾아본다.
+            if (liveMatch == null) liveMatch = findFuzzyMatch(p, live);
+            if (liveMatch == null) { merged.add(p); continue; }
             boolean needsImage = p.imageUrl() == null || p.imageUrl().isBlank();
-            boolean liveHasImage = liveMatch != null && liveMatch.imageUrl() != null && !liveMatch.imageUrl().isBlank();
-            merged.add(needsImage && liveHasImage ? withImage(p, liveMatch.imageUrl()) : p);
+            boolean liveHasImage = liveMatch.imageUrl() != null && !liveMatch.imageUrl().isBlank();
+            // 큐레이션 목록은 이용시간/휴무일/문의 같은 상세정보 조회용 contentId가 애초에 없다.
+            // 이름이 실제 TourAPI 항목과 일치하면 사진뿐 아니라 contentId도 같이 채워줘야
+            // 여행일정 상세 패널에서도 관광페이지랑 똑같은 상세정보가 뜬다.
+            boolean needsContentId = p.contentId() == null || p.contentId().isBlank();
+            merged.add((needsImage && liveHasImage) || needsContentId
+                    ? withLiveInfo(p, needsImage && liveHasImage ? liveMatch.imageUrl() : p.imageUrl(),
+                            needsContentId ? liveMatch.contentId() : p.contentId(),
+                            needsContentId ? liveMatch.contentTypeId() : p.contentTypeId())
+                    : p);
         }
 
         Set<String> existingNames = curated.stream().map(PlaceData::name).collect(Collectors.toSet());
@@ -405,25 +432,58 @@ public class TripRecommendService {
         return merged;
     }
 
-    private PlaceData withImage(PlaceData p, String imageUrl) {
+    private PlaceData withLiveInfo(PlaceData p, String imageUrl, String contentId, String contentTypeId) {
         return new PlaceData(p.name(), p.category(), p.lat(), p.lng(), p.score(), p.avgRating(), p.reviewCount(),
-                p.area(), p.foodCategory(), p.address(), imageUrl, p.nameEn(), p.categoryEn(), p.adventure(), p.typeName());
+                p.area(), p.foodCategory(), p.address(), imageUrl, p.nameEn(), p.categoryEn(), p.adventure(), p.typeName(),
+                contentId, contentTypeId);
+    }
+
+    /**
+     * 정확 이름 일치가 실패했을 때 쓰는 보조 매칭. 지점명("본점", "해운대점" 등)이나 공백/괄호 표기가
+     * 달라서 문자열이 완전히는 안 맞는 케이스를 잡기 위해, 이름을 정규화한 뒤 한쪽이 다른 쪽을
+     * 포함하는지 보고, 동명이인(전혀 다른 지점)을 걸러내기 위해 300m 이내 거리 조건까지 같이 건다.
+     * 후보가 여러 개면 가장 가까운 곳을 고른다.
+     */
+    private PlaceData findFuzzyMatch(PlaceData curated, List<PlaceData> live) {
+        String cn = normalizeName(curated.name());
+        if (cn.length() < 2) return null;
+        PlaceData best = null;
+        double bestDist = Double.MAX_VALUE;
+        for (PlaceData p : live) {
+            if (p.name() == null || p.name().isBlank()) continue;
+            String ln = normalizeName(p.name());
+            if (ln.length() < 2) continue;
+            if (!ln.contains(cn) && !cn.contains(ln)) continue;
+            double dist = haversine(curated.lat(), curated.lng(), p.lat(), p.lng());
+            if (dist <= 0.3 && dist < bestDist) { best = p; bestDist = dist; }
+        }
+        return best;
+    }
+
+    /** 공백/괄호 안 내용/흔한 지점 표현("본점", "OO점" 등)을 지워서 이름을 대충 맞춰본다. */
+    private String normalizeName(String name) {
+        if (name == null) return "";
+        String n = name.replaceAll("\\([^)]*\\)", "");
+        n = n.replaceAll("[·\\s\\-.]", "");
+        n = n.replaceAll("(본점|직영점|본관)$", "");
+        n = n.replaceAll("[가-힣]{1,4}점$", "");
+        return n.trim();
     }
 
     private PlaceData busanFood(String name, double lat, double lng, String area, String foodCategory) {
         return new PlaceData(name, "food", lat, lng, 4.5, 4.5, 0, area, foodCategory,
-                "부산 " + area, "", "", "", false, resolveTypeLabel(name, null));
+                "부산 " + area, "", "", "", false, resolveTypeLabel(name, null), "", "");
     }
 
     private PlaceData busanBar(String name, double lat, double lng, String area) {
         return new PlaceData(name, "bar", lat, lng, 4.4, 4.4, 0, area, "",
-                "부산 " + area, "", "", "", false, resolveTypeLabel(name, null));
+                "부산 " + area, "", "", "", false, resolveTypeLabel(name, null), "", "");
     }
 
     private PlaceData busanPlace(String name, String category, double lat, double lng,
                                  String area, String address, double rating) {
         return new PlaceData(name, category, lat, lng, rating, rating, 0, area, "",
-                address, "", "", "", false, resolveTypeLabel(name, null));
+                address, "", "", "", false, resolveTypeLabel(name, null), "", "");
     }
 
     // ────────────────────────────────────────────
@@ -525,7 +585,7 @@ public class TripRecommendService {
             String nameEn    = firstStr(m, "nameEn");    // EN JSON에만 존재
             String catEn     = firstStr(m, "categoryEn"); // EN JSON에만 존재
             if (name.isBlank() || lat == 0) continue;
-            list.add(new PlaceData(name, cat, lat, lng, score, star, cnt, areaFromCoord(lat, lng), foodCat, "", "", nameEn, catEn, false, ""));
+            list.add(new PlaceData(name, cat, lat, lng, score, star, cnt, areaFromCoord(lat, lng), foodCat, "", "", nameEn, catEn, false, "", "", ""));
         }
         return list;
     }
@@ -571,13 +631,13 @@ public class TripRecommendService {
             if (name.isBlank()) continue;
             if (lat == 0 && lng == 0) { lat = 35.1796; lng = 129.0756; }
             list.add(new PlaceData(name, "tourism", lat, lng,
-                    score > 0 ? score : 1.0, star, cnt, areaFromCoord(lat, lng), "", addr, img, "", "", false, ""));
+                    score > 0 ? score : 1.0, star, cnt, areaFromCoord(lat, lng), "", addr, img, "", "", false, "", "", ""));
         }
 
         if (list.isEmpty()) {
             foreignCoverage.forEach((name, cov) -> {
                 double[] coord = AREA_COORDS.getOrDefault(name, new double[]{35.1796, 129.0756});
-                list.add(new PlaceData(name, "tourism", coord[0], coord[1], cov, 4.0, 0, areaFromCoord(coord[0], coord[1]), "", "", "", "", "", false, ""));
+                list.add(new PlaceData(name, "tourism", coord[0], coord[1], cov, 4.0, 0, areaFromCoord(coord[0], coord[1]), "", "", "", "", "", false, "", "", ""));
             });
         }
         return list;
@@ -593,16 +653,14 @@ public class TripRecommendService {
     public TripRecommendResponse reoptimize(TripReoptimizeRequest input) {
         TripRecommendResponse updated = recommendInternal(input.getRequest(), true);
         if (input.getCurrent() == null || input.getCurrent().getSchedule() == null) return updated;
-        Set<String> completed = new HashSet<>(Optional.ofNullable(input.getCompletedPlaceNames()).orElse(List.of()));
         Set<String> reserved = new HashSet<>(Optional.ofNullable(input.getReservedPlaceNames()).orElse(List.of()));
-        Set<String> locked = new HashSet<>(completed); locked.addAll(reserved);
         for (DayScheduleDto oldDay : input.getCurrent().getSchedule()) {
             DayScheduleDto newDay = updated.getSchedule().stream().filter(d -> d.getDay() == oldDay.getDay()).findFirst().orElse(null);
             if (newDay == null) continue;
             for (int i = 0; i < oldDay.getSlots().size(); i++) {
                 SlotDto old = oldDay.getSlots().get(i);
-                if (!locked.contains(old.getPlaceName())) continue;
-                old.setLocked(true); old.setLockReason(completed.contains(old.getPlaceName()) ? "방문 완료" : "예약 장소");
+                if (!reserved.contains(old.getPlaceName())) continue;
+                old.setLocked(true); old.setLockReason("예약 장소");
                 newDay.getSlots().removeIf(s -> s.getPlaceName().equals(old.getPlaceName()));
                 newDay.getSlots().add(Math.min(i, newDay.getSlots().size()), old);
             }
@@ -620,7 +678,9 @@ public class TripRecommendService {
 
         // 여행 기간과 겹치는 축제(드론쇼·불꽃축제 등)는 캐시된 공용 목록이 아니라
         // 요청마다(사용자 여행 날짜 기준으로) 새로 조회해서 이번 요청에서만 후보 풀에 더한다.
-        tourismPlaces = withFestivals(tourismPlaces, req);
+        // 일정에 실제로 뽑혔는지와 무관하게 응답에도 그대로 실어서 안내 배너로 보여준다.
+        List<BusanFestivalDto> tripFestivals = fetchTripFestivals(req);
+        tourismPlaces = mergeFestivalsIntoPool(tourismPlaces, tripFestivals);
 
         List<ScoredPlace> tourism = scoreAll(tourismPlaces, req);
         List<ScoredPlace> food    = scoreAll(foodSource.stream().filter(p -> !"bar".equals(p.category())).collect(Collectors.toList()), req);
@@ -631,6 +691,7 @@ public class TripRecommendService {
         resp.setTourismList(toRecList(tourism, 10));
         resp.setFoodList   (toRecList(food,    10));
         resp.setCafeList   (toRecList(cafe,    10));
+        resp.setFestivals  (toFestivalDtos(tripFestivals));
         String warning = weatherWarningService.currentBusanWarning();
         resp.setWeatherWarning(warning);
         Optional<AirQuality> airQuality = airQualityService.currentBusan();
@@ -934,13 +995,30 @@ public class TripRecommendService {
                 .findFirst().orElse(null);
     }
 
+    // 매번 일정을 새로 만들어도 항상 똑같은(1등만 뽑는) 조합이 나온다는 피드백 —
+    // 점수 1등만 고정으로 뽑지 않고, 조건을 만족하는 상위 몇 곳 중에서 매번 무작위로 하나를 골라
+    // 재생성할 때마다 실제로 다른 장소 구성이 나오게 한다. 저장한 장소/꼭 가고 싶은 장소는
+    // pickSaved()에서 이 함수보다 먼저 확정되므로 여기서 랜덤이 섞여도 영향받지 않는다.
+    private static final int PICK_POOL_SIZE = 4;
+
+    private ScoredPlace randomPick(List<ScoredPlace> candidates) {
+        return candidates.isEmpty() ? null : candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+    }
+
     private ScoredPlace pickNext(List<ScoredPlace> list, Set<String> used,
                                  double anchorLat, double anchorLng, double maxKm) {
-        for (ScoredPlace sp : list) {
-            if (used.contains(sp.place.name())) continue;
-            if (haversine(anchorLat, anchorLng, sp.place.lat(), sp.place.lng()) <= maxKm) return sp;
-        }
-        return list.stream().filter(sp -> !used.contains(sp.place.name())).findFirst().orElse(null);
+        List<ScoredPlace> nearby = list.stream()
+                .filter(sp -> !used.contains(sp.place.name()))
+                .filter(sp -> haversine(anchorLat, anchorLng, sp.place.lat(), sp.place.lng()) <= maxKm)
+                .limit(PICK_POOL_SIZE)
+                .collect(Collectors.toList());
+        if (!nearby.isEmpty()) return randomPick(nearby);
+
+        List<ScoredPlace> fallback = list.stream()
+                .filter(sp -> !used.contains(sp.place.name()))
+                .limit(PICK_POOL_SIZE)
+                .collect(Collectors.toList());
+        return randomPick(fallback);
     }
 
     private ScoredPlace pickNext(List<ScoredPlace> list, Set<String> used,
@@ -951,11 +1029,13 @@ public class TripRecommendService {
         if ((weather.isEmpty() || !weather.get().rainy()) && airQuality.filter(AirQuality::bad).isEmpty() && healthRisk.filter(HealthRisk::outdoorCaution).isEmpty()) {
             return pickNext(list, used, anchorLat, anchorLng, maxKm);
         }
-        return list.stream()
+        List<ScoredPlace> candidates = list.stream()
                 .filter(sp -> !used.contains(sp.place.name()))
                 .sorted(Comparator.comparingDouble((ScoredPlace sp) ->
                         environmentalScore(sp, weather, airQuality, healthRisk, anchorLat, anchorLng, maxKm)).reversed())
-                .findFirst().orElse(null);
+                .limit(PICK_POOL_SIZE)
+                .collect(Collectors.toList());
+        return randomPick(candidates);
     }
 
     private double environmentalScore(ScoredPlace scored, Optional<WeatherForecast> weather,
@@ -1036,6 +1116,8 @@ public class TripRecommendService {
         // 예전엔 Unsplash 스톡 이미지로 채웠는데, 실제 장소랑 안 어울리는 사진이 뜨는 문제가 있어서
         // (예: 범어사에 반찬 사진) 뺐다 — 프론트가 이미지 없으면 카테고리 아이콘을 보여준다.
         s.setImageUrl(pl.imageUrl());
+        s.setContentId(pl.contentId());
+        s.setContentTypeId(pl.contentTypeId());
         // 베이즈 별점 보정 (리뷰 수 적으면 전체 평균 쪽으로 당김)
         double correctedRating = bayesRating(pl.avgRating(), pl.reviewCount());
         s.setAvgRating(Math.round(correctedRating * 10.0) / 10.0);
@@ -1073,6 +1155,13 @@ public class TripRecommendService {
                     a.setScore(Math.round(sp.score * 10000.0) / 10000.0);
                     a.setLat(sp.place.lat()); a.setLng(sp.place.lng());
                     a.setDistanceKm(Math.round(haversine(selfLat, selfLng, sp.place.lat(), sp.place.lng()) * 100.0) / 100.0);
+                    a.setCategory(sp.place.category());
+                    a.setAddress(sp.place.address());
+                    a.setImageUrl(sp.place.imageUrl());
+                    a.setAvgRating(sp.place.avgRating());
+                    a.setReviewCount(sp.place.reviewCount());
+                    a.setContentId(sp.place.contentId());
+                    a.setContentTypeId(sp.place.contentTypeId());
                     return a;
                 }).collect(Collectors.toList());
     }
@@ -1088,7 +1177,8 @@ public class TripRecommendService {
         List<PlaceData> tourismPlaces = isEn ? tourismPlacesEn : tourismPlacesKo;
         List<PlaceData> foodSource    = isEn ? foodPlacesEn    : foodPlacesKo;
         List<PlaceData> cafeSource    = isEn ? cafePlacesEn    : cafePlacesKo;
-        tourismPlaces = withFestivals(tourismPlaces, req);
+        List<BusanFestivalDto> tripFestivals = fetchTripFestivals(req);
+        tourismPlaces = mergeFestivalsIntoPool(tourismPlaces, tripFestivals);
 
         List<ScoredPlace> tourism = scoreAll(tourismPlaces, req);
         List<ScoredPlace> food    = scoreAll(foodSource.stream().filter(p -> !"bar".equals(p.category())).collect(Collectors.toList()), req);
@@ -1106,6 +1196,24 @@ public class TripRecommendService {
                 };
                 double lat = slot.getLat() != null ? slot.getLat() : 0;
                 double lng = slot.getLng() != null ? slot.getLng() : 0;
+
+                // 옛날에 저장된 일정은 언스플래시 사진/빈 contentId 같은 낡은 스냅샷을 그대로 갖고 있을 수 있다.
+                // 지금 풀(같은 이름의 실제 TourAPI/큐레이션 장소)에서 최신 사진·상세조회용 정보를 찾아 덮어씌운다.
+                pool.stream()
+                        .filter(sp -> sp.place.name().equals(slot.getPlaceName()) ||
+                                (sp.place.nameEn() != null && sp.place.nameEn().equals(slot.getPlaceName())))
+                        .findFirst()
+                        .ifPresent(sp -> {
+                            String img = slot.getImageUrl();
+                            if (img == null || img.isBlank() || img.contains("unsplash.com")) {
+                                slot.setImageUrl(sp.place.imageUrl());
+                            }
+                            if (slot.getContentId() == null || slot.getContentId().isBlank()) {
+                                slot.setContentId(sp.place.contentId());
+                                slot.setContentTypeId(sp.place.contentTypeId());
+                            }
+                        });
+
                 slot.setAlternatives(buildAlternatives(slot.getPlaceName(), lat, lng, pool));
             }
         }
@@ -1114,6 +1222,7 @@ public class TripRecommendService {
         resp.setTourismList(toRecList(tourism, 10));
         resp.setFoodList(toRecList(food, 10));
         resp.setCafeList(toRecList(cafe, 10));
+        resp.setFestivals(toFestivalDtos(tripFestivals));
         resp.setSchedule(savedSchedule);
         return resp;
     }
@@ -1124,16 +1233,42 @@ public class TripRecommendService {
             RecommendedPlace rp = new RecommendedPlace();
             rp.setName(hasEn ? sp.place.nameEn() : sp.place.name());
             rp.setScore(Math.round(sp.score * 10000.0) / 10000.0);
+            rp.setCategory(sp.place.category());
             rp.setReason(sp.reason); rp.setLat(sp.place.lat()); rp.setLng(sp.place.lng());
             rp.setAddress(sp.place.address());
             // 큐레이션/TourAPI 원본 사진만 쓰고, 없으면 비워둔다(Unsplash 대체 안 함 — 사진 불일치 방지).
             rp.setImageUrl(sp.place.imageUrl());
             rp.setAvgRating(sp.place.avgRating()); rp.setReviewCount(sp.place.reviewCount());
+            rp.setContentId(sp.place.contentId()); rp.setContentTypeId(sp.place.contentTypeId());
             return rp;
         }).collect(Collectors.toList());
     }
 
     public PlaceDetailDto getPlaceDetail(Long placeId) { return null; }
+
+    /**
+     * 상세 패널의 "근처 맛집/근처 카페" — 관광페이지는 별도 목록 페이지로 이동시키지만
+     * trip에는 그런 페이지가 없어서, 이미 갖고 있는 후보 풀에서 가까운 순으로 몇 곳만 골라 보여준다.
+     */
+    public List<RecommendedPlace> findNearby(double lat, double lng, String category, int limit) {
+        List<PlaceData> source = switch (category == null ? "" : category) {
+            case "cafe" -> cafePlacesKo;
+            case "food" -> foodPlacesKo.stream().filter(p -> !"bar".equals(p.category())).collect(Collectors.toList());
+            default -> tourismPlacesKo;
+        };
+        return source.stream()
+                .sorted(Comparator.comparingDouble(p -> haversine(lat, lng, p.lat(), p.lng())))
+                .limit(Math.max(1, limit))
+                .map(p -> {
+                    RecommendedPlace rp = new RecommendedPlace();
+                    rp.setName(p.name()); rp.setCategory(p.category()); rp.setLat(p.lat()); rp.setLng(p.lng());
+                    rp.setAddress(p.address()); rp.setImageUrl(p.imageUrl());
+                    rp.setAvgRating(p.avgRating()); rp.setReviewCount(p.reviewCount());
+                    rp.setContentId(p.contentId()); rp.setContentTypeId(p.contentTypeId());
+                    return rp;
+                })
+                .collect(Collectors.toList());
+    }
 
     // ────────────────────────────────────────────
     //  유틸

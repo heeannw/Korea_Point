@@ -7,6 +7,5 @@ import java.util.List;
 public class TripReoptimizeRequest {
     private TripRecommendRequest request;
     private TripRecommendResponse current;
-    private List<String> completedPlaceNames;
     private List<String> reservedPlaceNames;
 }

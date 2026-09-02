@@ -1,6 +1,7 @@
 package com.example.demo.trip.dto;
 
 import lombok.Data;
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -15,6 +16,8 @@ public class TripRecommendResponse {
     private AirQualitySummary airQuality;
     private String forecastIssuedAt;
     private HealthRiskSummary healthRisk;
+    /** 여행 기간과 겹치는 부산 축제 — 일정에 실제로 들어갔는지와 무관하게 항상 안내용으로 보여준다. */
+    private List<FestivalDto> festivals;
 
     @Data
     public static class HealthRiskSummary {
@@ -44,6 +47,8 @@ public class TripRecommendResponse {
         private String imageUrl;
         private double avgRating;
         private int    reviewCount;
+        private String contentId;
+        private String contentTypeId;
     }
 
     @Data
@@ -82,6 +87,10 @@ public class TripRecommendResponse {
         private boolean locked;
         private String lockReason;
 
+        // TourAPI 상세(운영시간·전화번호·메뉴 등) 조회용 — 큐레이션 장소는 빈 값이라 상세 조회 불가
+        private String contentId;
+        private String contentTypeId;
+
         /** 리뷰 목록 (최대 3개) */
         private List<ReviewDto> reviews;
 
@@ -103,5 +112,23 @@ public class TripRecommendResponse {
         private double distanceKm;
         private Double lat;
         private Double lng;
+        private String category;
+        private String address;
+        private String imageUrl;
+        private double avgRating;
+        private int    reviewCount;
+        private String contentId;
+        private String contentTypeId;
+    }
+
+    @Data
+    public static class FestivalDto {
+        private String title;
+        private LocalDate startDate;
+        private LocalDate endDate;
+        private String address;
+        private String imageUrl;
+        private double lat;
+        private double lng;
     }
 }

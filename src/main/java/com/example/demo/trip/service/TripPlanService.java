@@ -224,6 +224,11 @@ public class TripPlanService {
         req.setPreferredAreas(strToList(plan.getPreferredAreas()));
         req.setStyleDescription(plan.getStyleDescription());
         req.setLang("ko");
+        // startDate/travelDays가 안 채워져 있으면 축제 조회(fetchTripFestivals)가 실제 여행 기간이
+        // 아니라 "오늘 하루"만 조회하게 된다 — 저장된 일정을 다시 볼 때 축제 안내가 비거나
+        // 엉뚱하게 나오는 원인이라 반드시 같이 채워줘야 한다.
+        req.setStartDate(plan.getStartDate());
+        req.setTravelDays(plan.getTravelDays());
 
         List<DayScheduleDto> schedule = new ArrayList<>();
         for (TripPlanDay day : plan.getDays()) {
@@ -297,7 +302,7 @@ public class TripPlanService {
                 sd.setPlaceName(sl.getPlaceName()); sd.setReason(sl.getReason());
                 sd.setScore(sl.getScore()); sd.setLat(sl.getLat()); sd.setLng(sl.getLng());
                 sd.setAddress(sl.getAddress());
-                sd.setImageUrl(sl.getImageUrl());
+                sd.setImageUrl(cleanImageUrl(sl.getImageUrl()));
                 sd.setAvgRating(sl.getAvgRating());
                 sd.setReviewCount(sl.getReviewCount());
                 sd.setDurationMinutes(sl.getDurationMinutes());
@@ -307,6 +312,14 @@ public class TripPlanService {
         }
         d.setDays(dayDtos);
         return d;
+    }
+
+    /**
+     * 예전에 저장된 일정은 언스플래시 스톡 이미지를 그대로 갖고 있을 수 있다(실제 장소랑 안 어울리는 사진 문제로
+     * 지금은 안 씀). 그런 낡은 URL은 화면에서 아예 숨기는 게 낫다 — 프론트가 이미지 없으면 알아서 처리한다.
+     */
+    private String cleanImageUrl(String url) {
+        return (url == null || url.isBlank() || url.contains("unsplash.com")) ? null : url;
     }
 
     private String listToStr(List<String> list) {
