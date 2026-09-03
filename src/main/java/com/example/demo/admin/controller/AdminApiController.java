@@ -304,6 +304,9 @@ public class AdminApiController {
         item.put("userPoint", request.getUser().getPoint());
         item.put("storeName", request.getStoreName());
         item.put("businessRegistrationNumber", request.getBusinessRegistrationNumber());
+        // 국세청 진위확인을 통과한 값. 진위확인이 생기기 전 신청은 비어 있다.
+        item.put("ownerName", request.getOwnerName());
+        item.put("startDate", request.getStartDate());
         item.put("businessRegistrationFilePath", request.getBusinessRegistrationFilePath());
         item.put("businessLicenseFilePath", request.getBusinessLicenseFilePath());
         item.put("menuFilePath", request.getMenuFilePath());
