@@ -1,9 +1,9 @@
 package com.example.demo.config;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
@@ -14,12 +14,25 @@ import java.util.Properties;
 public class MailConfig {
 
     @Bean
-    @ConditionalOnMissingBean(JavaMailSender.class)
+    @Primary
     JavaMailSender javaMailSender(
             @Value("${spring.mail.host:smtp.gmail.com}") String host,
             @Value("${spring.mail.port:587}") int port,
             @Value("${spring.mail.username:}") String username,
             @Value("${spring.mail.password:}") String password) {
+        return createMailSender(host, port, username, password);
+    }
+
+    @Bean("reservationMailSender")
+    JavaMailSender reservationMailSender(
+            @Value("${reservation.mail.host:smtp.gmail.com}") String host,
+            @Value("${reservation.mail.port:587}") int port,
+            @Value("${reservation.mail.username:}") String username,
+            @Value("${reservation.mail.password:}") String password) {
+        return createMailSender(host, port, username, password);
+    }
+
+    private JavaMailSender createMailSender(String host, int port, String username, String password) {
         JavaMailSenderImpl sender = new JavaMailSenderImpl();
         sender.setHost(host);
         sender.setPort(port);

@@ -4,8 +4,8 @@ import com.example.demo.reservation.event.ReservationConfirmedEvent;
 import com.example.demo.user.entity.User;
 import com.example.demo.user.repository.UserRepository;
 import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -22,7 +22,6 @@ import java.util.Locale;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ReservationConfirmationMailService {
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy년 M월 d일");
@@ -30,14 +29,21 @@ public class ReservationConfirmationMailService {
     private final JavaMailSender mailSender;
     private final UserRepository userRepository;
 
-    @Value("${spring.mail.username:}")
+    @Value("${reservation.mail.username:}")
     private String senderEmail;
+
+    public ReservationConfirmationMailService(
+            @Qualifier("reservationMailSender") JavaMailSender mailSender,
+            UserRepository userRepository) {
+        this.mailSender = mailSender;
+        this.userRepository = userRepository;
+    }
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void sendAfterCommit(ReservationConfirmedEvent event) {
         if (!StringUtils.hasText(senderEmail)) {
-            log.warn("Reservation confirmation mail skipped: spring.mail.username is empty");
+            log.warn("Reservation confirmation mail skipped: reservation.mail.username is empty");
             return;
         }
 
