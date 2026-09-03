@@ -171,6 +171,8 @@
 
         .slide {
             position: relative;
+            /* 사진마다 그 장소로 가는 링크다. a 로 바꿔도 자리는 그대로다 */
+            display: block;
             flex: 0 0 33.3333%;
             scroll-snap-align: start;
             height: 100%;
@@ -223,6 +225,10 @@
             position: absolute;
             inset: 0;
             z-index: 2;
+            /* 문구 막이 배너 전체를 덮고 있어 그냥 두면 사진 클릭을 가로챈다.
+               클릭이 아래 사진까지 내려가게 비켜 준다. 화살표·점은 z-index 3 이라
+               이 막 위에 따로 있어 그대로 눌린다. */
+            pointer-events: none;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -360,26 +366,40 @@
             z-index: 3;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.25s ease, background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+            transition: opacity 0.25s ease, background 0.25s ease, border-color 0.25s ease,
+                        box-shadow 0.25s ease, transform 0.25s ease;
             width: 48px;
             height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
-            /* 사진이 밝든 어둡든 보이도록 흰 버튼에 어두운 화살표를 쓴다.
-               반투명 흰색이던 예전 것은 밝은 사진 위에서 아예 안 보였다. */
             border-radius: 50%;
-            border: none;
-            background: rgba(255, 255, 255, 0.92);
-            color: var(--dark);
-            box-shadow: 0 2px 12px rgba(16, 24, 40, 0.18);
+            /* 사진이 비쳐 보이는 유리판.
+               흰 반투명은 예전에 밝은 사진 위에서 아예 안 보여 한 번 접었다.
+               그래서 유리를 어둡게 눌러 깔고 화살표를 흰색으로 둔다. 사진이 밝든
+               어둡든 흰 화살표가 살아남고, 테두리가 어두운 사진에서 버튼 윤곽을
+               잡아 준다. */
+            background: rgba(17, 24, 39, 0.28);
+            -webkit-backdrop-filter: blur(10px) saturate(140%);
+            backdrop-filter: blur(10px) saturate(140%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: #ffffff;
+            box-shadow: 0 4px 18px rgba(16, 24, 40, 0.22);
             cursor: pointer;
         }
 
+        /* 유리 효과를 못 쓰는 브라우저에서는 그냥 어두운 판으로 보인다.
+           투명도가 낮으면 흐릿하기만 하고 안 읽히므로 좀 더 진하게 깐다. */
+        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+            .hero-arrow { background: rgba(17, 24, 39, 0.5); }
+        }
+
         .hero-arrow:hover {
-            background: #ffffff;
-            color: var(--primary);
-            box-shadow: 0 4px 16px rgba(16, 24, 40, 0.26);
+            background: rgba(17, 24, 39, 0.42);
+            border-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 6px 22px rgba(16, 24, 40, 0.3);
+            /* 세로 가운데 정렬이 transform 이라 hover 에서도 같이 써 줘야 안 튄다 */
+            transform: translateY(-50%) scale(1.06);
         }
 
         /* 화살표는 글씨를 가리므로 평소엔 감춰 두고 마우스를 올렸을 때만 띄운다 */
@@ -1323,10 +1343,13 @@
 <!-- 히어로: 메인 문구가 들어가는 전체 폭 슬라이더 -->
 <section class="hero">
     <div class="slider-track" id="sliderTrack">
-        <div class="slide"
-             th:each="slide : ${slides}"
-             th:style="|background-image:url('${slide.imageUrl}')|"
-             style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/c/cc/N_Seoul_Tower_%2813952097192%29.jpg')"></div>
+        <a class="slide"
+           th:each="slide : ${slides}"
+           th:href="@{/tour/all(lang='ko',focus=${slide.contentId})}"
+           href="/tour/all?lang=ko"
+           th:attr="aria-label=${slide.title}"
+           th:style="|background-image:url('${slide.imageUrl}')|"
+           style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/c/cc/N_Seoul_Tower_%2813952097192%29.jpg')"></a>
     </div>
 
     <button class="hero-arrow left" type="button" onclick="moveSlide(-1)" aria-label="Previous slide">
