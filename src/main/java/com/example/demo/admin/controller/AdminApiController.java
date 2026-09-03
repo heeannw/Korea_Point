@@ -40,6 +40,7 @@ import java.time.LocalDate;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @RestController
@@ -105,10 +106,45 @@ public class AdminApiController {
         Path documentPath = ownerRequestService.findDocumentPath(id, type);
         Resource resource = new FileSystemResource(documentPath);
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(documentContentType(documentPath))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "inline; filename=\"" + documentPath.getFileName() + "\"")
                 .body(resource);
+    }
+
+    /**
+     * 서류를 무슨 종류로 내려줄지 확장자로 정한다.
+     *
+     * <p>전부 {@code application/octet-stream} 으로 보내면 {@code inline} 을 붙여도
+     * 브라우저가 그냥 내려받는다. 사업자등록증 한 장 보려고 파일을 받아서 다시 여는
+     * 일이 신청 한 건에 세 번씩 반복된다. 사진과 PDF만 제 종류로 내려주면
+     * 새 탭에서 바로 열린다.
+     *
+     * <p>목록에 없는 것은 그대로 내려받게 둔다. 특히 <b>html 과 svg 는 일부러 뺐다</b> -
+     * 그 둘은 스크립트를 품을 수 있어서, 화면에 띄우면 신청자가 올린 파일이
+     * 관리자 브라우저에서 실행된다.
+     */
+    private MediaType documentContentType(Path documentPath) {
+        String fileName = documentPath.getFileName().toString().toLowerCase(Locale.ROOT);
+        if (fileName.endsWith(".pdf")) {
+            return MediaType.APPLICATION_PDF;
+        }
+        if (fileName.endsWith(".png")) {
+            return MediaType.IMAGE_PNG;
+        }
+        if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+            return MediaType.IMAGE_JPEG;
+        }
+        if (fileName.endsWith(".gif")) {
+            return MediaType.IMAGE_GIF;
+        }
+        if (fileName.endsWith(".webp")) {
+            return MediaType.parseMediaType("image/webp");
+        }
+        if (fileName.endsWith(".heic")) {
+            return MediaType.parseMediaType("image/heic");
+        }
+        return MediaType.APPLICATION_OCTET_STREAM;
     }
 
     @PostMapping("/owner-applications/{id}/approve")
