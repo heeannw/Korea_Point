@@ -197,6 +197,8 @@ public class UserController {
                          @RequestParam String name,
                          @RequestParam String email,
                          @RequestParam(required = false) String storeName,
+                         @RequestParam(required = false) String ownerName,
+                         @RequestParam(required = false) String startDate,
                          @RequestParam(required = false) String businessRegistrationNumber,
                          @RequestParam(required = false) MultipartFile businessRegistrationFile,
                          @RequestParam(required = false) MultipartFile businessLicenseFile,
@@ -224,6 +226,8 @@ public class UserController {
                 ownerRequestService.apply(
                         user.getId(),
                         storeName,
+                        ownerName,
+                        startDate,
                         businessRegistrationNumber,
                         businessRegistrationFile,
                         businessLicenseFile,

@@ -256,6 +256,8 @@ public class ReservationController {
 
     @PostMapping("/ko/mypage/owner-application")
     public String applyOwner(@RequestParam String storeName,
+                             @RequestParam String ownerName,
+                             @RequestParam String startDate,
                              @RequestParam String businessRegistrationNumber,
                              @RequestParam MultipartFile businessRegistrationFile,
                              @RequestParam MultipartFile businessLicenseFile,
@@ -265,6 +267,8 @@ public class ReservationController {
             ownerRequestService.apply(
                     SecurityUtil.getCurrentUserId(),
                     storeName,
+                    ownerName,
+                    startDate,
                     businessRegistrationNumber,
                     businessRegistrationFile,
                     businessLicenseFile,

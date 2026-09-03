@@ -77,6 +77,8 @@ public class OwnerRequestService {
     @Transactional
     public OwnerRequest apply(Long userId,
                               String storeName,
+                              String ownerName,
+                              String startDate,
                               String businessRegistrationNumber,
                               MultipartFile businessRegistrationFile,
                               MultipartFile businessLicenseFile,
@@ -92,8 +94,10 @@ public class OwnerRequestService {
         }
 
         String normalizedStoreName = requireText(storeName, "가게명을 입력해 주세요.");
-        // 숫자 10자리로 정리하고 체크섬·국세청 조회까지 거친다. 틀리면 여기서 막힌다.
-        String normalizedBusinessNumber = businessNumberValidator.validate(businessRegistrationNumber);
+        // 번호·대표자명·개업일자를 정리하고 국세청 진위확인까지 거친다. 틀리면 여기서 막힌다.
+        String normalizedBusinessNumber = businessNumberValidator
+                .validateOwner(businessRegistrationNumber, startDate, ownerName)
+                .businessNumber();
         requireFile(businessRegistrationFile, "사업자등록증을 등록해 주세요.");
         requireFile(businessLicenseFile, "영업신고증을 등록해 주세요.");
         requireFile(menuFile, "메뉴판 또는 메뉴 정보를 등록해 주세요.");

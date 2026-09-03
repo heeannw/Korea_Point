@@ -528,6 +528,8 @@
               th:action="@{/ko/mypage/owner-application}" method="post" enctype="multipart/form-data">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
             <input name="storeName" type="text" placeholder="가게명" required>
+            <input name="ownerName" type="text" placeholder="대표자명" required>
+            <input name="startDate" type="text" placeholder="개업일자 (YYYYMMDD)" inputmode="numeric" maxlength="8" required>
             <input name="businessRegistrationNumber" type="text" placeholder="사업자등록번호" required>
             <label>
                 <span>사업자등록증</span>
