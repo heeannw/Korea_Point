@@ -66,27 +66,8 @@
 <link rel="stylesheet" th:href="@{/css/common/variables.css}">
 <link rel="stylesheet" th:href="@{/css/common/reset.css}">
 <link rel="stylesheet" th:href="@{/css/common/layout.css}">
-<header>
-    <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
-    <div class="header-right">
-        <a th:href="@{/community/post/write(lang='en')}"
-           class="h-btn" th:classappend="${#locale.language == 'en'} ? ' active' : ''">EN</a>
-        <a th:href="@{/community/post/write(lang='ko')}"
-           class="h-btn" th:classappend="${#locale.language != 'en'} ? ' active' : ''">KR</a>
-
-        <th:block th:if="${isLoggedIn}">
-            <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
-            <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
-            <form th:action="@{/logout}" method="post">
-                <button type="submit" class="h-btn h-btn-fill">Logout</button>
-            </form>
-        </th:block>
-
-        <th:block th:unless="${isLoggedIn}">
-            <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
-        </th:block>
-    </div>
-</header>
+<link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
+<div th:replace="~{fragments/app-header :: header(${#locale.language}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <main class="flex-1">
     <div class="max-w-[800px] mx-auto px-6 py-8">
@@ -291,5 +272,6 @@
         document.getElementById('contentInput').value = html;
     });
 </script>
+<script th:src="@{/js/common/header-menu.js}"></script>
 </body>
 </html>
