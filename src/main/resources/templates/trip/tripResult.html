@@ -53,6 +53,7 @@
             <div class="air-line" id="airLine" hidden></div>
             <div class="health-line" id="healthLine" hidden></div>
             <div class="warning-line" id="warningLine" hidden></div>
+            <div class="festival-line" id="festivalLine" hidden></div>
             <div class="ai-line" id="aiLine"></div>
             <button type="button" class="reoptimize-btn" id="reoptimizeBtn" onclick="reoptimizeRemaining()">현재 날씨로 남은 일정 다시 짜기</button>
         </div>
@@ -84,7 +85,6 @@
             <div class="mc" id="mcZI">＋</div>
             <div class="mc" id="mcZO">－</div>
         </div>
-        <button class="loc-btn" onclick="goMyLoc()">📍 내 위치</button>
 
         <!-- 장소 상세 패널 -->
         <div class="detail-panel" id="detailPanel">
@@ -92,35 +92,54 @@
                 <button class="dp-back" onclick="closeDetail()">←</button>
                 <div class="dp-title" id="dpTitle"></div>
             </div>
-            <div class="dp-img" id="dpImg">🏙️</div>
+            <div class="dp-hero no-image" id="dpHero">
+                <button class="dp-hero-nav dp-hero-prev dp-hero-hidden" id="dpImgPrev" type="button" onclick="moveDetailImage(-1)" aria-label="이전 사진">‹</button>
+                <button class="dp-hero-nav dp-hero-next dp-hero-hidden" id="dpImgNext" type="button" onclick="moveDetailImage(1)" aria-label="다음 사진">›</button>
+                <div class="dp-hero-count dp-hero-hidden" id="dpImgCount"></div>
+            </div>
             <div class="dp-body">
-                <div class="dp-badge-row" id="dpBadges"></div>
-                <div class="dp-name" id="dpName"></div>
-                <div class="dp-sub" id="dpSub">
-                    <span class="dp-addr-icon">📍</span>
-                    <span id="dpAddr"></span>
-                </div>
-                <div class="dp-rating-row" id="dpRatingRow" style="display:none">
-                    <div class="dp-star-score" id="dpStarScore"></div>
-                    <div class="dp-star-wrap">
-                        <div class="dp-stars-visual" id="dpStarsVisual"></div>
-                        <div class="dp-review-cnt" id="dpReviewCnt"></div>
+                <section class="dp-summary">
+                    <div class="dp-badges" id="dpBadges"></div>
+                    <div class="dp-name" id="dpName"></div>
+                    <div class="dp-sub" id="dpSub">
+                        <span class="dp-addr-icon">📍</span>
+                        <span id="dpAddr"></span>
                     </div>
+                    <div class="dp-rating" id="dpRatingRow" style="display:none">
+                        <span class="dp-rating-stars">★</span>
+                        <span class="dp-rating-score" id="dpStarScore"></span>
+                        <span class="dp-rating-count" id="dpReviewCnt"></span>
+                    </div>
+                </section>
+                <div class="quick-actions">
+                    <button class="quick-btn" id="dpTransBtn" type="button"><div class="qb-icon">🚇</div><span class="qb-label">길찾기</span></button>
+                    <button class="quick-btn" id="dpNearFoodBtn" type="button"><div class="qb-icon">🍽️</div><span class="qb-label">근처 맛집</span></button>
+                    <button class="quick-btn" id="dpNearCafeBtn" type="button"><div class="qb-icon">☕</div><span class="qb-label">근처 카페</span></button>
+                    <button class="quick-btn" id="dpShareBtn" type="button"><div class="qb-icon">🔗</div><span class="qb-label">공유</span></button>
                 </div>
-                <div class="dp-reason" id="dpReason"></div>
-                <div class="dp-desc-section" id="dpDescSection" style="display:none">
-                    <div class="dp-section-title">📖 이곳은</div>
-                    <div class="dp-desc-text" id="dpDescText"></div>
-                </div>
-                <div class="dp-review-section" id="dpReviewSection" style="display:none">
-                    <div class="dp-section-title">💬 리뷰</div>
+                <nav class="dp-tabs">
+                    <button class="dp-tab active" type="button" data-tab="info" onclick="showDetailTab('info')">정보</button>
+                    <button class="dp-tab" type="button" data-tab="reviews" onclick="showDetailTab('reviews')">리뷰</button>
+                </nav>
+                <section class="tab-panel" id="tab-info">
+                    <div class="dp-reason" id="dpReason"></div>
+                    <div class="dp-info-row" id="dpInfoRow"></div>
+                    <div class="section-card" id="dpDescSection" style="display:none">
+                        <div class="section-title">📖 이곳은</div>
+                        <div class="dp-desc" id="dpDescText"></div>
+                    </div>
+                    <div class="section-card" id="dpNearSection" style="display:none">
+                        <div class="section-title" id="dpNearTitle"></div>
+                        <div id="dpNearList"></div>
+                    </div>
+                </section>
+                <section class="tab-panel" id="tab-reviews" hidden>
                     <div id="dpReviewList"></div>
-                </div>
+                </section>
             </div>
             <div class="dp-action">
                 <button class="dp-btn dp-btn-secondary" onclick="closeDetail()">← 목록으로</button>
                 <button class="dp-btn dp-btn-swap" id="dpSwapBtn" style="display:none" onclick="confirmSwap()">🔄 이 장소로 교체</button>
-                <button class="dp-btn dp-btn-primary" id="dpTransBtn">🚇 교통 검색</button>
             </div>
             <!-- 상세 패널 전용 토스트 -->
             <div class="toast dp-toast" id="dpToast"></div>
@@ -316,29 +335,11 @@
     };
 
     let tripResult = null, tripRequest = null, currentDay = 1;
-    let completedPlaces = new Set(JSON.parse(sessionStorage.getItem('completedTripPlaces') || '[]'));
     let reservedPlaces = new Set();
+    // myLoc은 지도 자체에서는 더 이상 자동으로 안 받아온다 — "교통 검색" 버튼 눌렀을 때만
+    // (dpTransBtn 핸들러에서) 그때 필요해서 요청한다. 지도 진입하자마자 위치 권한 팝업 뜨는 게
+    // 불편하다는 피드백으로 지도용 "내 위치" 버튼/자동 요청은 제거했다.
     let myLoc = null, activeOverlays = [], activeLines = [], dayCache = {};
-
-    /* ─── 내 위치 ─── */
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-            myLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            const img = new kakao.maps.MarkerImage(
-                'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
-                new kakao.maps.Size(24, 35)
-            );
-            new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(myLoc.lat, myLoc.lng), image: img });
-            new kakao.maps.CustomOverlay({
-                map, position: new kakao.maps.LatLng(myLoc.lat, myLoc.lng), yAnchor: 2.5,
-                content: `<div style="background:#3b9eff;color:#fff;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.2);white-space:nowrap;">📍 내 위치</div>`
-            });
-        }, ()=>{});
-    }
-    function goMyLoc() {
-        if (!myLoc) { alert('위치를 불러오는 중입니다.'); return; }
-        map.setLevel(3); map.panTo(new kakao.maps.LatLng(myLoc.lat, myLoc.lng));
-    }
 
     /* ─── 탭 전환 ─── */
     function switchTab(id, btn) {
@@ -548,10 +549,7 @@
           <div class="slot-info">
             <div class="slot-time">${slot.time} · ${cfg.label}${slot.durationMinutes ? ` · ${slot.durationMinutes}분` : ''}</div>
             <div class="slot-name">${slot.placeName}</div>
-            <label class="slot-lock" onclick="event.stopPropagation()">
-              <input type="checkbox" ${completedPlaces.has(slot.placeName) ? 'checked' : ''} onchange="toggleCompleted('${slot.placeName.replaceAll("'", "\\'")}', this.checked)">
-              방문 완료 ${reservedPlaces.has(slot.placeName) || slot.locked ? `<span>🔒 ${slot.lockReason || '예약 장소'}</span>` : ''}
-            </label>
+            ${(reservedPlaces.has(slot.placeName) || slot.locked) ? `<div class="slot-lock"><span>🔒 ${slot.lockReason || '예약 장소'}</span></div>` : ''}
             <div class="slot-reason">${slot.reason || ''}</div>
             <div class="slot-score">score ${(slot.score||0).toFixed(4)}</div>
             ${slot.alternatives?.length
@@ -578,6 +576,7 @@
         const warning = document.getElementById('warningLine');
         warning.hidden = !tripResult.weatherWarning;
         warning.textContent = tripResult.weatherWarning ? `⚠️ ${tripResult.weatherWarning}` : '';
+        renderFestivalLine();
         const air = document.getElementById('airLine');
         air.hidden = !tripResult.airQuality;
         air.textContent = tripResult.airQuality
@@ -598,9 +597,38 @@
         return '☁️';
     }
 
-    function toggleCompleted(placeName, checked) {
-        checked ? completedPlaces.add(placeName) : completedPlaces.delete(placeName);
-        sessionStorage.setItem('completedTripPlaces', JSON.stringify([...completedPlaces]));
+    /* ─── 여행 기간 축제 안내 — 일정에 실제로 뽑혔는지와 무관하게 항상 보여준다 ─── */
+    function festivalRange(startDate, endDate) {
+        if (!startDate) return '';
+        const fmt = d => `${d.getMonth() + 1}/${d.getDate()}`;
+        const s = new Date(startDate);
+        const e = endDate ? new Date(endDate) : null;
+        return (e && e.getTime() !== s.getTime()) ? `${fmt(s)}~${fmt(e)}` : fmt(s);
+    }
+
+    function renderFestivalLine() {
+        const el = document.getElementById('festivalLine');
+        const festivals = tripResult.festivals || [];
+        if (!festivals.length) { el.hidden = true; el.innerHTML = ''; return; }
+        el.hidden = false;
+        el.innerHTML = '🎉 여행 기간 축제 · ' + festivals.map((f, i) => {
+            const range = festivalRange(f.startDate, f.endDate);
+            return `<span class="festival-pill" onclick="openFestivalDetail(${i})">${f.title}${range ? ` (${range})` : ''}</span>`;
+        }).join('');
+    }
+
+    /** 축제 배지를 누르면 (일정에 안 뽑혔더라도) 기존 상세 패널로 바로 보여준다. */
+    function openFestivalDetail(idx) {
+        const f = (tripResult.festivals || [])[idx];
+        if (!f) return;
+        const slot = {
+            placeName: f.title, category: 'tourism', address: f.address || '',
+            imageUrl: f.imageUrl || '', reason: '여행 기간 중 열리는 축제',
+            avgRating: 0, reviewCount: 0, reviews: [], alternatives: [],
+            contentId: '', contentTypeId: ''
+        };
+        if (f.lat && f.lng) { map.setLevel(4); map.panTo(new kakao.maps.LatLng(f.lat, f.lng)); }
+        openDetail(slot, f.lat, f.lng);
     }
 
     async function loadReservedPlaces() {
@@ -617,7 +645,7 @@
         button.disabled = true; button.textContent = '재조정 중...';
         try {
             const response = await fetch('/api/trip/reoptimize', {method:'POST', headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({request:tripRequest, current:tripResult, completedPlaceNames:[...completedPlaces], reservedPlaceNames:[...reservedPlaces]})});
+                body:JSON.stringify({request:tripRequest, current:tripResult, reservedPlaceNames:[...reservedPlaces]})});
             if (!response.ok) throw new Error('재조정 실패');
             tripResult = await response.json();
             sessionStorage.setItem('tripResult', JSON.stringify(tripResult));
@@ -643,28 +671,21 @@
         const alt = origSlot?.alternatives?.[altIdx];
         if (!alt) return;
 
-        let matchSlot = null;
-        for (const day of tripResult.schedule) {
-            matchSlot = day.slots.find(s => s.placeName === alt.placeName);
-            if (matchSlot) break;
-        }
-        if (!matchSlot) {
-            const allRec = [...(tripResult.foodList||[]), ...(tripResult.tourismList||[]), ...(tripResult.cafeList||[])];
-            const rec = allRec.find(r => r.name === alt.placeName);
-            if (rec) matchSlot = { placeName: rec.name, avgRating: rec.avgRating, reviewCount: rec.reviewCount, address: rec.address, imageUrl: rec.imageUrl, reviews: [] };
-        }
-
+        // alt 자체가 이제 category/주소/사진/평점/contentId까지 다 갖고 있어서
+        // 예전처럼 일정·추천 리스트를 뒤져서 짝을 찾는 우회 로직이 필요 없다.
         const altSlot = {
             placeName:   alt.placeName,
-            category:    origSlot.category,
+            category:    alt.category || origSlot.category,
             time:        origSlot.time,
             reason:      `대체 후보 (원래: ${origSlot.placeName})`,
             score:       alt.score,
-            avgRating:   matchSlot?.avgRating   || 0,
-            reviewCount: matchSlot?.reviewCount || 0,
-            address:     matchSlot?.address     || '',
-            imageUrl:    matchSlot?.imageUrl    || '',
-            reviews:     matchSlot?.reviews     || []
+            avgRating:   alt.avgRating   || 0,
+            reviewCount: alt.reviewCount || 0,
+            address:     alt.address     || '',
+            imageUrl:    alt.imageUrl    || '',
+            reviews:     [],
+            contentId:     alt.contentId     || '',
+            contentTypeId: alt.contentTypeId || ''
         };
 
         if (alt.lat && alt.lng) { map.setLevel(3); map.panTo(new kakao.maps.LatLng(alt.lat, alt.lng)); }
@@ -694,7 +715,8 @@
             score: altSlot.score, lat: alt.lat, lng: alt.lng,
             address: altSlot.address, imageUrl: altSlot.imageUrl,
             avgRating: altSlot.avgRating, reviewCount: altSlot.reviewCount,
-            reviews: altSlot.reviews, alternatives: orig.alternatives
+            reviews: altSlot.reviews, alternatives: orig.alternatives,
+            contentId: altSlot.contentId, contentTypeId: altSlot.contentTypeId
         };
         // 이미 저장된 일정을 보다가 장소를 바꾼 거라 저장 버튼을 숨겨뒀을 수 있는데,
         // 바뀐 내용을 저장할 수 있게 다시 보여준다.
@@ -727,21 +749,44 @@
         if (coords.length) fitBounds(coords);
     }
 
-    /* ─── 장소 상세 패널 ─── */
+    /* ─── 장소 상세 패널 (관광 페이지 상세 패널과 동일한 구조: 캐러셀·quick-actions·탭) ─── */
+    let detailImages = [], detailImageIndex = 0;
+
+    function setDetailImages(images) {
+        detailImages = [...new Set((images || []).filter(Boolean))];
+        detailImageIndex = 0;
+        renderDetailImage();
+    }
+    function moveDetailImage(direction) {
+        if (detailImages.length < 2) return;
+        detailImageIndex = (detailImageIndex + direction + detailImages.length) % detailImages.length;
+        renderDetailImage();
+    }
+    function renderDetailImage() {
+        const hero = document.getElementById('dpHero');
+        const hasImage = detailImages.length > 0;
+        const current = hasImage ? detailImages[detailImageIndex] : '';
+        hero.style.backgroundImage = current ? `url("${String(current).replace(/"/g, '%22')}")` : '';
+        hero.classList.toggle('no-image', !hasImage);
+        const multiple = detailImages.length > 1;
+        document.getElementById('dpImgPrev').classList.toggle('dp-hero-hidden', !multiple);
+        document.getElementById('dpImgNext').classList.toggle('dp-hero-hidden', !multiple);
+        const counter = document.getElementById('dpImgCount');
+        counter.classList.toggle('dp-hero-hidden', !multiple);
+        counter.textContent = multiple ? `${detailImageIndex + 1} / ${detailImages.length}` : '';
+    }
+    function showDetailTab(name) {
+        ['info', 'reviews'].forEach(tab => {
+            const panel = document.getElementById('tab-' + tab);
+            if (panel) panel.hidden = tab !== name;
+            document.querySelector(`.dp-tab[data-tab="${tab}"]`)?.classList.toggle('active', tab === name);
+        });
+    }
+
     function openDetail(slot, lat, lng, isAlt = false) {
         const cfg = CAT[slot.category] || CAT.tourism;
-
-        const imgEl = document.getElementById('dpImg');
-        if (slot.imageUrl) {
-            imgEl.style.backgroundImage = `url('${slot.imageUrl}')`;
-            imgEl.style.backgroundSize  = 'cover';
-            imgEl.style.backgroundPosition = 'center';
-            imgEl.textContent = '';
-        } else {
-            imgEl.style.backgroundImage = '';
-            imgEl.textContent = cfg.icon;
-            imgEl.style.fontSize = '52px';
-        }
+        showDetailTab('info');
+        setDetailImages([slot.imageUrl]);
 
         document.getElementById('dpTitle').textContent = slot.placeName;
         document.getElementById('dpName').textContent  = slot.placeName;
@@ -756,18 +801,8 @@
         const ratingRow = document.getElementById('dpRatingRow');
         if (slot.avgRating && slot.avgRating > 0) {
             document.getElementById('dpStarScore').textContent = slot.avgRating.toFixed(1);
-            const stars = document.getElementById('dpStarsVisual');
-            stars.innerHTML = '';
-            for (let i = 1; i <= 5; i++) {
-                const s = document.createElement('span');
-                s.className = 'dp-star ' + (i <= Math.floor(slot.avgRating) ? 'filled' : (i - slot.avgRating < 1 && i - slot.avgRating > 0 ? 'half' : ''));
-                s.textContent = '★';
-                stars.appendChild(s);
-            }
             document.getElementById('dpReviewCnt').textContent =
-                slot.reviewCount
-                    ? `리뷰 ${slot.reviewCount.toLocaleString()}개`
-                    : '방문자 평점 기반';
+                slot.reviewCount ? `리뷰 ${slot.reviewCount.toLocaleString()}개` : '방문자 평점 기반';
             ratingRow.style.display = 'flex';
         } else {
             ratingRow.style.display = 'none';
@@ -777,10 +812,12 @@
         if (slot.reason) { reasonEl.textContent = '💡 ' + slot.reason; reasonEl.style.display = 'block'; }
         else { reasonEl.style.display = 'none'; }
 
-        loadPlaceDescription(slot.placeName, slot.address);
+        document.getElementById('dpInfoRow').innerHTML = '';
+        document.getElementById('dpNearSection').style.display = 'none';
+        document.getElementById('dpDescSection').style.display = 'none';
+        loadPlaceFullDetail(slot.contentId, slot.contentTypeId);
 
-        const revSection = document.getElementById('dpReviewSection');
-        const revList    = document.getElementById('dpReviewList');
+        const revList = document.getElementById('dpReviewList');
         if (slot.reviews && slot.reviews.length > 0) {
             revList.innerHTML = slot.reviews.map((r, idx) => {
                 const stars = '★'.repeat(Math.round(r.rating)) + '☆'.repeat(5 - Math.round(r.rating));
@@ -798,13 +835,22 @@
             ${r.text && r.text.length > 80 ? `<span class="ri-more" onclick="toggleReview(${idx})">더 보기</span>` : ''}
           </div>`;
             }).join('');
-            revSection.style.display = 'block';
         } else {
             revList.innerHTML = '<div class="no-review">등록된 리뷰가 없어요</div>';
-            revSection.style.display = 'block';
         }
 
-        // ── 교통 검색 버튼 — 위치 권한 요청 전 토스트로 안내 ──
+        // ── 근처 맛집/근처 카페 — 관광페이지는 목록 페이지로 이동시키지만 트립엔 그런 페이지가 없어서
+        //    같은 자리에 인라인으로 후보를 보여주는 방식으로 대체한다.
+        document.getElementById('dpNearFoodBtn').onclick = () => loadNearbyPlaces(lat, lng, 'food', '🍽️ 근처 맛집');
+        document.getElementById('dpNearCafeBtn').onclick = () => loadNearbyPlaces(lat, lng, 'cafe', '☕ 근처 카페');
+        document.getElementById('dpShareBtn').onclick = async () => {
+            try {
+                if (navigator.share) await navigator.share({ title: slot.placeName, url: location.href });
+                else { await navigator.clipboard.writeText(location.href); showToast('링크를 복사했어요'); }
+            } catch (e) { /* 공유 취소는 무시 */ }
+        };
+
+        // ── 교통 검색 버튼(길찾기) — 위치 권한 요청 전 토스트로 안내 ──
         document.getElementById('dpTransBtn').onclick = () => {
             const dest = encodeURIComponent(slot.placeName);
             const base = `/ko/transport/search?end=${dest}`;
@@ -857,37 +903,97 @@
         document.getElementById('detailPanel').classList.remove('open');
     }
 
-    /* ─── 장소 개요(설명) — 리뷰만 있고 "여기가 뭐 하는 곳인지"가 없다는 피드백으로 추가 ─── */
-    let descRequestId = 0;
-    async function loadPlaceDescription(placeName, address) {
-        const section = document.getElementById('dpDescSection');
-        const textEl = document.getElementById('dpDescText');
-        const myRequestId = ++descRequestId;
-        section.style.display = 'block';
-        textEl.textContent = '설명을 불러오는 중...';
-        textEl.classList.add('loading');
+    /* ─── 관광페이지 수준 상세정보(운영시간·전화번호·메뉴 등) — TourAPI contentId 있는 장소만 가능 ─── */
+    const DETAIL_FIELD_LABELS = {
+        usetime:'이용시간', restdate:'휴무일', infocenter:'문의처', parking:'주차',
+        usetimeculture:'이용시간', restdateculture:'휴무일', usefee:'이용요금', parkingculture:'주차',
+        eventstartdate:'시작일', eventenddate:'종료일', eventplace:'장소', playtime:'공연시간',
+        usetimefestival:'이용시간', spendtimefestival:'관람 소요시간',
+        distance:'거리', schedule:'일정', taketime:'소요시간', infocentertourcourse:'문의처',
+        openperiod:'운영기간', usetimeleports:'이용시간', restdateleports:'휴무일', reservation:'예약안내',
+        expagerangeleports:'체험 가능 연령', usefeeleports:'이용요금',
+        checkintime:'체크인', checkouttime:'체크아웃', reservationurl:'예약', roomcount:'객실 수', parkinglodging:'주차',
+        opentime:'영업시간', restdateshopping:'휴무일', saleitem:'판매 품목',
+        firstmenu:'대표메뉴', opentimefood:'영업시간', restdatefood:'휴무일', reservationfood:'예약안내', treatmenu:'취급메뉴'
+    };
+    let fullDetailRequestId = 0;
+    async function loadPlaceFullDetail(contentId, contentTypeId) {
+        const infoRow = document.getElementById('dpInfoRow');
+        const myRequestId = ++fullDetailRequestId;
+        if (!contentId) return; // 큐레이션 장소는 상세조회 불가 — 사진 1장/개요/리뷰만으로 충분히 보여준다
         try {
-            const params = new URLSearchParams({ name: placeName });
-            if (address) params.set('address', address);
-            const response = await fetch(`/api/trip/place/description?${params.toString()}`);
-            if (myRequestId !== descRequestId) return; // 그 사이 다른 장소를 열었으면 무시
-            const data = response.ok ? await response.json() : { description: '' };
-            if (data.description) {
-                textEl.textContent = data.description;
-                textEl.classList.remove('loading');
-            } else {
-                section.style.display = 'none';
+            const params = new URLSearchParams({ contentId });
+            if (contentTypeId) params.set('contentTypeId', contentTypeId);
+            const response = await fetch(`/api/trip/place/full-detail?${params.toString()}`);
+            if (myRequestId !== fullDetailRequestId) return;
+            const data = response.ok ? await response.json() : {};
+            const rows = [];
+            if (data.tel) rows.push(['전화번호', data.tel]);
+            const details = data.details || {};
+            Object.entries(DETAIL_FIELD_LABELS).forEach(([key, label]) => {
+                if (details[key]) rows.push([label, details[key]]);
+            });
+            if (data.homepage) rows.push(['홈페이지', data.homepage.replace(/<[^>]*>/g, '')]);
+            infoRow.innerHTML = rows.map(([label, value]) =>
+                `<div class="dp-info"><div class="dp-info-label">${label}</div><div class="dp-info-val">${value}</div></div>`
+            ).join('');
+            // 관광페이지처럼 실제 등록된 여러 장 사진이 있으면 캐러셀로 보여준다.
+            if (data.images && data.images.length > 1) setDetailImages(data.images);
+            // 장소 소개 — TourAPI 원문 개요(overview)를 그대로 보여준다. Gemini 생성 문구는 쓰지 않는다.
+            const descSection = document.getElementById('dpDescSection');
+            const descText = document.getElementById('dpDescText');
+            if (myRequestId === fullDetailRequestId && data.overview) {
+                descText.innerHTML = data.overview.replace(/<[^>]*>/g, '');
+                descSection.style.display = 'block';
+            } else if (myRequestId === fullDetailRequestId) {
+                descSection.style.display = 'none';
             }
+        } catch (e) { /* 실패해도 나머지(개요·리뷰)는 그대로 보여준다 */ }
+    }
+
+    /* ─── 근처 맛집/근처 카페 — 트립의 기존 후보 풀에서 가까운 순으로 몇 곳만 보여준다 ─── */
+    let nearRequestId = 0;
+    async function loadNearbyPlaces(lat, lng, category, title) {
+        const section = document.getElementById('dpNearSection');
+        const titleEl = document.getElementById('dpNearTitle');
+        const listEl = document.getElementById('dpNearList');
+        const myRequestId = ++nearRequestId;
+        if (!lat || !lng) return;
+        titleEl.textContent = title;
+        section.style.display = 'block';
+        listEl.innerHTML = '<div class="dp-detail-loading">근처를 찾는 중...</div>';
+        // 이용시간·소개글 등으로 정보 탭이 길어지면 이 섹션이 화면 아래로 밀려서 눌러도
+        // 아무 반응 없는 것처럼 보인다 — 채워 넣자마자 바로 눈에 보이게 스크롤한다.
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        try {
+            const params = new URLSearchParams({ lat, lng, category, limit: 6 });
+            const response = await fetch(`/api/trip/place/nearby?${params.toString()}`);
+            if (myRequestId !== nearRequestId) return;
+            const list = response.ok ? await response.json() : [];
+            listEl.innerHTML = list.length
+                ? list.map(p => `<div class="rec-card" onclick='openDetail(${JSON.stringify({
+                    placeName: p.name, category: p.category, lat: p.lat, lng: p.lng, address: p.address,
+                    imageUrl: p.imageUrl, avgRating: p.avgRating, reviewCount: p.reviewCount,
+                    reason: '', reviews: [], durationMinutes: 0, alternatives: [],
+                    contentId: p.contentId, contentTypeId: p.contentTypeId
+                }).replace(/'/g, "&apos;")}, ${p.lat}, ${p.lng})'>
+                    <div class="rec-info"><div class="rec-name">${p.name}</div>${p.address ? `<div class="rec-reason">${p.address}</div>` : ''}</div>
+                  </div>`).join('')
+                : '<div class="empty-msg">근처에서 못 찾았어요</div>';
         } catch (e) {
-            if (myRequestId === descRequestId) section.style.display = 'none';
+            if (myRequestId === nearRequestId) listEl.innerHTML = '<div class="empty-msg">근처를 불러오지 못했어요</div>';
         }
     }
 
     /* ─── 추천 리스트 렌더링 ─── */
+    let recListCache = { tourismList: [], foodList: [], cafeList: [] };
+
+    /** 추천 리스트(관광/음식/카페 탭)에서도 일정 슬롯이랑 똑같이 눌러서 바로 상세정보/경로검색 보이게. */
     function renderRecList(containerId, list) {
+        recListCache[containerId] = list || [];
         document.getElementById(containerId).innerHTML = list?.length
             ? list.map((p, i) => `
-          <div class="rec-card">
+          <div class="rec-card" onclick="openRecDetail('${containerId}', ${i})">
             <div class="rec-rank">${i+1}</div>
             <div class="rec-info">
               <div class="rec-name">${p.name}</div>
@@ -896,6 +1002,18 @@
             </div>
           </div>`).join('')
             : '<div class="empty-msg">추천 결과가 없어요</div>';
+    }
+
+    function openRecDetail(containerId, idx) {
+        const p = recListCache[containerId]?.[idx];
+        if (!p) return;
+        if (p.lat && p.lng) { map.setLevel(3); map.panTo(new kakao.maps.LatLng(p.lat, p.lng)); }
+        openDetail({
+            placeName: p.name, category: p.category || 'tourism', lat: p.lat, lng: p.lng,
+            address: p.address, imageUrl: p.imageUrl, avgRating: p.avgRating, reviewCount: p.reviewCount,
+            reason: p.reason, reviews: [], durationMinutes: 0, alternatives: [],
+            contentId: p.contentId, contentTypeId: p.contentTypeId
+        }, p.lat, p.lng);
     }
 
     /* ─── 일차 버튼 생성 ─── */
@@ -943,7 +1061,27 @@
         renderRecList('tourismList', tripResult.tourismList);
         renderRecList('foodList',    tripResult.foodList);
         renderRecList('cafeList',    tripResult.cafeList);
-        drawDay(1);
+
+        // 저장된 일정 목록(tripPlanList.html)에서 슬롯 하나를 눌러서 넘어온 경우 —
+        // 그 날짜를 펼치고 상세 패널까지 자동으로 열어준다.
+        const openReq = sessionStorage.getItem('openTripSlot');
+        sessionStorage.removeItem('openTripSlot');
+        let openDay = 1, openIdx = null;
+        if (openReq) {
+            try {
+                const o = JSON.parse(openReq);
+                if (o.day) openDay = o.day;
+                if (typeof o.idx === 'number') openIdx = o.idx;
+            } catch (_) {}
+        }
+        if (openDay !== 1) {
+            document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('db' + openDay)?.classList.add('active');
+            currentDay = openDay;
+        }
+        await drawDay(openDay);
+        if (openIdx !== null) focusSlot(openIdx);
+
         await autoSaveTripPlan();
     });
 </script>

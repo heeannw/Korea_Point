@@ -15,6 +15,10 @@ public class TransportRouteDto {
     private List<TransportStepDto> steps;
     private Double startLat;
     private Double startLng;
+    private Double endLat;
+    private Double endLng;
+    /** 택시 탭 전용 — TMAP 자동차 경로안내가 계산해주는 예상 택시 요금(원). 다른 수단은 null. */
+    private Integer fareWon;
 
     public String getRouteId() { return routeId; }
     public void setRouteId(String routeId) { this.routeId = routeId; }
@@ -38,4 +42,10 @@ public class TransportRouteDto {
     public void setStartLat(Double startLat) { this.startLat = startLat; }
     public Double getStartLng() { return startLng; }
     public void setStartLng(Double startLng) { this.startLng = startLng; }
+    public Double getEndLat() { return endLat; }
+    public void setEndLat(Double endLat) { this.endLat = endLat; }
+    public Double getEndLng() { return endLng; }
+    public void setEndLng(Double endLng) { this.endLng = endLng; }
+    public Integer getFareWon() { return fareWon; }
+    public void setFareWon(Integer fareWon) { this.fareWon = fareWon; }
 }

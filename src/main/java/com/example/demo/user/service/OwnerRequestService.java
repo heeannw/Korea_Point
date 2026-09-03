@@ -5,6 +5,7 @@ import com.example.demo.user.entity.OwnerRequestStatus;
 import com.example.demo.user.entity.User;
 import com.example.demo.user.repository.OwnerRequestRepository;
 import com.example.demo.user.repository.UserRepository;
+import com.example.demo.user.validation.BusinessNumberValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class OwnerRequestService {
 
     private final OwnerRequestRepository ownerRequestRepository;
     private final UserRepository userRepository;
+    private final BusinessNumberValidator businessNumberValidator;
 
     @Value("${owner-application.upload-dir:uploads/owner-requests}")
     private String uploadDir;
@@ -90,7 +92,8 @@ public class OwnerRequestService {
         }
 
         String normalizedStoreName = requireText(storeName, "가게명을 입력해 주세요.");
-        String normalizedBusinessNumber = requireText(businessRegistrationNumber, "사업자등록번호를 입력해 주세요.");
+        // 숫자 10자리로 정리하고 체크섬·국세청 조회까지 거친다. 틀리면 여기서 막힌다.
+        String normalizedBusinessNumber = businessNumberValidator.validate(businessRegistrationNumber);
         requireFile(businessRegistrationFile, "사업자등록증을 등록해 주세요.");
         requireFile(businessLicenseFile, "영업신고증을 등록해 주세요.");
         requireFile(menuFile, "메뉴판 또는 메뉴 정보를 등록해 주세요.");

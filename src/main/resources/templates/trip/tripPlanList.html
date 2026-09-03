@@ -123,7 +123,10 @@
     }
     function renderDaySlots(dayData){
         const slots=(dayData && dayData.slots) || [];
-        document.getElementById('detailDays').innerHTML=`<div class="day-card"><div class="day-card-head"><span class="day-badge">Day ${dayData ? dayData.day : ''}</span><span class="day-stop-count">${slots.length}곳</span></div>${slots.map(s=>{const cfg=CAT[s.category]||CAT.tourism;return `<div class="slot"><div class="slot-dot" style="background:${cfg.color}">${cfg.icon}</div><div class="slot-body"><div class="slot-top-row"><span class="slot-time">${esc(s.time)}</span>${s.durationMinutes ? `<span class="slot-duration-pill">${s.durationMinutes}분</span>` : ''}</div><div class="slot-name">${esc(s.placeName)}</div><div class="slot-reason">${esc(s.reason)}</div></div>${s.imageUrl ? `<img class="slot-thumb" src="${esc(s.imageUrl)}" alt="" onerror="this.remove()">` : ''}</div>`}).join('')}</div>`;
+        // 슬롯을 눌러도 아무 반응이 없다는 피드백 — 여기엔 상세 패널(사진/이용시간/리뷰 등)을 따로 안 만들고,
+        // 이미 다 갖춰져 있는 "상세 페이지에서 보기"(tripResult.html) 화면으로 넘어가면서 그 장소 상세를
+        // 자동으로 열어준다(openSavedSlot → openTripSlot 세션 저장 → tripResult.html에서 읽어서 focusSlot).
+        document.getElementById('detailDays').innerHTML=`<div class="day-card"><div class="day-card-head"><span class="day-badge">Day ${dayData ? dayData.day : ''}</span><span class="day-stop-count">${slots.length}곳</span></div>${slots.map((s,idx)=>{const cfg=CAT[s.category]||CAT.tourism;return `<div class="slot" onclick="openSavedSlot(${idx})"><div class="slot-dot" style="background:${cfg.color}">${cfg.icon}</div><div class="slot-body"><div class="slot-top-row"><span class="slot-time">${esc(s.time)}</span>${s.durationMinutes ? `<span class="slot-duration-pill">${s.durationMinutes}분</span>` : ''}</div><div class="slot-name">${esc(s.placeName)}</div><div class="slot-reason">${esc(s.reason)}</div></div>${s.imageUrl ? `<img class="slot-thumb" src="${esc(s.imageUrl)}" alt="" onerror="this.remove()">` : ''}</div>`}).join('')}</div>`;
     }
     // 날짜마다 동선 범위가 다르면 setBounds가 확대/축소를 극단으로 튀게 만들어서
     // "지도 크기가 커졌다 작아졌다" 하는 것처럼 느껴진다. 줌 레벨을 이 범위 안으로 고정해서
@@ -133,6 +136,11 @@
         const container=document.getElementById('savedPlanMap'),slots=((dayData && dayData.slots) || []).filter(s=>s.lat&&s.lng);if(!slots.length||!window.kakao){container.style.display='none';return}container.style.display='block';savedPlanMap=new kakao.maps.Map(container,{center:new kakao.maps.LatLng(slots[0].lat,slots[0].lng),level:7});const bounds=new kakao.maps.LatLngBounds();slots.forEach(s=>{const position=new kakao.maps.LatLng(s.lat,s.lng);new kakao.maps.Marker({map:savedPlanMap,position,title:s.placeName});bounds.extend(position)});new kakao.maps.Polyline({map:savedPlanMap,path:slots.map(s=>new kakao.maps.LatLng(s.lat,s.lng)),strokeWeight:4,strokeColor:'#3b82f6',strokeOpacity:.8});savedPlanMap.setBounds(bounds);const lvl=savedPlanMap.getLevel();const clamped=Math.min(Math.max(lvl,MAP_MIN_LEVEL),MAP_MAX_LEVEL);if(clamped!==lvl)savedPlanMap.setLevel(clamped);setTimeout(()=>savedPlanMap.relayout(),100)
     }
     function editCurrentPlan(){if(!currentDetailPlan)return;sessionStorage.setItem('tripEditRequest',JSON.stringify(currentDetailPlan));location.href='/ko/trip'}
+    /** 슬롯 한 곳을 눌렀을 때 — "상세 페이지에서 보기"로 넘어가면서 그 장소 상세 패널을 바로 연다. */
+    function openSavedSlot(idx){
+        sessionStorage.setItem('openTripSlot', JSON.stringify({ day: currentDay, idx }));
+        viewInResultPage();
+    }
     /** 일정 생성 후 보게 되는 그 상세 페이지(/ko/trip/result)를 이 저장된 일정 데이터로 그대로 연다.
      *  그 페이지는 열리면 자동으로 일정을 저장하려고 하는데, 이미 저장된 걸 또 저장하지 않도록
      *  savedTripPlanKey를 미리 맞춰서 넣어준다(그 페이지의 자동저장 중복 방지 로직 재사용). */

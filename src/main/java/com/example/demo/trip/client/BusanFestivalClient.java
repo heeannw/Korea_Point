@@ -32,6 +32,8 @@ public class BusanFestivalClient {
     private static final String BASE_URL = "https://apis.data.go.kr/B551011/KorService2/searchFestival2";
     /** 법정동 시도코드 — 부산. */
     private static final String BUSAN_LEGAL_DONG_CODE = "26";
+    /** TourAPI 지역코드(areaCode) — 부산. */
+    private static final String BUSAN_AREA_CODE = "6";
     private static final int MAX_ROWS = 300;
     private static final int CONNECT_TIMEOUT_MS = 2500;
     private static final int READ_TIMEOUT_MS = 6000;
@@ -70,6 +72,11 @@ public class BusanFestivalClient {
                     .queryParam("MobileApp", "KoreaPoint")
                     .queryParam("_type", "json")
                     .queryParam("eventStartDate", queryFrom.format(DateTimeFormatter.BASIC_ISO_DATE))
+                    // areaCode 없이 조회하면 전국 축제를 제목순(arrange=A)으로 최대 300건만 받아온 뒤에야
+                    // lDongRegnCd로 부산만 걸러내는 구조라, 전국 데이터가 300건을 넘으면 알파벳 순서상
+                    // 뒤로 밀린 부산 축제(나이트 캠크닉·헬로메이커 등)는 애초에 응답에 없어서 통째로 빠졌다.
+                    // areaCode=6(부산)으로 서버 쪽에서부터 부산만 조회하도록 좁힌다.
+                    .queryParam("areaCode", BUSAN_AREA_CODE)
                     .queryParam("arrange", "A")
                     .queryParam("numOfRows", MAX_ROWS)
                     .queryParam("pageNo", 1);
@@ -90,6 +97,17 @@ public class BusanFestivalClient {
                 for (JsonNode item : items) addIfOverlapping(result, item, tripStart, tripEnd);
             } else if (items.isObject()) {
                 addIfOverlapping(result, items, tripStart, tripEnd);
+            }
+            int rawCount = items.isArray() ? items.size() : (items.isObject() ? 1 : 0);
+            // 왜 축제가 안 뜨는지(지역코드 필드명이 다른가/기간이 안 겹치는가 등) 바로 알 수 있게
+            // 원본 응답 건수 대비 최종 매칭 건수를 항상 남긴다. 0건이면 첫 항목 원본을 같이 남긴다.
+            log.info("[BusanFestival] 조회기간 {}~{} | TourAPI 원본 {}건 → 부산·기간겹침 매칭 {}건",
+                    tripStart, tripEnd, rawCount, result.size());
+            if (result.isEmpty() && rawCount > 0) {
+                JsonNode first = items.isArray() ? items.get(0) : items;
+                log.info("[BusanFestival] 매칭 0건 — 원본 첫 항목 샘플: title={}, lDongRegnCd={}, eventstartdate={}, eventenddate={}, areacode={}",
+                        text(first, "title"), text(first, "lDongRegnCd"), text(first, "eventstartdate"),
+                        text(first, "eventenddate"), text(first, "areacode"));
             }
             return List.copyOf(result);
         } catch (Exception e) {

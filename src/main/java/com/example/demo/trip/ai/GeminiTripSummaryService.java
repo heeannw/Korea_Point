@@ -45,19 +45,6 @@ public class GeminiTripSummaryService {
         return result.isBlank() ? fallback(response) : result;
     }
 
-    /**
-     * 장소 상세 패널에서 쓰는 한 줄짜리 개요. 리뷰만 있고 "여기가 뭐 하는 곳인지"가 없다는
-     * 피드백으로 추가함 — 큐레이션 목록(관광공사 API 원문이 없는 곳)에도 똑같이 쓸 수 있게
-     * 상세 API 대신 그냥 Gemini에게 물어본다. 실패하면 빈 문자열 — 프론트에서 그 칸을 숨긴다.
-     */
-    public String describePlace(String name, String address) {
-        if (apiKey == null || apiKey.isBlank() || name == null || name.isBlank()) return "";
-        String prompt = "다음 장소가 정확히 어떤 곳인지 한국어로 1~2문장, 60자 내외로 간단히 설명해줘. " +
-                "과장하거나 추측성 수식어 없이 사실 위주로, 설명 문장만 출력하고 다른 말은 하지 마. " +
-                "장소명: " + name + (address != null && !address.isBlank() ? ", 주소: " + address : "");
-        return callGemini(prompt, 120, Duration.ofHours(24));
-    }
-
     /** 캐시 확인 → Gemini 호출 → 캐시 저장까지 공통 처리. 실패 시 빈 문자열. */
     private String callGemini(String prompt, int maxOutputTokens, Duration cacheTtl) {
         String cacheKey = Integer.toHexString(prompt.hashCode());

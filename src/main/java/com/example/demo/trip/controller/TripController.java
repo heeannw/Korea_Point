@@ -1,6 +1,6 @@
 package com.example.demo.trip.controller;
 
-import com.example.demo.trip.ai.GeminiTripSummaryService;
+import com.example.demo.tourism.client.TourApiClient;
 import com.example.demo.trip.dto.PlaceDetailDto;
 import com.example.demo.trip.dto.TripRecommendRequest;
 import com.example.demo.trip.dto.TripRecommendResponse;
@@ -8,20 +8,23 @@ import com.example.demo.trip.dto.TripReoptimizeRequest;
 import com.example.demo.trip.service.TripRecommendService;
 import com.example.demo.user.util.SecurityUtil;               // ✅ 추가
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class TripController {
 
     private final TripRecommendService tripRecommendService;
-    private final GeminiTripSummaryService geminiTripSummaryService;
+    private final TourApiClient tourApiClient;
 
     // ── 공통 세션 세팅 (SecurityUtil로 교체) ──
     private void session(Model model, HttpSession session) {
@@ -99,14 +102,30 @@ public class TripController {
     }
 
     /**
-     * 장소 상세 패널의 "이 장소는 이런 곳이에요" 한 줄 개요.
-     * 큐레이션 장소든 TourAPI 장소든 원문 소개글이 다 있는 게 아니라서 Gemini에게 즉석에서 물어본다.
+     * 관광페이지 상세정보 수준(운영시간·전화번호·메뉴·소개글 등)을 여행일정 상세 패널에도 보여주기 위해
+     * tourism의 TourApiClient를 읽기 전용으로 그대로 재사용한다(tourism 파일은 건드리지 않음).
+     * contentId가 없는 장소(손으로 넣은 큐레이션 목록)는 애초에 상세 조회 대상이 아니라서
+     * 프론트에서 이 API를 호출하지 않는다 — 여기서는 방어적으로만 처리.
      */
-    @GetMapping("/api/trip/place/description")
+    @GetMapping("/api/trip/place/full-detail")
     @ResponseBody
-    public ResponseEntity<Map<String, String>> placeDescription(@RequestParam String name,
-                                                                  @RequestParam(required = false) String address) {
-        String description = geminiTripSummaryService.describePlace(name, address);
-        return ResponseEntity.ok(Map.of("description", description));
+    public ResponseEntity<Map<String, Object>> placeFullDetail(@RequestParam String contentId,
+                                                                 @RequestParam(required = false) String contentTypeId) {
+        if (contentId == null || contentId.isBlank()) return ResponseEntity.ok(Map.of());
+        try {
+            return ResponseEntity.ok(tourApiClient.findDetail(contentId, contentTypeId, "ko"));
+        } catch (Exception e) {
+            log.warn("여행일정 상세정보 조회 실패 (contentId={}): {}", contentId, e.getMessage());
+            return ResponseEntity.ok(Map.of());
+        }
+    }
+
+    /** 상세 패널의 "근처 맛집/근처 카페" — 지금 보고 있는 장소 주변 후보를 가까운 순으로 몇 곳 돌려준다. */
+    @GetMapping("/api/trip/place/nearby")
+    @ResponseBody
+    public ResponseEntity<List<TripRecommendResponse.RecommendedPlace>> placeNearby(
+            @RequestParam double lat, @RequestParam double lng,
+            @RequestParam String category, @RequestParam(defaultValue = "6") int limit) {
+        return ResponseEntity.ok(tripRecommendService.findNearby(lat, lng, category, Math.min(limit, 10)));
     }
 }

@@ -57,9 +57,11 @@ public class GeminiChatClient {
 
         // gemini-3.6-flash는 "생각(thinking)" 과정도 maxOutputTokens 예산을 같이 쓰는 모델이라
         // 최종 답변 전에 예산이 소진되면 문장이 끊긴다. 여유 있게 넉넉히 잡는다.
+        // 답변 생성 요청이 번역 언어일 때는 참고 자료 본문 전체를 같이 번역해서 돌려받다 보니
+        // 응답이 꽤 커질 수 있어(원문 여러 개 + 번역본) 예산을 넉넉히 잡는다.
         Map<String, Object> body = Map.of(
                 "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
-                "generationConfig", Map.of("temperature", 0.3, "maxOutputTokens", 4096));
+                "generationConfig", Map.of("temperature", 0.3, "maxOutputTokens", 8192));
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
         String url = String.format(ENDPOINT, model);
 
