@@ -95,9 +95,9 @@ public class OwnerRequestService {
 
         String normalizedStoreName = requireText(storeName, "가게명을 입력해 주세요.");
         // 번호·대표자명·개업일자를 정리하고 국세청 진위확인까지 거친다. 틀리면 여기서 막힌다.
-        String normalizedBusinessNumber = businessNumberValidator
-                .validateOwner(businessRegistrationNumber, startDate, ownerName)
-                .businessNumber();
+        // 통과한 값은 그대로 신청서에 남긴다. 관리자가 사업자등록증과 대조할 때 쓴다.
+        BusinessNumberValidator.VerifiedBusiness verified =
+                businessNumberValidator.validateOwner(businessRegistrationNumber, startDate, ownerName);
         requireFile(businessRegistrationFile, "사업자등록증을 등록해 주세요.");
         requireFile(businessLicenseFile, "영업신고증을 등록해 주세요.");
         requireFile(menuFile, "메뉴판 또는 메뉴 정보를 등록해 주세요.");
@@ -105,7 +105,9 @@ public class OwnerRequestService {
         return ownerRequestRepository.save(OwnerRequest.builder()
                 .user(user)
                 .storeName(normalizedStoreName)
-                .businessRegistrationNumber(normalizedBusinessNumber)
+                .businessRegistrationNumber(verified.businessNumber())
+                .ownerName(verified.ownerName())
+                .startDate(verified.startDate())
                 .businessRegistrationFilePath(storeFile(userId, businessRegistrationFile))
                 .businessLicenseFilePath(storeFile(userId, businessLicenseFile))
                 .menuFilePath(storeFile(userId, menuFile))

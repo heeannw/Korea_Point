@@ -51,6 +51,17 @@ public class OwnerRequest {
     @Column(nullable = false, length = 80)
     private String businessRegistrationNumber;
 
+    /**
+     * 국세청 진위확인에 쓴 대표자명. 관리자가 사업자등록증과 대조할 근거로 남긴다.
+     * 진위확인이 생기기 전에 접수된 신청은 비어 있다.
+     */
+    @Column(length = 80)
+    private String ownerName;
+
+    /** 개업일자 여덟 자리(YYYYMMDD). 위와 같은 이유로 남긴다. */
+    @Column(length = 8)
+    private String startDate;
+
     @Column(length = 300)
     private String businessRegistrationFilePath;
 
