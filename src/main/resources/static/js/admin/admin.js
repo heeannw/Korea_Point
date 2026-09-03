@@ -407,6 +407,7 @@ async function loadOwnerApplications() {
                 <div class="stack">
                     <strong>${escapeHtml(item.storeName)}</strong>
                     <span class="muted">${escapeHtml(item.businessRegistrationNumber)}</span>
+                    ${renderOwnerIdentity(item)}
                     <span class="badge ${classForOwnerStatus(item.status)}">${escapeHtml(labelForOwnerStatus(item.status))}</span>
                 </div>
             </td>
@@ -468,6 +469,31 @@ function emptyOwnerApplicationMessage(status) {
         return "반려된 사업자 신청이 없습니다.";
     }
     return "검토 대기 중인 사업자 신청이 없습니다.";
+}
+
+/**
+ * 국세청 진위확인에 쓴 대표자명과 개업일자를 보여준다.
+ *
+ * 가입자 이름과 다르다고 경고하지는 않는다. 대표자 본인만 신청할 수 있는 게
+ * 아니라 직원이나 가족이 대신 넣는 경우가 흔하다. 정상 신청에 경고가 자꾸 뜨면
+ * 관리자가 경고를 무시하게 되고, 정작 봐야 할 때도 안 보게 된다.
+ * 서류와 대조할 값을 그대로 보여주는 것까지가 화면의 몫이다.
+ */
+function renderOwnerIdentity(item) {
+    if (!item.ownerName) {
+        // 진위확인이 생기기 전에 접수된 신청. 값 자체가 없다.
+        return `<span class="muted">대표자명 미확인 · 진위확인 도입 전 접수</span>`;
+    }
+    return `<span class="muted">대표 ${escapeHtml(item.ownerName)}`
+         + ` · 개업 ${escapeHtml(formatBusinessStartDate(item.startDate))}</span>`;
+}
+
+/** 20160610 을 2016-06-10 으로 읽기 좋게. */
+function formatBusinessStartDate(value) {
+    if (!value || value.length !== 8) {
+        return value || "-";
+    }
+    return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
 }
 
 function documentLink(requestId, path, type, label) {
