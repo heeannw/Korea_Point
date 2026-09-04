@@ -1,21 +1,28 @@
 :root {
-    --ab: #f0f7ff;
-    --ap: #ffffff;
-    --as: #0f172a;
-    --ac: #3b9eff;
-    --acd: #1a7de0;
-    --al: #dbeafe;
-    --at: #0f172a;
-    --am: #64748b;
-    --ad: #ef4444;
-    --adb: rgba(239,68,68,0.08);
-    --ag: #10b981;
-    --agb: rgba(16,185,129,0.08);
-    --aw: #f59e0b;
-    --awb: rgba(245,158,11,0.10);
-    --shadow: 0 2px 16px rgba(15,23,42,0.07);
-    --shadow-lg: 0 8px 32px rgba(59,158,255,0.12);
-    --r: 14px;
+    /* 중립 - 화면의 대부분이다. 회색이어야 파랑이 산다 */
+    --ab: #f5f6f8;          /* 화면 배경 */
+    --ap: #ffffff;          /* 카드 */
+    --al: #e3e6ea;          /* 테두리 */
+    --as: #191b20;          /* 사이드바 */
+    --at: #14161a;          /* 본문 글자 */
+    --am: #6b7280;          /* 보조 글자 */
+    --an: rgba(107,114,128,0.10);  /* 중립 배지 바탕 */
+
+    /* 강조 - 누를 수 있는 것에만 쓴다 */
+    --ac: #2f80ed;
+    --acd: #1b64c8;
+
+    /* 상태 */
+    --ad: #e5484d;                  /* 위험 */
+    --adb: rgba(229,72,77,0.09);
+    --ag: #12a15c;                  /* 정상 */
+    --agb: rgba(18,161,92,0.09);
+    --aw: #d98207;                  /* 주의 */
+    --awb: rgba(217,130,7,0.11);
+
+    --shadow: 0 1px 2px rgba(20,22,26,0.05), 0 1px 8px rgba(20,22,26,0.04);
+    --shadow-lg: 0 8px 28px rgba(20,22,26,0.12);
+    --r: 12px;
 }
 
 * { box-sizing: border-box; }
@@ -24,6 +31,8 @@ html, body { margin: 0; min-height: 100%; }
 
 body {
     font-family: "Sora", "Noto Sans KR", sans-serif;
+    /* 숫자는 자릿수 폭을 고정한다. 표에서 위아래 숫자가 자리를 맞춰 서야 비교가 된다 */
+    font-variant-numeric: tabular-nums;
     color: var(--at);
     background: var(--ab);
 }
@@ -95,14 +104,50 @@ button:disabled, input:disabled, select:disabled, textarea:disabled {
 }
 
 .nav-link.active {
-    background: rgba(59,158,255,0.18);
+    background: rgba(47,128,237,0.18);
     color: #ffffff;
-    box-shadow: inset 0 0 0 1px rgba(59,158,255,0.30);
+    box-shadow: inset 0 0 0 1px rgba(47,128,237,0.30);
 }
 
 .nav-link strong, .nav-link span { display: block; }
 
-.nav-link strong { font-size: 14px; font-weight: 600; }
+/* 배지를 오른쪽 끝에 붙이려고 제목 줄만 가로로 편다 */
+.nav-link strong {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* 메뉴를 성격별로 묶는 작은 머리글. 링크가 아니라 라벨이라 눌리지 않는다 */
+.nav-group {
+    margin: 14px 0 2px;
+    padding: 0 14px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.30);
+}
+
+/* 밀린 건수. 0 이면 JS 가 hidden 을 씌워 아예 안 보인다 */
+.nav-badge {
+    min-width: 20px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--ad);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 18px;
+}
+
+.nav-badge.is-warn { background: var(--aw); }
+
+.nav-badge[hidden] { display: none; }
 
 .nav-link span {
     margin-top: 3px;
@@ -140,13 +185,13 @@ button:disabled, input:disabled, select:disabled, textarea:disabled {
 /* ── Topbar ── */
 .admin-topbar {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 14px;
 }
 
-.topbar-eyebrow, .modal-eyebrow {
+.modal-eyebrow {
     margin: 0 0 6px;
     color: var(--ac);
     font-size: 11px;
@@ -155,18 +200,9 @@ button:disabled, input:disabled, select:disabled, textarea:disabled {
     font-weight: 700;
 }
 
-.topbar-title {
-    margin: 0;
-    font-family: "Fraunces", serif;
-    font-size: clamp(28px, 3.5vw, 42px);
-    line-height: 1;
-    letter-spacing: -0.04em;
-    color: var(--at);
-}
-
-.topbar-copy {
-    margin: 8px 0 0;
+.topbar-crumb {
     font-size: 13px;
+    font-weight: 600;
     color: var(--am);
 }
 
@@ -207,7 +243,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled {
     color: #ffffff;
     font-size: 13px;
     font-weight: 600;
-    box-shadow: 0 4px 14px rgba(59,158,255,0.28);
+    box-shadow: 0 4px 14px rgba(47,128,237,0.28);
 }
 
 .primary-button:hover { background: var(--acd); transform: translateY(-1px); }
@@ -291,9 +327,16 @@ body[data-page="logs"] #logsPanel {
 }
 
 /* ── Section Head ── */
-.section-head, .section-inline {
+.section-head {
     display: flex;
     align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.section-inline {
+    display: flex;
+    align-items: baseline;
     justify-content: space-between;
     gap: 16px;
 }
@@ -312,33 +355,151 @@ body[data-page="logs"] #logsPanel {
     font-size: 13px;
 }
 
-/* ── Summary Cards ── */
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.summary-card {
-    padding: 18px 20px;
-    border-radius: 14px;
+/* ── 처리 대기 큐 ──
+   숫자가 아니라 밀린 건을 그대로 늘어놓고, 조치 버튼을 같은 줄에 둔다.
+   여기서 끝나야 화면을 옮길 일이 없다. */
+.queue {
+    margin-bottom: 16px;
+    border-radius: var(--r);
     background: var(--ap);
     border: 1px solid var(--al);
     box-shadow: var(--shadow);
+    overflow: hidden;
 }
 
-.summary-label {
+.queue-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--al);
+}
+
+.queue-head h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--at);
+}
+
+.queue-head p {
+    margin: 0;
     font-size: 12px;
     color: var(--am);
-    font-weight: 500;
 }
 
-.summary-value {
-    margin-top: 10px;
-    font-family: "Fraunces", serif;
-    font-size: 32px;
-    line-height: 1;
+.queue-count {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--acd);
+}
+
+.queue-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--ab);
+}
+
+.queue-row:last-child { border-bottom: none; }
+
+/* 여덟 건을 넘겨 잘린 나머지를 알려 주는 줄 */
+.queue-more {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--ab);
+    font-size: 12px;
+}
+.queue-row:hover { background: var(--ab); }
+
+/* 신고인지 신청인지 왼쪽에서 바로 갈린다 */
+.queue-kind {
+    flex-shrink: 0;
+    min-width: 42px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 18px;
+}
+
+.queue-kind.is-report { background: var(--adb); color: var(--ad); }
+.queue-kind.is-owner  { background: var(--awb); color: #b45309; }
+
+.queue-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.queue-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--at);
+}
+
+.queue-title strong { font-weight: 600; }
+
+.queue-meta {
+    font-size: 12px;
+    color: var(--am);
+}
+
+.queue-docs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 2px;
+    font-size: 12px;
+}
+
+.queue-row .action-group { flex-shrink: 0; }
+
+@media (max-width: 900px) {
+    .queue-row { flex-wrap: wrap; }
+    .queue-row .action-group { width: 100%; }
+}
+
+/* ── 운영 규모 ──
+   행동할 일이 아니라 배경 정보다. 한 줄로 눌러 두면 위 카드가 살아난다. */
+.scale-strip {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 1px;
+    margin-bottom: 20px;
+    border-radius: var(--r);
+    overflow: hidden;
+    background: var(--al);
+    border: 1px solid var(--al);
+}
+
+.scale-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 14px;
+    background: var(--ap);
+}
+
+.scale-item span {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--am);
+}
+
+.scale-item strong {
+    font-size: 17px;
+    font-weight: 600;
     color: var(--at);
 }
 
@@ -354,8 +515,13 @@ body[data-page="logs"] #logsPanel {
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+/* 목록 카드를 넷씩 늘어놓으면 다섯 번째가 혼자 남고, 좁아서 아무것도 안 읽힌다 */
+.dashboard-grid.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .dashboard-card {
-    padding: 18px;
+    padding: 14px 16px;
     border-radius: 14px;
     background: var(--ap);
     border: 1px solid var(--al);
@@ -389,15 +555,36 @@ body[data-page="logs"] #logsPanel {
 .filters {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
-    gap: 10px;
-    margin-bottom: 18px;
-    padding: 16px;
-    background: var(--ab);
-    border-radius: 14px;
-    border: 1px solid var(--al);
+    gap: 10px 12px;
+    margin-bottom: 16px;
+    padding: 0 0 16px;
+    border-bottom: 1px solid var(--al);
 }
 
 .filters.four { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; }
+
+.filters .primary-button {
+    /* 그리드 칸을 다 차지하면 표보다 커진다. 글자만큼만 차지하게 둔다 */
+    align-self: end;
+    justify-self: start;
+    height: 38px;
+    padding: 0 22px;
+    border-radius: 9px;
+    box-shadow: none;
+}
+
+/* 화면 머리의 새로고침도 같은 이유로 줄인다. 주인공은 아래 내용이다 */
+.section-head .primary-button {
+    height: 34px;
+    padding: 0 16px;
+    border-radius: 9px;
+    font-size: 12px;
+    box-shadow: none;
+}
+
+.section-head .primary-button:hover { transform: none; }
+
+.filters .primary-button:hover { transform: none; }
 
 .filters label {
     display: flex;
@@ -421,7 +608,7 @@ body[data-page="logs"] #logsPanel {
 .filters input:focus, .filters select:focus {
     outline: none;
     border-color: var(--ac);
-    box-shadow: 0 0 0 3px rgba(59,158,255,0.12);
+    box-shadow: 0 0 0 3px rgba(47,128,237,0.12);
 }
 
 .filters .primary-button { align-self: end; }
@@ -449,7 +636,7 @@ body[data-page="logs"] #logsPanel {
 .admin-tab:hover,
 .admin-tab.active {
     border-color: var(--ac);
-    background: rgba(59,158,255,0.10);
+    background: rgba(47,128,237,0.10);
     color: var(--acd);
 }
 
@@ -467,7 +654,7 @@ body[data-page="logs"] #logsPanel {
 table { width: 100%; border-collapse: collapse; }
 
 th, td {
-    padding: 13px 16px;
+    padding: 9px 14px;
     text-align: left;
     border-bottom: 1px solid var(--al);
     vertical-align: middle;
@@ -483,11 +670,11 @@ th {
     font-weight: 600;
 }
 
-tbody tr:hover { background: rgba(59,158,255,0.03); }
+tbody tr:hover { background: rgba(47,128,237,0.03); }
 tbody tr:last-child td { border-bottom: none; }
 
 /* ── Stack ── */
-.stack { display: flex; flex-direction: column; gap: 4px; }
+.stack { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
 
 .muted { color: var(--am); font-size: 12px; }
 
@@ -503,7 +690,7 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .badge.admin {
-    background: rgba(59,158,255,0.12);
+    background: rgba(47,128,237,0.12);
     color: var(--acd);
 }
 
@@ -517,7 +704,12 @@ tbody tr:last-child td { border-bottom: none; }
     color: var(--ag);
 }
 
-.badge.deleted, .badge.danger {
+.badge.deleted {
+    background: var(--an);
+    color: var(--am);
+}
+
+.badge.danger {
     background: var(--adb);
     color: var(--ad);
 }
@@ -528,7 +720,100 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 /* ── Action Group ── */
-.action-group { display: flex; flex-wrap: wrap; gap: 5px; }
+.action-group { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+
+/* ── 행 안의 조치 버튼 ──
+   primary·danger·tiny·more 가 저마다 다른 padding 을 갖고 있어서 한 줄에
+   40·36·32·28px 가 나란히 섰다. 모양도 알약과 사각형이 섞였다.
+   행 안에서는 종류와 상관없이 같은 규격으로 세운다. */
+.action-group button,
+.action-group .action-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1;
+}
+
+/* 표 안에서는 떠 보이는 그림자와 hover 이동이 오히려 산만하다 */
+.action-group .primary-button {
+    box-shadow: none;
+    font-weight: 600;
+}
+
+.action-group .primary-button:hover { transform: none; }
+
+/* 행에 바로 놓인 위험 버튼은 채워서 낸다.
+   연한 빨강 바탕에 빨간 글씨는 상태 배지("숨김")와 똑같이 생겨서,
+   조치 열의 "숨김"이 눌러야 하는 버튼인지 그냥 표시인지 구분되지 않았다.
+   ⋯ 안에 접힌 것들은 메뉴 항목이라 지금의 옅은 스타일이 맞아 그대로 둔다. */
+.action-group > .danger-button {
+    background: var(--ad);
+    color: #ffffff;
+    border-color: transparent;
+    font-weight: 600;
+}
+
+.action-group > .danger-button:hover { background: #dc2626; }
+
+/* 주 동작 옆의 ⋯ 버튼과 그 안에 접힌 나머지 조치들 */
+.more-menu { position: relative; display: inline-flex; }
+
+.more-btn {
+    border-radius: 8px;
+    border: 1px solid var(--al);
+    background: var(--ap);
+    color: var(--am);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.action-group .more-btn {
+    padding: 0 10px;
+    font-size: 15px;
+    letter-spacing: 1px;
+}
+
+.more-btn:hover, .more-btn[aria-expanded="true"] {
+    border-color: var(--ac);
+    color: var(--ac);
+}
+
+.more-pop {
+    /* 위치는 JS 가 화면 기준으로 잡아 준다. 표 상자의 overflow 에 갇히지 않게 하려는 것이다 */
+    position: fixed;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 148px;
+    padding: 6px;
+    border-radius: 10px;
+    background: var(--ap);
+    border: 1px solid var(--al);
+    box-shadow: var(--shadow-lg);
+}
+
+.more-pop[hidden] { display: none; }
+
+/* 메뉴 안에서는 버튼이 세로로 서므로 좌측 정렬이 읽기 좋다 */
+.more-pop button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    text-align: left;
+}
+
+/* 배지가 여러 개 붙는 자리(신고 건수·숨김됨·정지됨). 줄바꿈되게 둔다 */
+.badge-row { display: flex; flex-wrap: wrap; gap: 4px; }
 
 /* ── Content Link ── */
 .content-link {
@@ -703,7 +988,7 @@ tbody tr:last-child td { border-bottom: none; }
 .modal-form textarea:focus {
     outline: none;
     border-color: var(--ac);
-    box-shadow: 0 0 0 3px rgba(59,158,255,0.12);
+    box-shadow: 0 0 0 3px rgba(47,128,237,0.12);
 }
 
 .modal-form textarea { resize: vertical; min-height: 100px; }
@@ -740,14 +1025,15 @@ tbody tr:last-child td { border-bottom: none; }
 
 /* ── Responsive ── */
 @media (max-width: 1360px) {
-    .dashboard-grid.four, .summary-grid {
+    .dashboard-grid.four {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+    .scale-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .filters.four { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; }
 }
 
 @media (max-width: 1100px) {
-    .dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dashboard-grid, .dashboard-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .filters { grid-template-columns: 1fr 1fr auto; }
 }
 
@@ -760,8 +1046,9 @@ tbody tr:last-child td { border-bottom: none; }
     .admin-main { padding: 16px; }
     .admin-topbar { flex-direction: column; }
     .topbar-actions { justify-content: flex-start; }
-    .summary-grid, .dashboard-grid, .dashboard-grid.four,
+    .dashboard-grid, .dashboard-grid.four, .dashboard-grid.two,
     .filters, .filters.four { grid-template-columns: 1fr; }
+    .scale-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .modal-card { padding: 18px; }
     .modal-actions { flex-direction: column-reverse; }
 }

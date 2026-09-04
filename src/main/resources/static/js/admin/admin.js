@@ -1,5 +1,6 @@
 const adminState = {
     activePage: document.body.dataset.page,
+    currentUserId: document.body.dataset.currentUserId,
     usersPage: 0,
     ownerApplicationsStatus: "PENDING",
     postsPage: 0,
@@ -182,6 +183,103 @@ function bindStaticEvents() {
         element.addEventListener("click", closeActionModal);
     });
     document.getElementById("actionModalForm")?.addEventListener("submit", handleModalSubmit);
+    bindMoreMenus();
+}
+
+/**
+ * 주 동작 하나만 내놓고 나머지는 ⋯ 안에 접는다.
+ *
+ * 버튼 네댓 개를 같은 크기로 늘어놓으면 매번 읽고 고르게 된다. 가장 자주 하는
+ * 하나만 눈에 띄게 두면 손이 먼저 간다. 반려·정지·영구 삭제처럼 되돌리기 어려운
+ * 것이 한 번 더 눌러야 닿는 자리로 가는 것도 덤이다.
+ */
+function withMoreMenu(primaryHtml, moreHtmlList) {
+    const more = (moreHtmlList || []).filter(Boolean);
+    if (!more.length) {
+        return `<div class="action-group">${primaryHtml}</div>`;
+    }
+    return `
+        <div class="action-group">
+            ${primaryHtml}
+            <div class="more-menu">
+                <button type="button" class="more-btn" aria-haspopup="true" aria-expanded="false" aria-label="다른 조치">&#8943;</button>
+                <div class="more-pop" hidden>${more.join("")}</div>
+            </div>
+        </div>
+    `;
+}
+
+/** 열려 있는 ⋯ 메뉴를 모두 닫는다. */
+function closeMoreMenus(except) {
+    document.querySelectorAll(".more-pop:not([hidden])").forEach((pop) => {
+        if (pop === except) {
+            return;
+        }
+        pop.hidden = true;
+        pop.previousElementSibling?.setAttribute("aria-expanded", "false");
+    });
+}
+
+/**
+ * ⋯ 메뉴를 화면 기준(fixed)으로 띄운다.
+ *
+ * 표를 감싼 상자가 overflow:hidden 이라 행 안에 absolute 로 두면 메뉴가 잘린다.
+ * 실제로 잘렸고, 표에 세로 스크롤바까지 생겼다. 화면 기준으로 띄우면 어떤 상자에도
+ * 갇히지 않는다. 아래 공간이 모자라면 위로 연다.
+ */
+function positionMorePop(trigger, pop) {
+    // 크기를 재려면 그려져 있어야 하므로 잠깐 보이지 않게만 해 둔다
+    pop.style.visibility = "hidden";
+    pop.hidden = false;
+
+    const button = trigger.getBoundingClientRect();
+    const menu = pop.getBoundingClientRect();
+    const gap = 6;
+    const margin = 8;
+
+    const openUp = window.innerHeight - button.bottom < menu.height + gap + margin;
+    const top = openUp ? button.top - menu.height - gap : button.bottom + gap;
+    const left = Math.min(
+        Math.max(margin, button.right - menu.width),
+        window.innerWidth - menu.width - margin
+    );
+
+    pop.style.top = `${Math.max(margin, top)}px`;
+    pop.style.left = `${left}px`;
+    pop.style.visibility = "";
+}
+
+/** ⋯ 메뉴는 목록을 다시 그려도 살아 있어야 해서 document 에 한 번만 건다. */
+function bindMoreMenus() {
+    document.addEventListener("click", (event) => {
+        const trigger = event.target.closest(".more-btn");
+        if (!trigger) {
+            closeMoreMenus();
+            return;
+        }
+
+        const pop = trigger.nextElementSibling;
+        const wasOpen = !pop.hidden;
+        closeMoreMenus(pop);
+
+        if (wasOpen) {
+            pop.hidden = true;
+            trigger.setAttribute("aria-expanded", "false");
+            return;
+        }
+        positionMorePop(trigger, pop);
+        trigger.setAttribute("aria-expanded", "true");
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeMoreMenus();
+        }
+    });
+
+    // 화면 기준으로 띄운 메뉴는 스크롤을 따라오지 않는다. 그럴 땐 닫는 게 맞다.
+    window.addEventListener("scroll", () => closeMoreMenus(), true);
+    window.addEventListener("resize", () => closeMoreMenus());
 }
 
 function bindFilterForm(formId, handler) {
@@ -196,6 +294,12 @@ function bindFilterForm(formId, handler) {
 }
 
 async function initializePage() {
+    // 사이드바 배지는 어느 화면에 있든 보여야 한다. 대시보드면 그쪽에서 같이 채우므로
+    // 두 번 부르지 않는다.
+    if (adminState.activePage !== "dashboard") {
+        refreshNavBadges();
+    }
+
     switch (adminState.activePage) {
         case "dashboard":
             await loadDashboard();
@@ -227,6 +331,182 @@ async function initializePage() {
     }
 }
 
+/**
+ * 처리 대기 큐.
+ *
+ * 대시보드에 "열린 신고 3"만 띄우고 누르면 신고 화면으로 보내는 방식은,
+ * 결국 한 단계를 더 거치게 만든다. 밀린 건을 여기에 그대로 늘어놓고
+ * 조치 버튼도 같이 둔다. 오래 기다린 것이 위로 온다.
+ */
+async function loadWorkQueue() {
+    const queue = await apiRequest("/admin/api/work-queue");
+    setNavBadges(queue);
+
+    const total = (queue.openReportCount || 0) + (queue.pendingOwnerCount || 0);
+    setText("queueTotal", numberFormat(total) + "건");
+
+    const container = document.getElementById("workQueue");
+    if (!container) {
+        return;
+    }
+
+    // 조치 버튼이 대상·작성자를 다시 물어보지 않아도 되게 들고 있는다
+    adminState.reportsById = {};
+    (queue.reports || []).forEach((item) => { adminState.reportsById[item.id] = item; });
+
+    if (!total) {
+        container.innerHTML = `<div class="empty-state">밀린 처리가 없습니다.</div>`;
+        return;
+    }
+
+    const reports = queue.reports || [];
+    const owners = queue.ownerApplications || [];
+    container.innerHTML = reports.map(renderQueueReport).join("")
+        + owners.map(renderQueueOwner).join("")
+        + renderQueueMore(queue, reports.length + owners.length, total);
+
+    container.querySelectorAll("[data-report-target]").forEach((button) => {
+        button.addEventListener("click", () => openReportTargetModal(adminState.reportsById[button.dataset.reportTarget]));
+    });
+    container.querySelectorAll("[data-report-author]").forEach((button) => {
+        button.addEventListener("click", () => openReportAuthorModal(adminState.reportsById[button.dataset.reportAuthor]));
+    });
+    container.querySelectorAll("[data-report-status]").forEach((button) => {
+        button.addEventListener("click", () => openReportStatusModal(button.dataset.reportStatus, button.dataset.nextStatus, button.dataset.targetSummary));
+    });
+    container.querySelectorAll("[data-owner-approve]").forEach((button) => {
+        button.addEventListener("click", () => openOwnerApplicationModal(button.dataset.ownerApprove, button.dataset.storeName, "approve"));
+    });
+    container.querySelectorAll("[data-owner-reject]").forEach((button) => {
+        button.addEventListener("click", () => openOwnerApplicationModal(button.dataset.ownerReject, button.dataset.storeName, "reject"));
+    });
+}
+
+/**
+ * 큐는 여덟 건까지만 싣는다. 그보다 밀렸으면 나머지가 몇 건인지 알려 준다.
+ * 머리에는 20건이라고 떠 있는데 목록은 여덟 줄뿐이면 나머지가 어디 갔는지 알 수 없다.
+ */
+function renderQueueMore(queue, shown, total) {
+    if (total <= shown) {
+        return "";
+    }
+    const links = [];
+    if ((queue.openReportCount || 0) > (queue.reports || []).length) {
+        links.push(`<a class="content-link" href="/admin/reports">신고 전체 보기</a>`);
+    }
+    if ((queue.pendingOwnerCount || 0) > (queue.ownerApplications || []).length) {
+        links.push(`<a class="content-link" href="/admin/owner-applications">사업자 신청 전체 보기</a>`);
+    }
+    return `
+        <div class="queue-more">
+            <span class="muted">여기 보이지 않는 ${numberFormat(total - shown)}건이 더 밀려 있습니다.</span>
+            ${links.join("")}
+        </div>
+    `;
+}
+
+function renderQueueReport(item) {
+    const postId = item.targetType === "POST" ? item.targetId : item.postId;
+    const marks = [
+        item.openCountForTarget > 1 ? `신고 ${item.openCountForTarget}건` : "",
+        item.targetHidden ? "숨김됨" : "",
+        item.targetAuthorSuspended ? "작성자 정지됨" : ""
+    ].filter(Boolean);
+
+    return `
+        <div class="queue-row">
+            <span class="queue-kind is-report">신고</span>
+            <div class="queue-body">
+                <div class="queue-title">
+                    <strong>${escapeHtml(labelForReportReason(item.reasonCode))}</strong>
+                    <a class="content-link" href="/community/post/${postId}" target="_blank" rel="noopener">${escapeHtml(item.targetSummary)}</a>
+                </div>
+                <div class="queue-meta">
+                    ${escapeHtml(labelForTarget(item.targetType))}
+                    ${item.targetAuthorName ? ` · 작성자 ${escapeHtml(item.targetAuthorName)}` : ""}
+                    · ${escapeHtml(waitedLabel(item.createdAt))}
+                    ${marks.length ? ` · ${escapeHtml(marks.join(" · "))}` : ""}
+                </div>
+            </div>
+            ${withMoreMenu(
+                `<button type="button" class="primary-button" data-report-status="${item.id}" data-next-status="RESOLVED" data-target-summary="${escapeHtml(item.targetSummary)}">해결</button>`,
+                [
+                    `<button type="button" class="tiny-button" data-report-target="${item.id}">${item.targetHidden ? "글 복구" : "글 숨김"}</button>`,
+                    item.targetAuthorId ? `<button type="button" class="tiny-button" data-report-author="${item.id}">${item.targetAuthorSuspended ? "작성자 정지 해제" : "작성자 정지"}</button>` : "",
+                    `<button type="button" class="danger-button" data-report-status="${item.id}" data-next-status="REJECTED" data-target-summary="${escapeHtml(item.targetSummary)}">반려</button>`
+                ]
+            )}
+        </div>
+    `;
+}
+
+function renderQueueOwner(item) {
+    return `
+        <div class="queue-row">
+            <span class="queue-kind is-owner">신청</span>
+            <div class="queue-body">
+                <div class="queue-title">
+                    <strong>${escapeHtml(item.storeName)}</strong>
+                    <span class="muted">${escapeHtml(item.businessRegistrationNumber)}</span>
+                </div>
+                <div class="queue-meta">
+                    ${item.ownerName ? `대표 ${escapeHtml(item.ownerName)} · ` : ""}${escapeHtml(item.userName)} 신청 · ${escapeHtml(waitedLabel(item.createdAt))}
+                </div>
+                <div class="queue-docs">
+                    ${documentLink(item.id, item.businessRegistrationFilePath, "registration", "사업자등록증")}
+                    ${documentLink(item.id, item.businessLicenseFilePath, "license", "영업신고증")}
+                    ${documentLink(item.id, item.menuFilePath, "menu", "메뉴")}
+                </div>
+            </div>
+            <div class="action-group">
+                <button type="button" class="primary-button" data-owner-approve="${item.id}" data-store-name="${escapeHtml(item.storeName)}">승인</button>
+                <button type="button" class="danger-button" data-owner-reject="${item.id}" data-store-name="${escapeHtml(item.storeName)}">반려</button>
+            </div>
+        </div>
+    `;
+}
+
+/** 며칠째 기다렸는지. 오래 밀린 건이 눈에 띄어야 한다. */
+function waitedLabel(createdAt) {
+    if (!createdAt) {
+        return "";
+    }
+    const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+    if (days <= 0) {
+        return "오늘 접수";
+    }
+    return `${days}일 대기`;
+}
+
+/**
+ * 사이드바의 밀린 건수 배지.
+ *
+ * 0 이면 아예 감춘다. "0" 이 빨갛게 떠 있으면 할 일이 있는 것처럼 보인다.
+ */
+function setNavBadges(queue) {
+    setNavBadge("navReportsBadge", queue.openReportCount);
+    setNavBadge("navOwnerBadge", queue.pendingOwnerCount);
+}
+
+function setNavBadge(id, count) {
+    const badge = document.getElementById(id);
+    if (!badge) {
+        return;
+    }
+    badge.textContent = numberFormat(count);
+    badge.hidden = !count;
+}
+
+/** 대시보드가 아닌 화면에서 배지만 채운다. 실패해도 화면은 그대로 쓸 수 있어야 한다. */
+async function refreshNavBadges() {
+    try {
+        const queue = await apiRequest("/admin/api/work-queue");
+        setNavBadges(queue);
+    } catch (error) {
+        // 배지는 곁다리다. 못 채웠다고 화면을 막지 않는다.
+    }
+}
+
 function setText(id, value) {
     const element = document.getElementById(id);
     if (element) {
@@ -241,32 +521,16 @@ async function loadDashboard() {
     setText("summaryPosts", numberFormat(data.summary.activePosts));
     setText("summaryComments", numberFormat(data.summary.activeComments));
     setText("summarySuspended", numberFormat(data.summary.suspendedUsers));
-    setText("summaryReports", numberFormat(data.summary.openReports));
     setText("summaryHide7d", numberFormat(data.summary.recent7dHideActions));
     setText("summaryRestore7d", numberFormat(data.summary.recent7dRestoreActions));
+
+    // 밀린 일은 숫자가 아니라 목록으로 보여 준다. 배지도 거기서 같이 채운다.
+    await loadWorkQueue();
 
     renderActivityList("dashboardUsers", data.recentUsers, (item) => `
         <div class="activity-item">
             <div class="activity-title">${escapeHtml(item.name)}</div>
             <div class="activity-sub">${escapeHtml(item.email)} / ${escapeHtml(item.role)} / ${escapeHtml(labelForAccountStatus(item.accountStatus || "ACTIVE"))}</div>
-        </div>
-    `);
-    renderActivityList("dashboardPosts", data.recentPosts, (item) => `
-        <div class="activity-item">
-            <div class="activity-title">${escapeHtml(item.title)}</div>
-            <div class="activity-sub">${escapeHtml(item.authorName)} / ${escapeHtml(item.categoryName || "미분류")} / ${formatDate(item.createdAt)}</div>
-        </div>
-    `);
-    renderActivityList("dashboardComments", data.recentComments, (item) => `
-        <div class="activity-item">
-            <div class="activity-title">${escapeHtml(item.contentPreview || "내용 없음")}</div>
-            <div class="activity-sub">${escapeHtml(item.authorName)} / ${escapeHtml(item.postTitle || "게시글 #" + item.postId)} / ${formatDate(item.createdAt)}</div>
-        </div>
-    `);
-    renderActivityList("dashboardReports", data.recentReports, (item) => `
-        <div class="activity-item">
-            <div class="activity-title">${escapeHtml(item.targetSummary)}</div>
-            <div class="activity-sub">${escapeHtml(item.reporterUserName)} / ${escapeHtml(labelForReportReason(item.reasonCode))} / ${escapeHtml(labelForReportStatus(item.status))}</div>
         </div>
     `);
     renderActivityList("dashboardLogs", data.recentLogs, (item) => `
@@ -327,11 +591,17 @@ async function loadUsers() {
                 <td><strong>${numberFormat(item.point)}P</strong></td>
                 <td class="muted">${formatDate(item.createdAt)}</td>
                 <td>
-                    <div class="action-group">
-                        <button type="button" class="tiny-button" data-user-role="${item.id}" data-user-name="${escapeHtml(item.name)}" data-current-role="${item.role}" data-current-point="${item.point}">권한</button>
-                        <button type="button" class="tiny-button" data-user-point="${item.id}" data-user-name="${escapeHtml(item.name)}" data-current-point="${item.point}">포인트</button>
-                        <button type="button" class="tiny-button ${item.accountStatus === "SUSPENDED" ? "" : "danger-button"}" data-user-status="${item.id}" data-user-name="${escapeHtml(item.name)}" data-current-status="${item.accountStatus}">${item.accountStatus === "SUSPENDED" ? "정지 해제" : "정지"}</button>
-                    </div>
+                    ${withMoreMenu(
+                        // 자기 계정을 정지시키면 그 길로 로그아웃되고 다시 못 들어온다. 서버도 막지만
+                        // 눌러서 알게 하는 것보다 아예 내지 않는 편이 낫다.
+                        String(item.id) === String(adminState.currentUserId)
+                            ? `<span class="muted">본인 계정</span>`
+                            : `<button type="button" class="tiny-button ${item.accountStatus === "SUSPENDED" ? "" : "danger-button"}" data-user-status="${item.id}" data-user-name="${escapeHtml(item.name)}" data-current-status="${item.accountStatus}">${item.accountStatus === "SUSPENDED" ? "정지 해제" : "정지"}</button>`,
+                        [
+                            `<button type="button" class="tiny-button" data-user-role="${item.id}" data-user-name="${escapeHtml(item.name)}" data-current-role="${item.role}" data-current-point="${item.point}">권한 변경</button>`,
+                            `<button type="button" class="tiny-button" data-user-point="${item.id}" data-user-name="${escapeHtml(item.name)}" data-current-point="${item.point}">포인트 조정</button>`
+                        ]
+                    )}
                 </td>
             </tr>
         `).join("");
@@ -381,6 +651,9 @@ function openUserRoleModal(userId, userName, currentRole) {
 }
 
 async function loadOwnerApplications() {
+    if (!document.getElementById("ownerApplicationsTableBody")) {
+        return;
+    }
     const status = adminState.ownerApplicationsStatus || "PENDING";
     const data = await apiRequest(`/admin/api/owner-applications?status=${encodeURIComponent(status)}`);
     const body = document.getElementById("ownerApplicationsTableBody");
@@ -641,10 +914,10 @@ async function loadPosts() {
                 </td>
                 <td class="muted">조회 ${numberFormat(item.viewCount)} / 댓글 ${numberFormat(item.commentCount)}</td>
                 <td>
-                    <div class="action-group">
-                        <button type="button" class="${item.deletedAt ? "primary-button" : "danger-button"}" data-post-action="${item.id}" data-post-mode="${item.deletedAt ? "restore" : "hide"}" data-post-title="${escapeHtml(item.title)}">${item.deletedAt ? "복구" : "숨김"}</button>
-                        ${item.deletedAt && item.purgeEligible ? `<button type="button" class="danger-button" data-post-purge="${item.id}" data-post-title="${escapeHtml(item.title)}">영구 삭제</button>` : ""}
-                    </div>
+                    ${withMoreMenu(
+                        `<button type="button" class="${item.deletedAt ? "primary-button" : "danger-button"}" data-post-action="${item.id}" data-post-mode="${item.deletedAt ? "restore" : "hide"}" data-post-title="${escapeHtml(item.title)}">${item.deletedAt ? "복구" : "숨김"}</button>`,
+                        [item.deletedAt && item.purgeEligible ? `<button type="button" class="danger-button" data-post-purge="${item.id}" data-post-title="${escapeHtml(item.title)}">영구 삭제</button>` : ""]
+                    )}
                 </td>
             </tr>
         `).join("");
@@ -738,10 +1011,10 @@ async function loadComments() {
                     ${item.purgeEligible ? `<span class="badge danger" style="margin-top:4px;">영구삭제 가능</span>` : ""}
                 </td>
                 <td>
-                    <div class="action-group">
-                        <button type="button" class="${item.deletedAt ? "primary-button" : "danger-button"}" data-comment-action="${item.id}" data-comment-mode="${item.deletedAt ? "restore" : "hide"}">${item.deletedAt ? "복구" : "숨김"}</button>
-                        ${item.deletedAt && item.purgeEligible ? `<button type="button" class="danger-button" data-comment-purge="${item.id}">영구 삭제</button>` : ""}
-                    </div>
+                    ${withMoreMenu(
+                        `<button type="button" class="${item.deletedAt ? "primary-button" : "danger-button"}" data-comment-action="${item.id}" data-comment-mode="${item.deletedAt ? "restore" : "hide"}">${item.deletedAt ? "복구" : "숨김"}</button>`,
+                        [item.deletedAt && item.purgeEligible ? `<button type="button" class="danger-button" data-comment-purge="${item.id}">영구 삭제</button>` : ""]
+                    )}
                 </td>
             </tr>
         `).join("");
@@ -800,6 +1073,10 @@ function openCommentPurgeModal(commentId) {
 }
 
 async function loadReports() {
+    // 대시보드 큐에서 조치하면 이 함수도 불린다. 신고 화면이 아니면 부를 일이 없다.
+    if (!document.getElementById("reportsTableBody")) {
+        return;
+    }
     const query = new URLSearchParams({ page: String(adminState.reportsPage), size: "10" });
     appendIfPresent(query, "targetType", document.getElementById("reportsTargetType")?.value);
     appendIfPresent(query, "status", document.getElementById("reportsStatus")?.value);
@@ -812,6 +1089,11 @@ async function loadReports() {
     if (!body) {
         return;
     }
+
+    // 조치 버튼이 대상·작성자 정보를 다시 물어보지 않아도 되게 이번 화면 분을 들고 있는다.
+    // 데이터 예닐곱 개를 data- 속성으로 흩뿌리는 것보다 낫다.
+    adminState.reportsById = {};
+    data.items.forEach((item) => { adminState.reportsById[item.id] = item; });
 
     if (!data.items.length) {
         body.innerHTML = `<tr><td colspan="6"><div class="empty-state">조회 결과가 없습니다.</div></td></tr>`;
@@ -829,7 +1111,12 @@ async function loadReports() {
                     <div class="stack">
                         <strong>${escapeHtml(labelForTarget(item.targetType))}</strong>
                         <a class="content-link" href="/community/post/${item.targetType === "POST" ? item.targetId : item.postId}" target="_blank">${escapeHtml(item.targetSummary)}</a>
-                        ${item.openCountForTarget > 1 ? `<span class="open-count-badge">신고 ${item.openCountForTarget}건</span>` : ""}
+                        ${item.targetAuthorName ? `<span class="muted">작성자 ${escapeHtml(item.targetAuthorName)}</span>` : ""}
+                        <div class="badge-row">
+                            ${item.openCountForTarget > 1 ? `<span class="open-count-badge">신고 ${item.openCountForTarget}건</span>` : ""}
+                            ${item.targetHidden ? `<span class="badge deleted">숨김됨</span>` : ""}
+                            ${item.targetAuthorSuspended ? `<span class="badge danger">작성자 정지됨</span>` : ""}
+                        </div>
                     </div>
                 </td>
                 <td>
@@ -845,11 +1132,17 @@ async function loadReports() {
                     </div>
                 </td>
                 <td>
-                    <div class="action-group">
-                        ${item.status !== "REVIEWING" ? `<button type="button" class="tiny-button" data-report-status="${item.id}" data-next-status="REVIEWING" data-target-summary="${escapeHtml(item.targetSummary)}">검토 중</button>` : ""}
-                        ${item.status !== "RESOLVED" ? `<button type="button" class="primary-button" data-report-status="${item.id}" data-next-status="RESOLVED" data-target-summary="${escapeHtml(item.targetSummary)}">해결</button>` : ""}
-                        ${item.status !== "REJECTED" ? `<button type="button" class="danger-button" data-report-status="${item.id}" data-next-status="REJECTED" data-target-summary="${escapeHtml(item.targetSummary)}">반려</button>` : ""}
-                    </div>
+                    ${withMoreMenu(
+                        item.status !== "RESOLVED"
+                            ? `<button type="button" class="primary-button" data-report-status="${item.id}" data-next-status="RESOLVED" data-target-summary="${escapeHtml(item.targetSummary)}">해결</button>`
+                            : `<span class="muted">처리됨</span>`,
+                        [
+                            `<button type="button" class="tiny-button" data-report-target="${item.id}">${item.targetHidden ? "글 복구" : "글 숨김"}</button>`,
+                            item.targetAuthorId ? `<button type="button" class="tiny-button" data-report-author="${item.id}">${item.targetAuthorSuspended ? "작성자 정지 해제" : "작성자 정지"}</button>` : "",
+                            item.status !== "REVIEWING" ? `<button type="button" class="tiny-button" data-report-status="${item.id}" data-next-status="REVIEWING" data-target-summary="${escapeHtml(item.targetSummary)}">검토 중으로</button>` : "",
+                            item.status !== "REJECTED" ? `<button type="button" class="danger-button" data-report-status="${item.id}" data-next-status="REJECTED" data-target-summary="${escapeHtml(item.targetSummary)}">반려</button>` : ""
+                        ]
+                    )}
                 </td>
             </tr>
         `).join("");
@@ -858,10 +1151,78 @@ async function loadReports() {
     body.querySelectorAll("[data-report-status]").forEach((button) => {
         button.addEventListener("click", () => openReportStatusModal(button.dataset.reportStatus, button.dataset.nextStatus, button.dataset.targetSummary));
     });
+    body.querySelectorAll("[data-report-target]").forEach((button) => {
+        button.addEventListener("click", () => openReportTargetModal(adminState.reportsById[button.dataset.reportTarget]));
+    });
+    body.querySelectorAll("[data-report-author]").forEach((button) => {
+        button.addEventListener("click", () => openReportAuthorModal(adminState.reportsById[button.dataset.reportAuthor]));
+    });
 
     renderPagination("reportsPagination", data, (page) => {
         adminState.reportsPage = page;
         loadReports().catch((error) => showAlert(error.message, "error"));
+    });
+}
+
+/**
+ * 신고된 글·댓글을 신고 목록에서 바로 숨기거나 되돌린다.
+ *
+ * 예전에는 한 건을 처리하려고 신고 탭에서 대상을 확인하고 → 게시글 탭으로 가서
+ * 찾아 숨기고 → 사용자 탭에서 작성자를 정지시키고 → 다시 신고 탭으로 돌아와
+ * 해결을 눌러야 했다. 화면을 네 번 옮기던 일을 이 자리에서 끝낸다.
+ */
+function openReportTargetModal(item) {
+    if (!item) {
+        return;
+    }
+    const isPost = item.targetType === "POST";
+    const isRestore = item.targetHidden;
+    const mode = isRestore ? "restore" : "hide";
+    const what = isPost ? "게시글" : "댓글";
+
+    openActionModal({
+        title: `${what} ${isRestore ? "복구" : "숨김"}`,
+        summary: `"${item.targetSummary}" ${what}을 ${isRestore ? "복구" : "숨김"}합니다.`,
+        confirmText: isRestore ? "복구" : "숨김",
+        reasonOptions: toReasonOptions(isRestore
+            ? ["MANUAL_RESTORE", "REPORT_POLICY", "POLICY", "OTHER"]
+            : ["SPAM", "ABUSE", "OFF_TOPIC", "POLICY", "DUPLICATE", "REPORT_POLICY", "OTHER"]),
+        submit: async (reasonPayload) => {
+            await apiRequest(`/admin/api/${isPost ? "posts" : "comments"}/${item.targetId}/${mode}`, {
+                method: "POST",
+                body: JSON.stringify(reasonPayload)
+            });
+            await loadReports();
+            await refreshDashboardSilently();
+            return `${what}이 ${isRestore ? "복구" : "숨김 처리"}되었습니다.`;
+        }
+    });
+}
+
+/** 신고된 글의 작성자를 신고 목록에서 바로 정지시키거나 푼다. */
+function openReportAuthorModal(item) {
+    if (!item || !item.targetAuthorId) {
+        return;
+    }
+    const nextStatus = item.targetAuthorSuspended ? "ACTIVE" : "SUSPENDED";
+
+    openActionModal({
+        title: "작성자 계정 상태 변경",
+        summary: `${item.targetAuthorName} 사용자를 ${labelForAccountStatus(nextStatus)} 상태로 변경합니다.`,
+        confirmText: item.targetAuthorSuspended ? "정지 해제" : "계정 정지",
+        reasonOptions: toReasonOptions(nextStatus === "SUSPENDED"
+            ? ["SUSPENSION_POLICY", "SPAM", "ABUSE", "POLICY", "REPORT_POLICY", "OTHER"]
+            : ["MANUAL_RESTORE", "SUSPENSION_POLICY", "REPORT_POLICY", "OTHER"]),
+        getExtraPayload: () => ({ accountStatus: nextStatus }),
+        submit: async (reasonPayload) => {
+            const response = await apiRequest(`/admin/api/users/${item.targetAuthorId}/account-status`, {
+                method: "PATCH",
+                body: JSON.stringify(reasonPayload)
+            });
+            await loadReports();
+            await refreshDashboardSilently();
+            return `계정 상태가 ${labelForAccountStatus(response.accountStatus)}로 변경되었습니다.`;
+        }
     });
 }
 
@@ -922,6 +1283,10 @@ async function loadLogs() {
 }
 
 function renderSnapshotDetails(label, snapshotJson) {
+    // 남긴 스냅샷이 없는 조치도 있다. 그때 펼침 버튼을 그려 두면 눌러야 빈 것을 알게 된다.
+    if (!snapshotJson) {
+        return "";
+    }
     return `
         <details>
             <summary>${escapeHtml(label)}</summary>

@@ -1,5 +1,6 @@
 package com.example.demo.admin.controller;
 
+import com.example.demo.user.util.SecurityUtil;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,6 +53,8 @@ public class AdminPageController {
     private String adminPage(Model model, String activePage, String pageTitle) {
         model.addAttribute("activePage", activePage);
         model.addAttribute("pageTitle", pageTitle);
+        // 사용자 목록에서 자기 자신에게 정지 버튼을 내지 않으려고 쓴다.
+        model.addAttribute("currentUserId", SecurityUtil.getCurrentUserId());
         return "admin/index";
     }
 }

@@ -86,6 +86,24 @@ public class AdminApiController {
         return adminService.updateUserAccountStatus(SecurityUtil.getCurrentUserId(), id, request);
     }
 
+    /**
+     * 처리 대기 큐. 밀린 신고와 사업자 신청을 한 번에 준다.
+     *
+     * <p>대시보드 API 는 카운트 여섯 개에 최근 목록 다섯 벌까지 만든다.
+     * 사이드바 배지 두 개를 얻으려고 매 화면에서 그걸 돌리는 건 낭비라
+     * 필요한 것만 담은 가벼운 응답을 따로 둔다.
+     */
+    @GetMapping("/work-queue")
+    public Map<String, Object> workQueue() {
+        List<OwnerRequest> pendingOwners = ownerRequestService.findPendingRequests();
+        Map<String, Object> body = new HashMap<>();
+        body.put("openReportCount", adminService.countOpenReports());
+        body.put("pendingOwnerCount", pendingOwners.size());
+        body.put("reports", adminService.getOpenReports());
+        body.put("ownerApplications", pendingOwners.stream().limit(8).map(this::toOwnerRequestItem).toList());
+        return body;
+    }
+
     @GetMapping("/owner-applications/pending")
     public List<Map<String, Object>> pendingOwnerRequests() {
         return ownerRequestService.findPendingRequests().stream()

@@ -236,6 +236,15 @@ public class AdminDto {
         private LocalDateTime reviewedAt;
         private LocalDateTime createdAt;
         private long openCountForTarget;
+        /**
+         * 신고 대상(글·댓글)의 작성자와 현재 상태.
+         * 신고 목록에서 화면을 옮기지 않고 바로 조치하려면 이 값들이 필요하다.
+         */
+        private Long targetAuthorId;
+        private String targetAuthorName;
+        private boolean targetAuthorSuspended;
+        /** 대상이 이미 숨겨져 있는지. 버튼을 숨김/복구 중 무엇으로 보일지 정한다. */
+        private boolean targetHidden;
     }
 
     @Getter
