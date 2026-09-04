@@ -11,39 +11,47 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Sora:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin/admin.css}">
 </head>
-<body th:attr="data-page=${activePage}">
+<body th:attr="data-page=${activePage},data-current-user-id=${currentUserId}">
 <div class="admin-shell">
     <aside class="admin-sidebar">
         <a class="brand-link" th:href="@{/admin}">
             <div class="brand-mark">Korea<span>Point</span></div>
-            <div class="brand-copy">운영 데이터를 빠르게 확인하고 커뮤니티 상태를 한 화면에서 관리하는 관리자 콘솔입니다.</div>
+            <div class="brand-copy">운영 콘솔</div>
         </a>
 
         <nav class="admin-nav" aria-label="관리자 메뉴">
             <a class="nav-link" th:classappend="${activePage == 'dashboard'} ? ' active'" th:href="@{/admin}">
-                <strong>대시보드</strong>
-                <span>운영 지표 요약</span>
+                <strong>오늘 할 일</strong>
+                <span>밀린 처리와 운영 요약</span>
             </a>
-            <a class="nav-link" th:classappend="${activePage == 'users'} ? ' active'" th:href="@{/admin/users}">
-                <strong>사용자 관리</strong>
-                <span>권한, 상태, 포인트 조정</span>
+
+            <!-- 처리함: 관리자가 실제로 "해야 하는" 일. 밀린 건수를 배지로 보여 준다 -->
+            <p class="nav-group">처리함</p>
+            <a class="nav-link" th:classappend="${activePage == 'reports'} ? ' active'" th:href="@{/admin/reports}">
+                <strong>신고 처리<span class="nav-badge" id="navReportsBadge" hidden>0</span></strong>
+                <span>숨김과 정지까지 한 자리에서</span>
             </a>
             <a class="nav-link" th:classappend="${activePage == 'ownerApplications'} ? ' active'" th:href="@{/admin/owner-applications}">
-                <strong>사업자 신청 관리</strong>
+                <strong>사업자 신청<span class="nav-badge is-warn" id="navOwnerBadge" hidden>0</span></strong>
                 <span>입점 서류 승인, 반려</span>
             </a>
+
+            <!-- 찾아보기: 밀린 일이 아니라 필요할 때 검색해서 들르는 곳 -->
+            <p class="nav-group">찾아보기</p>
+            <a class="nav-link" th:classappend="${activePage == 'users'} ? ' active'" th:href="@{/admin/users}">
+                <strong>사용자</strong>
+                <span>권한, 상태, 포인트 조정</span>
+            </a>
             <a class="nav-link" th:classappend="${activePage == 'posts'} ? ' active'" th:href="@{/admin/posts}">
-                <strong>게시글 관리</strong>
+                <strong>게시글</strong>
                 <span>숨김, 복구, 영구 삭제</span>
             </a>
             <a class="nav-link" th:classappend="${activePage == 'comments'} ? ' active'" th:href="@{/admin/comments}">
-                <strong>댓글 관리</strong>
+                <strong>댓글</strong>
                 <span>트리 규칙 기반 운영</span>
             </a>
-            <a class="nav-link" th:classappend="${activePage == 'reports'} ? ' active'" th:href="@{/admin/reports}">
-                <strong>신고 관리</strong>
-                <span>게시글과 댓글 신고 처리</span>
-            </a>
+
+            <p class="nav-group">기록</p>
             <a class="nav-link" th:classappend="${activePage == 'logs'} ? ' active'" th:href="@{/admin/logs}">
                 <strong>작업 로그</strong>
                 <span>관리자 조치 이력 조회</span>
@@ -52,17 +60,15 @@
 
         <div class="admin-note">
             <strong>운영 메모</strong>
-            <p>모든 관리자 조치는 사유 코드와 메모를 함께 남깁니다. 숨김, 복구, 권한 변경, 포인트 조정, 신고 처리 이력이 동일한 로그 화면에서 조회됩니다.</p>
+            <p>숨김·복구·권한 변경·포인트 조정·신고 처리가 모두 작업 로그 한 곳에 남습니다.</p>
         </div>
     </aside>
 
     <main class="admin-main">
+        <!-- 화면 제목은 아래 각 패널의 h2 가 갖는다. 여기서 또 크게 띄우면
+             같은 제목이 두 번 나오고 세로 공간만 먹는다. 상단바는 이동·로그아웃만 맡는다 -->
         <header class="admin-topbar">
-            <div>
-                <p class="topbar-eyebrow">Operations Console</p>
-                <h1 class="topbar-title" th:text="${pageTitle}">관리자 대시보드</h1>
-                <p class="topbar-copy">KoreaPoint 운영 데이터를 확인하고 필요한 변경은 확인 모달을 통해 안전하게 적용합니다.</p>
-            </div>
+            <div class="topbar-crumb" th:text="${pageTitle}">관리자 대시보드</div>
             <div class="topbar-actions">
                 <a class="action-link" th:href="@{/ko}" href="/">서비스 보기</a>
                 <form th:action="@{/logout}" method="post">
@@ -77,73 +83,44 @@
         <section id="dashboardPanel" class="page-panel">
             <div class="section-head">
                 <div>
-                    <h2>운영 요약</h2>
-                    <p>핵심 운영 수치와 최근 활동을 빠르게 확인합니다.</p>
+                    <h2>오늘 할 일</h2>
+                    <p>밀린 처리를 먼저 보여 주고, 운영 규모와 최근 활동이 뒤따릅니다.</p>
                 </div>
                 <button type="button" class="primary-button" id="refreshDashboardButton">새로고침</button>
             </div>
 
-            <div class="summary-grid">
-                <article class="summary-card">
-                    <div class="summary-label">전체 사용자</div>
-                    <div class="summary-value" id="summaryUsers">-</div>
-                </article>
-                <article class="summary-card">
-                    <div class="summary-label">관리자 계정</div>
-                    <div class="summary-value" id="summaryAdmins">-</div>
-                </article>
-                <article class="summary-card">
-                    <div class="summary-label">활성 게시글</div>
-                    <div class="summary-value" id="summaryPosts">-</div>
-                </article>
-                <article class="summary-card">
-                    <div class="summary-label">활성 댓글</div>
-                    <div class="summary-value" id="summaryComments">-</div>
-                </article>
-                <article class="summary-card">
-                    <div class="summary-label">정지 사용자</div>
-                    <div class="summary-value" id="summarySuspended">-</div>
-                </article>
-                <article class="summary-card">
-                    <div class="summary-label">열린 신고</div>
-                    <div class="summary-value" id="summaryReports">-</div>
-                </article>
-                <article class="summary-card">
-                    <div class="summary-label">최근 7일 숨김</div>
-                    <div class="summary-value" id="summaryHide7d">-</div>
-                </article>
-                <article class="summary-card">
-                    <div class="summary-label">최근 7일 복구</div>
-                    <div class="summary-value" id="summaryRestore7d">-</div>
-                </article>
+            <!-- 밀린 일을 숫자가 아니라 목록으로 둔다. 숫자를 보고 눌러 들어가게 하면
+                 결국 한 단계를 더 거치게 된다. 조치 버튼도 이 자리에 있다 -->
+            <div class="queue">
+                <div class="queue-head">
+                    <h3>처리 대기 <span class="queue-count" id="queueTotal">-</span></h3>
+                    <p>오래 기다린 것부터입니다.</p>
+                </div>
+                <div id="workQueue"></div>
             </div>
 
-            <div class="dashboard-grid four">
-                <article class="dashboard-card">
-                    <h3>최근 가입 사용자</h3>
-                    <div id="dashboardUsers" class="activity-list"></div>
-                </article>
-                <article class="dashboard-card">
-                    <h3>최근 게시글</h3>
-                    <div id="dashboardPosts" class="activity-list"></div>
-                </article>
-                <article class="dashboard-card">
-                    <h3>최근 댓글</h3>
-                    <div id="dashboardComments" class="activity-list"></div>
-                </article>
-                <article class="dashboard-card">
-                    <div class="section-inline">
-                        <h3>최근 신고</h3>
-                        <a class="text-link" th:href="@{/admin/reports}">전체 보기</a>
-                    </div>
-                    <div id="dashboardReports" class="activity-list"></div>
-                </article>
+            <!-- 운영 규모. 행동할 일이 아니라 배경 정보라 한 줄로 눌러 둔다 -->
+            <div class="scale-strip">
+                <div class="scale-item"><span>사용자</span><strong id="summaryUsers">-</strong></div>
+                <div class="scale-item"><span>관리자</span><strong id="summaryAdmins">-</strong></div>
+                <div class="scale-item"><span>게시글</span><strong id="summaryPosts">-</strong></div>
+                <div class="scale-item"><span>댓글</span><strong id="summaryComments">-</strong></div>
+                <div class="scale-item"><span>정지 사용자</span><strong id="summarySuspended">-</strong></div>
+                <div class="scale-item"><span>7일 숨김</span><strong id="summaryHide7d">-</strong></div>
+                <div class="scale-item"><span>7일 복구</span><strong id="summaryRestore7d">-</strong></div>
+            </div>
+
+            <div class="dashboard-grid two">
                 <article class="dashboard-card">
                     <div class="section-inline">
                         <h3>최근 작업 로그</h3>
                         <a class="text-link" th:href="@{/admin/logs}">전체 보기</a>
                     </div>
                     <div id="dashboardLogs" class="activity-list"></div>
+                </article>
+                <article class="dashboard-card">
+                    <h3>최근 가입 사용자</h3>
+                    <div id="dashboardUsers" class="activity-list"></div>
                 </article>
             </div>
         </section>
@@ -381,8 +358,8 @@
         <section id="reportsPanel" class="page-panel">
             <div class="section-head">
                 <div>
-                    <h2>신고 관리</h2>
-                    <p>게시글과 댓글 신고를 조회하고 검토, 해결, 반려 상태로 처리합니다.</p>
+                    <h2>신고 처리</h2>
+                    <p>글 숨김과 작성자 정지까지 이 화면에서 끝냅니다. 다른 탭으로 옮길 필요가 없습니다.</p>
                 </div>
             </div>
 

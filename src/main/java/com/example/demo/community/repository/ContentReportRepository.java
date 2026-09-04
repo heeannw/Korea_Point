@@ -26,6 +26,9 @@ public interface ContentReportRepository extends JpaRepository<ContentReport, Lo
 
     long countByStatusIn(Collection<ContentReportStatus> statuses);
 
+    /** 처리 대기 큐용. 오래 기다린 것부터 보여 준다. */
+    List<ContentReport> findTop8ByStatusInOrderByCreatedAtAsc(Collection<ContentReportStatus> statuses);
+
     long countByTargetTypeAndTargetIdAndStatusIn(ReportTargetType targetType,
                                                  Long targetId,
                                                  Collection<ContentReportStatus> statuses);

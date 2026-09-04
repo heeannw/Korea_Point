@@ -161,6 +161,17 @@ public class AdminService {
         String reasonDetail = validateActionRequest(request);
         User target = getUser(targetUserId);
 
+        // 자기 계정을 정지시키면 그 길로 로그아웃되고 다시 들어올 수 없다.
+        // 권한 변경에는 같은 방어가 있는데 정지에만 빠져 있었다.
+        if (request.getAccountStatus() == AccountStatus.SUSPENDED) {
+            if (Objects.equals(adminId, targetUserId)) {
+                throw new IllegalStateException("본인 계정은 정지할 수 없습니다.");
+            }
+            if ("ADMIN".equals(target.getRole()) && userRepository.countByRole("ADMIN") <= 1) {
+                throw new IllegalStateException("마지막 ADMIN 계정은 정지할 수 없습니다.");
+            }
+        }
+
         Map<String, Object> beforeSnapshot = snapshotUser(target);
         target.setAccountStatus(request.getAccountStatus());
         AdminActionType actionType = request.getAccountStatus() == AccountStatus.SUSPENDED
@@ -381,6 +392,22 @@ public class AdminService {
         return categoryRepository.findAllByOrderBySortOrderAsc().stream().map(this::toPostCategoryOption).toList();
     }
 
+
+    /**
+     * 아직 처리하지 않은 신고. 오래 기다린 것부터다.
+     *
+     * <p>대시보드에서 "최근 신고"를 보여 주는 것과 다르다. 최근 순으로 보여 주면
+     * 이미 처리한 건이 위에 오고 밀린 건이 뒤로 밀린다. 큐는 밀린 순서여야 한다.
+     */
+    @Transactional(readOnly = true)
+    public List<AdminDto.ReportItem> getOpenReports() {
+        return toReportItems(contentReportRepository.findTop8ByStatusInOrderByCreatedAtAsc(OPEN_REPORT_STATUSES));
+    }
+
+    @Transactional(readOnly = true)
+    public long countOpenReports() {
+        return contentReportRepository.countByStatusIn(OPEN_REPORT_STATUSES);
+    }
 
     @Transactional(readOnly = true)
     public AdminDto.PageResponse<AdminDto.ReportItem> getReports(int page, int size, Long reporterUserId,
@@ -649,17 +676,27 @@ public class AdminService {
             return List.of();
         }
 
+        // 대상을 먼저 훑어야 작성자 ID를 알 수 있고, 그래야 사용자 조회를 한 번에 끝낸다.
+        ReportTargetCache targetCache = resolveReportTargetCache(reports);
+
         Set<Long> userIds = new LinkedHashSet<>();
         reports.stream().map(ContentReport::getReporterUserId).filter(Objects::nonNull).forEach(userIds::add);
         reports.stream().map(ContentReport::getReviewedByAdminId).filter(Objects::nonNull).forEach(userIds::add);
+        userIds.addAll(targetCache.authorIds.values());
 
-        Map<Long, String> userNames = resolveUserNames(userIds);
-        ReportTargetCache targetCache = resolveReportTargetCache(reports);
+        Map<Long, User> users = resolveUsers(userIds);
+        Map<Long, String> userNames = new HashMap<>();
+        users.forEach((id, user) -> userNames.put(id, user.getName()));
         Map<String, String> targetSummaries = targetCache.summaries;
         Map<Long, Long> commentPostIds = targetCache.commentPostIds;
         Map<String, Long> openCountCache = resolveOpenCountCache(reports);
 
-        return reports.stream().map(report -> AdminDto.ReportItem.builder()
+        return reports.stream().map(report -> {
+            String key = reportKey(report.getTargetType(), report.getTargetId());
+            Long authorId = targetCache.authorIds.get(key);
+            User author = authorId == null ? null : users.get(authorId);
+
+            return AdminDto.ReportItem.builder()
                 .id(report.getId())
                 .reporterUserId(report.getReporterUserId())
                 .reporterUserName(userNames.getOrDefault(report.getReporterUserId(), "알 수 없음 #" + report.getReporterUserId()))
@@ -679,9 +716,23 @@ public class AdminService {
                         : null)
                 .reviewedAt(report.getReviewedAt())
                 .createdAt(report.getCreatedAt())
-                .openCountForTarget(openCountCache.getOrDefault(
-                        reportKey(report.getTargetType(), report.getTargetId()), 0L))
-                .build()).toList();
+                .openCountForTarget(openCountCache.getOrDefault(key, 0L))
+                .targetAuthorId(authorId)
+                .targetAuthorName(author != null ? author.getName() : null)
+                .targetAuthorSuspended(author != null && author.getAccountStatus() == AccountStatus.SUSPENDED)
+                .targetHidden(Boolean.TRUE.equals(targetCache.hidden.get(key)))
+                .build();
+        }).toList();
+    }
+
+    /** 이름만이 아니라 계정 상태까지 봐야 하는 자리에서 쓴다. */
+    private Map<Long, User> resolveUsers(Collection<Long> userIds) {
+        Map<Long, User> users = new HashMap<>();
+        if (userIds.isEmpty()) {
+            return users;
+        }
+        userRepository.findAllById(userIds).forEach(user -> users.put(user.getId(), user));
+        return users;
     }
 
     private Map<Long, String> resolveUserNames(Collection<Long> userIds) {
@@ -696,6 +747,10 @@ public class AdminService {
     private static class ReportTargetCache {
         final Map<String, String> summaries = new HashMap<>();
         final Map<Long, Long> commentPostIds = new HashMap<>();
+        /** 신고 대상의 작성자. 신고 행에서 바로 정지시키려면 필요하다. */
+        final Map<String, Long> authorIds = new HashMap<>();
+        /** 이미 숨겨진 대상인지. 버튼을 숨김으로 낼지 복구로 낼지 정한다. */
+        final Map<String, Boolean> hidden = new HashMap<>();
     }
 
     private ReportTargetCache resolveReportTargetCache(List<ContentReport> reports) {
@@ -710,15 +765,26 @@ public class AdminService {
 
         ReportTargetCache cache = new ReportTargetCache();
         if (!postIds.isEmpty()) {
-            postRepository.findAllById(postIds)
-                    .forEach(post -> cache.summaries.put(reportKey(ReportTargetType.POST, post.getId()), post.getTitle()));
+            postRepository.findAllById(postIds).forEach(post -> {
+                String key = reportKey(ReportTargetType.POST, post.getId());
+                cache.summaries.put(key, post.getTitle());
+                if (post.getUser() != null) {
+                    cache.authorIds.put(key, post.getUser().getId());
+                }
+                cache.hidden.put(key, post.getDeletedAt() != null);
+            });
         }
         if (!commentIds.isEmpty()) {
             commentRepository.findAllById(commentIds).forEach(comment -> {
-                cache.summaries.put(reportKey(ReportTargetType.COMMENT, comment.getId()), buildPreview(comment.getContent()));
+                String key = reportKey(ReportTargetType.COMMENT, comment.getId());
+                cache.summaries.put(key, buildPreview(comment.getContent()));
                 if (comment.getPost() != null) {
                     cache.commentPostIds.put(comment.getId(), comment.getPost().getId());
                 }
+                if (comment.getUser() != null) {
+                    cache.authorIds.put(key, comment.getUser().getId());
+                }
+                cache.hidden.put(key, comment.getDeletedAt() != null);
             });
         }
         return cache;
