@@ -1,5 +1,6 @@
 package com.example.demo.community.service;
 
+import com.example.demo.community.config.CommunityProperties;
 import com.example.demo.community.dto.PostDto;
 import com.example.demo.community.entity.Category;
 import com.example.demo.community.entity.Post;
@@ -28,7 +29,16 @@ public class PostService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final TranslationService translationService;
+    private final CommunityProperties communityProperties;
 
+    /** 홍보 글 1건 게시 비용. */
+    private static final int PROMO_COST = 500;
+
+    /*
+     * 전체 목록에는 홍보 글도 함께 나온다.
+     * 홍보 글은 500P 를 내고 올리는 유료 글이라 목록에서 빼면 산 것이 사라진다.
+     * (오른쪽 레일은 1400px 미만에서 숨으므로 레일만으로는 노출을 보장하지 못한다.)
+     */
     @Transactional(readOnly = true)
     public Page<PostDto> getPosts(Pageable pageable) {
         return postRepository.findByDeletedAtIsNull(pageable).map(this::toDto);
@@ -73,9 +83,12 @@ public class PostService {
                 .map(this::toDto);
     }
 
+    /** 인기 글. 여기에도 홍보 글이 오르면 목록 맨 위가 광고가 된다. */
     @Transactional(readOnly = true)
     public List<PostDto> getTrendingPosts() {
-        return postRepository.findTop5ByDeletedAtIsNullOrderByViewCountDesc()
+        return postRepository
+                .findTrendingExcludingCategory(communityProperties.getPromoCategoryId(),
+                        org.springframework.data.domain.PageRequest.of(0, 5))
                 .stream()
                 .map(this::toDto)
                 .toList();
@@ -121,16 +134,24 @@ public class PostService {
                 .placeTitle(blankToNull(req.getPlaceTitle()))
                 .build();
 
-        Post saved = postRepository.save(post);
-
-        if ("홍보".equals(category.getName())) {
+        // 홍보 글은 저장 전에 자격과 포인트를 확인한다. 통과해야 노출 기간을 붙여 저장한다.
+        boolean promo = communityProperties.getPromoCategoryId() == category.getId();
+        if (promo) {
             if (!"OWNER".equals(user.getRole())) {
                 throw new IllegalStateException("홍보 글은 사업자 회원만 작성할 수 있습니다.");
             }
-            if (user.getPoint() < 500) {
-                throw new IllegalStateException("포인트가 부족합니다. (필요: 500P, 보유: " + user.getPoint() + "P)");
+            if (user.getPoint() < PROMO_COST) {
+                throw new IllegalStateException(
+                        "포인트가 부족합니다. (필요: " + PROMO_COST + "P, 보유: " + user.getPoint() + "P)");
             }
-            userRepository.updatePoint(userId, -500);
+            // 500P 로 사는 것은 '사이드바 7일 노출'이다. 기간이 지나면 레일에서만 내려온다.
+            post.setPromoUntil(LocalDateTime.now().plusDays(communityProperties.getPromoExposureDays()));
+        }
+
+        Post saved = postRepository.save(post);
+
+        if (promo) {
+            userRepository.updatePoint(userId, -PROMO_COST);
         }
 
         translationService.translatePostAsync(saved.getId(), req.getTitle(), req.getContent());
@@ -154,6 +175,38 @@ public class PostService {
         post.setDeletedAt(LocalDateTime.now());
     }
 
+    /**
+     * 본문에서 첫 이미지 주소를 꺼낸다. 목록 썸네일로 쓴다.
+     *
+     * <p>글 목록이 글자만 나열되면 게시판처럼 보인다. 사진이 한 장이라도 있으면
+     * 목록이 훨씬 읽힌다. 본문은 에디터가 만든 HTML 이라 첫 img 태그를 찾으면 된다.
+     * 이미지가 없는 글도 많으므로 없으면 null 이고, 화면은 글자만으로도 서야 한다.
+     */
+    private String firstImageUrl(String html) {
+        if (html == null || html.isBlank()) {
+            return null;
+        }
+        java.util.regex.Matcher m = FIRST_IMAGE.matcher(html);
+        if (!m.find()) {
+            return null;
+        }
+        String src = m.group(1).trim();
+        // data: 로 박힌 이미지는 목록에 싣기엔 너무 무겁다. 그런 글은 글자만 보여 준다.
+        return src.startsWith("data:") ? null : src;
+    }
+
+    private static final java.util.regex.Pattern FIRST_IMAGE =
+            java.util.regex.Pattern.compile("<img[^>]+src\\s*=\\s*[\"']([^\"']+)[\"']",
+                    java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    /**
+     * 목록용 DTO 변환. 사이드바 등 다른 화면도 목록과 같은 표현을 써야 해서 공개한다.
+     * (제목 다국어·썸네일 추출 규칙이 화면마다 갈리면 안 된다.)
+     */
+    public PostDto toListDto(Post post) {
+        return toDto(post);
+    }
+
     private PostDto toDto(Post post) {
         return PostDto.builder()
                 .postId(post.getId())
@@ -165,6 +218,7 @@ public class PostService {
                 .title(post.getTitle())
                 .content(post.getContent())
                 .contentPreview(buildPreview(post.getContent()))
+                .thumbnailUrl(firstImageUrl(post.getContent()))
                 .titleEn(post.getTitleEn())
                 .contentEn(post.getContentEn())
                 .contentEnPreview(post.getContentEn() != null ? buildPreview(post.getContentEn()) : null)
