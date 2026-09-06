@@ -47,6 +47,35 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @EntityGraph(attributePaths = {"user", "category"})
     List<Post> findTop5ByDeletedAtIsNullOrderByViewCountDesc();
 
+    /*
+     * 인기 글에서만 홍보 카테고리를 뺀다. 조회수 높은 광고가 '인기' 자리를 차지하면
+     * 그건 인기 글이 아니라 광고 배너다. (전체 목록에는 홍보 글도 그대로 나온다.)
+     *
+     * 카테고리가 없는 글도 있을 수 있어 category.id <> :x 만으로는 그런 글까지 사라진다
+     * — SQL 에서 NULL <> 5 는 참이 아니다. IS NULL 을 따로 살려 둔다.
+     */
+    @EntityGraph(attributePaths = {"user", "category"})
+    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL "
+            + "AND (p.category IS NULL OR p.category.id <> :excludedCategoryId) "
+            + "ORDER BY p.viewCount DESC")
+    List<Post> findTrendingExcludingCategory(@Param("excludedCategoryId") Long excludedCategoryId,
+                                             Pageable pageable);
+
+    /**
+     * 아직 노출 기간이 남은 홍보 글.
+     *
+     * <p>무작위로 뽑을 것이라 정렬은 의미가 없다. 후보만 가져와 자바에서 섞는다.
+     * DB 의 random() 을 쓰면 특정 DB 에 묶이고, 후보가 수십 건 수준이라 그럴 이유가 없다.
+     */
+    @EntityGraph(attributePaths = {"user", "category"})
+    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL "
+            + "AND p.category.id = :categoryId "
+            + "AND p.promoUntil IS NOT NULL AND p.promoUntil > :now")
+    List<Post> findActivePromoPosts(@Param("categoryId") Long categoryId,
+                                    @Param("now") LocalDateTime now,
+                                    Pageable pageable);
+
+
     @EntityGraph(attributePaths = {"user", "category"})
     List<Post> findTop5ByDeletedAtIsNullOrderByCreatedAtDesc();
 

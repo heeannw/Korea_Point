@@ -61,6 +61,7 @@ public class AdminService {
             ContentReportStatus.REVIEWING
     );
 
+    private final com.example.demo.community.config.CommunityProperties communityProperties;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
@@ -224,6 +225,52 @@ public class AdminService {
         }
         AdminActionLog actionLog = saveActionLog(adminId, AdminTargetType.POST, post.getId(), AdminActionType.POST_RESTORE,
                 request.getReasonCode(), reasonDetail, beforeSnapshot, snapshotPost(post));
+        return toPostActionResponse(post, actionLog.getId());
+    }
+
+    /**
+     * 홍보 글을 광고 자리에서 내린다.
+     *
+     * <p>글을 지우는 것과 다르다. 노출 기간만 지금으로 끝내서 오른쪽 레일에서 빠지고,
+     * 글 자체는 목록과 홍보 탭에 그대로 남는다. 광고 내용이 부적절하지만 글까지
+     * 지울 정도는 아닐 때 쓰는 중간 조치다.
+     *
+     * <p>500P 를 받고 판 자리라 환불 판단이 따라온다. 규칙 위반이면 환불하지 않고,
+     * 우리 쪽 문제면 환불한다. 자동으로 정할 수 없어 관리자가 고르게 하고,
+     * 고른 결과는 활동 로그에 남긴다.
+     */
+    @Transactional
+    public AdminDto.PostActionResponse takeDownPromo(Long adminId, Long postId,
+                                                     AdminDto.PromoTakedownRequest request) {
+        String reasonDetail = validateActionRequest(request);
+        Post post = getAdminPost(postId);
+
+        if (post.getPromoUntil() == null || !post.getPromoUntil().isAfter(LocalDateTime.now())) {
+            throw new AdminRequestException("이미 광고 노출이 끝난 글입니다.",
+                    Map.of("promoUntil", "노출 중인 홍보 글만 내릴 수 있습니다."));
+        }
+
+        Map<String, Object> beforeSnapshot = snapshotPost(post);
+        post.setPromoUntil(LocalDateTime.now());
+
+        Long authorId = post.getUser() != null ? post.getUser().getId() : null;
+        int refunded = 0;
+        if (request.isRefund()) {
+            if (authorId == null) {
+                throw new AdminRequestException("환불할 수 없습니다.",
+                        Map.of("refund", "작성자가 없는 글은 환불할 수 없습니다."));
+            }
+            refunded = communityProperties.getPromoCost();
+            userRepository.updatePoint(authorId, refunded);
+        }
+
+        // 무엇을 왜 했는지가 로그만 봐도 드러나야 한다. 환불 여부는 나중에 분쟁이 나는 지점이다.
+        Map<String, Object> afterSnapshot = snapshotPost(post);
+        afterSnapshot.put("refunded", refunded);
+
+        AdminActionLog actionLog = saveActionLog(adminId, AdminTargetType.POST, post.getId(),
+                AdminActionType.PROMO_TAKEDOWN, request.getReasonCode(), reasonDetail,
+                beforeSnapshot, afterSnapshot);
         return toPostActionResponse(post, actionLog.getId());
     }
 
@@ -833,6 +880,10 @@ public class AdminService {
                 .createdAt(post.getCreatedAt())
                 .deletedAt(post.getDeletedAt())
                 .purgeEligible(isPurgeEligible(post.getDeletedAt()))
+                .promoActive(post.getPromoUntil() != null
+                        && post.getPromoUntil().isAfter(LocalDateTime.now()))
+                .promoUntil(post.getPromoUntil())
+                .promoRefundAmount(communityProperties.getPromoCost())
                 .build();
     }
 
@@ -931,6 +982,7 @@ public class AdminService {
         snapshot.put("status", post.getDeletedAt() == null ? "active" : "deleted");
         snapshot.put("deletedAt", post.getDeletedAt());
         snapshot.put("purgeEligible", isPurgeEligible(post.getDeletedAt()));
+        snapshot.put("promoUntil", post.getPromoUntil());
         return snapshot;
     }
 

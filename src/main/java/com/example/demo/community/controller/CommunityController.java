@@ -1,6 +1,7 @@
 package com.example.demo.community.controller;
 
 import com.example.demo.community.dto.PostDto;
+import com.example.demo.community.service.CommunitySidebarService;
 import com.example.demo.community.service.CommentService;
 import com.example.demo.community.service.CommunityService;
 import com.example.demo.community.service.PostService;
@@ -30,6 +31,8 @@ public class CommunityController {
     private final PostService postService;
     private final CommentService commentService;
     private final UserService userService;
+    // 목록 오른쪽 레일(가게 홍보 · 축제). 커뮤니티 화면 전용이라 별도 서비스로 뺐다.
+    private final CommunitySidebarService sidebarService;
 
     @GetMapping("/post-list")
     public String getPosts(@RequestParam(required = false) Long categoryId,
@@ -63,6 +66,9 @@ public class CommunityController {
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         model.addAttribute("communitySuspended", isCommunitySuspended());
+        // 레일. 비어 있으면 화면에서 그 칸이 통째로 사라진다(축제는 TourAPI 가 죽어도 목록을 막지 않는다).
+        model.addAttribute("promoPosts", sidebarService.promoPosts());
+        model.addAttribute("festivals", sidebarService.festivals(org.springframework.context.i18n.LocaleContextHolder.getLocale().getLanguage()));
         return "community/post-list";
     }
 

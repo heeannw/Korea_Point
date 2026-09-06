@@ -78,6 +78,14 @@ public class Post {
     @Builder.Default
     private int commentCount = 0;
 
+    /**
+     * 홍보 글의 사이드바 노출 만료 시각. 홍보가 아닌 글은 null 이다.
+     *
+     * <p>500P 를 받고 파는 것이 '7일 노출'이라는 걸 데이터로 못박는다.
+     * 이 시각이 지나면 오른쪽 레일에서만 내려오고, 목록과 홍보 탭에는 그대로 남는다.
+     */
+    private LocalDateTime promoUntil;
+
     // 생성일
     @Column(nullable = false)
     private LocalDateTime createdAt;
