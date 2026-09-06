@@ -1052,3 +1052,7 @@ tbody tr:last-child td { border-bottom: none; }
     .modal-card { padding: 18px; }
     .modal-actions { flex-direction: column-reverse; }
 }
+
+/* 모달 안 체크박스 한 줄. 라벨과 상자가 같은 줄에서 가운데로 맞아야 읽힌다. */
+.checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+.checkbox-row input { width: 14px; height: 14px; margin: 0; cursor: pointer; }

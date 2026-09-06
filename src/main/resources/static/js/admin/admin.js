@@ -911,12 +911,16 @@ async function loadPosts() {
                 <td>
                     <span class="badge ${item.deletedAt ? "deleted" : "active"}">${item.deletedAt ? "숨김" : "활성"}</span>
                     ${item.purgeEligible ? `<span class="badge danger" style="margin-top:4px;">영구삭제 가능</span>` : ""}
+                    ${item.promoActive ? `<span class="badge owner" style="margin-top:4px;" title="${formatDate(item.promoUntil)}까지 사이드바 노출">광고 노출중</span>` : ""}
                 </td>
                 <td class="muted">조회 ${numberFormat(item.viewCount)} / 댓글 ${numberFormat(item.commentCount)}</td>
                 <td>
                     ${withMoreMenu(
                         `<button type="button" class="${item.deletedAt ? "primary-button" : "danger-button"}" data-post-action="${item.id}" data-post-mode="${item.deletedAt ? "restore" : "hide"}" data-post-title="${escapeHtml(item.title)}">${item.deletedAt ? "복구" : "숨김"}</button>`,
-                        [item.deletedAt && item.purgeEligible ? `<button type="button" class="danger-button" data-post-purge="${item.id}" data-post-title="${escapeHtml(item.title)}">영구 삭제</button>` : ""]
+                        [
+                            item.promoActive ? `<button type="button" data-promo-takedown="${item.id}" data-post-title="${escapeHtml(item.title)}" data-promo-until="${item.promoUntil || ""}" data-promo-refund="${item.promoRefundAmount || 0}">광고 내리기</button>` : "",
+                            item.deletedAt && item.purgeEligible ? `<button type="button" class="danger-button" data-post-purge="${item.id}" data-post-title="${escapeHtml(item.title)}">영구 삭제</button>` : ""
+                        ]
                     )}
                 </td>
             </tr>
@@ -928,6 +932,14 @@ async function loadPosts() {
     });
     body.querySelectorAll("[data-post-purge]").forEach((button) => {
         button.addEventListener("click", () => openPostPurgeModal(button.dataset.postPurge, button.dataset.postTitle));
+    });
+    body.querySelectorAll("[data-promo-takedown]").forEach((button) => {
+        button.addEventListener("click", () => openPromoTakedownModal(
+            button.dataset.promoTakedown,
+            button.dataset.postTitle,
+            button.dataset.promoUntil,
+            Number(button.dataset.promoRefund || 0)
+        ));
     });
 
     renderPagination("postsPagination", data, (page) => {
@@ -953,6 +965,44 @@ function openPostActionModal(postId, mode, title) {
             await loadPosts();
             await refreshDashboardSilently();
             return isRestore ? "게시글이 복구되었습니다." : "게시글이 숨김 처리되었습니다.";
+        }
+    });
+}
+
+/**
+ * 홍보 글을 광고 자리에서 내린다.
+ *
+ * 글을 지우는 것과 다르다 — 노출 기간만 지금으로 끝내서 사이드바에서 빠지고,
+ * 글은 목록과 홍보 탭에 그대로 남는다.
+ *
+ * 환불은 자동으로 정하지 않는다. 규칙 위반이면 돌려주지 않고, 우리 쪽 문제면
+ * 돌려주는 게 맞는데 그 판단은 사람이 해야 한다. 고른 결과는 활동 로그에 남는다.
+ */
+function openPromoTakedownModal(postId, title, promoUntil, refundAmount) {
+    openActionModal({
+        title: "광고 노출 내리기",
+        summary: `"${title}" 글을 광고 자리에서 내립니다. 글 자체는 목록에 그대로 남습니다.`
+            + (promoUntil ? ` (원래 노출 만료: ${formatDate(promoUntil)})` : ""),
+        confirmText: "내리기",
+        reasonOptions: toReasonOptions(["SPAM", "ABUSE", "OFF_TOPIC", "POLICY", "DUPLICATE", "OTHER"]),
+        extraHtml: `
+            <label class="checkbox-row">
+                <input type="checkbox" id="modalPromoRefund">
+                <span>게시 비용 ${numberFormat(refundAmount)}P 를 환불합니다</span>
+            </label>
+            <p class="muted" style="margin:4px 0 0;">규칙 위반이면 환불하지 않고, 우리 쪽 문제라면 환불합니다.</p>
+        `,
+        getExtraPayload: () => ({ refund: document.getElementById("modalPromoRefund")?.checked === true }),
+        submit: async (payload) => {
+            await apiRequest(`/admin/api/posts/${postId}/promo-takedown`, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            await loadPosts();
+            await refreshDashboardSilently();
+            return payload.refund
+                ? `광고를 내리고 ${numberFormat(refundAmount)}P를 환불했습니다.`
+                : "광고를 내렸습니다. (환불 없음)";
         }
     });
 }

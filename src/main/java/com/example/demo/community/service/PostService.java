@@ -31,8 +31,6 @@ public class PostService {
     private final TranslationService translationService;
     private final CommunityProperties communityProperties;
 
-    /** 홍보 글 1건 게시 비용. */
-    private static final int PROMO_COST = 500;
 
     /*
      * 전체 목록에는 홍보 글도 함께 나온다.
@@ -140,9 +138,9 @@ public class PostService {
             if (!"OWNER".equals(user.getRole())) {
                 throw new IllegalStateException("홍보 글은 사업자 회원만 작성할 수 있습니다.");
             }
-            if (user.getPoint() < PROMO_COST) {
+            if (user.getPoint() < communityProperties.getPromoCost()) {
                 throw new IllegalStateException(
-                        "포인트가 부족합니다. (필요: " + PROMO_COST + "P, 보유: " + user.getPoint() + "P)");
+                        "포인트가 부족합니다. (필요: " + communityProperties.getPromoCost() + "P, 보유: " + user.getPoint() + "P)");
             }
             // 500P 로 사는 것은 '사이드바 7일 노출'이다. 기간이 지나면 레일에서만 내려온다.
             post.setPromoUntil(LocalDateTime.now().plusDays(communityProperties.getPromoExposureDays()));
@@ -151,7 +149,7 @@ public class PostService {
         Post saved = postRepository.save(post);
 
         if (promo) {
-            userRepository.updatePoint(userId, -PROMO_COST);
+            userRepository.updatePoint(userId, -communityProperties.getPromoCost());
         }
 
         translationService.translatePostAsync(saved.getId(), req.getTitle(), req.getContent());

@@ -133,6 +133,20 @@ public class AdminDto {
     public static class PostActionRequest extends AdminActionRequest {
     }
 
+    /** 홍보 글을 광고 자리에서 내린다. 글 자체는 목록에 남는다. */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static class PromoTakedownRequest extends AdminActionRequest {
+        /**
+         * 500P 를 돌려줄지.
+         *
+         * <p>규칙 위반이면 환불하지 않고, 우리 쪽 문제(중복 노출·잘못된 심사 등)면 환불한다.
+         * 판단이 갈리는 자리라 자동으로 정하지 않고 관리자가 고른다.
+         */
+        private boolean refund;
+    }
+
     @Getter
     @Setter
     @NoArgsConstructor
@@ -156,6 +170,11 @@ public class AdminDto {
         private LocalDateTime createdAt;
         private LocalDateTime deletedAt;
         private boolean purgeEligible;
+        /** 홍보 글이면서 아직 노출 기간이 남았는지. 내리기 버튼을 띄울지 판단한다. */
+        private boolean promoActive;
+        private LocalDateTime promoUntil;
+        /** 내릴 때 돌려줄 수 있는 금액. 화면이 숫자를 지어내지 않도록 서버가 알려 준다. */
+        private int promoRefundAmount;
     }
 
     @Getter

@@ -30,7 +30,7 @@ class CommunitySidebarServiceTest {
     private final TourApiClient tourApiClient = Mockito.mock(TourApiClient.class);
     private final PostService postService = Mockito.mock(PostService.class);
     private final PostRepository postRepository = Mockito.mock(PostRepository.class);
-    private final CommunityProperties properties = new CommunityProperties(5L, 7, 3);
+    private final CommunityProperties properties = new CommunityProperties(5L, 7, 3, 500);
 
     private CommunitySidebarService service() {
         return new CommunitySidebarService(postService, postRepository, tourApiClient, properties);

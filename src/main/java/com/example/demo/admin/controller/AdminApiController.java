@@ -204,6 +204,13 @@ public class AdminApiController {
         return adminService.restorePost(SecurityUtil.getCurrentUserId(), id, request);
     }
 
+    /** 홍보 글을 광고 자리에서 내린다. 글은 목록에 남는다. */
+    @PostMapping("/posts/{id}/promo-takedown")
+    public AdminDto.PostActionResponse takeDownPromo(@PathVariable Long id,
+                                                     @RequestBody AdminDto.PromoTakedownRequest request) {
+        return adminService.takeDownPromo(SecurityUtil.getCurrentUserId(), id, request);
+    }
+
     @PostMapping("/posts/{id}/purge")
     public AdminDto.PostActionResponse purgePost(@PathVariable Long id,
                                                  @Valid @RequestBody AdminDto.PostActionRequest request) {
