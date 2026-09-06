@@ -9,6 +9,7 @@ import com.example.demo.trip.service.TripRecommendService;
 import com.example.demo.user.util.SecurityUtil;               // ✅ 추가
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -32,11 +33,26 @@ public class TripController {
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName()); // ✅ 수정
     }
 
+    /**
+     * 관광/챗봇/홈과 동일하게 세션 로케일(?lang=)을 그대로 반영한다. 예전엔 화면 문구를 전부
+     * 한국어 원문 하나로 두고 구글 번역 위젯(trip-translate.js)이 화면에서 즉석 번역했는데,
+     * 그 위젯은 이 세션 로케일과 별도로 localStorage에 언어를 저장해서 홈 등에서 언어를 바꿔도
+     * trip에는 반영이 안 됐다. 이제 트립도 진짜 메시지 키(#{trip.*})로 서버 렌더링하므로
+     * 구글 위젯 전용이던 "zh-CN" 매핑은 더 이상 필요 없다.
+     */
+    private String currentTripLang() {
+        String lang = LocaleContextHolder.getLocale().getLanguage();
+        return switch (lang) {
+            case "en", "ja", "zh", "fr" -> lang;
+            default -> "ko";
+        };
+    }
+
     // ── 여행 플래너 메인 (KO) ──
     @GetMapping("/ko/trip")
     public String tripMainKo(Model model, HttpSession session) {
         session(model, session);
-        model.addAttribute("lang", "ko");
+        model.addAttribute("lang", currentTripLang());
         return "trip/tripMain";
     }
 
@@ -50,7 +66,7 @@ public class TripController {
     @GetMapping("/ko/trip/result")
     public String tripResultKo(Model model, HttpSession session) {
         session(model, session);
-        model.addAttribute("lang", "ko");
+        model.addAttribute("lang", currentTripLang());
         return "trip/tripResult";
     }
 
@@ -63,7 +79,7 @@ public class TripController {
     @GetMapping("/ko/trip/plans")
     public String tripPlansKo(Model model, HttpSession session) {
         session(model, session);
-        model.addAttribute("lang", "ko");
+        model.addAttribute("lang", currentTripLang());
         return "trip/tripPlanList";
     }
 
