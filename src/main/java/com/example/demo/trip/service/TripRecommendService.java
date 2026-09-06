@@ -749,31 +749,44 @@ public class TripRecommendService {
                 && req.getSavedPlaceNames().stream().anyMatch(sn -> p.name().contains(sn) || sn.contains(p.name()));
     }
 
+    /** ko/en 두 언어만 하드코딩돼 있어서 ja/zh/fr 사용자는 이 이유 문구만 한국어로 보이던 문제 —
+     *  관광 페이지 화면 문구처럼 이런 짧은 고정 문구는 API 호출 없이 5개 언어를 직접 준비해둔다. */
+    private String reasonText(String lang, String ko, String en, String ja, String zh, String fr) {
+        String key = lang == null ? "ko" : lang.toLowerCase();
+        return switch (key) {
+            case "en" -> en;
+            case "ja" -> ja;
+            case "zh" -> zh;
+            case "fr" -> fr;
+            default -> ko;
+        };
+    }
+
     private String buildReason(PlaceData p, TripRecommendRequest req) {
-        boolean isEn = "en".equalsIgnoreCase(req.getLang());
+        String lang = req.getLang();
         List<String> r = new ArrayList<>();
         if ("축제".equals(p.typeName()))
-            r.add(isEn ? "Festival during your trip" : "여행 기간 중 열리는 축제");
+            r.add(reasonText(lang, "여행 기간 중 열리는 축제", "Festival during your trip", "旅行期間中に開催されるお祭り", "旅行期间举办的节庆活动", "Un festival qui a lieu pendant votre voyage"));
         if (isSaved(p, req))
-            r.add(isEn ? "From your saved list" : "저장한 장소 우선 반영");
+            r.add(reasonText(lang, "저장한 장소 우선 반영", "From your saved list", "保存した場所を優先反映", "优先采用已保存的地点", "Priorité donnée à vos lieux enregistrés"));
         if (req.getMustVisit() != null && req.getMustVisit().stream().anyMatch(mv -> p.name().contains(mv) || mv.contains(p.name())))
-            r.add(isEn ? "Matches your must-visit list" : "꼭 가고 싶은 장소 반영");
+            r.add(reasonText(lang, "꼭 가고 싶은 장소 반영", "Matches your must-visit list", "絶対に行きたい場所を反映", "符合必去清单", "Correspond à vos lieux incontournables"));
         if (req.getPreferredAreas() != null && req.getPreferredAreas().stream().anyMatch(a -> p.area().contains(a) || p.name().contains(a) || a.contains(p.name())))
-            r.add(isEn ? "Matches preferred area" : "선호 지역 우선 반영");
+            r.add(reasonText(lang, "선호 지역 우선 반영", "Matches preferred area", "希望地域を優先反映", "优先匹配偏好地区", "Correspond à votre région préférée"));
         if (req.getCategories() != null) {
             List<String> cats = req.getCategories();
-            if (cats.contains("local"))   r.add(isEn ? "Local experience"    : "로컬 체험 요소");
-            if (cats.contains("photo"))   r.add(isEn ? "Great photo spot"    : "사진/감성 포인트");
-            if (cats.contains("culture")) r.add(isEn ? "Culture & history"   : "문화/역사 반영");
-            if (cats.contains("nature"))  r.add(isEn ? "Nature & parks"      : "자연/공원 반영");
-            if (cats.contains("healing")) r.add(isEn ? "Relaxation spot"     : "힐링 코스");
-            if (cats.contains("shopping"))r.add(isEn ? "Shopping area"       : "쇼핑 반영");
-            if (cats.contains("night"))   r.add(isEn ? "Nightlife pick"      : "나이트라이프 반영");
-            if (cats.contains("food"))    r.add(isEn ? "Food adventure"      : "맛집 탐방");
-            if (cats.contains("cafe"))    r.add(isEn ? "Café hopping"        : "카페 투어");
-            if (cats.contains("adventure") && p.adventure()) r.add(isEn ? "Activity pick" : "액티비티 반영");
+            if (cats.contains("local"))   r.add(reasonText(lang, "로컬 체험 요소", "Local experience", "ローカル体験要素", "本地体验元素", "Expérience locale"));
+            if (cats.contains("photo"))   r.add(reasonText(lang, "사진/감성 포인트", "Great photo spot", "映えスポット", "拍照打卡点", "Un lieu photogénique"));
+            if (cats.contains("culture")) r.add(reasonText(lang, "문화/역사 반영", "Culture & history", "文化・歴史を反映", "融入文化历史元素", "Culture et histoire"));
+            if (cats.contains("nature"))  r.add(reasonText(lang, "자연/공원 반영", "Nature & parks", "自然・公園を反映", "融入自然公园元素", "Nature et parcs"));
+            if (cats.contains("healing")) r.add(reasonText(lang, "힐링 코스", "Relaxation spot", "癒やしコース", "疗愈路线", "Un lieu de détente"));
+            if (cats.contains("shopping"))r.add(reasonText(lang, "쇼핑 반영", "Shopping area", "ショッピングを反映", "融入购物元素", "Zone de shopping"));
+            if (cats.contains("night"))   r.add(reasonText(lang, "나이트라이프 반영", "Nightlife pick", "ナイトライフを反映", "融入夜生活元素", "Une sélection nocturne"));
+            if (cats.contains("food"))    r.add(reasonText(lang, "맛집 탐방", "Food adventure", "グルメ探訪", "美食探索", "Exploration culinaire"));
+            if (cats.contains("cafe"))    r.add(reasonText(lang, "카페 투어", "Café hopping", "カフェ巡り", "咖啡厅巡礼", "Tournée des cafés"));
+            if (cats.contains("adventure") && p.adventure()) r.add(reasonText(lang, "액티비티 반영", "Activity pick", "アクティビティを反映", "融入户外活动元素", "Une sélection d'activités"));
         }
-        if (r.isEmpty()) r.add(isEn ? "Highly rated" : "기본 점수 우수");
+        if (r.isEmpty()) r.add(reasonText(lang, "기본 점수 우수", "Highly rated", "基本スコア優秀", "综合评分优秀", "Très bien noté"));
         return String.join(", ", r);
     }
 

@@ -5,49 +5,44 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="_csrf" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
-    <title>내 여행 일정 | KoreaPoint</title>
+    <title th:text="#{trip.plans.pageTitle}">내 여행 일정 | KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/common/variables.css}">
     <link rel="stylesheet" th:href="@{/css/common/reset.css}">
     <link rel="stylesheet" th:href="@{/css/trip/trip-plan-list.css}">
     <link rel="stylesheet" th:href="@{/css/common/layout.css}">
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
     <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
 </head>
 <body>
-<div id="google_translate_element" style="display:none"></div>
-<header>
-    <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
-    <div class="header-right">
-        <a class="h-btn" href="/ko/trip">새 일정 만들기</a>
-        <select class="h-btn" id="languageSelect" onchange="changeTripLanguage(this.value)" aria-label="언어 선택"><option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option><option value="zh-CN">中文</option></select>
-        <th:block th:if="${isLoggedIn}">
-            <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
-            <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
-            <form th:action="@{/logout}" method="post"><button type="submit" class="h-btn h-btn-fill">Logout</button></form>
-        </th:block>
-        <th:block th:unless="${isLoggedIn}"><a th:href="@{/login}" class="h-btn h-btn-fill">Login</a></th:block>
-    </div>
-</header>
+
+<!-- ─── 헤더 (공용 fragment: 관광/챗봇/교통검색과 동일) ─── -->
+<div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
+
 <main class="page">
-    <h1 class="page-title">내 여행 일정</h1>
-    <p class="page-subtitle">저장한 일정을 다시 확인하거나 삭제할 수 있습니다.</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title" th:text="#{trip.plans.h1}">내 여행 일정</h1>
+            <p class="page-subtitle" th:text="#{trip.plans.subtitle}">저장한 일정을 다시 확인하거나 삭제할 수 있습니다.</p>
+        </div>
+        <a class="h-btn" href="/ko/trip" th:text="#{trip.plans.newPlan}">새 일정 만들기</a>
+    </div>
     <div class="plan-layout">
         <aside class="plan-list-panel">
-            <div id="planGrid" class="plan-list"><div class="loading">일정을 불러오는 중입니다...</div></div>
+            <div id="planGrid" class="plan-list"><div class="loading" th:text="#{trip.plans.loadingPlans}">일정을 불러오는 중입니다...</div></div>
             <div id="dayListPanel" class="day-list-panel" style="display:none">
-                <div class="day-list-title">일자별 보기</div>
+                <div class="day-list-title" th:text="#{trip.plans.dayListTitle}">일자별 보기</div>
                 <div id="dayList" class="day-list"></div>
             </div>
         </aside>
         <section class="detail-panel">
-            <div id="detailEmpty" class="detail-empty">왼쪽 목록에서 일정을 선택해주세요.</div>
+            <div id="detailEmpty" class="detail-empty" th:text="#{trip.plans.detailEmpty}">왼쪽 목록에서 일정을 선택해주세요.</div>
             <div id="detailBody" class="detail-body" style="display:none">
                 <div class="detail-head">
                     <h2 id="detailTitle" class="detail-title"></h2>
                     <div class="detail-head-actions">
-                        <button class="view-btn" onclick="viewInResultPage()">상세 페이지에서 보기</button>
-                        <button class="edit-btn" onclick="editCurrentPlan()">이 일정으로 다시 만들기</button>
+                        <button class="view-btn" onclick="viewInResultPage()" th:text="#{trip.plans.viewBtn}">상세 페이지에서 보기</button>
+                        <button class="edit-btn" onclick="editCurrentPlan()" th:text="#{trip.plans.editBtn}">이 일정으로 다시 만들기</button>
                     </div>
                 </div>
                 <div id="detailMeta" class="plan-meta"></div>
@@ -58,7 +53,32 @@
     </div>
 </main>
 <div class="toast" id="toast"></div>
-<script>
+<script th:inline="javascript">
+    const CURRENT_LANG = /*[[${lang}]]*/ 'ko';
+    const I18N = {
+        loadFailed: /*[[#{trip.plans.js.loadFailed}]]*/ '일정을 불러오지 못했습니다.',
+        companionUnset: /*[[#{trip.plans.js.companionUnset}]]*/ '동행 미정',
+        areaUnset: /*[[#{trip.plans.js.areaUnset}]]*/ '지역 미정',
+        daysSuffix: /*[[#{trip.plans.js.daysSuffix}]]*/ '{0}일',
+        placesSuffix: /*[[#{trip.plans.js.placesSuffix}]]*/ '곳',
+        minuteUnit: /*[[#{trip.unit.minute}]]*/ '분',
+        deleteBtn: /*[[#{trip.plans.deleteBtn}]]*/ '삭제',
+        confirmDelete: /*[[#{trip.plans.js.confirmDelete}]]*/ '이 일정을 삭제할까요?',
+        deleteFailed: /*[[#{trip.plans.js.deleteFailed}]]*/ '삭제하지 못했습니다.',
+        planDeleted: /*[[#{trip.plans.js.planDeleted}]]*/ '일정이 삭제되었습니다.',
+        candidatesFailed: /*[[#{trip.plans.js.candidatesFailed}]]*/ '추천 후보를 불러오지 못해 일정만 표시합니다.',
+        companion: {
+            solo: /*[[#{trip.option.solo}]]*/ '혼자 🙋',
+            friend: /*[[#{trip.option.friend}]]*/ '친구와 👫',
+            couple: /*[[#{trip.option.couple}]]*/ '커플 💑',
+            family: /*[[#{trip.option.family}]]*/ '가족 👨‍👩‍👧'
+        }
+    };
+    function fmt(template, ...args) {
+        return args.reduce((s, a, i) => s.replace(`{${i}}`, a), template);
+    }
+    const DATE_LOCALE = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR' }[CURRENT_LANG] || 'ko-KR';
+
     const grid = document.getElementById('planGrid');
     let currentDetailPlan = null;
     let currentPlans = [];
@@ -75,16 +95,16 @@
         bar:    { color:'#8b5cf6', icon:'🍺'  }
     };
     // tripMain.html의 동행 유형 선택지와 동일한 라벨로 통일
-    const COMPANION_LABEL = { solo:'혼자 🙋', friend:'친구와 👫', couple:'커플 💑', family:'가족 👨‍👩‍👧' };
+    const COMPANION_LABEL = I18N.companion;
     function toast(message){const el=document.getElementById('toast');el.textContent=message;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2200)}
-    function formatDate(value){return value ? new Date(value).toLocaleDateString('ko-KR') : '-'}
+    function formatDate(value){return value ? new Date(value).toLocaleDateString(DATE_LOCALE) : '-'}
     async function loadPlans(){
         const response=await fetch('/api/trip/plan/list');
-        if(!response.ok){grid.innerHTML='<div class="empty">일정을 불러오지 못했습니다.</div>';return}
+        if(!response.ok){grid.innerHTML=`<div class="empty">${I18N.loadFailed}</div>`;return}
         const plans=await response.json();
         currentPlans=plans;
         if(!plans.length){location.replace('/ko/trip');return}
-        grid.innerHTML=plans.map(p=>`<article class="plan-list-item" id="planItem-${p.id}" onclick="showDetail(${p.id})"><div class="plan-title">🗺️ ${esc(p.title)}</div><div class="plan-pill-row"><span class="meta-pill">${p.travelDays}일</span><span class="meta-pill">${esc(COMPANION_LABEL[p.companion] || p.companion || '동행 미정')}</span></div><div class="plan-sub">${esc(p.preferredAreas||'지역 미정')} · ${formatDate(p.createdAt)}</div><button class="action-btn delete-btn" onclick="event.stopPropagation();deletePlan(${p.id})">삭제</button></article>`).join('');
+        grid.innerHTML=plans.map(p=>`<article class="plan-list-item" id="planItem-${p.id}" onclick="showDetail(${p.id})"><div class="plan-title">🗺️ ${esc(p.title)}</div><div class="plan-pill-row"><span class="meta-pill">${fmt(I18N.daysSuffix, p.travelDays)}</span><span class="meta-pill">${esc(COMPANION_LABEL[p.companion] || p.companion || I18N.companionUnset)}</span></div><div class="plan-sub">${esc(p.preferredAreas||I18N.areaUnset)} · ${formatDate(p.createdAt)}</div><button class="action-btn delete-btn" onclick="event.stopPropagation();deletePlan(${p.id})">${I18N.deleteBtn}</button></article>`).join('');
         // 처음 들어왔을 때, 또는 삭제 후 선택 중이던 일정이 사라졌을 때 왼쪽 첫 번째 일정을 자동으로 보여준다.
         if (!currentDetailPlan || !plans.some(p => p.id === currentDetailPlan.id)) showDetail(plans[0].id);
         else highlightSelected(currentDetailPlan.id);
@@ -94,13 +114,13 @@
         document.getElementById(`planItem-${id}`)?.classList.add('selected');
     }
     async function showDetail(id){
-        const response=await fetch(`/api/trip/plan/${id}`); if(!response.ok){toast('일정을 불러오지 못했습니다.');return}
+        const response=await fetch(`/api/trip/plan/${id}`); if(!response.ok){toast(I18N.loadFailed);return}
         const p=await response.json(); currentDetailPlan=p;
         highlightSelected(id);
         document.getElementById('detailEmpty').style.display='none';
         document.getElementById('detailBody').style.display='block';
         document.getElementById('detailTitle').textContent=p.title;
-        document.getElementById('detailMeta').textContent=`${p.preferredAreas||'지역 미정'} · ${p.travelDays}일 · ${formatDate(p.createdAt)}`;
+        document.getElementById('detailMeta').textContent=`${p.preferredAreas||I18N.areaUnset} · ${fmt(I18N.daysSuffix, p.travelDays)} · ${formatDate(p.createdAt)}`;
         renderDayTabs(p);
         selectDay((p.days && p.days[0] && p.days[0].day) || 1);
     }
@@ -110,7 +130,7 @@
         const days=plan.days||[];
         if(!days.length){panel.style.display='none';return}
         panel.style.display='block';
-        list.innerHTML=days.map(d=>`<button type="button" class="day-tab" id="dayTab-${d.day}" onclick="selectDay(${d.day})">Day ${d.day}<span class="day-tab-count">${(d.slots||[]).length}곳</span></button>`).join('');
+        list.innerHTML=days.map(d=>`<button type="button" class="day-tab" id="dayTab-${d.day}" onclick="selectDay(${d.day})">Day ${d.day}<span class="day-tab-count">${(d.slots||[]).length}${I18N.placesSuffix}</span></button>`).join('');
     }
     function selectDay(day){
         if(!currentDetailPlan) return;
@@ -126,7 +146,7 @@
         // 슬롯을 눌러도 아무 반응이 없다는 피드백 — 여기엔 상세 패널(사진/이용시간/리뷰 등)을 따로 안 만들고,
         // 이미 다 갖춰져 있는 "상세 페이지에서 보기"(tripResult.html) 화면으로 넘어가면서 그 장소 상세를
         // 자동으로 열어준다(openSavedSlot → openTripSlot 세션 저장 → tripResult.html에서 읽어서 focusSlot).
-        document.getElementById('detailDays').innerHTML=`<div class="day-card"><div class="day-card-head"><span class="day-badge">Day ${dayData ? dayData.day : ''}</span><span class="day-stop-count">${slots.length}곳</span></div>${slots.map((s,idx)=>{const cfg=CAT[s.category]||CAT.tourism;return `<div class="slot" onclick="openSavedSlot(${idx})"><div class="slot-dot" style="background:${cfg.color}">${cfg.icon}</div><div class="slot-body"><div class="slot-top-row"><span class="slot-time">${esc(s.time)}</span>${s.durationMinutes ? `<span class="slot-duration-pill">${s.durationMinutes}분</span>` : ''}</div><div class="slot-name">${esc(s.placeName)}</div><div class="slot-reason">${esc(s.reason)}</div></div>${s.imageUrl ? `<img class="slot-thumb" src="${esc(s.imageUrl)}" alt="" onerror="this.remove()">` : ''}</div>`}).join('')}</div>`;
+        document.getElementById('detailDays').innerHTML=`<div class="day-card"><div class="day-card-head"><span class="day-badge">Day ${dayData ? dayData.day : ''}</span><span class="day-stop-count">${slots.length}${I18N.placesSuffix}</span></div>${slots.map((s,idx)=>{const cfg=CAT[s.category]||CAT.tourism;return `<div class="slot" onclick="openSavedSlot(${idx})"><div class="slot-dot" style="background:${cfg.color}">${cfg.icon}</div><div class="slot-body"><div class="slot-top-row"><span class="slot-time">${esc(s.time)}</span>${s.durationMinutes ? `<span class="slot-duration-pill">${s.durationMinutes}${I18N.minuteUnit}</span>` : ''}</div><div class="slot-name">${esc(s.placeName)}</div><div class="slot-reason">${esc(s.reason)}</div></div>${s.imageUrl ? `<img class="slot-thumb" src="${esc(s.imageUrl)}" alt="" onerror="this.remove()">` : ''}</div>`}).join('')}</div>`;
     }
     // 날짜마다 동선 범위가 다르면 setBounds가 확대/축소를 극단으로 튀게 만들어서
     // "지도 크기가 커졌다 작아졌다" 하는 것처럼 느껴진다. 줌 레벨을 이 범위 안으로 고정해서
@@ -154,7 +174,7 @@
             arrivalAirport: p.arrivalAirport, arrivalTime: p.arrivalTime, arrivalReadyMinutes: p.arrivalReadyMinutes,
             departureAirport: p.departureAirport, departureTime: p.departureTime, departureLeadMinutes: p.departureLeadMinutes,
             intensity: p.intensity, preferredAreas: p.preferredAreas || [], mustVisit: p.mustVisit || [],
-            categories: p.categories || [], styleDescription: p.styleDescription || '', lang: 'ko'
+            categories: p.categories || [], styleDescription: p.styleDescription || '', lang: CURRENT_LANG
         };
 
         // 관광/음식/카페 추천 리스트와 슬롯별 대체 후보(생성 당시처럼 5개씩)는 저장 시 DB에
@@ -170,7 +190,7 @@
                 schedule: p.days || [], tourismList: [], foodList: [], cafeList: [],
                 aiSummary: '', weatherWarning: '', airQuality: null, healthRisk: null, forecastIssuedAt: ''
             };
-            toast('추천 후보를 불러오지 못해 일정만 표시합니다.');
+            toast(I18N.candidatesFailed);
         }
 
         sessionStorage.setItem('tripRequest', JSON.stringify(reqObj));
@@ -180,12 +200,13 @@
         location.href = '/ko/trip/result';
     }
     async function deletePlan(id){
-        if(!confirm('이 일정을 삭제할까요?'))return; const headers={}; if(csrfToken&&csrfHeader)headers[csrfHeader]=csrfToken;
-        const response=await fetch(`/api/trip/plan/${id}`,{method:'DELETE',headers}); if(!response.ok){toast('삭제하지 못했습니다.');return}
+        if(!confirm(I18N.confirmDelete))return; const headers={}; if(csrfToken&&csrfHeader)headers[csrfHeader]=csrfToken;
+        const response=await fetch(`/api/trip/plan/${id}`,{method:'DELETE',headers}); if(!response.ok){toast(I18N.deleteFailed);return}
         if(currentDetailPlan && currentDetailPlan.id===id) currentDetailPlan=null;
-        toast('일정이 삭제되었습니다.');loadPlans();
+        toast(I18N.planDeleted);loadPlans();
     }
-    loadPlans().catch(()=>grid.innerHTML='<div class="empty">일정을 불러오지 못했습니다.</div>');
+    loadPlans().catch(()=>grid.innerHTML=`<div class="empty">${I18N.loadFailed}</div>`);
 </script>
+<script th:src="@{/js/common/header-menu.js}"></script>
 </body>
 </html>

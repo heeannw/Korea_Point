@@ -16,8 +16,13 @@
         :root { --green: #10b981; }
         html, body { height: auto; overflow: auto; }
         body { background: var(--light); min-height: 100vh; display: block; }
-        header { position: sticky; top: 0; padding: 0 24px; box-shadow: 0 1px 8px rgba(0,0,0,.05); }
-        .h-btn { text-decoration: none; display: inline-flex; align-items: center; }
+        header {
+            position: sticky; top: 0; height: 60px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 32px 0 20px; background: #fff;
+            border-bottom: 1px solid var(--border, #dbeafe);
+            box-shadow: 0 1px 8px rgba(0,0,0,.05); z-index: 100;
+        }
         .swap-btn {
             width: 32px;
             height: 32px;
@@ -37,88 +42,15 @@
             background: var(--green);
             color: #fff;
         }
-        .h-btn.active {
-            font-weight: 700;
-            color: var(--blue, #3b9eff);
-            border-bottom: 2px solid var(--blue, #3b9eff);
-        }
-
-        /* 수단별(버스/지하철/도보/택시) 탭 — 결과가 여러 개 섞여 나오던 걸 탭으로 분리 */
-        .mode-tabs {
-            display: flex;
-            gap: 6px;
-            margin: 4px 0 16px;
-            border-bottom: 1px solid var(--border, #e2e8f0);
-        }
-        .mode-tab {
-            flex: 1;
-            padding: 10px 4px;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--gray);
-            background: none;
-            border: none;
-            border-bottom: 2px solid transparent;
-            cursor: pointer;
-            font-family: 'DM Sans', sans-serif;
-        }
-        .mode-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
-        .mode-panel { display: none; }
-        .mode-panel.active { display: block; }
-        .empty-state.small {
-            padding: 32px 16px;
-            text-align: center;
-            color: var(--gray);
-            background: white;
-            border-radius: 14px;
-        }
-        .empty-state.small .icon { font-size: 28px; margin-bottom: 8px; }
-        .empty-state.small p { font-size: 13px; margin: 0; }
-        .kakao-map-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 10px;
-            padding: 10px 16px;
-            border-radius: 10px;
-            background: #FEE500;
-            color: #191600;
-            font-size: 13px;
-            font-weight: 700;
-            text-decoration: none;
-        }
-        .kakao-map-btn:hover { background: #f5da00; }
     </style>
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
+    <!-- trip-translate.js(구글 번역 위젯)는 여기서 안 씀 — 교통검색은 이미 ko/en 화면이 각각
+         실제로 있어서 필요 없고, 공용 헤더(app-header)의 언어 드롭다운이랑 겹쳐서 중복 셀렉트
+         박스가 하나 더 생기는 문제가 있었다. -->
 </head>
 <body>
 
-<header>
-    <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
-    <div class="header-right">
-        <a th:href="@{/en/transport/search}"
-           class="h-btn">
-            EN
-        </a>
-
-        <a th:href="@{/ko/transport/search}"
-           class="h-btn active">
-            KR
-        </a>
-
-        <th:block th:if="${isLoggedIn}">
-            <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
-            <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
-            <form th:action="@{/logout}" method="post">
-                <button type="submit" class="h-btn h-btn-fill">Logout</button>
-            </form>
-        </th:block>
-
-        <th:block th:unless="${isLoggedIn}">
-            <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
-        </th:block>
-    </div>
-</header>
+<div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 
 <div class="hero">
@@ -186,8 +118,9 @@
         </div>
 
         <div class="mode-panel active" id="mode-bus" th:with="modeRoutes=${routes.?[type=='bus']}">
-            <div th:each="route : ${modeRoutes}">
+            <div th:each="route, routeStat : ${modeRoutes}">
                 <div class="route-card" th:data-route-id="${route.routeId}" th:data-route-type="${route.type}" onclick="goDetail(this)">
+                    <div class="route-mode-label"><span th:text="${routeStat.count}"></span>번째로 빠른 버스 경로</div>
                     <div class="route-time" th:data-minutes="${route.totalTime}"></div>
                     <div class="route-info">
                         환승 <span th:text="${route.transferCount}"></span>회 ·
@@ -221,8 +154,9 @@
         </div>
 
         <div class="mode-panel" id="mode-subway" th:with="modeRoutes=${routes.?[type=='subway']}">
-            <div th:each="route : ${modeRoutes}">
+            <div th:each="route, routeStat : ${modeRoutes}">
                 <div class="route-card" th:data-route-id="${route.routeId}" th:data-route-type="${route.type}" onclick="goDetail(this)">
+                    <div class="route-mode-label"><span th:text="${routeStat.count}"></span>번째로 빠른 지하철 경로</div>
                     <div class="route-time" th:data-minutes="${route.totalTime}"></div>
                     <div class="route-info">
                         환승 <span th:text="${route.transferCount}"></span>회 ·
@@ -257,9 +191,10 @@
 
         <div class="mode-panel" id="mode-walk" th:with="modeRoutes=${routes.?[type=='walk']}">
             <div th:each="route : ${modeRoutes}">
-                <div class="route-card" th:data-route-id="${route.routeId}" th:data-route-type="${route.type}" onclick="goDetail(this)">
+                <div class="route-card walk-card" th:data-route-id="${route.routeId}" th:data-route-type="${route.type}" onclick="goDetail(this)">
+                    <div class="route-mode-label">🚶 도보로만 이동</div>
                     <div class="route-time" th:data-minutes="${route.totalTime}"></div>
-                    <div class="route-info">🚶 도보로 이동하는 경로예요</div>
+                    <div class="route-info route-note">환승이나 대중교통 없이 쭉 걸어가는 경로예요</div>
                 </div>
             </div>
             <div class="empty-state small" th:if="${#lists.isEmpty(modeRoutes)}">
@@ -270,11 +205,12 @@
 
         <div class="mode-panel" id="mode-taxi" th:with="modeRoutes=${routes.?[type=='taxi']}">
             <div th:each="route : ${modeRoutes}">
-                <div class="route-card" style="cursor:default">
+                <div class="route-card taxi-card">
+                    <div class="route-mode-label">🚕 예상 택시 요금</div>
                     <div class="route-time" th:data-minutes="${route.totalTime}"></div>
                     <div class="route-info">
-                        💰 예상 요금 약 <b th:text="${#numbers.formatInteger(route.fareWon, 0, 'COMMA')}"></b>원
-                        <span style="color:#94a3b8">(실제 호출·정확한 요금은 카카오맵에서 확인해주세요)</span>
+                        💰 약 <b th:text="${#numbers.formatInteger(route.fareWon, 0, 'COMMA')}"></b>원
+                        <span class="route-note">(실제 호출·정확한 요금은 카카오맵에서 확인해주세요)</span>
                     </div>
                     <a class="kakao-map-btn"
                        th:href="'http://m.map.kakao.com/scheme/route?sp=' + ${route.startLat} + ',' + ${route.startLng} + '&ep=' + ${route.endLat} + ',' + ${route.endLng} + '&by=car'"
@@ -594,5 +530,6 @@
     }
 </script>
 
+<script th:src="@{/js/common/header-menu.js}"></script>
 </body>
 </html>

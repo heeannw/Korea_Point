@@ -11,29 +11,14 @@
   <link rel="stylesheet" th:href="@{/css/transport/t_common/variable.css}">
   <link rel="stylesheet" th:href="@{/css/transport/t_common/layout.css}">
   <link rel="stylesheet" th:href="@{/css/transport/transportDetail.css}">
-
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
+  <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
+  <!-- trip-translate.js (Google Translate widget) isn't used here — like the transit search page,
+       ko/en each already have their own real screen, and it clashed with the shared header's own
+       language dropdown, producing a duplicate select box. -->
 </head>
 <body>
-<header>
-  <a class="logo" th:href="@{/en}">Korea<span>Point</span></a>
-  <div class="header-right">
-    <a th:href="@{/en/transport/detail(routeId=${route?.routeId})}" class="h-btn active">EN</a>
-    <a th:href="@{/ko/transport/detail(routeId=${route?.routeId})}" class="h-btn">KR</a>
 
-        <th:block th:if="${isLoggedIn}">
-            <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
-            <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
-            <form th:action="@{/logout}" method="post">
-                <button type="submit" class="h-btn h-btn-fill">Logout</button>
-            </form>
-    </th:block>
-
-    <th:block th:unless="${isLoggedIn}">
-      <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
-    </th:block>
-  </div>
-</header>
+<div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <div class="app-body">
   <div class="sidebar">
@@ -1086,6 +1071,6 @@
             });
   }
 </script>
-
+<script th:src="@{/js/common/header-menu.js}"></script>
 </body>
 </html>

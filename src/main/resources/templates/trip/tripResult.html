@@ -5,38 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="_csrf" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
-    <title>여행 일정 — KoreaPoint</title>
+    <title th:text="#{trip.result.pageTitle}">여행 일정 — KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
     <link rel="stylesheet" th:href="@{/css/common/variables.css}">
     <link rel="stylesheet" th:href="@{/css/common/reset.css}">
     <link rel="stylesheet" th:href="@{/css/trip/trip-result.css}">
     <link rel="stylesheet" th:href="@{/css/common/layout.css}">
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
 </head>
 <body th:data-logged-in="${isLoggedIn}">
-<div id="google_translate_element" style="display:none"></div>
 
-<!-- ─── 헤더 ─── -->
-<header>
-    <a class="logo" th:href="@{/}">Korea<span>Point</span></a>
-    <div class="header-right">
-        <!-- sessionStorage 유지한 채 언어 전환 -->
-        <select class="h-btn" id="languageSelect" onchange="changeTripLanguage(this.value)" aria-label="언어 선택"><option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option><option value="zh-CN">中文</option></select>
-        <th:block th:if="${isLoggedIn}">
-            <button type="button" class="h-btn h-btn-save" id="savePlanBtn" onclick="saveTripPlan()">일정 저장</button>
-            <a href="/ko/trip/plans" class="h-btn">내 일정</a>
-            <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
-            <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
-            <form th:action="@{/logout}" method="post">
-                <button type="submit" class="h-btn h-btn-fill">Logout</button>
-            </form>
-        </th:block>
-        <th:block th:unless="${isLoggedIn}">
-            <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
-        </th:block>
-    </div>
-</header>
+<!-- ─── 헤더 (공용 fragment: 관광/챗봇/교통검색과 동일) ─── -->
+<div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <!-- ─── 앱 바디 ─── -->
 <div class="app-body">
@@ -44,8 +25,11 @@
     <!-- 사이드바 -->
     <div class="sidebar">
         <div class="back-bar">
-            <a class="back-link" href="/ko/trip">← 다시 설정</a>
-            <span class="trip-meta" id="tripMeta">로딩 중...</span>
+            <a class="back-link" href="/ko/trip" th:text="#{trip.result.backToSetup}">← 다시 설정</a>
+            <div style="display:flex;align-items:center;gap:8px">
+                <span class="trip-meta" id="tripMeta" th:text="#{trip.loading}">로딩 중...</span>
+                <button type="button" class="h-btn h-btn-save" id="savePlanBtn" th:if="${isLoggedIn}" onclick="saveTripPlan()" th:text="#{trip.result.savePlan}">일정 저장</button>
+            </div>
         </div>
         <div class="day-selector" id="daySelector"></div>
         <div class="trip-insight" id="tripInsight" hidden>
@@ -55,18 +39,18 @@
             <div class="warning-line" id="warningLine" hidden></div>
             <div class="festival-line" id="festivalLine" hidden></div>
             <div class="ai-line" id="aiLine"></div>
-            <button type="button" class="reoptimize-btn" id="reoptimizeBtn" onclick="reoptimizeRemaining()">현재 날씨로 남은 일정 다시 짜기</button>
+            <button type="button" class="reoptimize-btn" id="reoptimizeBtn" onclick="reoptimizeRemaining()" th:text="#{trip.result.reoptimizeBtn}">현재 날씨로 남은 일정 다시 짜기</button>
         </div>
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('schedule',this)">📅 일정</button>
-            <button class="tab-btn" onclick="switchTab('tourism',this)">🏛️ 관광</button>
-            <button class="tab-btn" onclick="switchTab('food',this)">🍽️ 음식</button>
-            <button class="tab-btn" onclick="switchTab('cafe',this)">☕ 카페</button>
+            <button class="tab-btn active" onclick="switchTab('schedule',this)" th:text="#{trip.result.tab.schedule}">📅 일정</button>
+            <button class="tab-btn" onclick="switchTab('tourism',this)" th:text="#{trip.result.tab.tourism}">🏛️ 관광</button>
+            <button class="tab-btn" onclick="switchTab('food',this)" th:text="#{trip.result.tab.food}">🍽️ 음식</button>
+            <button class="tab-btn" onclick="switchTab('cafe',this)" th:text="#{trip.result.tab.cafe}">☕ 카페</button>
         </div>
-        <div id="tab-schedule" class="tab-content active"><div id="scheduleList"><div class="empty-msg">일정 로딩 중...</div></div></div>
-        <div id="tab-tourism" class="tab-content"><div id="tourismList"><div class="empty-msg">추천 관광지 없음</div></div></div>
-        <div id="tab-food"    class="tab-content"><div id="foodList"><div class="empty-msg">추천 음식점 없음</div></div></div>
-        <div id="tab-cafe"    class="tab-content"><div id="cafeList"><div class="empty-msg">추천 카페 없음</div></div></div>
+        <div id="tab-schedule" class="tab-content active"><div id="scheduleList"><div class="empty-msg" th:text="#{trip.result.scheduleLoading}">일정 로딩 중...</div></div></div>
+        <div id="tab-tourism" class="tab-content"><div id="tourismList"><div class="empty-msg" th:text="#{trip.result.noTourism}">추천 관광지 없음</div></div></div>
+        <div id="tab-food"    class="tab-content"><div id="foodList"><div class="empty-msg" th:text="#{trip.result.noFood}">추천 음식점 없음</div></div></div>
+        <div id="tab-cafe"    class="tab-content"><div id="cafeList"><div class="empty-msg" th:text="#{trip.result.noCafe}">추천 카페 없음</div></div></div>
     </div>
 
     <!-- 지도 -->
@@ -74,11 +58,11 @@
         <div id="map"></div>
 
         <div class="map-legend">
-            <div class="legend-title">범례</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#3b9eff"></div>관광지</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>음식점</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>카페</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>바</div>
+            <div class="legend-title" th:text="#{trip.result.legendTitle}">범례</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#3b9eff"></div><span th:text="#{trip.result.legend.tourism}">관광지</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div><span th:text="#{trip.result.legend.food}">음식점</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div><span th:text="#{trip.result.legend.cafe}">카페</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div><span th:text="#{trip.result.legend.bar}">바</span></div>
         </div>
 
         <div class="map-controls">
@@ -93,8 +77,8 @@
                 <div class="dp-title" id="dpTitle"></div>
             </div>
             <div class="dp-hero no-image" id="dpHero">
-                <button class="dp-hero-nav dp-hero-prev dp-hero-hidden" id="dpImgPrev" type="button" onclick="moveDetailImage(-1)" aria-label="이전 사진">‹</button>
-                <button class="dp-hero-nav dp-hero-next dp-hero-hidden" id="dpImgNext" type="button" onclick="moveDetailImage(1)" aria-label="다음 사진">›</button>
+                <button class="dp-hero-nav dp-hero-prev dp-hero-hidden" id="dpImgPrev" type="button" onclick="moveDetailImage(-1)" th:aria-label="#{trip.result.prevPhoto}" aria-label="이전 사진">‹</button>
+                <button class="dp-hero-nav dp-hero-next dp-hero-hidden" id="dpImgNext" type="button" onclick="moveDetailImage(1)" th:aria-label="#{trip.result.nextPhoto}" aria-label="다음 사진">›</button>
                 <div class="dp-hero-count dp-hero-hidden" id="dpImgCount"></div>
             </div>
             <div class="dp-body">
@@ -112,20 +96,20 @@
                     </div>
                 </section>
                 <div class="quick-actions">
-                    <button class="quick-btn" id="dpTransBtn" type="button"><div class="qb-icon">🚇</div><span class="qb-label">길찾기</span></button>
-                    <button class="quick-btn" id="dpNearFoodBtn" type="button"><div class="qb-icon">🍽️</div><span class="qb-label">근처 맛집</span></button>
-                    <button class="quick-btn" id="dpNearCafeBtn" type="button"><div class="qb-icon">☕</div><span class="qb-label">근처 카페</span></button>
-                    <button class="quick-btn" id="dpShareBtn" type="button"><div class="qb-icon">🔗</div><span class="qb-label">공유</span></button>
+                    <button class="quick-btn" id="dpTransBtn" type="button"><div class="qb-icon">🚇</div><span class="qb-label" th:text="#{trip.result.qa.directions}">길찾기</span></button>
+                    <button class="quick-btn" id="dpNearFoodBtn" type="button"><div class="qb-icon">🍽️</div><span class="qb-label" th:text="#{trip.result.qa.nearFood}">근처 맛집</span></button>
+                    <button class="quick-btn" id="dpNearCafeBtn" type="button"><div class="qb-icon">☕</div><span class="qb-label" th:text="#{trip.result.qa.nearCafe}">근처 카페</span></button>
+                    <button class="quick-btn" id="dpShareBtn" type="button"><div class="qb-icon">🔗</div><span class="qb-label" th:text="#{trip.result.qa.share}">공유</span></button>
                 </div>
                 <nav class="dp-tabs">
-                    <button class="dp-tab active" type="button" data-tab="info" onclick="showDetailTab('info')">정보</button>
-                    <button class="dp-tab" type="button" data-tab="reviews" onclick="showDetailTab('reviews')">리뷰</button>
+                    <button class="dp-tab active" type="button" data-tab="info" onclick="showDetailTab('info')" th:text="#{trip.result.tabInfo}">정보</button>
+                    <button class="dp-tab" type="button" data-tab="reviews" onclick="showDetailTab('reviews')" th:text="#{trip.result.tabReviews}">리뷰</button>
                 </nav>
                 <section class="tab-panel" id="tab-info">
                     <div class="dp-reason" id="dpReason"></div>
                     <div class="dp-info-row" id="dpInfoRow"></div>
                     <div class="section-card" id="dpDescSection" style="display:none">
-                        <div class="section-title">📖 이곳은</div>
+                        <div class="section-title" th:text="#{trip.result.aboutHere}">📖 이곳은</div>
                         <div class="dp-desc" id="dpDescText"></div>
                     </div>
                     <div class="section-card" id="dpNearSection" style="display:none">
@@ -138,8 +122,8 @@
                 </section>
             </div>
             <div class="dp-action">
-                <button class="dp-btn dp-btn-secondary" onclick="closeDetail()">← 목록으로</button>
-                <button class="dp-btn dp-btn-swap" id="dpSwapBtn" style="display:none" onclick="confirmSwap()">🔄 이 장소로 교체</button>
+                <button class="dp-btn dp-btn-secondary" onclick="closeDetail()" th:text="#{trip.result.backToList}">← 목록으로</button>
+                <button class="dp-btn dp-btn-swap" id="dpSwapBtn" style="display:none" onclick="confirmSwap()" th:text="#{trip.result.swapHere}">🔄 이 장소로 교체</button>
             </div>
             <!-- 상세 패널 전용 토스트 -->
             <div class="toast dp-toast" id="dpToast"></div>
@@ -149,7 +133,7 @@
 
 <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
-    <div class="loading-text">지도에 일정을 그리는 중...</div>
+    <div class="loading-text" th:text="#{trip.result.mapLoading}">지도에 일정을 그리는 중...</div>
 </div>
 
 <!-- 토스트 (상세 패널 안에서도 중앙 표시용 — detail-panel 내부로 이동됨) -->
@@ -158,18 +142,108 @@
 <div class="reservation-modal" id="reservationModal" aria-hidden="true">
     <div class="reservation-dialog">
         <button class="reservation-close" type="button" onclick="closeReservationModal()">×</button>
-        <h2>예약을 도와드릴까요?</h2>
-        <p>예약 요청을 저장하면 내 일정에서 상태를 확인할 수 있습니다. 실제 예약 확정은 매장 확인이 필요합니다.</p>
-        <label>장소<select id="reservationPlace"></select></label>
-        <div class="reservation-row"><label>날짜<input id="reservationDate" type="date"></label><label>시간<input id="reservationTime" type="time"></label></div>
-        <label>인원<input id="reservationParty" type="number" min="1" max="30" value="2"></label>
-        <label>요청사항<textarea id="reservationNote" maxlength="500" placeholder="선택사항"></textarea></label>
-        <div class="reservation-actions"><button type="button" class="reservation-later" onclick="closeReservationModal()">나중에</button><button type="button" class="reservation-submit" onclick="submitReservation()">예약 요청 저장</button></div>
+        <h2 th:text="#{trip.result.reservation.title}">예약을 도와드릴까요?</h2>
+        <p th:text="#{trip.result.reservation.desc}">예약 요청을 저장하면 내 일정에서 상태를 확인할 수 있습니다. 실제 예약 확정은 매장 확인이 필요합니다.</p>
+        <label><span th:text="#{trip.result.reservation.place}">장소</span><select id="reservationPlace"></select></label>
+        <div class="reservation-row"><label><span th:text="#{trip.result.reservation.date}">날짜</span><input id="reservationDate" type="date"></label><label><span th:text="#{trip.result.reservation.time}">시간</span><input id="reservationTime" type="time"></label></div>
+        <label><span th:text="#{trip.result.reservation.party}">인원</span><input id="reservationParty" type="number" min="1" max="30" value="2"></label>
+        <label><span th:text="#{trip.result.reservation.note}">요청사항</span><textarea id="reservationNote" maxlength="500" th:placeholder="#{trip.result.reservation.notePlaceholder}" placeholder="선택사항"></textarea></label>
+        <div class="reservation-actions"><button type="button" class="reservation-later" onclick="closeReservationModal()" th:text="#{trip.result.reservation.later}">나중에</button><button type="button" class="reservation-submit" onclick="submitReservation()" th:text="#{trip.result.reservation.submit}">예약 요청 저장</button></div>
     </div>
 </div>
 
-<script>
+<script th:inline="javascript">
     const isLoggedIn = document.body.dataset.loggedIn === 'true';
+    const CURRENT_LANG = /*[[${lang}]]*/ 'ko';
+    const I18N = {
+        noTripToSave: /*[[#{trip.result.js.noTripToSave}]]*/ '저장할 일정이 없습니다.',
+        saving: /*[[#{trip.result.js.saving}]]*/ '저장 중...',
+        saveComplete: /*[[#{trip.result.js.saveComplete}]]*/ '저장 완료',
+        saveFailedGeneric: /*[[#{trip.result.js.saveFailedGeneric}]]*/ '일정 저장에 실패했습니다.',
+        saveSuccess: /*[[#{trip.result.js.saveSuccess}]]*/ '일정이 저장되었습니다. 마이페이지에서 확인할 수 있어요.',
+        autoSaveSuccess: /*[[#{trip.result.js.autoSaveSuccess}]]*/ '일정이 자동 저장되었습니다. 마이페이지에서 확인할 수 있어요.',
+        promptTitle: /*[[#{trip.result.js.promptTitle}]]*/ '일정 제목을 입력해주세요.',
+        savePlan: /*[[#{trip.result.savePlan}]]*/ '일정 저장',
+        busanFallback: /*[[#{trip.result.js.busanFallback}]]*/ '부산',
+        reservationFailed: /*[[#{trip.result.js.reservationFailed}]]*/ '예약 요청을 저장하지 못했습니다.',
+        reservationSaved: /*[[#{trip.result.js.reservationSaved}]]*/ '예약 요청이 저장되었습니다.',
+        catTourism: /*[[#{trip.js.slotLabelTourism}]]*/ '관광',
+        catFood: /*[[#{trip.result.js.catFood}]]*/ '음식',
+        catCafe: /*[[#{trip.js.slotLabelCafe}]]*/ '카페',
+        catBar: /*[[#{trip.js.slotLabelBar}]]*/ '바',
+        placesSuffix: /*[[#{trip.result.js.placesSuffix}]]*/ '장소',
+        minuteUnit: /*[[#{trip.unit.minute}]]*/ '분',
+        reservedPlaceFallback: /*[[#{trip.result.js.reservedPlaceFallback}]]*/ '예약 장소',
+        altToggleShow: /*[[#{trip.result.js.altToggleShow}]]*/ '대체 후보 ▾',
+        altToggleHide: /*[[#{trip.result.js.altToggleHide}]]*/ '대체 후보 ▴',
+        noForecast: /*[[#{trip.result.js.noForecast}]]*/ '제공 가능한 단기예보가 없습니다.',
+        issuedAt: /*[[#{trip.result.js.issuedAt}]]*/ '발표',
+        precipitation: /*[[#{trip.result.js.precipitation}]]*/ '강수',
+        wind: /*[[#{trip.result.js.wind}]]*/ '바람',
+        busanAirQuality: /*[[#{trip.result.js.busanAirQuality}]]*/ '부산 대기질',
+        uvLevel: /*[[#{trip.result.js.uvLevel}]]*/ '자외선',
+        heatRisk: /*[[#{trip.result.js.heatRisk}]]*/ '폭염',
+        coldRisk: /*[[#{trip.result.js.coldRisk}]]*/ '한파',
+        festivalLabel: /*[[#{trip.result.js.festivalLabel}]]*/ '여행 기간 축제',
+        festivalReason: /*[[#{trip.result.js.festivalReason}]]*/ '여행 기간 중 열리는 축제',
+        reoptimizing: /*[[#{trip.result.js.reoptimizing}]]*/ '재조정 중...',
+        reoptimizeBtn: /*[[#{trip.result.reoptimizeBtn}]]*/ '현재 날씨로 남은 일정 다시 짜기',
+        reoptimizeFailed: /*[[#{trip.result.js.reoptimizeFailed}]]*/ '재조정 실패',
+        altReason: /*[[#{trip.result.js.altReason}]]*/ '대체 후보 (원래: {0})',
+        reviewCount: /*[[#{trip.result.js.reviewCount}]]*/ '리뷰 {0}개',
+        ratingBasedOnVisitors: /*[[#{trip.result.js.ratingBasedOnVisitors}]]*/ '방문자 평점 기반',
+        anonymous: /*[[#{trip.result.js.anonymous}]]*/ '익명',
+        showMore: /*[[#{trip.result.js.showMore}]]*/ '더 보기',
+        showLess: /*[[#{trip.result.js.showLess}]]*/ '접기',
+        noReviews: /*[[#{trip.result.js.noReviews}]]*/ '등록된 리뷰가 없어요',
+        nearFood: /*[[#{trip.result.qa.nearFood}]]*/ '근처 맛집',
+        nearCafe: /*[[#{trip.result.qa.nearCafe}]]*/ '근처 카페',
+        linkCopied: /*[[#{trip.result.js.linkCopied}]]*/ '링크를 복사했어요',
+        usingCurrentLocation: /*[[#{trip.result.js.usingCurrentLocation}]]*/ '📍 현재 위치를 출발지로 사용합니다',
+        checkingLocation: /*[[#{trip.result.js.checkingLocation}]]*/ '📍 위치 확인 중...',
+        searchingNearby: /*[[#{trip.result.js.searchingNearby}]]*/ '근처를 찾는 중...',
+        nearbyNotFound: /*[[#{trip.result.js.nearbyNotFound}]]*/ '근처에서 못 찾았어요',
+        nearbyLoadFailed: /*[[#{trip.result.js.nearbyLoadFailed}]]*/ '근처를 불러오지 못했어요',
+        noRecommendations: /*[[#{trip.result.js.noRecommendations}]]*/ '추천 결과가 없어요',
+        dayLabel: /*[[#{trip.result.js.dayLabel}]]*/ '{0}일차',
+        noResultMsg: /*[[#{trip.result.js.noResultMsg}]]*/ '결과가 없습니다.',
+        resetSetup: /*[[#{trip.result.js.resetSetup}]]*/ '다시 설정하기',
+        loadingSchedule: /*[[#{trip.result.js.loadingSchedule}]]*/ '일정을 불러오는 중...',
+        mapLoading: /*[[#{trip.result.mapLoading}]]*/ '지도에 일정을 그리는 중...',
+        noSlots: /*[[#{trip.result.js.noSlots}]]*/ '슬롯이 없어요',
+        nightsBadge: /*[[#{trip.js.nightsBadge}]]*/ '{0}박 {1}일',
+        tel: /*[[#{trip.result.js.tel}]]*/ '전화번호',
+        homepage: /*[[#{trip.result.js.homepage}]]*/ '홈페이지',
+        field: {
+            hours: /*[[#{trip.result.js.hours}]]*/ '이용시간',
+            businessHours: /*[[#{trip.result.js.businessHours}]]*/ '영업시간',
+            closed: /*[[#{trip.result.js.closed}]]*/ '휴무일',
+            contact: /*[[#{trip.result.js.contact}]]*/ '문의처',
+            parking: /*[[#{trip.result.js.parking}]]*/ '주차',
+            fee: /*[[#{trip.result.js.fee}]]*/ '이용요금',
+            startDate: /*[[#{trip.result.js.startDate2}]]*/ '시작일',
+            endDate: /*[[#{trip.result.js.endDate2}]]*/ '종료일',
+            venue: /*[[#{trip.result.js.venue}]]*/ '장소',
+            showTime: /*[[#{trip.result.js.showTime}]]*/ '공연시간',
+            visitDuration: /*[[#{trip.result.js.visitDuration}]]*/ '관람 소요시간',
+            distance: /*[[#{trip.result.js.distance}]]*/ '거리',
+            schedule: /*[[#{trip.result.js.schedule2}]]*/ '일정',
+            duration: /*[[#{trip.result.js.duration}]]*/ '소요시간',
+            operatingPeriod: /*[[#{trip.result.js.operatingPeriod}]]*/ '운영기간',
+            reservationInfo: /*[[#{trip.result.js.reservationInfo}]]*/ '예약안내',
+            ageRange: /*[[#{trip.result.js.ageRange}]]*/ '체험 가능 연령',
+            checkin: /*[[#{trip.result.js.checkin}]]*/ '체크인',
+            checkout: /*[[#{trip.result.js.checkout}]]*/ '체크아웃',
+            reservation: /*[[#{trip.result.js.reservation2}]]*/ '예약',
+            roomCount: /*[[#{trip.result.js.roomCount}]]*/ '객실 수',
+            itemsSold: /*[[#{trip.result.js.itemsSold}]]*/ '판매 품목',
+            signatureMenu: /*[[#{trip.result.js.signatureMenu}]]*/ '대표메뉴',
+            menu: /*[[#{trip.result.js.menu}]]*/ '취급메뉴'
+        }
+    };
+    function fmt(template, ...args) {
+        return args.reduce((s, a, i) => s.replace(`{${i}}`, a), template);
+    }
 
     /* ─── 토스트 ─── */
     function showToast(msg, duration = 2500) {
@@ -182,7 +256,7 @@
 
     async function persistTripPlan(title, options = {}) {
         if (!tripResult || !tripRequest) {
-            showToast('저장할 일정이 없습니다.');
+            showToast(I18N.noTripToSave);
             return null;
         }
 
@@ -194,7 +268,7 @@
 
         if (button && !options.silent) {
             button.disabled = true;
-            button.textContent = '저장 중...';
+            button.textContent = I18N.saving;
         }
         try {
             const response = await fetch('/api/trip/plan/save', {
@@ -203,15 +277,15 @@
                 body: JSON.stringify({ title: title.trim(), request: tripRequest, response: tripResult })
             });
             const data = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(data.error || '일정 저장에 실패했습니다.');
+            if (!response.ok) throw new Error(data.error || I18N.saveFailedGeneric);
 
             sessionStorage.setItem('savedTripPlanId', data.planId);
             if (button) {
-                button.textContent = '저장 완료';
+                button.textContent = I18N.saveComplete;
                 button.disabled = true;
             }
             if (!options.silent) {
-                showToast('일정이 저장되었습니다. 마이페이지에서 확인할 수 있어요.');
+                showToast(I18N.saveSuccess);
             }
             return data.planId;
         } catch (error) {
@@ -220,14 +294,14 @@
             }
             if (button && !options.silent) {
                 button.disabled = false;
-                button.textContent = '일정 저장';
+                button.textContent = I18N.savePlan;
             }
             return null;
         }
     }
 
     async function saveTripPlan() {
-        const title = prompt('일정 제목을 입력해주세요.', defaultTripPlanTitle());
+        const title = prompt(I18N.promptTitle, defaultTripPlanTitle());
         if (title === null) return;
         await persistTripPlan(title);
     }
@@ -236,8 +310,8 @@
         const days = tripRequest?.travelDays || tripResult?.schedule?.length || 1;
         const areas = Array.isArray(tripRequest?.preferredAreas) && tripRequest.preferredAreas.length
             ? tripRequest.preferredAreas.slice(0, 2).join('·')
-            : '부산';
-        return `${areas} ${Math.max(0, days - 1)}박 ${days}일`;
+            : I18N.busanFallback;
+        return `${areas} ${fmt(I18N.nightsBadge, Math.max(0, days - 1), days)}`;
     }
 
     function hideSaveButton() {
@@ -249,7 +323,7 @@
         if (!button) return;
         button.style.display = '';
         button.disabled = false;
-        button.textContent = '일정 저장';
+        button.textContent = I18N.savePlan;
     }
 
     async function autoSaveTripPlan() {
@@ -268,7 +342,7 @@
         const planId = await persistTripPlan(defaultTripPlanTitle(), {silent: true});
         if (planId) {
             sessionStorage.setItem('savedTripPlanKey', saveKey);
-            showToast('일정이 자동 저장되었습니다. 마이페이지에서 확인할 수 있어요.');
+            showToast(I18N.autoSaveSuccess);
         }
     }
 
@@ -316,8 +390,8 @@
         const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
         const headers = {'Content-Type':'application/json'}; if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
         const response = await fetch('/api/trip/reservation', {method:'POST', headers, body:JSON.stringify(payload)});
-        if (!response.ok) { showToast('예약 요청을 저장하지 못했습니다.'); return; }
-        closeReservationModal(); showToast('예약 요청이 저장되었습니다.');
+        if (!response.ok) { showToast(I18N.reservationFailed); return; }
+        closeReservationModal(); showToast(I18N.reservationSaved);
     }
 
     /* ─── 카카오 지도 초기화 ─── */
@@ -328,10 +402,10 @@
     document.getElementById('mcZO').onclick = () => map.setLevel(map.getLevel() + 1);
 
     const CAT = {
-        tourism:{ color:'#3b9eff', icon:'🏛️', label:'관광' },
-        food:   { color:'#f59e0b', icon:'🍽️', label:'음식' },
-        cafe:   { color:'#10b981', icon:'☕',  label:'카페' },
-        bar:    { color:'#8b5cf6', icon:'🍺',  label:'바'  }
+        tourism:{ color:'#3b9eff', icon:'🏛️', get label() { return I18N.catTourism; } },
+        food:   { color:'#f59e0b', icon:'🍽️', get label() { return I18N.catFood; } },
+        cafe:   { color:'#10b981', icon:'☕',  get label() { return I18N.catCafe; } },
+        bar:    { color:'#8b5cf6', icon:'🍺',  get label() { return I18N.catBar; } }
     };
 
     let tripResult = null, tripRequest = null, currentDay = 1;
@@ -432,7 +506,7 @@
                     position: new kakao.maps.LatLng(avgLat, avgLng), yAnchor: 0.5, zIndex: 4,
                     content: `<div onclick="zoomToCluster(${avgLat},${avgLng})" style="width:44px;height:44px;border-radius:50%;background:rgba(59,158,255,.9);border:3px solid #fff;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(59,158,255,.45);font-family:'DM Sans',sans-serif;">
                         <div style="font-size:16px;font-weight:900;color:#fff;line-height:1">${group.length}</div>
-                        <div style="font-size:8px;color:rgba(255,255,255,.8);margin-top:1px">장소</div>
+                        <div style="font-size:8px;color:rgba(255,255,255,.8);margin-top:1px">${I18N.placesSuffix}</div>
                     </div>`
                 });
                 ov.setMap(map); activeOverlays.push(ov);
@@ -468,7 +542,7 @@
                     position: new kakao.maps.LatLng(avgLat, avgLng), yAnchor: 0.5, zIndex: 4,
                     content: `<div onclick="zoomToCluster(${avgLat},${avgLng})" style="width:44px;height:44px;border-radius:50%;background:rgba(59,158,255,.9);border:3px solid #fff;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(59,158,255,.45);font-family:'DM Sans',sans-serif;">
                         <div style="font-size:16px;font-weight:900;color:#fff;line-height:1">${group.length}</div>
-                        <div style="font-size:8px;color:rgba(255,255,255,.8);margin-top:1px">장소</div>
+                        <div style="font-size:8px;color:rgba(255,255,255,.8);margin-top:1px">${I18N.placesSuffix}</div>
                     </div>`
                 });
                 ov.setMap(map); activeOverlays.push(ov);
@@ -502,13 +576,13 @@
     async function drawDay(day) {
         clearMap(); closeDetail();
         const loadingOverlayEl = document.getElementById('loadingOverlay');
-        loadingOverlayEl.querySelector('.loading-text').textContent = '지도에 일정을 그리는 중...';
+        loadingOverlayEl.querySelector('.loading-text').textContent = I18N.mapLoading;
         loadingOverlayEl.classList.add('show');
 
         const dayData = tripResult.schedule.find(d => d.day === day);
         if (!dayData || !dayData.slots.length) {
             document.getElementById('loadingOverlay').classList.remove('show');
-            document.getElementById('scheduleList').innerHTML = '<div class="empty-msg">슬롯이 없어요</div>';
+            document.getElementById('scheduleList').innerHTML = `<div class="empty-msg">${I18N.noSlots}</div>`;
             return;
         }
 
@@ -547,13 +621,13 @@
             ${!isLast ? '<div class="slot-line"></div>' : ''}
           </div>
           <div class="slot-info">
-            <div class="slot-time">${slot.time} · ${cfg.label}${slot.durationMinutes ? ` · ${slot.durationMinutes}분` : ''}</div>
+            <div class="slot-time">${slot.time} · ${cfg.label}${slot.durationMinutes ? ` · ${slot.durationMinutes}${I18N.minuteUnit}` : ''}</div>
             <div class="slot-name">${slot.placeName}</div>
-            ${(reservedPlaces.has(slot.placeName) || slot.locked) ? `<div class="slot-lock"><span>🔒 ${slot.lockReason || '예약 장소'}</span></div>` : ''}
+            ${(reservedPlaces.has(slot.placeName) || slot.locked) ? `<div class="slot-lock"><span>🔒 ${slot.lockReason || I18N.reservedPlaceFallback}</span></div>` : ''}
             <div class="slot-reason">${slot.reason || ''}</div>
             <div class="slot-score">score ${(slot.score||0).toFixed(4)}</div>
             ${slot.alternatives?.length
-                ? `<span class="alt-toggle" onclick="toggleAlt(event,${idx})">대체 후보 ▾</span>
+                ? `<span class="alt-toggle" onclick="toggleAlt(event,${idx})">${I18N.altToggleShow}</span>
                  <div class="alt-list" id="al${idx}">
                  ${slot.alternatives.map((a, ai) => `
                    <div class="alt-item" onclick="selectAlt(event,${idx},${ai})">
@@ -564,15 +638,15 @@
                  </div>` : ''}
           </div>
         </div>`;
-        }).join('') || '<div class="empty-msg">슬롯이 없어요</div>';
+        }).join('') || `<div class="empty-msg">${I18N.noSlots}</div>`;
     }
 
     function renderTripInsight(dayData) {
         const box = document.getElementById('tripInsight');
         const w = dayData.weather;
         document.getElementById('weatherLine').textContent = w
-            ? `${weatherIcon(w)} Day ${dayData.day} · ${Math.round(w.temperature)}℃ · 강수 ${w.rainProbability}% · 바람 ${w.windSpeed.toFixed(1)}m/s · ${tripResult.forecastIssuedAt || ''} 발표`
-            : `🌦️ Day ${dayData.day} · 제공 가능한 단기예보가 없습니다.`;
+            ? `${weatherIcon(w)} Day ${dayData.day} · ${Math.round(w.temperature)}℃ · ${I18N.precipitation} ${w.rainProbability}% · ${I18N.wind} ${w.windSpeed.toFixed(1)}m/s · ${tripResult.forecastIssuedAt || ''} ${I18N.issuedAt}`
+            : `🌦️ Day ${dayData.day} · ${I18N.noForecast}`;
         const warning = document.getElementById('warningLine');
         warning.hidden = !tripResult.weatherWarning;
         warning.textContent = tripResult.weatherWarning ? `⚠️ ${tripResult.weatherWarning}` : '';
@@ -580,11 +654,11 @@
         const air = document.getElementById('airLine');
         air.hidden = !tripResult.airQuality;
         air.textContent = tripResult.airQuality
-            ? `😷 부산 대기질 ${tripResult.airQuality.grade} · PM10 ${tripResult.airQuality.pm10} · PM2.5 ${tripResult.airQuality.pm25}` : '';
+            ? `😷 ${I18N.busanAirQuality} ${tripResult.airQuality.grade} · PM10 ${tripResult.airQuality.pm10} · PM2.5 ${tripResult.airQuality.pm25}` : '';
         const health = document.getElementById('healthLine');
         health.hidden = !tripResult.healthRisk;
         health.textContent = tripResult.healthRisk
-            ? `☀️ 자외선 ${tripResult.healthRisk.uvLevel}${tripResult.healthRisk.uvIndex != null ? `(${tripResult.healthRisk.uvIndex})` : ''}${tripResult.healthRisk.heatRisk ? ` · 폭염 ${tripResult.healthRisk.heatRisk}` : ''}${tripResult.healthRisk.coldRisk ? ` · 한파 ${tripResult.healthRisk.coldRisk}` : ''}` : '';
+            ? `☀️ ${I18N.uvLevel} ${tripResult.healthRisk.uvLevel}${tripResult.healthRisk.uvIndex != null ? `(${tripResult.healthRisk.uvIndex})` : ''}${tripResult.healthRisk.heatRisk ? ` · ${I18N.heatRisk} ${tripResult.healthRisk.heatRisk}` : ''}${tripResult.healthRisk.coldRisk ? ` · ${I18N.coldRisk} ${tripResult.healthRisk.coldRisk}` : ''}` : '';
         document.getElementById('aiLine').textContent = tripResult.aiSummary ? `✨ ${tripResult.aiSummary}` : '';
         box.hidden = false;
     }
@@ -611,7 +685,7 @@
         const festivals = tripResult.festivals || [];
         if (!festivals.length) { el.hidden = true; el.innerHTML = ''; return; }
         el.hidden = false;
-        el.innerHTML = '🎉 여행 기간 축제 · ' + festivals.map((f, i) => {
+        el.innerHTML = `🎉 ${I18N.festivalLabel} · ` + festivals.map((f, i) => {
             const range = festivalRange(f.startDate, f.endDate);
             return `<span class="festival-pill" onclick="openFestivalDetail(${i})">${f.title}${range ? ` (${range})` : ''}</span>`;
         }).join('');
@@ -623,7 +697,7 @@
         if (!f) return;
         const slot = {
             placeName: f.title, category: 'tourism', address: f.address || '',
-            imageUrl: f.imageUrl || '', reason: '여행 기간 중 열리는 축제',
+            imageUrl: f.imageUrl || '', reason: I18N.festivalReason,
             avgRating: 0, reviewCount: 0, reviews: [], alternatives: [],
             contentId: '', contentTypeId: ''
         };
@@ -642,16 +716,16 @@
 
     async function reoptimizeRemaining() {
         const button = document.getElementById('reoptimizeBtn');
-        button.disabled = true; button.textContent = '재조정 중...';
+        button.disabled = true; button.textContent = I18N.reoptimizing;
         try {
             const response = await fetch('/api/trip/reoptimize', {method:'POST', headers:{'Content-Type':'application/json'},
                 body:JSON.stringify({request:tripRequest, current:tripResult, reservedPlaceNames:[...reservedPlaces]})});
-            if (!response.ok) throw new Error('재조정 실패');
+            if (!response.ok) throw new Error(I18N.reoptimizeFailed);
             tripResult = await response.json();
             sessionStorage.setItem('tripResult', JSON.stringify(tripResult));
             buildDaySelector(tripResult.schedule); await drawDay(currentDay);
         } catch (e) { alert(e.message); }
-        finally { button.disabled = false; button.textContent = '현재 날씨로 남은 일정 다시 짜기'; }
+        finally { button.disabled = false; button.textContent = I18N.reoptimizeBtn; }
     }
 
     function focusSlot(idx) {
@@ -677,7 +751,7 @@
             placeName:   alt.placeName,
             category:    alt.category || origSlot.category,
             time:        origSlot.time,
-            reason:      `대체 후보 (원래: ${origSlot.placeName})`,
+            reason:      fmt(I18N.altReason, origSlot.placeName),
             score:       alt.score,
             avgRating:   alt.avgRating   || 0,
             reviewCount: alt.reviewCount || 0,
@@ -697,7 +771,7 @@
         e.stopPropagation();
         const el = document.getElementById('al' + idx);
         el?.classList.toggle('show');
-        e.target.textContent = el?.classList.contains('show') ? '대체 후보 ▴' : '대체 후보 ▾';
+        e.target.textContent = el?.classList.contains('show') ? I18N.altToggleHide : I18N.altToggleShow;
     }
 
     /* ─── 교체 확정 ─── */
@@ -792,7 +866,7 @@
         document.getElementById('dpName').textContent  = slot.placeName;
 
         const addrEl = document.getElementById('dpAddr');
-        addrEl.textContent = slot.address || '부산';
+        addrEl.textContent = slot.address || I18N.busanFallback;
         document.getElementById('dpSub').style.display = 'flex';
 
         const badges = document.getElementById('dpBadges');
@@ -802,7 +876,7 @@
         if (slot.avgRating && slot.avgRating > 0) {
             document.getElementById('dpStarScore').textContent = slot.avgRating.toFixed(1);
             document.getElementById('dpReviewCnt').textContent =
-                slot.reviewCount ? `리뷰 ${slot.reviewCount.toLocaleString()}개` : '방문자 평점 기반';
+                slot.reviewCount ? fmt(I18N.reviewCount, slot.reviewCount.toLocaleString()) : I18N.ratingBasedOnVisitors;
             ratingRow.style.display = 'flex';
         } else {
             ratingRow.style.display = 'none';
@@ -825,28 +899,28 @@
                 return `
           <div class="review-item">
             <div class="ri-top">
-              <span class="ri-author">${r.author || '익명'}</span>
+              <span class="ri-author">${r.author || I18N.anonymous}</span>
               <div class="ri-meta">
                 <span class="ri-stars">${stars}</span>
                 ${showTime ? `<span class="ri-time">${r.timeDesc}</span>` : ''}
               </div>
             </div>
             <div class="ri-text" id="riText${idx}">${r.text}</div>
-            ${r.text && r.text.length > 80 ? `<span class="ri-more" onclick="toggleReview(${idx})">더 보기</span>` : ''}
+            ${r.text && r.text.length > 80 ? `<span class="ri-more" onclick="toggleReview(${idx})">${I18N.showMore}</span>` : ''}
           </div>`;
             }).join('');
         } else {
-            revList.innerHTML = '<div class="no-review">등록된 리뷰가 없어요</div>';
+            revList.innerHTML = `<div class="no-review">${I18N.noReviews}</div>`;
         }
 
         // ── 근처 맛집/근처 카페 — 관광페이지는 목록 페이지로 이동시키지만 트립엔 그런 페이지가 없어서
         //    같은 자리에 인라인으로 후보를 보여주는 방식으로 대체한다.
-        document.getElementById('dpNearFoodBtn').onclick = () => loadNearbyPlaces(lat, lng, 'food', '🍽️ 근처 맛집');
-        document.getElementById('dpNearCafeBtn').onclick = () => loadNearbyPlaces(lat, lng, 'cafe', '☕ 근처 카페');
+        document.getElementById('dpNearFoodBtn').onclick = () => loadNearbyPlaces(lat, lng, 'food', `🍽️ ${I18N.nearFood}`);
+        document.getElementById('dpNearCafeBtn').onclick = () => loadNearbyPlaces(lat, lng, 'cafe', `☕ ${I18N.nearCafe}`);
         document.getElementById('dpShareBtn').onclick = async () => {
             try {
                 if (navigator.share) await navigator.share({ title: slot.placeName, url: location.href });
-                else { await navigator.clipboard.writeText(location.href); showToast('링크를 복사했어요'); }
+                else { await navigator.clipboard.writeText(location.href); showToast(I18N.linkCopied); }
             } catch (e) { /* 공유 취소는 무시 */ }
         };
 
@@ -862,16 +936,16 @@
 
             // 이미 위치 확보된 경우 바로 사용
             if (myLoc) {
-                showToast('📍 현재 위치를 출발지로 사용합니다');
+                showToast(I18N.usingCurrentLocation);
                 location.href = `${base}&startLat=${myLoc.lat}&startLng=${myLoc.lng}`;
                 return;
             }
 
-            showToast('📍 현재 위치를 출발지로 사용합니다');
+            showToast(I18N.usingCurrentLocation);
 
             const btn = document.getElementById('dpTransBtn');
             const orig = btn.innerHTML;
-            btn.innerHTML = '📍 위치 확인 중...';
+            btn.innerHTML = I18N.checkingLocation;
             btn.disabled = true;
 
             navigator.geolocation.getCurrentPosition(
@@ -895,8 +969,8 @@
     function toggleReview(idx) {
         const el = document.getElementById('riText' + idx);
         const btn = el.nextElementSibling;
-        if (el.classList.contains('expanded')) { el.classList.remove('expanded'); btn.textContent = '더 보기'; }
-        else { el.classList.add('expanded'); btn.textContent = '접기'; }
+        if (el.classList.contains('expanded')) { el.classList.remove('expanded'); btn.textContent = I18N.showMore; }
+        else { el.classList.add('expanded'); btn.textContent = I18N.showLess; }
     }
 
     function closeDetail() {
@@ -905,16 +979,25 @@
 
     /* ─── 관광페이지 수준 상세정보(운영시간·전화번호·메뉴 등) — TourAPI contentId 있는 장소만 가능 ─── */
     const DETAIL_FIELD_LABELS = {
-        usetime:'이용시간', restdate:'휴무일', infocenter:'문의처', parking:'주차',
-        usetimeculture:'이용시간', restdateculture:'휴무일', usefee:'이용요금', parkingculture:'주차',
-        eventstartdate:'시작일', eventenddate:'종료일', eventplace:'장소', playtime:'공연시간',
-        usetimefestival:'이용시간', spendtimefestival:'관람 소요시간',
-        distance:'거리', schedule:'일정', taketime:'소요시간', infocentertourcourse:'문의처',
-        openperiod:'운영기간', usetimeleports:'이용시간', restdateleports:'휴무일', reservation:'예약안내',
-        expagerangeleports:'체험 가능 연령', usefeeleports:'이용요금',
-        checkintime:'체크인', checkouttime:'체크아웃', reservationurl:'예약', roomcount:'객실 수', parkinglodging:'주차',
-        opentime:'영업시간', restdateshopping:'휴무일', saleitem:'판매 품목',
-        firstmenu:'대표메뉴', opentimefood:'영업시간', restdatefood:'휴무일', reservationfood:'예약안내', treatmenu:'취급메뉴'
+        get usetime() { return I18N.field.hours; }, get restdate() { return I18N.field.closed; },
+        get infocenter() { return I18N.field.contact; }, get parking() { return I18N.field.parking; },
+        get usetimeculture() { return I18N.field.hours; }, get restdateculture() { return I18N.field.closed; },
+        get usefee() { return I18N.field.fee; }, get parkingculture() { return I18N.field.parking; },
+        get eventstartdate() { return I18N.field.startDate; }, get eventenddate() { return I18N.field.endDate; },
+        get eventplace() { return I18N.field.venue; }, get playtime() { return I18N.field.showTime; },
+        get usetimefestival() { return I18N.field.hours; }, get spendtimefestival() { return I18N.field.visitDuration; },
+        get distance() { return I18N.field.distance; }, get schedule() { return I18N.field.schedule; },
+        get taketime() { return I18N.field.duration; }, get infocentertourcourse() { return I18N.field.contact; },
+        get openperiod() { return I18N.field.operatingPeriod; }, get usetimeleports() { return I18N.field.hours; },
+        get restdateleports() { return I18N.field.closed; }, get reservation() { return I18N.field.reservationInfo; },
+        get expagerangeleports() { return I18N.field.ageRange; }, get usefeeleports() { return I18N.field.fee; },
+        get checkintime() { return I18N.field.checkin; }, get checkouttime() { return I18N.field.checkout; },
+        get reservationurl() { return I18N.field.reservation; }, get roomcount() { return I18N.field.roomCount; },
+        get parkinglodging() { return I18N.field.parking; }, get opentime() { return I18N.field.businessHours; },
+        get restdateshopping() { return I18N.field.closed; }, get saleitem() { return I18N.field.itemsSold; },
+        get firstmenu() { return I18N.field.signatureMenu; }, get opentimefood() { return I18N.field.businessHours; },
+        get restdatefood() { return I18N.field.closed; }, get reservationfood() { return I18N.field.reservationInfo; },
+        get treatmenu() { return I18N.field.menu; }
     };
     let fullDetailRequestId = 0;
     async function loadPlaceFullDetail(contentId, contentTypeId) {
@@ -928,12 +1011,12 @@
             if (myRequestId !== fullDetailRequestId) return;
             const data = response.ok ? await response.json() : {};
             const rows = [];
-            if (data.tel) rows.push(['전화번호', data.tel]);
+            if (data.tel) rows.push([I18N.tel, data.tel]);
             const details = data.details || {};
             Object.entries(DETAIL_FIELD_LABELS).forEach(([key, label]) => {
                 if (details[key]) rows.push([label, details[key]]);
             });
-            if (data.homepage) rows.push(['홈페이지', data.homepage.replace(/<[^>]*>/g, '')]);
+            if (data.homepage) rows.push([I18N.homepage, data.homepage.replace(/<[^>]*>/g, '')]);
             infoRow.innerHTML = rows.map(([label, value]) =>
                 `<div class="dp-info"><div class="dp-info-label">${label}</div><div class="dp-info-val">${value}</div></div>`
             ).join('');
@@ -961,7 +1044,7 @@
         if (!lat || !lng) return;
         titleEl.textContent = title;
         section.style.display = 'block';
-        listEl.innerHTML = '<div class="dp-detail-loading">근처를 찾는 중...</div>';
+        listEl.innerHTML = `<div class="dp-detail-loading">${I18N.searchingNearby}</div>`;
         // 이용시간·소개글 등으로 정보 탭이 길어지면 이 섹션이 화면 아래로 밀려서 눌러도
         // 아무 반응 없는 것처럼 보인다 — 채워 넣자마자 바로 눈에 보이게 스크롤한다.
         section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -979,9 +1062,9 @@
                 }).replace(/'/g, "&apos;")}, ${p.lat}, ${p.lng})'>
                     <div class="rec-info"><div class="rec-name">${p.name}</div>${p.address ? `<div class="rec-reason">${p.address}</div>` : ''}</div>
                   </div>`).join('')
-                : '<div class="empty-msg">근처에서 못 찾았어요</div>';
+                : `<div class="empty-msg">${I18N.nearbyNotFound}</div>`;
         } catch (e) {
-            if (myRequestId === nearRequestId) listEl.innerHTML = '<div class="empty-msg">근처를 불러오지 못했어요</div>';
+            if (myRequestId === nearRequestId) listEl.innerHTML = `<div class="empty-msg">${I18N.nearbyLoadFailed}</div>`;
         }
     }
 
@@ -1001,7 +1084,7 @@
               <div class="rec-score">score ${p.score?.toFixed(4)||'-'}</div>
             </div>
           </div>`).join('')
-            : '<div class="empty-msg">추천 결과가 없어요</div>';
+            : `<div class="empty-msg">${I18N.noRecommendations}</div>`;
     }
 
     function openRecDetail(containerId, idx) {
@@ -1020,7 +1103,7 @@
     function buildDaySelector(schedule) {
         document.getElementById('daySelector').innerHTML = schedule.map(d => `
       <button class="day-btn${d.day===1?' active':''}" id="db${d.day}" onclick="selectDay(${d.day})">
-        ${d.day}일차
+        ${fmt(I18N.dayLabel, d.day)}
       </button>`).join('');
     }
 
@@ -1040,7 +1123,7 @@
         const raw = sessionStorage.getItem('tripResult');
         if (!raw) {
             document.getElementById('scheduleList').innerHTML =
-                '<div class="empty-msg">결과가 없습니다.<br><a href="/ko/trip" style="color:var(--blue)">다시 설정하기</a></div>';
+                `<div class="empty-msg">${I18N.noResultMsg}<br><a href="/ko/trip" style="color:var(--blue)">${I18N.resetSetup}</a></div>`;
             return;
         }
         tripResult  = JSON.parse(raw);
@@ -1049,13 +1132,13 @@
         // 보이던 문제 — 초기화 시작하자마자 로딩 스피너부터 띄운다.
         const loadingOverlayEl = document.getElementById('loadingOverlay');
         const loadingTextEl = loadingOverlayEl.querySelector('.loading-text');
-        loadingTextEl.textContent = '일정을 불러오는 중...';
+        loadingTextEl.textContent = I18N.loadingSchedule;
         loadingOverlayEl.classList.add('show');
         await loadReservedPlaces();
 
         const days = tripRequest.travelDays || tripResult.schedule.length;
-        const area = (tripRequest.preferredAreas||[]).slice(0,2).join(', ') || '부산';
-        document.getElementById('tripMeta').textContent = `${area} · ${days-1}박 ${days}일`;
+        const area = (tripRequest.preferredAreas||[]).slice(0,2).join(', ') || I18N.busanFallback;
+        document.getElementById('tripMeta').textContent = `${area} · ${fmt(I18N.nightsBadge, days-1, days)}`;
 
         buildDaySelector(tripResult.schedule);
         renderRecList('tourismList', tripResult.tourismList);

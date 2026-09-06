@@ -323,3 +323,102 @@
 }
 
 .delete-btn:hover { color: #ef4444; }
+
+/* ================= 수단 탭 (버스/지하철/도보/택시) ================= */
+.mode-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--light);
+    padding: 5px;
+    border-radius: 14px;
+    margin: 4px 0 16px;
+}
+
+.mode-tab {
+    flex: 1;
+    padding: 10px 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gray);
+    background: none;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all .2s;
+}
+
+.mode-tab:hover { color: var(--blue-dk); }
+
+.mode-tab.active {
+    background: white;
+    color: var(--blue);
+    box-shadow: 0 2px 10px rgba(59,158,255,.18);
+}
+
+.mode-panel { display: none; }
+.mode-panel.active { display: block; animation: modeFadeIn .25s ease; }
+
+@keyframes modeFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ================= 빈 상태 ================= */
+.empty-state {
+    background: white;
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    box-shadow: var(--sh);
+}
+
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state h3 { font-size: 16px; font-weight: 700; color: var(--dark); margin: 0 0 6px; }
+.empty-state p { font-size: 13px; color: var(--gray); margin: 0; }
+
+.empty-state.small {
+    padding: 32px 16px;
+    box-shadow: none;
+    border: 1.5px dashed var(--border);
+}
+
+.empty-state.small .icon { font-size: 26px; margin-bottom: 8px; }
+
+/* ================= 경로 카드 안 수단 라벨 ================= */
+.route-mode-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--blue);
+    margin-bottom: 8px;
+}
+
+/* 도보/택시는 버스/지하철처럼 실제 노선 색이 없어서 카드 자체에 색을 얹어 구분감을 준다 */
+.route-card.walk-card { border-left: 4px solid var(--green); }
+.route-card.walk-card .route-mode-label { color: var(--green); }
+.route-card.taxi-card { border-left: 4px solid var(--gold); cursor: default; }
+.route-card.taxi-card:hover { transform: none; box-shadow: var(--sh); border-color: transparent; border-left-color: var(--gold); }
+.route-card.taxi-card .route-mode-label { color: #b45309; }
+
+.route-note { color: #94a3b8; font-size: 12px; }
+
+/* ================= 카카오맵 연결 버튼 ================= */
+.kakao-map-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: #FEE500;
+    color: #191600;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background .2s;
+}
+
+.kakao-map-btn:hover { background: #f5da00; }

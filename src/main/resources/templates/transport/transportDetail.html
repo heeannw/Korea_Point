@@ -11,29 +11,14 @@
     <link rel="stylesheet" th:href="@{/css/transport/t_common/variable.css}">
     <link rel="stylesheet" th:href="@{/css/transport/t_common/layout.css}">
     <link rel="stylesheet" th:href="@{/css/transport/transportDetail.css}">
-
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
+    <!-- trip-translate.js(구글 번역 위젯)는 여기서 안 씀 — 교통검색 페이지와 동일하게 ko/en
+         화면이 각각 실제로 있고, 공용 헤더(app-header)의 언어 드롭다운과 겹쳐서 중복 셀렉트
+         박스가 하나 더 생기는 문제가 있었다. -->
 </head>
 <body>
-<header>
-    <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
-    <div class="header-right">
-        <a th:href="@{/en/transport/detail(routeId=${route?.routeId})}" class="h-btn">EN</a>
-        <a th:href="@{/ko/transport/detail(routeId=${route?.routeId})}" class="h-btn active">KR</a>
 
-        <th:block th:if="${isLoggedIn}">
-            <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}"></a>
-            <a th:if="${isAdmin}" th:href="@{/admin}" class="h-btn">Admin</a>
-            <form th:action="@{/logout}" method="post">
-                <button type="submit" class="h-btn h-btn-fill">Logout</button>
-            </form>
-        </th:block>
-
-        <th:block th:unless="${isLoggedIn}">
-            <a th:href="@{/oauth2/authorization/google}" class="h-btn h-btn-fill">Login</a>
-        </th:block>
-    </div>
-</header>
+<div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <div class="app-body">
     <div class="sidebar">
@@ -333,8 +318,8 @@
                 liveOverlay.setPosition(latLng);
             }
 
-            // (선택) 지도도 따라오게
-            map.setCenter(latLng);
+            // 예전엔 위치가 갱신될 때마다 지도 중심을 내 위치로 강제로 옮겼는데, 경로를 보고 있다가도
+            // 계속 내 위치로 화면이 튀는 문제가 있어서 뺐다 — 마커/라벨만 갱신하고 지도 중심은 그대로 둔다.
 
         }, () => {
             // 위치 권한 거부
@@ -1067,6 +1052,6 @@
             });
     }
 </script>
-
+<script th:src="@{/js/common/header-menu.js}"></script>
 </body>
 </html>
