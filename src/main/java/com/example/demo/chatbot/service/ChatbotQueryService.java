@@ -57,20 +57,30 @@ public class ChatbotQueryService {
     }
 
     public ChatAskResponse ask(String question) {
-        float[] questionVector = embeddingClient.embed(question);
-        List<VectorMatch> matches = vectorDocumentRepository.findNearest(null, questionVector, topK);
+        return ask(question, null, null);
+    }
+
+    /** imageBase64/imageMimeType이 있으면(사용자가 + 버튼으로 사진을 첨부한 경우) 질문 텍스트가
+     *  없어도 되고, 벡터 검색으로 관련 부산 이야기를 못 찾아도 사진만 보고 답할 수 있다. */
+    public ChatAskResponse ask(String question, String imageBase64, String imageMimeType) {
+        String q = question == null ? "" : question.trim();
+        boolean hasImage = imageBase64 != null && !imageBase64.isBlank();
 
         List<SourceTextResolver.ResolvedSource> resolved = new ArrayList<>();
         List<String> sourceTypes = new ArrayList<>();
-        for (VectorMatch match : matches) {
-            if (match.distance() > maxDistance) continue;
-            resolveSource(match).ifPresent(source -> {
-                resolved.add(source);
-                sourceTypes.add(match.sourceType());
-            });
+        if (!q.isEmpty()) {
+            float[] questionVector = embeddingClient.embed(q);
+            List<VectorMatch> matches = vectorDocumentRepository.findNearest(null, questionVector, topK);
+            for (VectorMatch match : matches) {
+                if (match.distance() > maxDistance) continue;
+                resolveSource(match).ifPresent(source -> {
+                    resolved.add(source);
+                    sourceTypes.add(match.sourceType());
+                });
+            }
         }
 
-        if (resolved.isEmpty()) {
+        if (resolved.isEmpty() && !hasImage) {
             return new ChatAskResponse(NO_MATCH_ANSWER, List.of());
         }
 
@@ -78,8 +88,8 @@ public class ChatbotQueryService {
         // 카드/카드를 눌렀을 때 나오는 전문까지 계속 한국어로 보인다. 질문이 한국어가 아닐 때만
         // 같은 호출 안에서 자료별 번역본도 같이 받아온다(호출 한 번 더 안 씀). 한국어 질문일 땐
         // 어차피 원문 그대로 쓰면 되니 이 과정 자체를 건너뛰어 응답을 가볍게 유지한다.
-        boolean needsTranslation = !looksKorean(question);
-        String raw = chatClient.generate(buildPrompt(question, resolved, needsTranslation));
+        boolean needsTranslation = !q.isEmpty() && !looksKorean(q);
+        String raw = chatClient.generate(buildPrompt(q, resolved, needsTranslation, hasImage), imageBase64, imageMimeType);
         // 모델이 지시를 안 지키고 구분자에 마크다운(** 등)을 붙이는 경우까지 감안해서 제거하고 본다.
         String normalized = raw.replace("**", "");
 
@@ -152,11 +162,28 @@ public class ChatbotQueryService {
         }
     }
 
-    private String buildPrompt(String question, List<SourceTextResolver.ResolvedSource> sources, boolean needsTranslation) {
+    private String buildPrompt(String question, List<SourceTextResolver.ResolvedSource> sources,
+                                boolean needsTranslation, boolean hasImage) {
+        StringBuilder sb = new StringBuilder();
+
+        if (sources.isEmpty()) {
+            // 벡터 검색으로 관련 부산 이야기를 못 찾았지만(또는 질문 텍스트 자체가 없지만) 사진이
+            // 있는 경우 — ask()에서 이 분기는 hasImage가 true일 때만 호출된다.
+            sb.append("당신은 부산 지역 여행·설화를 안내하는 챗봇입니다. 사용자가 사진을 보냈습니다. ")
+              .append("사진 내용을 보고 자연스럽게 답하세요 — 부산의 장소·음식·설화와 관련 있어 보이면 그 내용을 곁들이고, ")
+              .append("아니면 사진에 대해 편하게 설명해도 됩니다. 지어내지 말고, 확실하지 않으면 확실하지 않다고 답하세요. ")
+              .append(question.isEmpty()
+                      ? "질문 텍스트는 따로 없으니 한국어로 답하세요. "
+                      : "답변 언어는 반드시 사용자 질문에 쓰인 언어와 같게 하세요. ")
+              .append("이 답변은 채팅창에 렌더링되니, 필요할 때만 **굵게**나 \"- 항목\" 목록을 섞어 쓰고 ")
+              .append("#, ---, 코드블록 같은 다른 마크다운 문법은 쓰지 말고 3~5문장으로 간결하게 답하세요.\n\n");
+            if (!question.isEmpty()) sb.append("질문: ").append(question);
+            return sb.toString();
+        }
+
         // sources는 벡터 거리순(가장 가까운 것이 0번)으로 정렬되어 들어온다.
         // 질문과 제일 가까운 자료 하나를 "주 자료"로 못박아, 매번 비슷한 톤으로 여러 자료를
         // 뭉뚱그려 답하는 대신 질문에 맞는 이야기 하나에 집중해서 구체적으로 답하게 한다.
-        StringBuilder sb = new StringBuilder();
         sb.append("당신은 부산 지역 설화·전설을 안내하는 챗봇입니다. 아래 [주 자료]를 중심으로 사용자 질문에 답변하세요. ")
           .append("답변 언어는 반드시 사용자 질문에 쓰인 언어와 같게 하세요 — 질문이 일본어면 일본어로, 영어면 영어로, ")
           .append("중국어면 중국어로, 프랑스어면 프랑스어로 답하고, 그 외 언어도 마찬가지로 질문 언어를 그대로 따르세요. ")
@@ -165,8 +192,11 @@ public class ChatbotQueryService {
           .append("자료에 없는 내용은 지어내지 말고, 모르면 모른다고 답하세요. ")
           .append("일반적이고 뻔한 설명 대신 [주 자료]에 나온 등장인물 이름, 지명, 사건 등 구체적인 디테일을 반드시 답변에 담아, ")
           .append("비슷한 질문에도 그 이야기만의 내용으로 답하세요. ")
-          .append("질문에서 직접 묻지 않은 다른 이야기까지 곁들이지 말고, 질문 범위 안에서만 3~5문장으로 간결하게 답하세요. ")
-          .append("이 답변은 채팅창에 렌더링되니 읽기 편하게 아래 서식만 필요할 때 적절히 섞어 쓰세요: ")
+          .append("질문에서 직접 묻지 않은 다른 이야기까지 곁들이지 말고, 질문 범위 안에서만 3~5문장으로 간결하게 답하세요. ");
+        if (hasImage) {
+            sb.append("사용자가 사진도 함께 보냈으니, 사진 내용을 참고해서 답변에 자연스럽게 반영하세요. ");
+        }
+        sb.append("이 답변은 채팅창에 렌더링되니 읽기 편하게 아래 서식만 필요할 때 적절히 섞어 쓰세요: ")
           .append("강조할 단어/이름은 **굵게**, 여러 항목을 나열할 땐 새 줄마다 \"- 항목\" 형식의 목록, ")
           .append("정보를 비교하거나 표로 정리하는 게 더 읽기 편할 땐 \"| 항목 | 내용 |\" 형식의 표를 쓰세요. ")
           .append("다만 답변 전체를 목록이나 표로만 채우지 말고 자연스러운 설명 문장을 기본으로 하고, ")
@@ -180,7 +210,7 @@ public class ChatbotQueryService {
             sb.append(label).append(' ').append(source.title()).append('\n')
               .append(text).append("\n\n");
         }
-        sb.append("질문: ").append(question);
+        sb.append("질문: ").append(question.isEmpty() ? "(텍스트 질문 없음 — 첨부한 사진을 보고 답변)" : question);
         if (needsTranslation) {
             // 사용자가 "참고한 이야기" 카드를 누르면 제목과 본문 전체를 그대로 보여주는데,
             // 원문이 한국어라 질문 언어랑 안 맞았다. 답변 뒤에 자료별로 제목/요약/본문 번역본을

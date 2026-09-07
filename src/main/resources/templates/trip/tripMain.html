@@ -46,105 +46,114 @@
         <div class="form-step active" id="step1">
             <div class="step-title" th:utext="#{trip.step1.title}">👤 기본 <span>정보</span>를 알려주세요</div>
 
-            <div class="field-grid">
-                <div class="field-group">
-                    <label class="field-label" th:text="#{trip.field.age}">나이</label>
-                    <input class="field-input" id="age" type="number" min="10" max="99" th:placeholder="#{trip.placeholder.age}" placeholder="나이 입력">
-                </div>
-                <div class="field-group">
-                    <label class="field-label" th:text="#{trip.field.companion}">동행 유형</label>
-                    <select class="field-input" id="companion">
-                        <option value="" th:text="#{trip.option.select}">선택하세요</option>
-                        <option value="solo" th:text="#{trip.option.solo}">혼자 🙋</option>
-                        <option value="friend" th:text="#{trip.option.friend}">친구와 👫</option>
-                        <option value="couple" th:text="#{trip.option.couple}">커플 💑</option>
-                        <option value="family" th:text="#{trip.option.family}">가족 👨‍👩‍👧</option>
-                    </select>
-                </div>
-                <div class="field-group">
-                    <label class="field-label" th:text="#{trip.field.budget}">하루 예산</label>
-                    <input class="field-input" id="budget" type="number" min="1" max="100"
-                           th:placeholder="#{trip.placeholder.budget}" placeholder="예: 5" oninput="updateBudgetLabel(this.value)">
-                    <p id="budgetLabel" class="field-hint" style="min-height:16px" th:text="#{trip.hint.budgetUnit}">만원 단위</p>
-                </div>
-                <div class="field-group">
-                    <label class="field-label" th:text="#{trip.field.intensity}">여행 강도</label>
-                    <select class="field-input" id="intensity">
-                        <option value="" th:text="#{trip.option.select}">선택하세요</option>
-                        <option value="relaxed" th:text="#{trip.option.relaxed}">느긋하게 😌</option>
-                        <option value="balanced" th:text="#{trip.option.balanced}">적당히 😊</option>
-                        <option value="packed" th:text="#{trip.option.packed}">알차게 🔥</option>
-                    </select>
+            <div class="field-section">
+                <div class="field-section-title" th:text="#{trip.section.traveler}">여행자 정보</div>
+                <div class="field-grid">
+                    <div class="field-group">
+                        <label class="field-label" th:text="#{trip.field.age}">나이</label>
+                        <input class="field-input" id="age" type="number" min="10" max="99" th:placeholder="#{trip.placeholder.age}" placeholder="나이 입력">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" th:text="#{trip.field.companion}">동행 유형</label>
+                        <select class="field-input" id="companion">
+                            <option value="" th:text="#{trip.option.select}">선택하세요</option>
+                            <option value="solo" th:text="#{trip.option.solo}">혼자 🙋</option>
+                            <option value="friend" th:text="#{trip.option.friend}">친구와 👫</option>
+                            <option value="couple" th:text="#{trip.option.couple}">커플 💑</option>
+                            <option value="family" th:text="#{trip.option.family}">가족 👨‍👩‍👧</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" th:text="#{trip.field.budget}">하루 예산</label>
+                        <input class="field-input" id="budget" type="number" min="1" max="100"
+                               th:placeholder="#{trip.placeholder.budget}" placeholder="예: 5" oninput="updateBudgetLabel(this.value)">
+                        <p id="budgetLabel" class="field-hint" style="min-height:16px" th:text="#{trip.hint.budgetUnit}">만원 단위</p>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" th:text="#{trip.field.intensity}">여행 강도</label>
+                        <select class="field-input" id="intensity">
+                            <option value="" th:text="#{trip.option.select}">선택하세요</option>
+                            <option value="relaxed" th:text="#{trip.option.relaxed}">느긋하게 😌</option>
+                            <option value="balanced" th:text="#{trip.option.balanced}">적당히 😊</option>
+                            <option value="packed" th:text="#{trip.option.packed}">알차게 🔥</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <div class="time-row">
-                <div class="field-group">
-                    <label class="field-label" th:text="#{trip.field.startDate}">여행 시작일</label>
-                    <input class="field-input" id="startDate" type="date">
-                </div>
-                <div class="field-group">
-                    <label class="field-label" th:text="#{trip.field.travelDays}">여행 일수</label>
-                    <input class="field-input" id="travelDays" type="number" min="1" max="14" th:placeholder="#{trip.placeholder.travelDaysExample}" placeholder="예: 3">
-                </div>
-                <div class="field-group">
-                    <label class="field-label" th:text="#{trip.field.startHour}">시작 시간 (시)</label>
-                    <input class="field-input" id="startHour" type="number" min="6" max="20" th:placeholder="#{trip.placeholder.startHourExample}" placeholder="예: 10">
-                </div>
-                <div class="field-group">
-                    <label class="field-label" th:text="#{trip.field.endHour}">종료 시간 (시)</label>
-                    <input class="field-input" id="endHour" type="number" min="12" max="24" th:placeholder="#{trip.placeholder.endHourExample}" placeholder="예: 21">
+            <div class="field-section">
+                <div class="field-section-title" th:text="#{trip.section.schedule}">일정 · 시간</div>
+                <div class="time-row">
+                    <div class="field-group">
+                        <label class="field-label" th:text="#{trip.field.startDate}">여행 시작일</label>
+                        <input class="field-input" id="startDate" type="date">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" th:text="#{trip.field.travelDays}">여행 일수</label>
+                        <input class="field-input" id="travelDays" type="number" min="1" max="14" th:placeholder="#{trip.placeholder.travelDaysExample}" placeholder="예: 3">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" th:text="#{trip.field.startHour}">시작 시간 (시)</label>
+                        <input class="field-input" id="startHour" type="number" min="6" max="20" th:placeholder="#{trip.placeholder.startHourExample}" placeholder="예: 10">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label" th:text="#{trip.field.endHour}">종료 시간 (시)</label>
+                        <input class="field-input" id="endHour" type="number" min="12" max="24" th:placeholder="#{trip.placeholder.endHourExample}" placeholder="예: 21">
+                    </div>
                 </div>
             </div>
 
-            <div class="time-row">
-                <div class="field-group">
-                    <label class="field-label" th:text="#{trip.field.arrivalAirport}">입국 공항</label>
-                    <select class="field-input" id="arrivalAirport" onchange="applyAirportDefaults('arrival')">
-                        <option value="PUS" th:text="#{trip.airport.gimhae}">김해국제공항</option><option value="ICN" th:text="#{trip.airport.incheon}">인천국제공항</option><option value="GMP" th:text="#{trip.airport.gimpo}">김포국제공항</option><option value="OTHER" th:text="#{trip.airport.other}">기타</option>
-                    </select>
-                </div>
-                <div class="field-group"><label class="field-label" th:text="#{trip.field.arrivalTime}">한국 도착 시각 (선택)</label><input class="field-input" id="arrivalTime" type="time"></div>
-                <div class="field-group">
-                    <label class="field-label" th:text="#{trip.field.arrivalTransportLabel}">도착 후 일정 시작까지</label>
-                    <select class="field-input" id="arrivalTransport" style="display:none;margin-bottom:6px" onchange="applyTransportDefault('arrival')">
-                        <option value="" th:text="#{trip.placeholder.arrivalTransport}">부산까지 이동수단 (선택 시 기본값 자동계산)</option>
-                        <option value="train" th:text="#{trip.transport.train}">KTX/기차</option>
-                        <option value="bus" th:text="#{trip.transport.bus}">고속·시외버스</option>
-                        <option value="rentcar" th:text="#{trip.transport.rentcar}">렌트카</option>
-                        <option value="domestic" th:text="#{trip.transport.domestic}">국내선 항공 환승</option>
-                    </select>
-                    <div class="duration-input">
-                        <input class="field-input" id="arrivalReadyHours" type="number" min="0" max="10" value="1" th:aria-label="#{trip.unit.hour}" aria-label="시간">
-                        <span class="duration-unit" th:text="#{trip.unit.hour}">시간</span>
-                        <input class="field-input" id="arrivalReadyMins" type="number" min="0" max="59" step="5" value="30" th:aria-label="#{trip.unit.minute}" aria-label="분">
-                        <span class="duration-unit" th:text="#{trip.unit.minute}">분</span>
+            <div class="field-section">
+                <div class="field-section-title" th:text="#{trip.section.airport}">공항 · 이동</div>
+                <div class="time-row">
+                    <div class="field-group">
+                        <label class="field-label" th:text="#{trip.field.arrivalAirport}">입국 공항</label>
+                        <select class="field-input" id="arrivalAirport" onchange="applyAirportDefaults('arrival')">
+                            <option value="PUS" th:text="#{trip.airport.gimhae}">김해국제공항</option><option value="ICN" th:text="#{trip.airport.incheon}">인천국제공항</option><option value="GMP" th:text="#{trip.airport.gimpo}">김포국제공항</option><option value="OTHER" th:text="#{trip.airport.other}">기타</option>
+                        </select>
                     </div>
-                    <p class="field-hint" th:text="#{trip.hint.arrivalReady}">입국수속·수하물·부산 이동 포함 (대략적인 기본값, 직접 수정 가능)</p>
-                </div>
-                <div class="field-group">
-                    <label class="field-label" th:text="#{trip.field.departureAirport}">출국 공항</label>
-                    <select class="field-input" id="departureAirport" onchange="applyAirportDefaults('departure')">
-                        <option value="PUS" th:text="#{trip.airport.gimhae}">김해국제공항</option><option value="ICN" th:text="#{trip.airport.incheon}">인천국제공항</option><option value="GMP" th:text="#{trip.airport.gimpo}">김포국제공항</option><option value="OTHER" th:text="#{trip.airport.other}">기타</option>
-                    </select>
-                </div>
-                <div class="field-group"><label class="field-label" th:text="#{trip.field.departureTime}">한국 출발 시각 (선택)</label><input class="field-input" id="departureTime" type="time"></div>
-                <div class="field-group">
-                    <label class="field-label" th:text="#{trip.field.departureTransportLabel}">출발 전 일정 종료 여유</label>
-                    <select class="field-input" id="departureTransport" style="display:none;margin-bottom:6px" onchange="applyTransportDefault('departure')">
-                        <option value="" th:text="#{trip.placeholder.departureTransport}">공항까지 이동수단 (선택 시 기본값 자동계산)</option>
-                        <option value="train" th:text="#{trip.transport.train}">KTX/기차</option>
-                        <option value="bus" th:text="#{trip.transport.bus}">고속·시외버스</option>
-                        <option value="rentcar" th:text="#{trip.transport.rentcar}">렌트카</option>
-                        <option value="domestic" th:text="#{trip.transport.domestic}">국내선 항공 환승</option>
-                    </select>
-                    <div class="duration-input">
-                        <input class="field-input" id="departureLeadHours" type="number" min="0" max="10" value="3" th:aria-label="#{trip.unit.hour}" aria-label="시간">
-                        <span class="duration-unit" th:text="#{trip.unit.hour}">시간</span>
-                        <input class="field-input" id="departureLeadMins" type="number" min="0" max="59" step="5" value="0" th:aria-label="#{trip.unit.minute}" aria-label="분">
-                        <span class="duration-unit" th:text="#{trip.unit.minute}">분</span>
+                    <div class="field-group"><label class="field-label" th:text="#{trip.field.arrivalTime}">한국 도착 시각 (선택)</label><input class="field-input" id="arrivalTime" type="time"></div>
+                    <div class="field-group">
+                        <label class="field-label" th:text="#{trip.field.arrivalTransportLabel}">도착 후 일정 시작까지</label>
+                        <select class="field-input" id="arrivalTransport" style="display:none;margin-bottom:6px" onchange="applyTransportDefault('arrival')">
+                            <option value="" th:text="#{trip.placeholder.arrivalTransport}">부산까지 이동수단 (선택 시 기본값 자동계산)</option>
+                            <option value="train" th:text="#{trip.transport.train}">KTX/기차</option>
+                            <option value="bus" th:text="#{trip.transport.bus}">고속·시외버스</option>
+                            <option value="rentcar" th:text="#{trip.transport.rentcar}">렌트카</option>
+                            <option value="domestic" th:text="#{trip.transport.domestic}">국내선 항공 환승</option>
+                        </select>
+                        <div class="duration-input">
+                            <input class="field-input" id="arrivalReadyHours" type="number" min="0" max="10" value="1" th:aria-label="#{trip.unit.hour}" aria-label="시간">
+                            <span class="duration-unit" th:text="#{trip.unit.hour}">시간</span>
+                            <input class="field-input" id="arrivalReadyMins" type="number" min="0" max="59" step="5" value="30" th:aria-label="#{trip.unit.minute}" aria-label="분">
+                            <span class="duration-unit" th:text="#{trip.unit.minute}">분</span>
+                        </div>
+                        <p class="field-hint" th:text="#{trip.hint.arrivalReady}">입국수속·수하물·부산 이동 포함 (대략적인 기본값, 직접 수정 가능)</p>
                     </div>
-                    <p class="field-hint" th:text="#{trip.hint.departureLead}">공항 이동·출국수속 포함 (대략적인 기본값, 직접 수정 가능)</p>
+                    <div class="field-group">
+                        <label class="field-label" th:text="#{trip.field.departureAirport}">출국 공항</label>
+                        <select class="field-input" id="departureAirport" onchange="applyAirportDefaults('departure')">
+                            <option value="PUS" th:text="#{trip.airport.gimhae}">김해국제공항</option><option value="ICN" th:text="#{trip.airport.incheon}">인천국제공항</option><option value="GMP" th:text="#{trip.airport.gimpo}">김포국제공항</option><option value="OTHER" th:text="#{trip.airport.other}">기타</option>
+                        </select>
+                    </div>
+                    <div class="field-group"><label class="field-label" th:text="#{trip.field.departureTime}">한국 출발 시각 (선택)</label><input class="field-input" id="departureTime" type="time"></div>
+                    <div class="field-group">
+                        <label class="field-label" th:text="#{trip.field.departureTransportLabel}">출발 전 일정 종료 여유</label>
+                        <select class="field-input" id="departureTransport" style="display:none;margin-bottom:6px" onchange="applyTransportDefault('departure')">
+                            <option value="" th:text="#{trip.placeholder.departureTransport}">공항까지 이동수단 (선택 시 기본값 자동계산)</option>
+                            <option value="train" th:text="#{trip.transport.train}">KTX/기차</option>
+                            <option value="bus" th:text="#{trip.transport.bus}">고속·시외버스</option>
+                            <option value="rentcar" th:text="#{trip.transport.rentcar}">렌트카</option>
+                            <option value="domestic" th:text="#{trip.transport.domestic}">국내선 항공 환승</option>
+                        </select>
+                        <div class="duration-input">
+                            <input class="field-input" id="departureLeadHours" type="number" min="0" max="10" value="3" th:aria-label="#{trip.unit.hour}" aria-label="시간">
+                            <span class="duration-unit" th:text="#{trip.unit.hour}">시간</span>
+                            <input class="field-input" id="departureLeadMins" type="number" min="0" max="59" step="5" value="0" th:aria-label="#{trip.unit.minute}" aria-label="분">
+                            <span class="duration-unit" th:text="#{trip.unit.minute}">분</span>
+                        </div>
+                        <p class="field-hint" th:text="#{trip.hint.departureLead}">공항 이동·출국수속 포함 (대략적인 기본값, 직접 수정 가능)</p>
+                    </div>
                 </div>
             </div>
 

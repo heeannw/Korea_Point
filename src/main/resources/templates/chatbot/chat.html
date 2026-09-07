@@ -24,7 +24,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: "Noto Sans KR", sans-serif;
-            background: var(--light);
+            background: var(--white);
             color: var(--dark);
             display: flex;
             flex-direction: column;
@@ -104,6 +104,7 @@
             gap: 4px;
         }
         .history-row {
+            position: relative;
             display: flex;
             align-items: center;
             border-radius: 10px;
@@ -127,25 +128,32 @@
             text-overflow: ellipsis;
         }
         .history-row.active .history-item { color: var(--primary-dark); font-weight: 700; }
-        .history-actions {
+        /* GPT처럼 삭제/이름 바꾸기를 항상 보이는 두 아이콘 대신 "⋯" 버튼 하나로 묶고,
+           눌렀을 때만 작은 메뉴로 두 항목을 보여준다. */
+        .history-menu-btn {
             display: none;
             flex: none;
-            gap: 2px;
-            padding-right: 6px;
-        }
-        .history-row:hover .history-actions { display: flex; }
-        .history-action-btn {
+            width: 26px;
+            height: 26px;
+            margin-right: 4px;
             border: none;
             background: transparent;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 15px;
             line-height: 1;
-            padding: 6px;
             border-radius: 6px;
             color: var(--gray);
+            align-items: center;
+            justify-content: center;
         }
-        .history-action-btn:hover { background: var(--border); }
-        .history-row.editing .history-actions { display: none; }
+        .history-menu-btn:hover { background: var(--border); color: var(--dark); }
+        .history-row:hover .history-menu-btn,
+        .history-row.menu-open .history-menu-btn { display: flex; }
+        .history-row.editing .history-menu-btn { display: none; }
+        /* 메뉴 팝오버는 공용 헤더(app-header)의 드롭다운과 같은 스타일(.user-menu-pop)을
+           그대로 재사용한다 — 위치만 이 버튼 기준으로 다시 잡는다. */
+        .history-menu-btn-wrap { position: relative; }
+        .history-menu-btn-wrap .user-menu-pop { right: 0; left: auto; min-width: 140px; }
         .history-edit-input {
             flex: 1;
             min-width: 0;
@@ -186,15 +194,26 @@
         }
         .intro {
             text-align: center;
-            color: var(--gray);
-            font-size: 14px;
             padding: 32px 16px;
         }
-        .intro h1 {
-            font-size: 22px;
+        .intro p {
+            font-size: 24px;
+            font-weight: 700;
             color: var(--dark);
-            margin-bottom: 8px;
         }
+        /* 대화 시작 전 — ChatGPT처럼 인사말+입력창을 화면 중앙에 두고, 첫 메시지를 보내는
+           순간 입력창을 하단(footer)으로 옮긴다(moveComposerToFooter/Intro, 아래 JS). */
+        .chat-area.empty main {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-area.empty footer { display: none; }
+        /* .chat-shell은 원래 메시지 말풍선 폭(720px)에 맞춘 값이라, 대화 시작 전 이 안에 있는
+           입력창까지 같이 좁아져 보였다(.composer 자체 max-width는 860px인데 부모가 더 좁아서
+           못 넓어짐) — 빈 화면일 때만 말풍선이 아직 없으니 .composer 폭에 맞춰 넓혀준다. */
+        .chat-area.empty .chat-shell { width: 100%; max-width: 860px; }
+        .intro .composer { margin-top: 24px; }
         .msg-row { display: flex; }
         .msg-row.user { justify-content: flex-end; }
         .msg-bubble {
@@ -348,39 +367,115 @@
         .typing { color: var(--gray); font-size: 13px; }
         footer {
             padding: 16px 24px 24px;
-            background: var(--light);
+            background: var(--white);
             flex: none;
         }
+        /* GPT 채팅창처럼 훨씬 넉넉한 폭 + 둥근 사각형(핏) 카드. 사진을 첨부하면 위쪽에
+           미리보기 줄이 먼저 뜨고, 그 아래에 입력 줄(첨부/텍스트/음성/전송)이 온다. */
         .composer {
-            max-width: 720px;
+            max-width: 860px;
             margin: 0 auto;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
             background: var(--white);
             border: 1.5px solid var(--border);
-            border-radius: 50px;
-            padding: 8px 8px 8px 20px;
+            border-radius: 28px;
+            padding: 8px;
+            box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06);
         }
-        .composer input {
+        .composer-preview {
+            display: none;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 6px 6px 10px;
+        }
+        .composer-preview.show { display: flex; }
+        .preview-chip {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            flex: none;
+        }
+        .preview-chip img { display: block; width: 100%; height: 100%; object-fit: cover; }
+        .preview-chip .remove-chip {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(15, 23, 42, 0.65);
+            color: #ffffff;
+            font-size: 11px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .composer-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .composer-row input[type="text"] {
             flex: 1;
+            min-width: 0;
             border: none;
             outline: none;
             font: inherit;
-            font-size: 14px;
+            font-size: 16px;
+            padding: 12px 6px;
         }
-        .composer button {
+        /* 첨부(+) · 음성 버튼 공용 원형 아이콘 버튼 */
+        .icon-btn {
+            flex: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--gray);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .icon-btn:hover { background: var(--light); color: var(--primary); }
+        .icon-btn svg { width: 20px; height: 20px; }
+        /* 음성 입력 버튼 — 듣는 동안은 빨갛게 펄스 애니메이션으로 상태를 알려준다. */
+        .mic-btn.listening {
+            background: #ef4444;
+            color: #ffffff;
+            animation: micPulse 1.3s ease-in-out infinite;
+        }
+        @keyframes micPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        }
+        .composer .send-btn {
+            flex: none;
+            width: 42px;
+            height: 42px;
             border: none;
             background: var(--primary);
             color: #ffffff;
-            font-weight: 600;
-            font-size: 13px;
-            padding: 10px 20px;
-            border-radius: 50px;
+            border-radius: 50%;
             cursor: pointer;
+            margin-left: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: background 0.2s ease;
         }
-        .composer button:hover { background: var(--primary-dark); }
-        .composer button:disabled { background: var(--gray); cursor: not-allowed; }
+        .composer .send-btn svg { width: 19px; height: 19px; margin-left: -1px; }
+        .composer .send-btn:hover { background: var(--primary-dark); }
+        .composer .send-btn:disabled { background: var(--gray); cursor: not-allowed; }
 
         @media (max-width: 720px) {
             .sidebar { display: none; }
@@ -399,24 +494,38 @@
         </div>
     </aside>
 
-    <div class="chat-area">
+    <div class="chat-area empty" id="chatArea">
         <main id="chatMain">
             <div class="chat-shell" id="chatShell">
                 <div class="intro" id="chatIntro">
-                    <h1 th:text="#{chatbot.intro.title}">🤖 부산 이야기 챗봇</h1>
-                    <p th:text="#{chatbot.intro.subtitle}">부산의 설화와 장소에 얽힌 이야기를 물어보세요.</p>
+                    <p th:text="#{chatbot.intro.subtitle}">부산의 설화와 장소에 얽힌 이야기를 물어보세요!</p>
+                    <!-- 대화가 없을 때는 입력창이 여기(중앙)에 있다가, 첫 메시지를 보내면
+                         JS(moveComposerToFooter)가 이 폼을 footer로 그대로 옮긴다. -->
                 </div>
             </div>
         </main>
 
-        <footer>
-            <form class="composer" id="chatForm">
-                <input type="text" id="chatInput" th:placeholder="#{chatbot.input.placeholder}" placeholder="예) 해운대에 얽힌 전설 있어?" autocomplete="off" required>
-                <button type="submit" id="chatSend" th:text="#{chatbot.send}">보내기</button>
-            </form>
+        <footer id="chatFooter">
         </footer>
     </div>
 </div>
+
+<form class="composer" id="chatForm">
+    <div class="composer-preview" id="composerPreview"></div>
+    <div class="composer-row">
+        <input type="file" id="attachInput" accept="image/*" hidden>
+        <button type="button" class="icon-btn" id="attachBtn" th:title="#{chatbot.attach.title}" title="사진 첨부하기" th:aria-label="#{chatbot.attach.title}" aria-label="사진 첨부하기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+        <input type="text" id="chatInput" th:placeholder="#{chatbot.input.placeholder}" placeholder="예) 해운대에 얽힌 전설 있어?" autocomplete="off">
+        <button type="button" class="icon-btn mic-btn" id="micBtn" th:title="#{chatbot.voice.title}" title="음성으로 입력하기" th:aria-label="#{chatbot.voice.title}" aria-label="음성으로 입력하기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="22"></line><line x1="8" y1="22" x2="16" y2="22"></line></svg>
+        </button>
+        <button type="submit" class="send-btn" id="chatSend" th:title="#{chatbot.send}" title="보내기" th:aria-label="#{chatbot.send}" aria-label="보내기">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+        </button>
+    </div>
+</form>
 
 <script th:inline="javascript">
     // switchLang()은 이제 공용 헤더 스크립트(/js/common/header-menu.js)가 제공한다.
@@ -424,6 +533,7 @@
     const CSRF_TOKEN = document.querySelector('meta[name="_csrf"]').content;
     const CSRF_HEADER = document.querySelector('meta[name="_csrf_header"]').content;
     const STORAGE_KEY = 'chatbotConversations';
+    const CURRENT_LANG = /*[[${lang}]]*/ 'ko';
 
     // JS가 동적으로 만드는 문구들 — 서버 렌더링(th:text)이 안 닿는 부분이라 현재 로케일 번역을
     // Thymeleaf 인라인으로 여기서 통째로 받아온다. {0} 자리는 askMore처럼 값을 끼워 넣을 때 쓴다.
@@ -438,7 +548,16 @@
         sourcesAskMore:/*[[#{chatbot.sources.askMore}]]*/ '「{0}」 이야기 더 알려줄래?',
         typing:       /*[[#{chatbot.typing}]]*/ '이야기를 찾아보는 중...',
         answerMissing:/*[[#{chatbot.answer.missing}]]*/ '답변을 받지 못했어요.',
-        answerError:  /*[[#{chatbot.answer.error}]]*/ '답변을 가져오지 못했어요. 잠시 후 다시 시도해 주세요.'
+        answerError:  /*[[#{chatbot.answer.error}]]*/ '답변을 가져오지 못했어요. 잠시 후 다시 시도해 주세요.',
+        voiceTitle:   /*[[#{chatbot.voice.title}]]*/ '음성으로 입력하기',
+        voiceListening:/*[[#{chatbot.voice.listening}]]*/ '듣고 있어요...',
+        voiceUnsupported:/*[[#{chatbot.voice.unsupported}]]*/ '이 브라우저는 음성 입력을 지원하지 않아요.',
+        voiceError:   /*[[#{chatbot.voice.error}]]*/ '음성을 인식하지 못했어요. 다시 시도해 주세요.',
+        moreTitle:    /*[[#{chatbot.more.title}]]*/ '더보기',
+        attachTooLarge:  /*[[#{chatbot.attach.tooLarge}]]*/ '사진 용량이 너무 커요 (4MB 이하로 올려주세요).',
+        attachInvalidType:/*[[#{chatbot.attach.invalidType}]]*/ '이미지 파일만 첨부할 수 있어요.',
+        attachRemove: /*[[#{chatbot.attach.remove}]]*/ '첨부 취소',
+        attachDefaultTitle: /*[[#{chatbot.attach.defaultTitle}]]*/ '📷 사진 문의'
     };
 
     /* ─── 챗봇 답변용 가벼운 마크다운 렌더러 ───
@@ -502,11 +621,30 @@
     const input = document.getElementById('chatInput');
     const shell = document.getElementById('chatShell');
     const sendBtn = document.getElementById('chatSend');
+    const micBtn = document.getElementById('micBtn');
+    const attachBtn = document.getElementById('attachBtn');
+    const attachInput = document.getElementById('attachInput');
+    const composerPreview = document.getElementById('composerPreview');
     const main = document.getElementById('chatMain');
     const historyList = document.getElementById('historyList');
     const historyEmpty = document.getElementById('historyEmpty');
     const newChatBtn = document.getElementById('newChatBtn');
     const chatIntro = document.getElementById('chatIntro');
+    const chatArea = document.getElementById('chatArea');
+    const chatFooter = document.getElementById('chatFooter');
+
+    /* ─── 입력창 위치 전환 — 대화 시작 전엔 화면 중앙(intro 안), 시작하면 하단(footer)으로 ───
+       같은 <form id="chatForm"> 노드를 그대로 옮기는 방식이라(innerHTML 재작성이 아님)
+       이벤트 리스너가 끊기지 않는다. */
+    function moveComposerToIntro() {
+        chatIntro.appendChild(form);
+        chatArea.classList.add('empty');
+    }
+    function moveComposerToFooter() {
+        chatFooter.appendChild(form);
+        chatArea.classList.remove('empty');
+    }
+    moveComposerToIntro();
 
     // ── 지난 대화는 브라우저(localStorage)에만 저장한다. 서버엔 대화 기록을 안 남긴다.
     let conversations = loadConversations();
@@ -567,30 +705,67 @@
             btn.addEventListener('click', () => openConversation(conv.id));
             btn.addEventListener('dblclick', (e) => { e.stopPropagation(); startRename(conv.id); });
 
-            const actions = document.createElement('div');
-            actions.className = 'history-actions';
+            // GPT처럼 "⋯" 버튼 하나 → 누르면 이름 바꾸기/삭제 두 항목이 담긴 작은 메뉴가 뜬다.
+            const menuWrap = document.createElement('div');
+            menuWrap.className = 'history-menu-btn-wrap';
+
+            const moreBtn = document.createElement('button');
+            moreBtn.type = 'button';
+            moreBtn.className = 'history-menu-btn';
+            moreBtn.textContent = '⋯';
+            moreBtn.title = I18N.moreTitle;
+            moreBtn.setAttribute('aria-haspopup', 'true');
+            moreBtn.setAttribute('aria-expanded', 'false');
+
+            const pop = document.createElement('div');
+            pop.className = 'user-menu-pop';
+            pop.setAttribute('role', 'menu');
+            pop.hidden = true;
 
             const renameBtn = document.createElement('button');
             renameBtn.type = 'button';
-            renameBtn.className = 'history-action-btn';
-            renameBtn.textContent = '✏️';
-            renameBtn.title = I18N.renameTitle;
-            renameBtn.addEventListener('click', (e) => { e.stopPropagation(); startRename(conv.id); });
+            renameBtn.setAttribute('role', 'menuitem');
+            renameBtn.textContent = I18N.renameTitle;
+            renameBtn.addEventListener('click', (e) => { e.stopPropagation(); closeHistoryMenus(); startRename(conv.id); });
 
             const deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
-            deleteBtn.className = 'history-action-btn';
-            deleteBtn.textContent = '🗑️';
-            deleteBtn.title = I18N.deleteTitle;
-            deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteConversation(conv.id); });
+            deleteBtn.setAttribute('role', 'menuitem');
+            deleteBtn.textContent = I18N.deleteTitle;
+            deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); closeHistoryMenus(); deleteConversation(conv.id); });
 
-            actions.appendChild(renameBtn);
-            actions.appendChild(deleteBtn);
+            pop.appendChild(renameBtn);
+            pop.appendChild(deleteBtn);
+
+            moreBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const willOpen = pop.hidden;
+                closeHistoryMenus();
+                pop.hidden = !willOpen;
+                row.classList.toggle('menu-open', willOpen);
+                moreBtn.setAttribute('aria-expanded', String(willOpen));
+            });
+
+            menuWrap.appendChild(moreBtn);
+            menuWrap.appendChild(pop);
             row.appendChild(btn);
-            row.appendChild(actions);
+            row.appendChild(menuWrap);
             historyList.appendChild(row);
         });
     }
+
+    /** 열려 있는 대화 목록 "⋯" 메뉴를 전부 닫는다(다른 메뉴를 열 때 · 바깥 클릭 · Esc). */
+    function closeHistoryMenus() {
+        historyList.querySelectorAll('.history-row.menu-open').forEach(row => row.classList.remove('menu-open'));
+        historyList.querySelectorAll('.user-menu-pop').forEach(pop => { pop.hidden = true; });
+        historyList.querySelectorAll('.history-menu-btn').forEach(btn => btn.setAttribute('aria-expanded', 'false'));
+    }
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.history-menu-btn-wrap')) closeHistoryMenus();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeHistoryMenus();
+    });
 
     function startRename(id) {
         editingId = id;
@@ -622,6 +797,7 @@
         const conv = conversations.find(c => c.id === id);
         if (!conv) return;
         activeId = id;
+        moveComposerToFooter();
         shell.innerHTML = '';
         conv.messages.forEach(msg => {
             const bubble = msg.isStory ? addStoryMessage(msg.text, msg.summary, false) : addMessage(msg.role, msg.text, false);
@@ -637,15 +813,19 @@
         editingId = null;
         shell.innerHTML = '';
         shell.appendChild(chatIntro);
+        moveComposerToIntro();
         renderHistoryList();
         input.focus();
     }
 
     function ensureActiveConversation(firstQuestion) {
         if (activeId) return conversations.find(c => c.id === activeId);
+        const title = firstQuestion
+            ? (firstQuestion.length > 24 ? firstQuestion.slice(0, 24) + '…' : firstQuestion)
+            : I18N.attachDefaultTitle; // 질문 텍스트 없이 사진만 보낸 첫 메시지
         const conv = {
             id: Date.now().toString(36),
-            title: firstQuestion.length > 24 ? firstQuestion.slice(0, 24) + '…' : firstQuestion,
+            title,
             messages: []
         };
         conversations.push(conv);
@@ -663,7 +843,7 @@
     }
 
     function addMessage(role, text, removeIntro = true) {
-        if (removeIntro && chatIntro.parentNode) chatIntro.remove();
+        if (removeIntro && chatIntro.parentNode) { moveComposerToFooter(); chatIntro.remove(); }
         const { row, bubble } = createMessageRow(role);
         // 봇 답변만 마크다운 렌더링 — 사용자가 직접 입력한 질문은 그대로(escape 없이 텍스트로만) 보여준다.
         if (role === 'bot') bubble.innerHTML = renderMarkdownLite(text);
@@ -737,7 +917,7 @@
     }
 
     function addStoryMessage(text, summary, removeIntro = true) {
-        if (removeIntro && chatIntro.parentNode) chatIntro.remove();
+        if (removeIntro && chatIntro.parentNode) { moveComposerToFooter(); chatIntro.remove(); }
         const { row, bubble } = createMessageRow('bot');
         renderStoryBubble(bubble, text, summary);
         shell.appendChild(row);
@@ -817,17 +997,173 @@
 
     newChatBtn.addEventListener('click', startNewConversation);
 
+    /* ─── 입력창 자동완성 — 입력창이 비어 있을 때 예시 질문을 한 글자씩 썼다 지웠다 하며
+       placeholder에 순환해서 보여주고, Tab을 누르면 지금 보이는 문장을 그대로 입력창에 채운다
+       (바로 전송하지는 않음 — 수정하거나 Enter로 직접 보낼 수 있게). */
+    const TYPEWRITER_PHRASES = [
+        /*[[#{chatbot.suggest.1}]]*/ '해운대에 얽힌 전설이 있어?',
+        /*[[#{chatbot.suggest.2}]]*/ '태종대 이름의 유래가 궁금해',
+        /*[[#{chatbot.suggest.3}]]*/ '용두산공원엔 어떤 이야기가 있어?',
+        /*[[#{chatbot.suggest.4}]]*/ '오륙도는 왜 그런 이름이 붙었어?'
+    ];
+    const BASE_PLACEHOLDER = input.placeholder;
+    let twPhraseIndex = 0;
+    let twTimer = null;
+    let twCurrentPhrase = '';
+
+    function typewriterStep(charIndex, deleting) {
+        const phrase = TYPEWRITER_PHRASES[twPhraseIndex];
+        twCurrentPhrase = phrase;
+        input.placeholder = phrase.slice(0, charIndex);
+        if (!deleting) {
+            if (charIndex < phrase.length) {
+                twTimer = setTimeout(() => typewriterStep(charIndex + 1, false), 65);
+            } else {
+                twTimer = setTimeout(() => typewriterStep(phrase.length, true), 1800); // 다 쓴 뒤 잠깐 멈춤
+            }
+        } else {
+            if (charIndex > 0) {
+                twTimer = setTimeout(() => typewriterStep(charIndex - 1, true), 30);
+            } else {
+                twPhraseIndex = (twPhraseIndex + 1) % TYPEWRITER_PHRASES.length;
+                twTimer = setTimeout(() => typewriterStep(0, false), 400);
+            }
+        }
+    }
+
+    function startTypewriter() {
+        if (twTimer) return; // 이미 돌고 있으면 다시 시작 안 함
+        typewriterStep(0, false);
+    }
+
+    function stopTypewriter() {
+        clearTimeout(twTimer);
+        twTimer = null;
+        input.placeholder = BASE_PLACEHOLDER;
+    }
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab' && input.value.trim() === '' && twCurrentPhrase) {
+            e.preventDefault();
+            input.value = twCurrentPhrase;
+            stopTypewriter();
+        }
+    });
+    input.addEventListener('input', () => {
+        if (input.value.trim() === '') startTypewriter();
+        else stopTypewriter();
+    });
+    startTypewriter();
+
+    /* ─── 사진 첨부 — + 버튼으로 고른 이미지를 base64로 들고 있다가 전송 시 질문과 함께 보낸다.
+       대화 기록(localStorage)에는 용량 문제로 이미지 자체는 저장하지 않고, 이번 세션 화면에만 보여준다. */
+    const MAX_ATTACH_BYTES = 4 * 1024 * 1024; // 4MB
+    let pendingImage = null; // { dataUrl, base64, mimeType }
+
+    attachBtn.addEventListener('click', () => attachInput.click());
+
+    attachInput.addEventListener('change', () => {
+        const file = attachInput.files?.[0];
+        attachInput.value = ''; // 같은 파일을 다시 골라도 change가 또 발생하게
+        if (!file) return;
+        if (!file.type.startsWith('image/')) { alert(I18N.attachInvalidType); return; }
+        if (file.size > MAX_ATTACH_BYTES) { alert(I18N.attachTooLarge); return; }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const dataUrl = reader.result;
+            const commaIdx = dataUrl.indexOf(',');
+            pendingImage = {
+                dataUrl,
+                base64: commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl,
+                mimeType: file.type || 'image/jpeg'
+            };
+            renderComposerPreview();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    function renderComposerPreview() {
+        composerPreview.innerHTML = '';
+        if (!pendingImage) { composerPreview.classList.remove('show'); return; }
+        composerPreview.classList.add('show');
+        const chip = document.createElement('div');
+        chip.className = 'preview-chip';
+        const img = document.createElement('img');
+        img.src = pendingImage.dataUrl;
+        img.alt = '';
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-chip';
+        removeBtn.textContent = '✕';
+        removeBtn.title = I18N.attachRemove;
+        removeBtn.setAttribute('aria-label', I18N.attachRemove);
+        removeBtn.addEventListener('click', () => { pendingImage = null; renderComposerPreview(); });
+        chip.appendChild(img);
+        chip.appendChild(removeBtn);
+        composerPreview.appendChild(chip);
+    }
+
+    /* ─── 음성 입력 — 마이크 버튼을 누르면 브라우저 음성 인식(Web Speech API)으로 받아쓰기.
+       바로 전송하지 않고 입력창에 텍스트만 채워서, 잘못 알아들었을 때 고쳐 쓸 수 있게 한다. */
+    const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const VOICE_LANG_MAP = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', fr: 'fr-FR' };
+    let recognizer = null;
+    let listening = false;
+
+    if (!SpeechRecognitionCtor) {
+        micBtn.style.display = 'none';
+    } else {
+        micBtn.addEventListener('click', () => {
+            if (listening) { recognizer?.stop(); return; }
+            recognizer = new SpeechRecognitionCtor();
+            recognizer.lang = VOICE_LANG_MAP[CURRENT_LANG] || 'ko-KR';
+            recognizer.interimResults = false;
+            recognizer.maxAlternatives = 1;
+
+            recognizer.addEventListener('start', () => {
+                listening = true;
+                micBtn.classList.add('listening');
+                micBtn.title = I18N.voiceListening;
+            });
+            recognizer.addEventListener('result', (e) => {
+                const text = e.results?.[0]?.[0]?.transcript || '';
+                if (text) {
+                    input.value = input.value ? (input.value.trim() + ' ' + text) : text;
+                    input.focus();
+                }
+            });
+            recognizer.addEventListener('error', (e) => {
+                if (e.error !== 'no-speech' && e.error !== 'aborted') alert(I18N.voiceError);
+            });
+            recognizer.addEventListener('end', () => {
+                listening = false;
+                micBtn.classList.remove('listening');
+                micBtn.title = I18N.voiceTitle;
+            });
+
+            try { recognizer.start(); } catch (e) { /* 이미 듣고 있는 중이면 무시 */ }
+        });
+    }
+
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const question = input.value.trim();
-        if (!question) return;
+        const image = pendingImage; // fetch 진행 중에 바뀌지 않게 지금 값을 붙잡아둔다
+        if (!question && !image) return;
 
         const conv = ensureActiveConversation(question);
-        addMessage('user', question);
+        const userBubble = addMessage('user', question);
+        if (image) prependImage(userBubble, image.dataUrl);
+        // 대화 기록(localStorage)에는 이미지 자체는 안 남긴다 — base64 사진 몇 장만으로도
+        // localStorage 용량 한도를 넘겨서 이후 저장이 통째로 실패할 수 있어서다.
         conv.messages.push({ role: 'user', text: question });
         renderHistoryList();
 
         input.value = '';
+        startTypewriter(); // JS로 값을 비운 거라 input 이벤트가 안 떠서 직접 다시 돌려준다
+        pendingImage = null;
+        renderComposerPreview();
         sendBtn.disabled = true;
         const typingBubble = addMessage('bot', '');
         typingBubble.classList.add('typing');
@@ -840,7 +1176,11 @@
                     'Content-Type': 'application/json',
                     [CSRF_HEADER]: CSRF_TOKEN
                 },
-                body: JSON.stringify({ question })
+                body: JSON.stringify({
+                    question,
+                    image: image ? image.base64 : null,
+                    imageMimeType: image ? image.mimeType : null
+                })
             });
             if (!response.ok) throw new Error('HTTP ' + response.status);
             const data = await response.json();

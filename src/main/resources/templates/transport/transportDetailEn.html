@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Route Detail — KoreaPoint</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Noto+Sans+KR:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
 
   <link rel="stylesheet" th:href="@{/css/transport/t_common/reset.css}">
@@ -87,9 +87,6 @@
       <div class="mc" id="mcZoomIn">＋</div>
       <div class="mc" id="mcZoomOut">－</div>
     </div>
-    <button class="loc-btn" onclick="getLocation()">
-      📍 My Location
-    </button>
   </div>
 </div>
 
@@ -118,19 +115,6 @@
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + id).classList.add('active');
-  }
-
-  function getLocation() {
-
-    if (!myLocation) {
-      alert("Your current location is still being loaded.");
-      return;
-    }
-
-    const moveLatLng = new kakao.maps.LatLng(myLocation.lat, myLocation.lng);
-
-    map.setLevel(3);   // 적당히 확대
-    map.panTo(moveLatLng); // 중심 이동
   }
 
   document.getElementById('mcZoomIn').addEventListener('click', () => map.setLevel(map.getLevel() - 1));
@@ -280,60 +264,6 @@
 
   // ===== Route Data Processing =====
 
-  // Show current location marker
-  let myLocation = null;
-  let liveMarker = null;
-  let liveOverlay = null;
-
-  if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(pos => {
-
-      const myLat = pos.coords.latitude;
-      const myLng = pos.coords.longitude;
-      console.log("Current Location:", myLat, myLng)
-
-      myLocation = { lat: myLat, lng: myLng };
-
-      const latLng = new kakao.maps.LatLng(myLat, myLng);
-
-      const myMarkerImg = new kakao.maps.MarkerImage(
-              'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
-              new kakao.maps.Size(24, 35)
-      );
-
-      if (!liveMarker) {
-        liveMarker = new kakao.maps.Marker({
-          map: map,
-          position: latLng,
-          image: myMarkerImg
-        });
-      } else {
-        liveMarker.setPosition(latLng);
-      }
-
-      if (!liveOverlay) {
-        liveOverlay = new kakao.maps.CustomOverlay({
-          map: map,
-          position: latLng,
-          content: `<div style="
-            background:#3b9eff;color:white;
-            padding:3px 10px;border-radius:50px;
-            font-size:11px;font-weight:700;
-            white-space:nowrap;
-            box-shadow:0 2px 6px rgba(0,0,0,0.25);
-            margin-bottom:6px;
-            font-family:'DM Sans',sans-serif;">
-            📍 My Location
-        </div>`,
-          yAnchor: 2.5
-        });
-      } else {
-        liveOverlay.setPosition(latLng);
-      }
-
-    }, () => {});
-  }
-
   //========== main ==========
   if (!routeId) {
     document.getElementById('stepList').innerHTML = '<p class="no-data">No route data</p>';
@@ -369,30 +299,10 @@
                   lng: routeData.startLng
                 };
 
-                // Priority 2: Current location (GPS)
-              } else if (startLabel === 'My Location') {
-
-                if (!myLocation) {
-                  await new Promise(resolve => {
-                    const wait = setInterval(() => {
-                      if (myLocation) {
-                        clearInterval(wait);
-                        resolve();
-                      }
-                    }, 100);
-                  });
-                }
-
-                originPt = myLocation;
-
-                // Priority 3: Search fallback
+                // Priority 2: Search fallback
               } else if (startLabel) {
 
                 originPt = await kakaoSearch(startLabel);
-              }
-
-              if (!originPt && myLocation) {
-                originPt = myLocation;
               }
 
               // Destination coordinates (Kakao search)
@@ -722,55 +632,6 @@
               // Auto adjust map bounds
               fitBounds(allCoords);
 
-              // Alert near destination
-              if (destPt) {
-                let alertShown = false;
-                const alertOverlay = new kakao.maps.CustomOverlay({
-                  position: new kakao.maps.LatLng(destPt.lat, destPt.lng),
-                  content: `<div style="
-                        background:#ef4444;color:white;
-                        padding:10px 16px;border-radius:12px;
-                        font-size:13px;font-weight:700;
-                        box-shadow:0 4px 12px rgba(0,0,0,0.3);
-                        white-space:nowrap;">🔔 You are near your destination!</div>`,
-                  yAnchor: 2.5,
-                  zIndex: 10
-                });
-
-                function getDistance(lat1, lng1, lat2, lng2) {
-                  const R = 6371000;
-                  const dLat = (lat2 - lat1) * Math.PI / 180;
-                  const dLng = (lng2 - lng1) * Math.PI / 180;
-                  const a = Math.sin(dLat/2) * Math.sin(dLat/2)
-                          + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
-                          * Math.sin(dLng/2) * Math.sin(dLng/2);
-                  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                }
-
-                const locationWatcher = setInterval(() => {
-
-                  if (!myLocation) return;
-
-                  const dist = getDistance(
-                          myLocation.lat, myLocation.lng,
-                          destPt.lat, destPt.lng
-                  );
-
-                  if (dist < 200 && !alertShown) {
-                    alertShown = true;
-                    alertOverlay.setMap(map);
-                    map.setCenter(new kakao.maps.LatLng(destPt.lat, destPt.lng));
-                    map.setLevel(3);
-                    setTimeout(() => alertOverlay.setMap(null), 30000);
-                  } else if (dist >= 200) {
-                    alertShown = false;
-                    alertOverlay.setMap(null);
-                  }
-
-                }, 5000);
-
-                window.addEventListener('beforeunload', () => clearInterval(locationWatcher));
-              }
 
               // ── Live Arrival Info (departure + all transfer stations) ──
               // Build station list
