@@ -22,12 +22,15 @@
                      width:48px; height:19px; border-radius:4px;
                      font-size:11px; font-weight:600; letter-spacing:-0.01em;
                      overflow:hidden; white-space:nowrap; }
-        .cat-0 { background:#eef2ff; color:#4051b5; }
-        .cat-1 { background:#fff1e8; color:#c2410c; }
-        .cat-2 { background:#e8f5ee; color:#1a7f4b; }
-        .cat-3 { background:#eaf3fd; color:#1a6dbf; }
-        .cat-4 { background:#fdeef5; color:#b3316f; }
-        .cat-5 { background:#f1f0f4; color:#5b5570; }
+        /* 홈은 UI 를 무채색으로 두고 색은 사진이 내게 한다. 배지는 구분만 되면 되므로
+           바탕을 옅은 무채색 하나로 통일하고 글자색만 아주 낮은 채도로 나눈다. */
+        .cat-badge { background:#f2f3f5; color:#5b6270; }
+        .cat-0 { color:#4a5478; }
+        .cat-1 { color:#8a563c; }
+        .cat-2 { color:#3f6b52; }
+        .cat-3 { color:#3f6289; }
+        .cat-4 { color:#7d4f66; }
+        .cat-5 { color:#5b5570; }
 
         :root { --primary-dark: #1a7de0; }
         footer { background: #ffffff; padding: 32px 80px 28px; border-top: 1px solid #dbe5f2; }
@@ -70,17 +73,17 @@
         </div>
 
         <!-- 탭 · 검색 · 글쓰기 한 줄 -->
-        <div class="flex items-center gap-3 border-b border-gray-200">
+        <div class="flex items-center gap-3 border-b border-[#e8eaed]">
             <nav class="flex items-center overflow-x-auto -mb-px">
                 <a th:href="@{/community/post-list(sort=${sort}, mine=${mine})}"
-                   th:classappend="${selectedCategory == null} ? 'text-[#16181d] border-[#16181d]' : 'text-[#8b919c] border-transparent hover:text-[#5b6270]'"
+                   th:classappend="${selectedCategory == null} ? 'text-[#3b9eff] border-[#3b9eff]' : 'text-[#8b919c] border-transparent hover:text-[#5b6270]'"
                    class="shrink-0 flex items-center h-10 px-3 text-[13.5px] border-b-2 no-underline transition-colors"
                    style="font-weight:600;">
                     <span th:text="#{community.all}">All</span>
                 </a>
                 <a th:each="cat : ${data.categories}"
                    th:href="@{/community/post-list(categoryId=${cat.categoryId}, sort=${sort}, mine=${mine})}"
-                   th:classappend="${selectedCategory != null and selectedCategory == cat.categoryId} ? 'text-[#16181d] border-[#16181d]' : 'text-[#8b919c] border-transparent hover:text-[#5b6270]'"
+                   th:classappend="${selectedCategory != null and selectedCategory == cat.categoryId} ? 'text-[#3b9eff] border-[#3b9eff]' : 'text-[#8b919c] border-transparent hover:text-[#5b6270]'"
                    class="shrink-0 flex items-center h-10 px-3 text-[13.5px] border-b-2 no-underline transition-colors"
                    style="font-weight:600;">
                     <span th:text="${#locale.language == 'en' and cat.nameEn != null ? cat.nameEn : cat.name}">Category</span>
@@ -98,7 +101,7 @@
                            class="w-[170px] h-[30px] pl-8 pr-3 bg-gray-50 border border-transparent rounded-md text-[12.5px] text-[#16181d] placeholder:text-[#8b919c] focus:outline-none focus:bg-white focus:border-[#3b9eff] transition-all"/>
                 </form>
                 <a th:if="${isLoggedIn and !communitySuspended}" th:href="@{/community/post/write}"
-                   class="flex items-center gap-1.5 h-[30px] px-3 bg-[#16181d] text-white rounded-md text-[12.5px] no-underline hover:bg-black transition-colors"
+                   class="flex items-center gap-1.5 h-[30px] px-3 bg-[#3b9eff] text-white rounded-md text-[12.5px] no-underline hover:bg-[#1a7de0] transition-colors"
                    style="font-weight:500;">
                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i> <span th:text="#{community.btn.write}">Write Post</span>
                 </a>
@@ -113,8 +116,8 @@
         <!-- 인기 글. 테두리 박스는 무겁다. 한 줄짜리 글머리로만 둔다 -->
         <div th:if="${!#lists.isEmpty(data.trendingPosts)}"
              class="flex items-center gap-2.5 mt-4 mb-1 text-[12.5px] overflow-hidden">
-            <span class="shrink-0 flex items-center gap-1 text-[#e8590c]" style="font-weight:700;">
-                <i data-lucide="flame" class="w-3.5 h-3.5"></i>
+            <span class="shrink-0 flex items-center gap-1 text-[#1a7de0]" style="font-weight:700;">
+                <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
                 <span th:text="#{community.sidebar.trending}">Trending</span>
             </span>
             <span th:each="post, st : ${data.trendingPosts}" th:if="${st.index < 3}"
@@ -127,15 +130,15 @@
         </div>
 
         <!-- 정렬 · 건수. 클리앙도 목록 바로 위에 정렬을 둔다 -->
-        <div class="flex items-center justify-between h-10 border-b border-gray-200">
+        <div class="flex items-center justify-between h-10 border-b border-[#e8eaed]">
             <div class="flex items-center gap-2.5">
                 <a th:href="@{/community/post-list(categoryId=${selectedCategory}, keyword=${keyword}, sort='latest', mine=${mine})}"
-                   th:classappend="${sort != 'popular'} ? 'text-[#16181d]' : 'text-[#8b919c] hover:text-[#5b6270]'"
+                   th:classappend="${sort != 'popular'} ? 'text-[#3b9eff]' : 'text-[#8b919c] hover:text-[#5b6270]'"
                    class="text-[12.5px] no-underline transition-colors" style="font-weight:600;"
                    th:text="#{community.sort.latest}">Latest</a>
                 <span class="w-px h-2.5 bg-gray-300"></span>
                 <a th:href="@{/community/post-list(categoryId=${selectedCategory}, keyword=${keyword}, sort='popular', mine=${mine})}"
-                   th:classappend="${sort == 'popular'} ? 'text-[#16181d]' : 'text-[#8b919c] hover:text-[#5b6270]'"
+                   th:classappend="${sort == 'popular'} ? 'text-[#3b9eff]' : 'text-[#8b919c] hover:text-[#5b6270]'"
                    class="text-[12.5px] no-underline transition-colors" style="font-weight:600;"
                    th:text="#{community.sort.popular}">Popular</a>
                 <span class="text-gray-300" aria-hidden="true">·</span>
@@ -158,7 +161,7 @@
         <div>
             <a th:each="post : ${data.posts}"
                th:href="@{/community/post/{id}(id=${post.postId})}"
-               class="group flex items-center gap-3 py-2 border-b border-gray-100 no-underline">
+               class="group flex items-center gap-3 py-2 border-b border-[#f1f2f4] no-underline">
 
                 <div class="flex-1 min-w-0">
                     <div class="flex items-baseline gap-2 min-w-0">
@@ -171,7 +174,7 @@
                             th:text="${#locale.language == 'en' and post.titleEn != null ? post.titleEn : (#locale.language != 'en' and post.titleKo != null ? post.titleKo : post.title)}">Title</h3>
                         <!-- 댓글 수를 제목 옆에. 한국 커뮤니티에서 이건 사실상 관용 표현이다 -->
                         <span th:if="${post.commentCount > 0}"
-                              class="shrink-0 text-[12px] text-[#e8590c]" style="font-weight:700;"
+                              class="shrink-0 text-[12px] text-[#1a7de0]" style="font-weight:700;"
                               th:text="'[' + ${post.commentCount} + ']'">[0]</span>
                     </div>
 
@@ -211,7 +214,7 @@
             <a th:each="i : ${#numbers.sequence(startPage, endPage)}"
                th:href="@{/community/post-list(page=${i}, categoryId=${selectedCategory}, keyword=${keyword}, sort=${sort}, mine=${mine})}"
                th:text="${i + 1}"
-               th:classappend="${i == data.posts.number} ? 'bg-[#16181d] text-white' : 'text-[#5b6270] hover:bg-gray-100'"
+               th:classappend="${i == data.posts.number} ? 'bg-[#3b9eff] text-white' : 'text-[#5b6270] hover:bg-gray-100'"
                class="flex items-center justify-center w-8 h-8 rounded-md text-[13px] transition-colors no-underline" style="font-weight:500;">1</a>
             <a th:with="nextUrl=@{/community/post-list(page=${data.posts.number + 1}, categoryId=${selectedCategory}, keyword=${keyword}, sort=${sort}, mine=${mine})}"
                th:href="${data.posts.last} ? '#' : ${nextUrl}"
@@ -234,7 +237,7 @@
                 <div class="space-y-2">
                     <a th:each="f : ${festivals}"
                        th:href="@{'/tour/all'}"
-                       class="group block rounded-lg border border-gray-200/80 overflow-hidden no-underline hover:border-gray-300 transition-colors">
+                       class="group block rounded-lg border border-[#e8eaed] overflow-hidden no-underline hover:border-gray-300 transition-colors">
                         <span th:if="${f.image != null and !#strings.isEmpty(f.image)}"
                               class="block h-[74px] bg-gray-100 overflow-hidden">
                             <img th:src="${f.image}" alt="" loading="lazy"
@@ -260,7 +263,7 @@
                 <div class="space-y-2">
                     <a th:each="promo : ${promoPosts}"
                        th:href="@{/community/post/{id}(id=${promo.postId})}"
-                       class="group block rounded-lg border border-gray-200/80 overflow-hidden no-underline hover:border-gray-300 transition-colors">
+                       class="group block rounded-lg border border-[#e8eaed] overflow-hidden no-underline hover:border-gray-300 transition-colors">
                         <span th:if="${promo.thumbnailUrl != null}"
                               class="block h-[74px] bg-gray-100 overflow-hidden">
                             <img th:src="${promo.thumbnailUrl}" alt="" loading="lazy"

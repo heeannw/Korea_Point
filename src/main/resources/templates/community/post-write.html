@@ -85,7 +85,7 @@
         </a>
 
         <div>
-            <h1 class="text-[24px] text-[#16181d] pb-5 mb-6 border-b border-gray-200" style="font-weight:700;" th:text="#{community.write.title}">Write a Post</h1>
+            <h1 class="text-[24px] text-[#16181d] pb-5 mb-6 border-b border-[#e8eaed]" style="font-weight:700;" th:text="#{community.write.title}">Write a Post</h1>
 
             <!--
                 th:action을 사용하면 thymeleaf-extras-springsecurity6가
@@ -97,7 +97,7 @@
                 <input type="hidden" name="placeTitle" th:value="${placeTitle}"/>
 
                 <div th:if="${placeContentId != null and !#strings.isEmpty(placeContentId)}"
-                     class="flex items-center gap-3 px-4 py-2.5 bg-gray-50 rounded-md border border-gray-200">
+                     class="flex items-center gap-3 px-4 py-2.5 bg-gray-50 rounded-md border border-[#e8eaed]">
                     <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-[#5b6270]">⌖</span>
                     <div class="min-w-0">
                         <div class="text-[11px] text-[#8b919c]" style="font-weight:600;">장소 태그</div>
@@ -106,7 +106,7 @@
                 </div>
 
                 <!-- 포인트 잔액 -->
-                <div class="flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-md border border-gray-200">
+                <div class="flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-md border border-[#e8eaed]">
                     <span class="text-[13px] text-[#5b6270]" th:text="#{community.write.point.label}">Points Balance</span>
                     <div class="flex items-center gap-3">
                         <span class="text-[14px] text-[#1a7de0]" style="font-weight:700;"
@@ -129,7 +129,7 @@
                 <div>
                     <label class="block text-[13px] text-[#5b6270] mb-1.5" style="font-weight:600;" th:text="#{community.write.label.category}">Category</label>
                     <select name="categoryId" id="categorySelect" required
-                            class="w-full px-3 py-2 border border-gray-200 rounded-md text-[14px] text-[#5b6270] bg-white focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100 cursor-pointer">
+                            class="w-full px-3 py-2 border border-[#e8eaed] rounded-md text-[14px] text-[#5b6270] bg-white focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100 cursor-pointer">
                         <option value="" disabled selected th:text="#{community.write.placeholder.category}">Select a category</option>
                         <option th:each="cat : ${categories}"
                                 th:value="${cat.categoryId}"
@@ -148,7 +148,7 @@
                     <label class="block text-[13px] text-[#5b6270] mb-1.5" style="font-weight:600;" th:text="#{community.write.label.title}">Title</label>
                     <input type="text" name="title" required maxlength="200"
                            th:placeholder="#{community.write.placeholder.title}"
-                           class="w-full px-4 py-2 border border-gray-200 rounded-md text-[14px] text-[#16181d] placeholder:text-[#8b919c] focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100"/>
+                           class="w-full px-4 py-2 border border-[#e8eaed] rounded-md text-[14px] text-[#16181d] placeholder:text-[#8b919c] focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100"/>
                 </div>
 
                 <!-- 내용 — Quill 에디터 -->
@@ -169,7 +169,7 @@
                 <!-- 버튼 -->
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <a th:href="@{/community/post-list}"
-                       class="px-5 py-2 border border-gray-200 text-[#5b6270] rounded-md text-[14px] no-underline hover:bg-gray-50 transition-colors"
+                       class="px-5 py-2 border border-[#e8eaed] text-[#5b6270] rounded-md text-[14px] no-underline hover:bg-gray-50 transition-colors"
                        style="font-weight:500;" th:text="#{community.write.btn.cancel}">Cancel</a>
                     <button type="submit"
                             class="px-5 py-2 bg-[#3b9eff] text-white rounded-md text-[13px] hover:bg-[#1a7de0] transition-colors cursor-pointer"
