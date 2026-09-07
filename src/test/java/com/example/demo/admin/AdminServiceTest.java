@@ -96,6 +96,25 @@ class AdminServiceTest {
     }
 
     @Test
+    void getUsers_withoutFiltersIncludesOtherProvidersAndRoles() {
+        User member = User.builder().id(2L).provider("kakao").providerId("member-2")
+                .name("Member").email("member@example.com").role("USER").build();
+        User owner = User.builder().id(3L).provider("local").providerId("owner-3")
+                .name("Owner").email("owner@example.com").role("OWNER").build();
+        when(userRepository.searchForAdmin(
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(adminUser, member, owner)));
+
+        var result = adminService.getUsers(0, 10, "", "", "", null, null, null);
+
+        assertEquals(3, result.getTotalElements());
+        assertEquals(List.of(1L, 2L, 3L), result.getItems().stream().map(AdminDto.UserItem::getId).toList());
+        assertEquals(List.of("ADMIN", "USER", "OWNER"), result.getItems().stream().map(AdminDto.UserItem::getRole).toList());
+    }
+
+    @Test
     void updateUserRole_blocksLastAdminDemotion() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(adminUser));
         when(userRepository.countByRole("ADMIN")).thenReturn(1L);

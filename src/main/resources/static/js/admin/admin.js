@@ -140,6 +140,9 @@ function fillSelect(id, options, { firstLabel = "전체" } = {}) {
 }
 
 function bindStaticEvents() {
+    document.getElementById("showAllUsersButton")?.addEventListener("click", () => {
+        loadAllUsers().catch((error) => showAlert(error.message, "error"));
+    });
     bindFilterForm("usersFilterForm", () => {
         adminState.usersPage = 0;
         return loadUsers();
@@ -305,7 +308,7 @@ async function initializePage() {
             await loadDashboard();
             break;
         case "users":
-            await loadUsers();
+            await loadAllUsers();
             break;
         case "ownerApplications":
             await loadOwnerApplications();
@@ -560,6 +563,12 @@ async function refreshDashboardSilently() {
     }
 }
 
+async function loadAllUsers() {
+    document.getElementById("usersFilterForm")?.reset();
+    adminState.usersPage = 0;
+    await loadUsers();
+}
+
 async function loadUsers() {
     const query = new URLSearchParams({ page: String(adminState.usersPage), size: "10" });
     appendIfPresent(query, "keyword", document.getElementById("usersKeyword")?.value);
@@ -569,6 +578,8 @@ async function loadUsers() {
     appendIfPresent(query, "dateTo",   document.getElementById("usersDateTo")?.value);
 
     const data = await apiRequest(`/admin/api/users?${query.toString()}`);
+    const filtered = ["keyword", "role", "accountStatus", "dateFrom", "dateTo"].some((key) => query.has(key));
+    setText("usersResultCount", `${filtered ? "검색 결과" : "전체 회원"} ${numberFormat(data.totalElements)}명 · 현재 페이지 ${data.items.length}명`);
     const body = document.getElementById("usersTableBody");
     if (!body) {
         return;

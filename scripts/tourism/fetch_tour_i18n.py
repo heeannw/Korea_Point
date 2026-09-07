@@ -11,7 +11,7 @@
 
 키:
   TOUR_API_SERVICE_KEY  <- src/main/resources/application-local.properties
-  translation.api.key   <- src/main/resources/application-secret.properties  (DeepL Free, '...:fx')
+  translation.api.key   <- src/main/resources/application-local.properties  (DeepL Free, '...:fx')
 
 사용:  python3 scripts/tourism/fetch_tour_i18n.py
 """
@@ -33,7 +33,7 @@ def prop(path, key):
 
 
 TOUR_KEY = prop("src/main/resources/application-local.properties", "TOUR_API_SERVICE_KEY")
-DEEPL_KEY = prop("src/main/resources/application-secret.properties", "translation.api.key")
+DEEPL_KEY = prop("src/main/resources/application-local.properties", "translation.api.key")
 
 
 def get_json(url):

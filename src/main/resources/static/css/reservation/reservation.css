@@ -42,15 +42,16 @@ textarea {
 header {
     position: sticky;
     top: 0;
-    z-index: 10;
-    height: 56px;
-    padding: 0 24px;
+    z-index: 100;
+    height: 60px;
+    padding: 0 32px 0 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     background: #ffffff;
     border-bottom: 1px solid #dbeafe;
-    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
+    font-family: "DM Sans", "Noto Sans KR", sans-serif;
 }
 
 .logo {
@@ -708,7 +709,7 @@ h1 {
 @media (max-width: 900px) {
     header {
         height: auto;
-        min-height: 56px;
+        min-height: 60px;
         padding: 12px 20px;
         gap: 12px;
         flex-wrap: wrap;
