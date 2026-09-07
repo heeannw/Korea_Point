@@ -19,8 +19,12 @@ public record SavedPlaceDto(
     }
 
     public static SavedPlaceDto from(SavedPlace s, String kind) {
+        return from(s, kind, s.getTitle(), s.getAddr());
+    }
+
+    public static SavedPlaceDto from(SavedPlace s, String kind, String title, String addr) {
         return new SavedPlaceDto(
                 s.getId(), s.getContentId(), s.getContentTypeId(), kind,
-                s.getTitle(), s.getAddr(), s.getLat(), s.getLng(), s.getImageUrl());
+                title, addr, s.getLat(), s.getLng(), s.getImageUrl());
     }
 }

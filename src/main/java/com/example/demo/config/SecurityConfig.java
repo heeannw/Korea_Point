@@ -51,7 +51,7 @@ public class SecurityConfig {
                 })
                 .failureHandler((request, response, exception) -> {
                     log.warn("OAuth2 login failed: {}", exception.getMessage(), exception);
-                    response.sendRedirect("/login?error=true");
+                    response.sendRedirect(loginFailureUrl(request));
                 })
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
@@ -65,7 +65,9 @@ public class SecurityConfig {
                 .successHandler((request, response, authentication) -> {
                     response.sendRedirect(loginSuccessUrl(request));
                 })
-                .failureUrl("/login?error=true")
+                .failureHandler((request, response, exception) -> {
+                    response.sendRedirect(loginFailureUrl(request));
+                })
                 .permitAll()
             )
             .logout(logout -> logout
@@ -104,5 +106,11 @@ public class SecurityConfig {
             url += "&provider=" + user.getProvider();
         }
         return url;
+    }
+
+    private String loginFailureUrl(HttpServletRequest request) {
+        Object language = request.getSession().getAttribute("loginLanguage");
+        String selected = language instanceof String value ? value : "ko";
+        return "/login?error=true&lang=" + selected;
     }
 }

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" th:lang="${lang}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="_csrf" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
-    <title>로그인 완료 - KoreaPoint</title>
+    <title th:text="#{login.success.pageTitle}">로그인 완료 - KoreaPoint</title>
     <style>
         * {
             box-sizing: border-box;
@@ -126,41 +126,42 @@
     </style>
 </head>
 <body>
-    <p class="status">로그인 완료 중입니다.</p>
+    <p class="status" th:text="#{login.success.status}">로그인 완료 중입니다.</p>
     <div id="nationalityModal" class="modal-backdrop" th:hidden="${!showNationalityPrompt}">
         <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="nationalityTitle">
-            <p class="eyebrow">Welcome</p>
-            <h1 id="nationalityTitle">국적을 선택해 주세요</h1>
-            <p>여행 추천과 안내를 더 자연스럽게 맞추는 데 사용할 수 있어요. 지금 선택하지 않아도 괜찮아요.</p>
+            <p class="eyebrow" th:text="#{login.success.eyebrow}">Welcome</p>
+            <h1 id="nationalityTitle" th:text="#{login.success.nationalityTitle}">국적을 선택해 주세요</h1>
+            <p th:text="#{login.success.nationalityGuide}">여행 추천과 안내를 더 자연스럽게 맞추는 데 사용할 수 있어요. 지금 선택하지 않아도 괜찮아요.</p>
             <form id="nationalityForm" th:action="@{/ko/settings/nationality}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <input type="hidden" name="redirect" th:value="${targetUrl}">
+                <input type="hidden" name="lang" th:value="${lang}">
                 <label>
-                    <span>국적</span>
+                    <span th:text="#{settings.nationality.label}">국적</span>
                     <select name="nationality">
-                        <option value="">선택 안 함</option>
-                        <option value="KR">대한민국</option>
-                        <option value="US">미국</option>
-                        <option value="JP">일본</option>
-                        <option value="CN">중국</option>
-                        <option value="TW">대만</option>
-                        <option value="HK">홍콩</option>
-                        <option value="TH">태국</option>
-                        <option value="VN">베트남</option>
-                        <option value="PH">필리핀</option>
-                        <option value="ID">인도네시아</option>
-                        <option value="MY">말레이시아</option>
-                        <option value="SG">싱가포르</option>
-                        <option value="FR">프랑스</option>
-                        <option value="DE">독일</option>
-                        <option value="GB">영국</option>
-                        <option value="CA">캐나다</option>
-                        <option value="AU">호주</option>
+                        <option value="" th:text="#{settings.country.none}">선택 안 함</option>
+                        <option value="KR" th:text="#{settings.country.kr}">대한민국</option>
+                        <option value="US" th:text="#{settings.country.us}">미국</option>
+                        <option value="JP" th:text="#{settings.country.jp}">일본</option>
+                        <option value="CN" th:text="#{settings.country.cn}">중국</option>
+                        <option value="TW" th:text="#{settings.country.tw}">대만</option>
+                        <option value="HK" th:text="#{settings.country.hk}">홍콩</option>
+                        <option value="TH" th:text="#{settings.country.th}">태국</option>
+                        <option value="VN" th:text="#{settings.country.vn}">베트남</option>
+                        <option value="PH" th:text="#{settings.country.ph}">필리핀</option>
+                        <option value="ID" th:text="#{settings.country.id}">인도네시아</option>
+                        <option value="MY" th:text="#{settings.country.my}">말레이시아</option>
+                        <option value="SG" th:text="#{settings.country.sg}">싱가포르</option>
+                        <option value="FR" th:text="#{settings.country.fr}">프랑스</option>
+                        <option value="DE" th:text="#{settings.country.de}">독일</option>
+                        <option value="GB" th:text="#{settings.country.gb}">영국</option>
+                        <option value="CA" th:text="#{settings.country.ca}">캐나다</option>
+                        <option value="AU" th:text="#{settings.country.au}">호주</option>
                     </select>
                 </label>
                 <div class="actions">
-                    <button type="button" class="secondary" onclick="submitNationality(true)">건너뛰기</button>
-                    <button type="submit">저장하고 시작</button>
+                    <button type="button" class="secondary" onclick="submitNationality(true)" th:text="#{login.success.skip}">건너뛰기</button>
+                    <button type="submit" th:text="#{login.success.save}">저장하고 시작</button>
                 </div>
             </form>
         </section>
@@ -169,6 +170,9 @@
         const targetUrl = /*[[${targetUrl}]]*/ "/ko";
         const loginProvider = /*[[${provider}]]*/ null;
         const showNationalityPrompt = /*[[${showNationalityPrompt}]]*/ false;
+        const msg = {
+            nationalitySaveFailed: /*[[#{login.success.nationalitySaveFailed}]]*/ '국적 설정을 저장하지 못했습니다.'
+        };
         const providerLabels = {
             google: 'Google',
             naver: '네이버',
@@ -205,12 +209,12 @@
                     credentials: 'same-origin'
                 });
                 if (!response.ok) {
-                    alert('국적 설정을 저장하지 못했습니다.');
+                    alert(msg.nationalitySaveFailed);
                     return;
                 }
                 finishLogin();
             } catch (error) {
-                alert('국적 설정을 저장하지 못했습니다.');
+                alert(msg.nationalitySaveFailed);
             }
         }
 
