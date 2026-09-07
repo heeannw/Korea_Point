@@ -1684,7 +1684,8 @@
 
 <script th:inline="javascript">
     const isLoggedIn = /*[[${isLoggedIn}]]*/ false;
-    const loginOpenButton = document.querySelector(".header-right a.h-btn-fill[href='/login']");
+    const currentLang = /*[[${lang}]]*/ 'en';
+    const loginOpenButton = document.querySelector(".header-right a.h-btn-fill[href^='/login']");
 
     function openLoginWindow(event, redirectUrl) {
         if (event) event.preventDefault();
@@ -1692,7 +1693,7 @@
         const popupHeight = 720;
         const popupLeft = Math.max(0, window.screenX + (window.outerWidth - popupWidth) / 2);
         const popupTop = Math.max(0, window.screenY + (window.outerHeight - popupHeight) / 2);
-        const loginUrl = "/login?lang=en" + (redirectUrl ? "&redirect=" + encodeURIComponent(redirectUrl) : "");
+        const loginUrl = "/login?lang=" + encodeURIComponent(currentLang) + (redirectUrl ? "&redirect=" + encodeURIComponent(redirectUrl) : "");
         const popup = window.open(
             loginUrl,
             "koreaPointLogin",

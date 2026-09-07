@@ -63,6 +63,7 @@ public class UserController {
                 ? value
                 : ("ko".equals(selected) ? "/ko" : "/");
         model.addAttribute("targetUrl", targetUrl);
+        model.addAttribute("lang", selected);
         model.addAttribute("provider", provider);
         model.addAttribute("showNationalityPrompt",
                 SecurityUtil.isLoggedIn()
@@ -189,7 +190,7 @@ public class UserController {
             redirectAttributes.addFlashAttribute("withdrawMessage", "계정 탈퇴가 완료됐어요. 언제든 다시 가입할 수 있어요.");
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             new SecurityContextLogoutHandler().logout(request, response, authentication);
-            return "redirect:/login";
+            return "redirect:/login?lang=" + normalizeLanguage(lang);
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("withdrawError", ex.getMessage());
             return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#danger";
@@ -299,9 +300,12 @@ public class UserController {
     }
 
     private boolean isSupportedLanguage(String language) {
+        if (language == null || language.isBlank()) {
+            return false;
+        }
         String normalized = normalizeLanguage(language);
         return "ko".equals(normalized) || "en".equals(normalized)
-                || "ja".equals(normalized) || "zh-CN".equals(normalized)
+                || "ja".equals(normalized) || "zh".equals(normalized)
                 || "fr".equals(normalized);
     }
 
@@ -312,7 +316,7 @@ public class UserController {
         String normalized = language.trim().toLowerCase().replace('_', '-');
         if (normalized.startsWith("en")) return "en";
         if (normalized.startsWith("ja") || normalized.startsWith("jp")) return "ja";
-        if (normalized.startsWith("zh")) return "zh-CN";
+        if (normalized.startsWith("zh")) return "zh";
         if (normalized.startsWith("fr")) return "fr";
         return "ko";
     }

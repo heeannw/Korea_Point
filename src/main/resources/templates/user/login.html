@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title th:text="${lang == 'en'} ? 'Sign In - KoreaPoint' : '로그인 - KoreaPoint'">로그인 - KoreaPoint</title>
+    <title th:text="#{login.pageTitle}">로그인 - KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
     <style>
-        body{top:0!important}.goog-te-banner-frame.skiptranslate,body>.skiptranslate{display:none!important}
+        body{top:0!important}
         body.login-mode{padding:12px 0}
         body.signup-mode{justify-content:flex-start;padding-top:0}
         .auth-wrap{max-width:460px}
@@ -49,23 +48,22 @@
 <body class="min-h-screen bg-[#FAFAFA] flex flex-col items-center justify-center py-10"
       th:classappend="${signupMode} ? ' signup-mode' : ' login-mode'">
 
-    <div id="google_translate_element" style="display:none"></div>
     <div id="signupToast" class="page-toast" role="alert" aria-live="assertive" th:if="${signupError}">
         <i data-lucide="circle-alert" aria-hidden="true"></i>
         <span th:text="${signupError}">회원가입 정보를 확인해 주세요.</span>
     </div>
     <header class="signup-header w-full h-[88px] items-center justify-center border-b border-blue-100 bg-white shadow-[0_2px_18px_rgba(59,158,255,0.08)]">
-        <a th:href="${lang == 'ko'} ? @{/ko} : @{/}"
+        <a th:href="${lang == 'ko'} ? @{/ko(lang=${lang})} : @{/(lang=${lang})}"
            class="brand-logo no-underline"
-           aria-label="KoreaPoint 홈으로 이동">Korea<span>Point</span></a>
+           th:aria-label="#{login.homeLabel}">Korea<span>Point</span></a>
     </header>
     <div class="fixed top-5 right-6">
-        <select id="languageSelect" translate="no" aria-label="언어 선택" onchange="changeLoginLanguage(this.value)"
+        <select id="languageSelect" translate="no" th:aria-label="#{common.language}" onchange="changeLoginLanguage(this.value)"
                 class="h-11 min-w-[132px] rounded-full border border-gray-200 bg-white px-4 text-[14px] text-gray-700 outline-none focus:border-blue-500">
             <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
             <option value="en" th:selected="${lang == 'en'}">English</option>
             <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
-            <option value="zh-CN" th:selected="${lang == 'zh-CN'}">中文</option>
+            <option value="zh" th:selected="${lang == 'zh'}">中文</option>
         </select>
     </div>
 
@@ -77,11 +75,11 @@
         <div class="auth-card bg-white rounded-2xl border border-gray-200/80 shadow-sm">
             <div th:if="${param.error}"
                  class="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-red-600">
-                아이디 또는 비밀번호를 확인해 주세요.
+                <span th:text="#{login.error.badCredentials}">아이디 또는 비밀번호를 확인해 주세요.</span>
             </div>
             <div th:if="${param.registered}"
                  class="mb-5 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg text-[13px] text-blue-700">
-                회원가입이 완료됐어요. 아이디로 로그인해 주세요.
+                <span th:text="#{login.notice.registered}">회원가입이 완료됐어요. 아이디로 로그인해 주세요.</span>
             </div>
             <div th:if="${withdrawMessage}"
                  th:text="${withdrawMessage}"
@@ -91,53 +89,54 @@
 
             <section id="loginPanel" class="auth-panel" th:classappend="${signupMode} ? '' : ' active'">
                 <div class="mb-4 text-center">
-                    <h1 class="sr-only">로그인</h1>
+                    <h1 class="sr-only" th:text="#{login.title}">로그인</h1>
                 </div>
 
                 <form th:action="@{/login}" method="post" class="space-y-3">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                    <input id="loginIdInput" name="loginId" type="text" autocomplete="username" placeholder="아이디"
+                    <input type="hidden" name="lang" th:value="${lang}"/>
+                    <input id="loginIdInput" name="loginId" type="text" autocomplete="username" th:placeholder="#{login.field.loginId}"
                            class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
                     <div class="password-field">
-                        <input name="password" type="password" autocomplete="current-password" placeholder="비밀번호"
+                        <input name="password" type="password" autocomplete="current-password" th:placeholder="#{login.field.password}"
                                class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                        <button type="button" class="password-toggle" aria-label="비밀번호 보기" title="비밀번호 보기">
+                        <button type="button" class="password-toggle" th:aria-label="#{login.password.show}" th:title="#{login.password.show}">
                             <i data-lucide="eye"></i>
                         </button>
                     </div>
                     <label class="flex items-center gap-2 text-[13px] text-gray-600">
                         <input id="rememberLoginId" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-[#2563EB] focus:ring-blue-500"/>
-                        아이디 저장
+                        <span th:text="#{login.rememberId}">아이디 저장</span>
                     </label>
                     <button type="submit"
                             class="w-full h-11 rounded-xl bg-[#2563EB] text-white text-[15px] hover:bg-blue-700 transition-colors"
-                            style="font-weight:700;">로그인</button>
+                            style="font-weight:700;" th:text="#{login.button.submit}">로그인</button>
                 </form>
 
                 <div class="mt-4 flex items-center justify-center gap-3 text-[12px] text-gray-300">
-                    <button type="button" id="signupLink" class="text-[#2563EB] hover:text-blue-700" style="font-weight:700;">회원가입</button>
+                    <button type="button" id="signupLink" class="text-[#2563EB] hover:text-blue-700" style="font-weight:700;" th:text="#{login.link.signup}">회원가입</button>
                     <span>|</span>
-                    <button type="button" data-auth-target="findIdPanel" class="text-gray-500 hover:text-gray-800">아이디 찾기</button>
+                    <button type="button" data-auth-target="findIdPanel" class="text-gray-500 hover:text-gray-800" th:text="#{login.link.findId}">아이디 찾기</button>
                     <span>|</span>
-                    <button type="button" data-auth-target="resetPasswordPanel" class="text-gray-500 hover:text-gray-800">비밀번호 찾기</button>
+                    <button type="button" data-auth-target="resetPasswordPanel" class="text-gray-500 hover:text-gray-800" th:text="#{login.link.findPassword}">비밀번호 찾기</button>
                 </div>
 
                 <div class="mt-5 border-t border-gray-100 pt-5">
                     <p id="lastSocialLoginNote" class="last-social-note" aria-live="polite"></p>
                     <div class="flex items-center justify-center gap-4">
-                        <a th:href="@{/oauth2/authorization/naver}" class="social-login-link" data-social-provider="naver" aria-label="네이버 로그인">
+                        <a th:href="@{/oauth2/authorization/naver}" class="social-login-link" data-social-provider="naver" th:aria-label="#{login.social.naverLogin}">
                             <span class="social-login-icon provider-icon">
                                 <img th:src="@{/images/auth/naver-login-icon.png}" alt="" aria-hidden="true">
                             </span>
-                            <span>네이버</span>
+                            <span th:text="#{login.social.naver}">네이버</span>
                         </a>
-                        <a th:href="@{/oauth2/authorization/kakao}" class="social-login-link" data-social-provider="kakao" aria-label="카카오 로그인">
+                        <a th:href="@{/oauth2/authorization/kakao}" class="social-login-link" data-social-provider="kakao" th:aria-label="#{login.social.kakaoLogin}">
                             <span class="social-login-icon provider-icon">
                                 <img th:src="@{/images/auth/kakao-login-icon.png}" alt="" aria-hidden="true">
                             </span>
-                            <span>카카오</span>
+                            <span th:text="#{login.social.kakao}">카카오</span>
                         </a>
-                        <a th:href="@{/oauth2/authorization/google}" class="social-login-link" data-social-provider="google" aria-label="Google 로그인">
+                        <a th:href="@{/oauth2/authorization/google}" class="social-login-link" data-social-provider="google" th:aria-label="#{login.social.googleLogin}">
                             <span class="social-login-icon">
                                 <svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -157,10 +156,10 @@
                     <button type="button" data-auth-target="loginPanel"
                             class="inline-flex items-center gap-1 text-[13px] text-gray-500 hover:text-[#2563EB]">
                         <i data-lucide="chevron-left" class="h-4 w-4"></i>
-                        로그인
+                        <span th:text="#{login.title}">로그인</span>
                     </button>
                     <span class="rounded-full border border-blue-100 bg-[#eff6ff] px-3 py-1 text-[12px] text-[#1a7de0]"
-                          style="font-weight:700;">아이디 찾기</span>
+                          style="font-weight:700;" th:text="#{login.link.findId}">아이디 찾기</span>
                 </div>
                 <div th:if="${findIdResult}" th:text="${findIdResult}"
                      class="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-[13px] text-blue-700"></div>
@@ -169,13 +168,13 @@
                 <form th:action="@{/find-login-id}" method="post" class="space-y-3">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <input type="hidden" name="lang" th:value="${lang}"/>
-                    <input name="name" type="text" placeholder="이름"
+                    <input name="name" type="text" th:placeholder="#{login.field.name}"
                            class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                    <input name="email" type="email" placeholder="이메일"
+                    <input name="email" type="email" th:placeholder="#{login.field.email}"
                            class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
                     <button type="submit"
                             class="w-full h-11 rounded-xl bg-[#2563EB] text-white text-[15px] hover:bg-blue-700 transition-colors"
-                            style="font-weight:700;">아이디 찾기</button>
+                            style="font-weight:700;" th:text="#{login.link.findId}">아이디 찾기</button>
                 </form>
             </section>
 
@@ -184,10 +183,10 @@
                     <button type="button" data-auth-target="loginPanel"
                             class="inline-flex items-center gap-1 text-[13px] text-gray-500 hover:text-[#2563EB]">
                         <i data-lucide="chevron-left" class="h-4 w-4"></i>
-                        로그인
+                        <span th:text="#{login.title}">로그인</span>
                     </button>
                     <span class="rounded-full border border-blue-100 bg-[#eff6ff] px-3 py-1 text-[12px] text-[#1a7de0]"
-                          style="font-weight:700;">비밀번호 찾기</span>
+                          style="font-weight:700;" th:text="#{login.link.findPassword}">비밀번호 찾기</span>
                 </div>
                 <div th:if="${resetPasswordResult}" th:text="${resetPasswordResult}"
                      class="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-[13px] text-blue-700"></div>
@@ -196,38 +195,38 @@
                 <form th:action="@{/reset-password}" method="post" class="space-y-3">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <input type="hidden" name="lang" th:value="${lang}"/>
-                    <input name="loginId" type="text" placeholder="아이디" autocomplete="username"
+                    <input name="loginId" type="text" th:placeholder="#{login.field.loginId}" autocomplete="username"
                            class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                    <input name="email" type="email" placeholder="이메일"
+                    <input name="email" type="email" th:placeholder="#{login.field.email}"
                            class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
                     <div class="password-field">
-                        <input name="newPassword" type="password" placeholder="새 비밀번호" autocomplete="new-password"
+                        <input name="newPassword" type="password" th:placeholder="#{login.field.newPassword}" autocomplete="new-password"
                                pattern="(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,20}"
-                               title="비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자로 입력해 주세요."
+                               th:title="#{login.hint.passwordRule}"
                                class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                        <button type="button" class="password-toggle" aria-label="비밀번호 보기" title="비밀번호 보기">
+                        <button type="button" class="password-toggle" th:aria-label="#{login.password.show}" th:title="#{login.password.show}">
                             <i data-lucide="eye"></i>
                         </button>
                     </div>
                     <div class="password-field">
-                        <input name="passwordConfirm" type="password" placeholder="새 비밀번호 확인" autocomplete="new-password"
+                        <input name="passwordConfirm" type="password" th:placeholder="#{login.field.newPasswordConfirm}" autocomplete="new-password"
                                class="w-full h-11 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                        <button type="button" class="password-toggle" aria-label="비밀번호 보기" title="비밀번호 보기">
+                        <button type="button" class="password-toggle" th:aria-label="#{login.password.show}" th:title="#{login.password.show}">
                             <i data-lucide="eye"></i>
                         </button>
                     </div>
-                    <p class="text-[12px] text-gray-400 -mt-1">영문, 숫자, 특수문자를 포함해 8~20자로 입력해 주세요.</p>
+                    <p class="text-[12px] text-gray-400 -mt-1" th:text="#{login.hint.passwordRuleShort}">영문, 숫자, 특수문자를 포함해 8~20자로 입력해 주세요.</p>
                     <button type="submit"
                             class="w-full h-11 rounded-xl bg-[#2563EB] text-white text-[15px] hover:bg-blue-700 transition-colors"
-                            style="font-weight:700;">비밀번호 변경</button>
+                            style="font-weight:700;" th:text="#{login.button.changePassword}">비밀번호 변경</button>
                 </form>
             </section>
 
             <section id="signupPanel" class="auth-panel" th:classappend="${signupMode} ? ' active' : ''">
                 <div id="signupChoiceStep" class="signup-step">
                     <div class="text-center mb-6">
-                        <p class="text-[13px] text-[#1a7de0]" style="font-weight:700;">가입 유형 선택</p>
-                        <h2 class="text-[24px] text-gray-900 mt-1" style="font-weight:800;">어떤 회원으로 시작할까요?</h2>
+                        <p class="text-[13px] text-[#1a7de0]" style="font-weight:700;" th:text="#{login.signup.choiceEyebrow}">가입 유형 선택</p>
+                        <h2 class="text-[24px] text-gray-900 mt-1" style="font-weight:800;" th:text="#{login.signup.choiceTitle}">어떤 회원으로 시작할까요?</h2>
                     </div>
 
                     <div class="grid items-stretch gap-4 md:grid-cols-2">
@@ -236,26 +235,26 @@
                                 <span class="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#eff6ff] text-[#2563EB] ring-1 ring-blue-100 transition-colors group-hover:bg-[#3b9eff] group-hover:text-white">
                                     <i data-lucide="user-round" class="h-10 w-10"></i>
                                 </span>
-                                <span class="mt-6 block text-[28px] text-gray-900" style="font-weight:800;">개인 회원</span>
-                                <span class="mt-2 block text-[14px] leading-relaxed text-gray-500">한국 여행 정보와 커뮤니티를 이용해요.</span>
+                                <span class="mt-6 block text-[28px] text-gray-900" style="font-weight:800;" th:text="#{login.signup.personalTitle}">개인 회원</span>
+                                <span class="mt-2 block text-[14px] leading-relaxed text-gray-500" th:text="#{login.signup.personalDesc}">한국 여행 정보와 커뮤니티를 이용해요.</span>
                             </div>
                             <div class="signup-choice-bottom">
                                 <button type="button" data-signup-type="personal"
                                         class="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#3b9eff] text-[15px] text-white transition-colors hover:bg-[#1a7de0]"
-                                        style="font-weight:800;">개인으로 가입하기</button>
+                                        style="font-weight:800;" th:text="#{login.signup.personalCta}">개인으로 가입하기</button>
                                 <div class="mt-4 w-full rounded-xl bg-gray-50 px-5 py-4">
                                     <div class="flex items-center justify-center gap-5">
-                                    <a th:href="@{/oauth2/authorization/naver}" class="social-login-link" data-social-provider="naver" aria-label="네이버 회원가입">
+                                    <a th:href="@{/oauth2/authorization/naver}" class="social-login-link" data-social-provider="naver" th:aria-label="#{login.social.naverSignup}">
                                         <span class="social-login-icon provider-icon">
                                             <img th:src="@{/images/auth/naver-login-icon.png}" alt="" aria-hidden="true">
                                         </span>
                                     </a>
-                                    <a th:href="@{/oauth2/authorization/kakao}" class="social-login-link" data-social-provider="kakao" aria-label="카카오 회원가입">
+                                    <a th:href="@{/oauth2/authorization/kakao}" class="social-login-link" data-social-provider="kakao" th:aria-label="#{login.social.kakaoSignup}">
                                         <span class="social-login-icon provider-icon">
                                             <img th:src="@{/images/auth/kakao-login-icon.png}" alt="" aria-hidden="true">
                                         </span>
                                     </a>
-                                    <a th:href="@{/oauth2/authorization/google}" class="social-login-link" data-social-provider="google" aria-label="Google 회원가입">
+                                    <a th:href="@{/oauth2/authorization/google}" class="social-login-link" data-social-provider="google" th:aria-label="#{login.social.googleSignup}">
                                         <span class="social-login-icon">
                                             <svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                                 <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -275,16 +274,16 @@
                                 <span class="flex h-20 w-20 items-center justify-center rounded-2xl bg-white text-[#1a7de0] ring-1 ring-blue-100 transition-colors group-hover:bg-[#2563EB] group-hover:text-white">
                                     <i data-lucide="store" class="h-10 w-10"></i>
                                 </span>
-                                <span class="mt-6 block text-[28px] text-gray-900" style="font-weight:800;">사업자 회원</span>
-                                <span class="mt-2 block text-[14px] leading-relaxed text-gray-500">매장 정보와 입점 서류를 함께 등록해요.</span>
+                                <span class="mt-6 block text-[28px] text-gray-900" style="font-weight:800;" th:text="#{login.signup.ownerTitle}">사업자 회원</span>
+                                <span class="mt-2 block text-[14px] leading-relaxed text-gray-500" th:text="#{login.signup.ownerDesc}">매장 정보와 입점 서류를 함께 등록해요.</span>
                             </div>
                             <div class="signup-choice-bottom">
                                 <button type="button" data-signup-type="owner"
                                         class="inline-flex h-12 w-full items-center justify-center rounded-xl border border-[#3b9eff] bg-white text-[15px] text-[#1a7de0] transition-colors hover:bg-[#2563EB] hover:text-white"
-                                        style="font-weight:800;">사업자로 가입하기</button>
+                                        style="font-weight:800;" th:text="#{login.signup.ownerCta}">사업자로 가입하기</button>
                                 <div class="mt-4 flex min-h-[76px] w-full items-center justify-center rounded-xl border border-blue-100 bg-white px-5 py-4">
                                     <p class="text-[12px] leading-relaxed text-gray-500">
-                                        사업자등록번호와 입점 서류를 준비해 주세요.
+                                        <span th:text="#{login.signup.ownerGuide}">사업자등록번호와 입점 서류를 준비해 주세요.</span>
                                     </p>
                                 </div>
                             </div>
@@ -298,11 +297,11 @@
                         <button type="button" id="backToSignupChoice"
                                 class="inline-flex items-center gap-1 text-[13px] text-gray-500 hover:text-[#2563EB]">
                             <i data-lucide="chevron-left" class="h-4 w-4"></i>
-                            유형 다시 선택
+                            <span th:text="#{login.signup.chooseAgain}">유형 다시 선택</span>
                         </button>
                         <span id="accountTypeBadge"
                               class="rounded-full border border-blue-100 bg-[#eff6ff] px-3 py-1 text-[12px] text-[#1a7de0]"
-                              style="font-weight:700;">개인 회원</span>
+                              style="font-weight:700;" th:text="#{login.signup.personalTitle}">개인 회원</span>
                     </div>
 
                     <form id="signupForm" th:action="@{/signup}" method="post" enctype="multipart/form-data" class="space-y-3">
@@ -310,37 +309,37 @@
                         <input id="accountTypeInput" name="accountType" type="hidden" th:value="${accountType == 'owner'} ? 'owner' : 'personal'"/>
                         <input type="hidden" name="lang" th:value="${lang}"/>
 
-                        <input name="name" type="text" placeholder="이름" autocomplete="name" th:value="${signupName}"
+                        <input name="name" type="text" th:placeholder="#{login.field.name}" autocomplete="name" th:value="${signupName}"
                                class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                        <input id="signupLoginId" name="loginId" type="text" placeholder="아이디" autocomplete="username"
+                        <input id="signupLoginId" name="loginId" type="text" th:placeholder="#{login.field.loginId}" autocomplete="username"
                                pattern="(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{4,20}"
-                               title="아이디는 영문과 숫자를 포함한 4~20자로 입력해 주세요."
+                               th:title="#{login.hint.loginIdRule}"
                                th:value="${signupLoginId}"
                                class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                        <p class="text-[12px] text-gray-400 -mt-1">영문과 숫자를 포함해 4~20자로 입력해 주세요.</p>
+                        <p class="text-[12px] text-gray-400 -mt-1" th:text="#{login.hint.loginIdRuleShort}">영문과 숫자를 포함해 4~20자로 입력해 주세요.</p>
                         <div class="password-field">
-                            <input id="signupPassword" name="password" type="password" placeholder="비밀번호" autocomplete="new-password"
+                            <input id="signupPassword" name="password" type="password" th:placeholder="#{login.field.password}" autocomplete="new-password"
                                    pattern="(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,20}"
-                                   title="비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자로 입력해 주세요."
+                                   th:title="#{login.hint.passwordRule}"
                                    class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                            <button type="button" class="password-toggle" aria-label="비밀번호 보기" title="비밀번호 보기">
+                            <button type="button" class="password-toggle" th:aria-label="#{login.password.show}" th:title="#{login.password.show}">
                                 <i data-lucide="eye"></i>
                             </button>
                         </div>
-                        <p class="text-[12px] text-gray-400 -mt-1">영문, 숫자, 특수문자를 포함해 8~20자로 입력해 주세요.</p>
+                        <p class="text-[12px] text-gray-400 -mt-1" th:text="#{login.hint.passwordRuleShort}">영문, 숫자, 특수문자를 포함해 8~20자로 입력해 주세요.</p>
                         <div class="password-field">
-                            <input id="signupPasswordConfirm" name="passwordConfirm" type="password" placeholder="비밀번호 확인" autocomplete="new-password"
+                            <input id="signupPasswordConfirm" name="passwordConfirm" type="password" th:placeholder="#{login.field.passwordConfirm}" autocomplete="new-password"
                                    class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
-                            <button type="button" class="password-toggle" aria-label="비밀번호 보기" title="비밀번호 보기">
+                            <button type="button" class="password-toggle" th:aria-label="#{login.password.show}" th:title="#{login.password.show}">
                                 <i data-lucide="eye"></i>
                             </button>
                         </div>
-                        <input name="email" type="email" placeholder="이메일" th:value="${signupEmail}"
+                        <input name="email" type="email" th:placeholder="#{login.field.email}" th:value="${signupEmail}"
                                class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
 
                         <div id="personalPanel" class="account-panel">
                             <p class="text-[12px] text-gray-400 leading-relaxed pt-1">
-                                개인은 아이디 가입과 Google 로그인을 모두 이용할 수 있어요.
+                                <span th:text="#{login.signup.personalGuide}">개인은 아이디 가입과 Google 로그인을 모두 이용할 수 있어요.</span>
                             </p>
                         </div>
 
@@ -348,24 +347,24 @@
                             <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
                                 <div class="flex items-center gap-2 mb-3">
                                     <i data-lucide="store" class="w-4 h-4 text-[#2563EB]"></i>
-                                    <strong class="text-[14px] text-gray-900">입점 서류 등록</strong>
-                                    <span class="ml-auto text-[11px] text-blue-600 bg-white border border-blue-100 rounded-full px-2 py-1">검토 대기</span>
+                                    <strong class="text-[14px] text-gray-900" th:text="#{login.signup.ownerDocsTitle}">입점 서류 등록</strong>
+                                    <span class="ml-auto text-[11px] text-blue-600 bg-white border border-blue-100 rounded-full px-2 py-1" th:text="#{login.signup.pendingReview}">검토 대기</span>
                                 </div>
-                                <input name="storeName" type="text" placeholder="가게명" th:value="${storeName}"
+                                <input name="storeName" type="text" th:placeholder="#{mypage.owner.storeName}" th:value="${storeName}"
                                        class="owner-required-field mb-2 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
-                                <input name="ownerName" type="text" placeholder="대표자명" th:value="${ownerName}"
+                                <input name="ownerName" type="text" th:placeholder="#{mypage.owner.ownerName}" th:value="${ownerName}"
                                        class="owner-required-field mb-2 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
-                                <input name="startDate" type="text" placeholder="개업일자 (YYYYMMDD)" inputmode="numeric" maxlength="8" th:value="${startDate}"
+                                <input name="startDate" type="text" th:placeholder="#{mypage.owner.startDate}" inputmode="numeric" maxlength="8" th:value="${startDate}"
                                        class="owner-required-field mb-2 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
-                                <input name="businessRegistrationNumber" type="text" placeholder="사업자등록번호" th:value="${businessRegistrationNumber}"
+                                <input name="businessRegistrationNumber" type="text" th:placeholder="#{mypage.owner.businessNo}" th:value="${businessRegistrationNumber}"
                                        class="owner-required-field mb-3 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
-                                <label class="block text-[12px] text-gray-500 mb-1">사업자등록증</label>
+                                <label class="block text-[12px] text-gray-500 mb-1" th:text="#{mypage.owner.registrationFile}">사업자등록증</label>
                                 <input name="businessRegistrationFile" type="file"
                                        class="owner-required-field mb-3 w-full text-[12px] text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-[#2563EB]"/>
-                                <label class="block text-[12px] text-gray-500 mb-1">영업신고증</label>
+                                <label class="block text-[12px] text-gray-500 mb-1" th:text="#{mypage.owner.licenseFile}">영업신고증</label>
                                 <input name="businessLicenseFile" type="file"
                                        class="owner-required-field mb-3 w-full text-[12px] text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-[#2563EB]"/>
-                                <label class="block text-[12px] text-gray-500 mb-1">메뉴판 또는 메뉴 정보</label>
+                                <label class="block text-[12px] text-gray-500 mb-1" th:text="#{mypage.owner.menuFile}">메뉴판 또는 메뉴 정보</label>
                                 <input name="menuFile" type="file"
                                        class="owner-required-field w-full text-[12px] text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-[#2563EB]"/>
                             </div>
@@ -373,14 +372,14 @@
 
                         <button type="submit"
                                 class="w-full h-12 rounded-xl bg-[#2563EB] text-white text-[15px] hover:bg-blue-700 transition-colors"
-                                style="font-weight:700;">회원가입 완료</button>
+                                style="font-weight:700;" th:text="#{login.signup.submit}">회원가입 완료</button>
                     </form>
 
                 </div>
             </section>
 
             <p class="text-center text-[12px] text-gray-400 mt-5 leading-relaxed">
-                로그인하면 서비스 이용약관 및<br/>개인정보 처리방침에 동의하게 됩니다.
+                <span th:text="#{login.terms.line1}">로그인하면 서비스 이용약관 및</span><br/><span th:text="#{login.terms.line2}">개인정보 처리방침에 동의하게 됩니다.</span>
             </p>
         </div>
     </div>
@@ -388,12 +387,6 @@
     <script th:inline="javascript">
         function changeLoginLanguage(language) {
             localStorage.setItem('tripLanguage', language);
-            if (language === 'ko') {
-                document.cookie = 'googtrans=; Max-Age=0; path=/';
-                document.cookie = 'googtrans=; Max-Age=0; path=/; domain=' + location.hostname;
-            } else {
-                document.cookie = `googtrans=/ko/${language}; path=/`;
-            }
             window.location.href = '/login?lang=' + encodeURIComponent(language);
         }
 
@@ -408,6 +401,16 @@
         const rememberLoginId = document.getElementById('rememberLoginId');
         const signupLink = document.getElementById('signupLink');
         const signupToast = document.getElementById('signupToast');
+        const msg = {
+            personalTitle: /*[[#{login.signup.personalTitle}]]*/ '개인 회원',
+            ownerTitle: /*[[#{login.signup.ownerTitle}]]*/ '사업자 회원',
+            passwordMismatch: /*[[#{login.error.passwordMismatch}]]*/ '비밀번호가 일치하지 않습니다.',
+            lastSocial: /*[[#{login.social.lastUsed}]]*/ '마지막 로그인은 {0} 계정입니다.',
+            passwordShow: /*[[#{login.password.show}]]*/ '비밀번호 보기',
+            passwordHide: /*[[#{login.password.hide}]]*/ '비밀번호 숨기기'
+        };
+        const formatMsg = (template, ...values) =>
+            values.reduce((result, value, index) => result.replace(`{${index}}`, value), template);
 
         function showAuthPanel(panelId, options = {}) {
             document.querySelectorAll('.auth-panel').forEach(panel => panel.classList.remove('active'));
@@ -444,7 +447,7 @@
             document.querySelectorAll('.account-panel').forEach(panel => panel.classList.remove('active'));
             document.getElementById(targetId).classList.add('active');
             document.getElementById('accountTypeInput').value = type;
-            document.getElementById('accountTypeBadge').textContent = type === 'owner' ? '사업자 회원' : '개인 회원';
+            document.getElementById('accountTypeBadge').textContent = type === 'owner' ? msg.ownerTitle : msg.personalTitle;
             document.querySelectorAll('.owner-required-field').forEach(field => {
                 field.required = type === 'owner';
             });
@@ -452,7 +455,7 @@
 
         function validatePasswordConfirm() {
             const mismatch = passwordConfirmInput.value && passwordInput.value !== passwordConfirmInput.value;
-            passwordConfirmInput.setCustomValidity(mismatch ? '비밀번호가 일치하지 않습니다.' : '');
+            passwordConfirmInput.setCustomValidity(mismatch ? msg.passwordMismatch : '');
         }
 
         document.querySelectorAll('[data-auth-target]').forEach(button => {
@@ -512,21 +515,21 @@
                 if (!input) return;
                 const willShow = input.type === 'password';
                 input.type = willShow ? 'text' : 'password';
-                button.setAttribute('aria-label', willShow ? '비밀번호 숨기기' : '비밀번호 보기');
-                button.setAttribute('title', willShow ? '비밀번호 숨기기' : '비밀번호 보기');
+                button.setAttribute('aria-label', willShow ? msg.passwordHide : msg.passwordShow);
+                button.setAttribute('title', willShow ? msg.passwordHide : msg.passwordShow);
                 button.innerHTML = `<i data-lucide="${willShow ? 'eye-off' : 'eye'}"></i>`;
                 lucide.createIcons();
             });
         });
         const providerLabels = {
             google: 'Google',
-            naver: '네이버',
-            kakao: '카카오'
+            naver: /*[[#{login.social.naver}]]*/ '네이버',
+            kakao: /*[[#{login.social.kakao}]]*/ '카카오'
         };
         const lastSocialProvider = localStorage.getItem('koreaPointLastSocialLogin');
         const lastSocialNote = document.getElementById('lastSocialLoginNote');
         if (lastSocialProvider && providerLabels[lastSocialProvider] && lastSocialNote) {
-            lastSocialNote.textContent = `마지막 로그인은 ${providerLabels[lastSocialProvider]} 계정입니다.`;
+            lastSocialNote.textContent = formatMsg(msg.lastSocial, providerLabels[lastSocialProvider]);
             lastSocialNote.classList.add('active');
             document.querySelectorAll(`[data-social-provider="${lastSocialProvider}"]`).forEach(link => {
                 link.classList.add('last-used');

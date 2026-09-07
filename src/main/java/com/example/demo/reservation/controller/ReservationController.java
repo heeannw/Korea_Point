@@ -14,6 +14,7 @@ import com.example.demo.community.repository.PostRepository;
 import com.example.demo.trip.dto.TripPlanDto;
 import com.example.demo.trip.service.TripPlanService;
 import com.example.demo.tourism.dto.SavedPlaceDto;
+import com.example.demo.tourism.config.TourPlaceI18n;
 import com.example.demo.tourism.service.SavedPlaceService;
 import com.example.demo.user.entity.OwnerRequest;
 import com.example.demo.user.entity.User;
@@ -39,7 +40,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Locale;
 
@@ -54,6 +57,7 @@ public class ReservationController {
     private final OwnerRequestService ownerRequestService;
     private final TripPlanService tripPlanService;
     private final SavedPlaceService savedPlaceService;
+    private final TourPlaceI18n tourPlaceI18n;
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
 
@@ -205,6 +209,7 @@ public class ReservationController {
         User user = userService.findById(userId);
         Optional<OwnerRequest> latestOwnerRequest = ownerRequestService.findLatestByUserId(userId);
         List<TourReservation> reservations = reservationService.findMyReservations(userId);
+        String lang = normalizeReservationLang(LocaleContextHolder.getLocale().getLanguage());
         List<TourReservation> activeReservations = reservations.stream()
                 .filter(reservation -> !"예약 취소".equals(reservation.getStatus()))
                 .toList();
@@ -238,6 +243,7 @@ public class ReservationController {
         model.addAttribute("promoPostCount", promoPostCount);
         model.addAttribute("promoCategoryId", promoCategoryId);
         model.addAttribute("reservations", reservations);
+        model.addAttribute("reservationTitleById", localizedReservationTitles(reservations, lang));
         model.addAttribute("activeReservations", activeReservations);
         model.addAttribute("hasReservation", !reservations.isEmpty());
         model.addAttribute("hasActiveReservation", !activeReservations.isEmpty());
@@ -252,6 +258,15 @@ public class ReservationController {
             ));
         }
         return "mypage/mypage";
+    }
+
+    private Map<Long, String> localizedReservationTitles(List<TourReservation> reservations, String lang) {
+        Map<Long, String> titles = new LinkedHashMap<>();
+        for (TourReservation reservation : reservations) {
+            titles.put(reservation.getId(), tourPlaceI18n.translateTitle(
+                    lang, reservation.getContentId(), reservation.getPlaceTitle()));
+        }
+        return titles;
     }
 
     @PostMapping("/ko/mypage/owner-application")

@@ -19,7 +19,7 @@
 -->
 <body>
 <header th:fragment="header(lang, isLoggedIn, currentUserName)">
-  <a class="logo" translate="no" th:href="${lang == 'en'} ? @{/en} : @{/ko}">Korea<span>Point</span></a>
+  <a class="logo" translate="no" th:href="${lang == 'en'} ? @{/en(lang=${lang})} : @{/ko(lang=${lang})}">Korea<span>Point</span></a>
   <div class="header-right">
     <div class="user-menu" th:if="${isLoggedIn}">
       <button type="button" class="h-btn user-menu-btn"
@@ -46,7 +46,7 @@
       </div>
     </div>
     <th:block th:unless="${isLoggedIn}">
-      <a th:href="@{/login}" class="h-btn h-btn-fill" translate="no">Login</a>
+      <a th:href="@{/login(lang=${lang})}" class="h-btn h-btn-fill" translate="no">Login</a>
     </th:block>
 
     <div class="lang-menu">
