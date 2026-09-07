@@ -18,7 +18,7 @@
 .back-link:hover { color: var(--blue); }
 
 .route-title {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Playfair Display', 'Noto Sans KR', serif;
     font-size: 18px;
     font-weight: 700;
     margin-bottom: 4px;
@@ -390,12 +390,6 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-}
-
-.loc-btn {
-    position: absolute;
-    bottom: 24px;
-    right: 16px;
 }
 
 /* 상단 한 줄 */

@@ -4,6 +4,8 @@ import com.example.demo.user.entity.AccountStatus;
 import com.example.demo.user.entity.User;
 import com.example.demo.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MessageSource messageSource;
 
     @Transactional
     public User processOAuth2User(String provider, String providerId,
@@ -112,15 +115,21 @@ public class UserService {
 
     public String loginProviderName(User user) {
         if (user == null || !StringUtils.hasText(user.getProvider())) {
-            return "알 수 없음";
+            return message("user.provider.unknown", "알 수 없음");
         }
-        return switch (user.getProvider()) {
+        String provider = user.getProvider();
+        String fallback = switch (provider) {
             case "local" -> "아이디 로그인";
             case "google" -> "Google 로그인";
             case "naver" -> "네이버 로그인";
             case "kakao" -> "카카오 로그인";
             default -> "소셜 로그인";
         };
+        return message("user.provider." + provider, fallback);
+    }
+
+    private String message(String key, String fallback) {
+        return messageSource.getMessage(key, null, fallback, LocaleContextHolder.getLocale());
     }
 
     @Transactional

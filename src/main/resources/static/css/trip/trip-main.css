@@ -56,9 +56,9 @@ body{font-family:'DM Sans',sans-serif;color:var(--dark);background:#f8fafc}
 
 /* ─── 카드 ─── */
 .step-card{
-    width:100%;max-width:660px;
+    width:100%;max-width:720px;
     background:#fff;border-radius:20px;
-    padding:32px 28px;
+    padding:40px 36px;
     box-shadow:0 4px 24px rgba(59,158,255,.10), 0 1px 4px rgba(0,0,0,.06);
     border:1px solid var(--border);
 }
@@ -66,7 +66,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--dark);background:#f8fafc}
 .step-title{
     font-family:'Playfair Display',serif;
     font-size:20px;font-weight:700;
-    margin-bottom:24px;color:var(--dark);
+    margin-bottom:28px;color:var(--dark);
 }
 .step-title span{color:var(--blue)}
 
@@ -75,27 +75,36 @@ body{font-family:'DM Sans',sans-serif;color:var(--dark);background:#f8fafc}
 .form-step.active{display:block;animation:fadeUp .22s ease}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
+/* ─── 필드를 의미 단위로 묶는 섹션 — 필드가 많은 스텝(특히 1단계)에서 한눈에 다 나열되면
+   읽기 힘들다는 피드백으로, 소제목 + 여백으로 시각적으로 덩어리를 나눠준다. ─── */
+.field-section{margin-bottom:32px}
+.field-section-title{
+    font-size:13px;font-weight:700;color:var(--blue-dk);
+    margin-bottom:16px;padding-bottom:10px;
+    border-bottom:1.5px solid var(--border);
+}
+
 /* ─── 필드 그리드 ─── */
 .field-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
-    gap:14px;
-    margin-bottom:20px;
+    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:18px;
 }
-.field-group{display:flex;flex-direction:column;gap:6px}
+.field-group{display:flex;flex-direction:column;gap:7px}
 .field-label{
-    font-size:11px;font-weight:700;color:var(--gray);
-    text-transform:uppercase;letter-spacing:.6px;
+    font-size:12px;font-weight:700;color:var(--mid);
+    text-transform:uppercase;letter-spacing:.5px;
 }
 .field-input{
-    padding:11px 14px;
+    padding:12px 15px;
     border:1.5px solid var(--border);border-radius:10px;
     font-size:14px;font-family:'DM Sans',sans-serif;
-    outline:none;transition:border-color .2s;
-    background:#fff;color:var(--dark);width:100%;
+    outline:none;transition:border-color .2s, background .2s;
+    background:#f9fbff;color:var(--dark);width:100%;
 }
+.field-input:hover{border-color:#bcdcff}
 .field-input:focus{border-color:var(--blue);background:#fff}
-.field-input::placeholder{color:#c0ccda}
+.field-input::placeholder{color:#94a3b8}
 
 /* 숙박/일수 행 */
 .nights-row{
@@ -113,7 +122,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--dark);background:#f8fafc}
 /* 시간 행 */
 .time-row{
     display:grid;grid-template-columns:1fr 1fr 1fr;
-    gap:14px;margin-bottom:20px;
+    gap:18px;
 }
 
 /* ─── 칩 ─── */
@@ -152,11 +161,11 @@ body{font-family:'DM Sans',sans-serif;color:var(--dark);background:#f8fafc}
 }
 .field-textarea:focus{border-color:var(--blue)}
 .field-textarea::placeholder{color:#c0ccda}
-.field-hint{font-size:11px;color:var(--gray);margin-top:5px}
+.field-hint{font-size:12px;color:var(--gray);margin-top:6px;line-height:1.5}
 
 /* 시간+분 듀레이션 입력(도착 후 일정 시작까지 등) */
 .duration-input{display:flex;align-items:center;gap:6px}
-.duration-input .field-input{width:60px;flex:none;padding:11px 6px;text-align:center}
+.duration-input .field-input{width:60px;flex:none;padding:12px 6px;text-align:center}
 .duration-unit{font-size:13px;color:var(--gray);white-space:nowrap}
 
 /* ─── 구분선 ─── */

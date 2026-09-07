@@ -6,7 +6,7 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>Transit Search — KoreaPoint</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Noto+Sans+KR:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/transport/t_common/variable.css}">
     <link rel="stylesheet" th:href="@{/css/transport/t_common/reset.css}">
     <link rel="stylesheet" th:href="@{/css/transport/t_common/layout.css}">
@@ -67,10 +67,6 @@
                                th:value="${start}" autocomplete="off">
                         <div class="autocomplete-list" id="startAcList"></div>
                     </div>
-                    <button type="button" class="location-btn"
-                            id="locationBtn" onclick="useMyLocation()">
-                        📡 My Location
-                    </button>
                 </div>
                 <div class="route-divider">
                     <div class="route-divider-line"></div>
@@ -87,8 +83,6 @@
                     </div>
                 </div>
             </div>
-            <input type="hidden" name="startLat" id="startLat">
-            <input type="hidden" name="startLng" id="startLng">
             <button type="submit" class="search-btn">Search Routes →</button>
         </form>
     </div>
@@ -378,16 +372,6 @@
             }
         });
 
-        if (inputId === 'startInput') {
-            input.addEventListener('input', () => {
-                document.getElementById('startLat').value = '';
-                document.getElementById('startLng').value = '';
-                const btn = document.getElementById('locationBtn');
-                btn.textContent = '📡 My Location';
-                btn.disabled = false;
-                btn.style.background = '#10b981';
-            });
-        }
     }
 
     function selectAc(inputId, listId, name) {
@@ -451,66 +435,12 @@
         document.getElementById('searchForm').submit();
     }
 
-    function useMyLocation() {
-        if (!navigator.geolocation) {
-            alert('Geolocation is not supported by this browser.');
-            return;
-        }
-        const btn = document.getElementById('locationBtn');
-        btn.textContent = '📡 Locating...';
-        btn.disabled = true;
-
-        navigator.geolocation.getCurrentPosition(
-            pos => {
-                const { latitude: lat, longitude: lng } = pos.coords;
-                document.getElementById('startLat').value = lat;
-                document.getElementById('startLng').value = lng;
-
-                fetch(`/api/kakao/reverse?x=${lng}&y=${lat}`)
-                    .then(r => r.json())
-                    .then(data => {
-                        const docs = data.documents;
-                        if (docs && docs.length > 0) {
-                            const addr = docs[0];
-                            const displayAddr = addr.road_address
-                                ? addr.road_address.address_name
-                                : (addr.address
-                                    ? `${addr.address.region_1depth_name} ${addr.address.region_2depth_name} ${addr.address.region_3depth_name}`
-                                    : 'Current Location');
-                            document.getElementById('startInput').value = displayAddr;
-                        } else {
-                            document.getElementById('startInput').value = 'Current Location';
-                        }
-                        btn.textContent = '✅ Located';
-                        btn.style.background = '#0f172a';
-                    })
-                    .catch(() => {
-                        document.getElementById('startInput').value = 'Current Location';
-                        btn.textContent = '✅ Located';
-                        btn.style.background = '#0f172a';
-                    });
-            },
-            () => {
-                alert('Unable to get location. Please enter manually.');
-                btn.textContent = '📡 My Location';
-                btn.disabled = false;
-            }
-        );
-    }
     function swapLocations() {
         const startInput = document.getElementById('startInput');
         const endInput   = document.getElementById('endInput');
-        const startLat   = document.getElementById('startLat');
-        const startLng   = document.getElementById('startLng');
-
-        // 현재위치 사용 중이면 좌표도 같이 초기화
         const tmpVal = startInput.value;
         startInput.value = endInput.value;
         endInput.value   = tmpVal;
-
-        // 현재위치 좌표는 도착지로 이동하면 의미 없으므로 초기화
-        startLat.value = '';
-        startLng.value = '';
     }
 
     //04.09 버그로 인해 수정

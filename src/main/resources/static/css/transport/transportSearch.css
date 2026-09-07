@@ -16,10 +16,10 @@
 }
 
 .hero h1 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Playfair Display', 'Noto Sans KR', serif;
     color: white;
     font-size: 32px;
-    font-weight: 900;
+    font-weight: 700;
     margin-bottom: 8px;
     position: relative;
 }
@@ -139,25 +139,6 @@
 
 .route-divider-line { flex: 1; height: 1px; background: var(--border); }
 .route-divider-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
-
-/* ================= 버튼 ================= */
-.location-btn {
-    padding: 10px 14px;
-    background: var(--green);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: background 0.2s;
-    font-family: 'DM Sans', sans-serif;
-}
-
-.location-btn:hover { background: #059669; }
-.location-btn:disabled { background: #0f172a; cursor: default; }
 
 .search-btn {
     width: 100%;

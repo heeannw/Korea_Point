@@ -14,6 +14,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +49,12 @@ public class GeminiChatClient {
     }
 
     public String generate(String prompt) {
+        return generate(prompt, null, null);
+    }
+
+    /** imageBase64/imageMimeType이 있으면 텍스트 프롬프트와 같은 요청 안에 이미지 part를
+     *  같이 실어 보낸다(Gemini 멀티모달 — inline_data). 이미지가 없으면 기존과 동일하게 텍스트만. */
+    public String generate(String prompt, String imageBase64, String imageMimeType) {
         if (!isConfigured()) {
             throw new ChatbotApiException("GEMINI_API_KEY가 없어 답변을 생성할 수 없습니다.");
         }
@@ -55,12 +62,20 @@ public class GeminiChatClient {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("x-goog-api-key", apiKey);
 
+        List<Map<String, Object>> parts = new ArrayList<>();
+        parts.add(Map.of("text", prompt));
+        if (imageBase64 != null && !imageBase64.isBlank()) {
+            parts.add(Map.of("inline_data", Map.of(
+                    "mime_type", (imageMimeType == null || imageMimeType.isBlank()) ? "image/jpeg" : imageMimeType,
+                    "data", imageBase64)));
+        }
+
         // gemini-3.6-flash는 "생각(thinking)" 과정도 maxOutputTokens 예산을 같이 쓰는 모델이라
         // 최종 답변 전에 예산이 소진되면 문장이 끊긴다. 여유 있게 넉넉히 잡는다.
         // 답변 생성 요청이 번역 언어일 때는 참고 자료 본문 전체를 같이 번역해서 돌려받다 보니
         // 응답이 꽤 커질 수 있어(원문 여러 개 + 번역본) 예산을 넉넉히 잡는다.
         Map<String, Object> body = Map.of(
-                "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
+                "contents", List.of(Map.of("parts", parts)),
                 "generationConfig", Map.of("temperature", 0.3, "maxOutputTokens", 8192));
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
         String url = String.format(ENDPOINT, model);

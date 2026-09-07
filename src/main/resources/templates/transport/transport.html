@@ -6,7 +6,7 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>교통 경로 검색 — KoreaPoint</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Noto+Sans+KR:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/transport/t_common/variable.css}">
     <link rel="stylesheet" th:href="@{/css/transport/t_common/reset.css}">
     <link rel="stylesheet" th:href="@{/css/transport/t_common/layout.css}">
@@ -69,10 +69,6 @@
                                th:value="${start}" autocomplete="off">
                         <div class="autocomplete-list" id="startAcList"></div>
                     </div>
-                    <button type="button" class="location-btn"
-                            id="locationBtn" onclick="useMyLocation()">
-                        📡 현재위치
-                    </button>
                 </div>
                 <div class="route-divider">
                     <div class="route-divider-line"></div>
@@ -89,8 +85,6 @@
                     </div>
                 </div>
             </div>
-            <input type="hidden" name="startLat" id="startLat">
-            <input type="hidden" name="startLng" id="startLng">
             <button type="submit" class="search-btn">경로 검색 →</button>
         </form>
     </div>
@@ -380,16 +374,6 @@
             }
         });
 
-        if (inputId === 'startInput') {
-            input.addEventListener('input', () => {
-                document.getElementById('startLat').value = '';
-                document.getElementById('startLng').value = '';
-                const btn = document.getElementById('locationBtn');
-                btn.textContent = '📡 현재위치';
-                btn.disabled = false;
-                btn.style.background = '#10b981';
-            });
-        }
     }
 
     function selectAc(inputId, listId, name) {
@@ -459,66 +443,12 @@
         document.getElementById('searchForm').submit();
     }
 
-    function useMyLocation() {
-        if (!navigator.geolocation) {
-            alert('이 브라우저는 위치 서비스를 지원하지 않아요.');
-            return;
-        }
-        const btn = document.getElementById('locationBtn');
-        btn.textContent = '📡 확인중...';
-        btn.disabled = true;
-
-        navigator.geolocation.getCurrentPosition(
-            pos => {
-                const { latitude: lat, longitude: lng } = pos.coords;
-                document.getElementById('startLat').value = lat;
-                document.getElementById('startLng').value = lng;
-
-                fetch(`/api/kakao/reverse?x=${lng}&y=${lat}`)
-                    .then(r => r.json())
-                    .then(data => {
-                        const docs = data.documents;
-                        if (docs && docs.length > 0) {
-                            const addr = docs[0];
-                            const displayAddr = addr.road_address
-                                ? addr.road_address.address_name
-                                : (addr.address
-                                    ? `${addr.address.region_1depth_name} ${addr.address.region_2depth_name} ${addr.address.region_3depth_name}`
-                                    : '현재위치');
-                            document.getElementById('startInput').value = displayAddr;
-                        } else {
-                            document.getElementById('startInput').value = '현재위치';
-                        }
-                        btn.textContent = '✅ 확인됨';
-                        btn.style.background = '#0f172a';
-                    })
-                    .catch(() => {
-                        document.getElementById('startInput').value = '현재위치';
-                        btn.textContent = '✅ 확인됨';
-                        btn.style.background = '#0f172a';
-                    });
-            },
-            () => {
-                alert('위치를 가져올 수 없어요. 직접 입력해주세요.');
-                btn.textContent = '📡 현재위치';
-                btn.disabled = false;
-            }
-        );
-    }
     function swapLocations() {
         const startInput = document.getElementById('startInput');
         const endInput   = document.getElementById('endInput');
-        const startLat   = document.getElementById('startLat');
-        const startLng   = document.getElementById('startLng');
-
-        // 현재위치 사용 중이면 좌표도 같이 초기화
         const tmpVal = startInput.value;
         startInput.value = endInput.value;
         endInput.value   = tmpVal;
-
-        // 현재위치 좌표는 도착지로 이동하면 의미 없으므로 초기화
-        startLat.value = '';
-        startLng.value = '';
     }
 
     //04.09 버그로 인해 수정

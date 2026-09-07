@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>경로 상세 — KoreaPoint</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Noto+Sans+KR:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
 
     <link rel="stylesheet" th:href="@{/css/transport/t_common/reset.css}">
@@ -86,9 +86,6 @@
             <div class="mc" id="mcZoomIn">＋</div>
             <div class="mc" id="mcZoomOut">－</div>
         </div>
-        <button class="loc-btn" onclick="getLocation()">
-            📍 내 위치
-        </button>
     </div>
 </div>
 
@@ -117,20 +114,6 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById('tab-' + id).classList.add('active');
-    }
-
-    // 내 위치 클릭
-    function getLocation() {
-
-        if (!myLocation) {
-            alert("현재 위치를 아직 불러오는 중입니다.");
-            return;
-        }
-
-        const moveLatLng = new kakao.maps.LatLng(myLocation.lat, myLocation.lng);
-
-        map.setLevel(3);   // 적당히 확대
-        map.panTo(moveLatLng); // 중심 이동
     }
 
     document.getElementById('mcZoomIn').addEventListener('click', () => map.setLevel(map.getLevel() - 1));
@@ -264,68 +247,6 @@
 
     // ===== 경로 데이터 처리 =====
 
-    //현재위치 마커 표시
-    let myLocation = null;
-    let liveMarker = null;
-    let liveOverlay = null;
-
-    if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(pos => {
-
-            const myLat = pos.coords.latitude;
-            const myLng = pos.coords.longitude;
-            console.log("현재 위치:", myLat, myLng);
-
-            myLocation = { lat: myLat, lng: myLng };
-
-            const latLng = new kakao.maps.LatLng(myLat, myLng);
-
-            // 마커 이미지 (한번만 생성)
-            const myMarkerImg = new kakao.maps.MarkerImage(
-                'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
-                new kakao.maps.Size(24, 35)
-            );
-
-            // 마커
-            if (!liveMarker) {
-                liveMarker = new kakao.maps.Marker({
-                    map: map,
-                    position: latLng,
-                    image: myMarkerImg
-                });
-            } else {
-                liveMarker.setPosition(latLng);
-            }
-
-            // 라벨
-            if (!liveOverlay) {
-                liveOverlay = new kakao.maps.CustomOverlay({
-                    map: map,
-                    position: latLng,
-                    content: `<div style="
-                    background:#3b9eff;color:white;
-                    padding:3px 10px;border-radius:50px;
-                    font-size:11px;font-weight:700;
-                    white-space:nowrap;
-                    box-shadow:0 2px 6px rgba(0,0,0,0.25);
-                    margin-bottom:6px;
-                    font-family:'DM Sans',sans-serif;">
-                    📍 내 위치
-                </div>`,
-                    yAnchor: 2.5
-                });
-            } else {
-                liveOverlay.setPosition(latLng);
-            }
-
-            // 예전엔 위치가 갱신될 때마다 지도 중심을 내 위치로 강제로 옮겼는데, 경로를 보고 있다가도
-            // 계속 내 위치로 화면이 튀는 문제가 있어서 뺐다 — 마커/라벨만 갱신하고 지도 중심은 그대로 둔다.
-
-        }, () => {
-            // 위치 권한 거부
-        });
-    }
-
     //========== main ==========
     if (!routeId) {
         document.getElementById('stepList').innerHTML = '<p class="no-data">경로 데이터 없음</p>';
@@ -361,23 +282,7 @@
                         lng: routeData.startLng
                     };
 
-                    // 2순위: 현재위치 (GPS)
-                } else if (startLabel === '현재위치') {
-
-                    if (!myLocation) {
-                        await new Promise(resolve => {
-                            const wait = setInterval(() => {
-                                if (myLocation) {
-                                    clearInterval(wait);
-                                    resolve();
-                                }
-                            }, 100);
-                        });
-                    }
-
-                    originPt = myLocation;
-
-                    // 3순위: 검색 fallback
+                    // 2순위: 검색 fallback
                 } else if (startLabel) {
 
                     originPt = await kakaoSearch(startLabel);
@@ -708,56 +613,6 @@
 
                 // 지도 범위 자동 조정
                 fitBounds(allCoords);
-
-                // 목적지 근처 알림
-                if (destPt) {
-                    let alertShown = false;
-                    const alertOverlay = new kakao.maps.CustomOverlay({
-                        position: new kakao.maps.LatLng(destPt.lat, destPt.lng),
-                        content: `<div style="
-                        background:#ef4444;color:white;
-                        padding:10px 16px;border-radius:12px;
-                        font-size:13px;font-weight:700;
-                        box-shadow:0 4px 12px rgba(0,0,0,0.3);
-                        white-space:nowrap;">🔔 목적지 근처입니다!</div>`,
-                        yAnchor: 2.5,
-                        zIndex: 10
-                    });
-
-                    function getDistance(lat1, lng1, lat2, lng2) {
-                        const R = 6371000;
-                        const dLat = (lat2 - lat1) * Math.PI / 180;
-                        const dLng = (lng2 - lng1) * Math.PI / 180;
-                        const a = Math.sin(dLat/2) * Math.sin(dLat/2)
-                            + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
-                            * Math.sin(dLng/2) * Math.sin(dLng/2);
-                        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                    }
-
-                    const locationWatcher = setInterval(() => {
-
-                        if (!myLocation) return;
-
-                        const dist = getDistance(
-                            myLocation.lat, myLocation.lng,
-                            destPt.lat, destPt.lng
-                        );
-
-                        if (dist < 200 && !alertShown) {
-                            alertShown = true;
-                            alertOverlay.setMap(map);
-                            map.setCenter(new kakao.maps.LatLng(destPt.lat, destPt.lng));
-                            map.setLevel(3);
-                            setTimeout(() => alertOverlay.setMap(null), 30000);
-                        } else if (dist >= 200) {
-                            alertShown = false;
-                            alertOverlay.setMap(null);
-                        }
-
-                    }, 5000);
-
-                    window.addEventListener('beforeunload', () => clearInterval(locationWatcher));
-                }
 
                 // ── 실시간 도착정보 (출발 + 환승역 모두) ──
                 // 역 리스트 만들기
