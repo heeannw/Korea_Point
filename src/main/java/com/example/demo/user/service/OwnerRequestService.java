@@ -83,6 +83,46 @@ public class OwnerRequestService {
                               MultipartFile businessRegistrationFile,
                               MultipartFile businessLicenseFile,
                               MultipartFile menuFile) {
+        return apply(userId, prepareApplication(
+                storeName,
+                ownerName,
+                startDate,
+                businessRegistrationNumber,
+                businessRegistrationFile,
+                businessLicenseFile,
+                menuFile
+        ));
+    }
+
+    public OwnerApplicationDraft prepareApplication(String storeName,
+                                                    String ownerName,
+                                                    String startDate,
+                                                    String businessRegistrationNumber,
+                                                    MultipartFile businessRegistrationFile,
+                                                    MultipartFile businessLicenseFile,
+                                                    MultipartFile menuFile) {
+        String normalizedStoreName = requireText(storeName, "가게명을 입력해 주세요.");
+        // 번호·대표자명·개업일자를 정리하고 국세청 진위확인까지 거친다. 틀리면 여기서 막힌다.
+        // 통과한 값은 그대로 신청서에 남긴다. 관리자가 사업자등록증과 대조할 때 쓴다.
+        BusinessNumberValidator.VerifiedBusiness verified =
+                businessNumberValidator.validateOwner(businessRegistrationNumber, startDate, ownerName);
+        requireFile(businessRegistrationFile, "사업자등록증을 등록해 주세요.");
+        requireFile(businessLicenseFile, "영업신고증을 등록해 주세요.");
+        requireFile(menuFile, "메뉴판 또는 메뉴 정보를 등록해 주세요.");
+
+        return new OwnerApplicationDraft(
+                normalizedStoreName,
+                verified.businessNumber(),
+                verified.ownerName(),
+                verified.startDate(),
+                businessRegistrationFile,
+                businessLicenseFile,
+                menuFile
+        );
+    }
+
+    @Transactional
+    public OwnerRequest apply(Long userId, OwnerApplicationDraft draft) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
@@ -93,24 +133,15 @@ public class OwnerRequestService {
             throw new IllegalStateException("이미 검토 중인 사업자 신청이 있습니다.");
         }
 
-        String normalizedStoreName = requireText(storeName, "가게명을 입력해 주세요.");
-        // 번호·대표자명·개업일자를 정리하고 국세청 진위확인까지 거친다. 틀리면 여기서 막힌다.
-        // 통과한 값은 그대로 신청서에 남긴다. 관리자가 사업자등록증과 대조할 때 쓴다.
-        BusinessNumberValidator.VerifiedBusiness verified =
-                businessNumberValidator.validateOwner(businessRegistrationNumber, startDate, ownerName);
-        requireFile(businessRegistrationFile, "사업자등록증을 등록해 주세요.");
-        requireFile(businessLicenseFile, "영업신고증을 등록해 주세요.");
-        requireFile(menuFile, "메뉴판 또는 메뉴 정보를 등록해 주세요.");
-
         return ownerRequestRepository.save(OwnerRequest.builder()
                 .user(user)
-                .storeName(normalizedStoreName)
-                .businessRegistrationNumber(verified.businessNumber())
-                .ownerName(verified.ownerName())
-                .startDate(verified.startDate())
-                .businessRegistrationFilePath(storeFile(userId, businessRegistrationFile))
-                .businessLicenseFilePath(storeFile(userId, businessLicenseFile))
-                .menuFilePath(storeFile(userId, menuFile))
+                .storeName(draft.storeName())
+                .businessRegistrationNumber(draft.businessRegistrationNumber())
+                .ownerName(draft.ownerName())
+                .startDate(draft.startDate())
+                .businessRegistrationFilePath(storeFile(userId, draft.businessRegistrationFile()))
+                .businessLicenseFilePath(storeFile(userId, draft.businessLicenseFile()))
+                .menuFilePath(storeFile(userId, draft.menuFile()))
                 .status(OwnerRequestStatus.PENDING)
                 .build());
     }
@@ -169,5 +200,14 @@ public class OwnerRequestService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException(message);
         }
+    }
+
+    public record OwnerApplicationDraft(String storeName,
+                                        String businessRegistrationNumber,
+                                        String ownerName,
+                                        String startDate,
+                                        MultipartFile businessRegistrationFile,
+                                        MultipartFile businessLicenseFile,
+                                        MultipartFile menuFile) {
     }
 }

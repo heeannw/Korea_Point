@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,6 +63,7 @@ public class UserController {
                 ? value
                 : ("ko".equals(selected) ? "/ko" : "/");
         model.addAttribute("targetUrl", targetUrl);
+        model.addAttribute("lang", selected);
         model.addAttribute("provider", provider);
         model.addAttribute("showNationalityPrompt",
                 SecurityUtil.isLoggedIn()
@@ -87,6 +89,7 @@ public class UserController {
     public String updateNationality(@RequestParam(required = false) String nationality,
                                     @RequestParam(required = false) String skip,
                                     @RequestParam(required = false) String redirect,
+                                    @RequestParam(defaultValue = "ko") String lang,
                                     RedirectAttributes redirectAttributes) {
         try {
             if ("true".equals(skip)) {
@@ -105,11 +108,12 @@ public class UserController {
         if (isSafeRedirectPath(redirect)) {
             return "redirect:" + redirect;
         }
-        return "redirect:/ko/settings#nationality";
+        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#nationality";
     }
 
     @PostMapping("/ko/settings/profile")
     public String updateProfile(@RequestParam String name,
+                                @RequestParam(defaultValue = "ko") String lang,
                                 RedirectAttributes redirectAttributes) {
         try {
             userService.updateProfile(SecurityUtil.getCurrentUserId(), name);
@@ -117,13 +121,14 @@ public class UserController {
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("settingsError", ex.getMessage());
         }
-        return "redirect:/ko/settings";
+        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang);
     }
 
     @PostMapping("/ko/settings/password")
     public String changePassword(@RequestParam String currentPassword,
                                  @RequestParam String newPassword,
                                  @RequestParam String passwordConfirm,
+                                 @RequestParam(defaultValue = "ko") String lang,
                                  RedirectAttributes redirectAttributes) {
         try {
             userService.changeLocalPassword(
@@ -136,11 +141,12 @@ public class UserController {
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("passwordError", ex.getMessage());
         }
-        return "redirect:/ko/settings#password";
+        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#password";
     }
 
     @PostMapping("/ko/settings/email-code")
     public String sendEmailCode(@RequestParam String newEmail,
+                                @RequestParam(defaultValue = "ko") String lang,
                                 HttpSession session,
                                 RedirectAttributes redirectAttributes) {
         try {
@@ -153,12 +159,13 @@ public class UserController {
         } catch (IllegalArgumentException | IllegalStateException ex) {
             redirectAttributes.addFlashAttribute("emailError", ex.getMessage());
         }
-        return "redirect:/ko/settings#email";
+        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#email";
     }
 
     @PostMapping("/ko/settings/email")
     public String updateEmail(@RequestParam String newEmail,
                               @RequestParam String verificationCode,
+                              @RequestParam(defaultValue = "ko") String lang,
                               HttpSession session,
                               RedirectAttributes redirectAttributes) {
         try {
@@ -168,12 +175,13 @@ public class UserController {
         } catch (IllegalArgumentException | IllegalStateException ex) {
             redirectAttributes.addFlashAttribute("emailError", ex.getMessage());
         }
-        return "redirect:/ko/settings#email";
+        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#email";
     }
 
     @PostMapping("/ko/settings/withdraw")
     public String withdrawAccount(@RequestParam(required = false) String currentPassword,
                                   @RequestParam(required = false) String confirmationText,
+                                  @RequestParam(defaultValue = "ko") String lang,
                                   HttpServletRequest request,
                                   HttpServletResponse response,
                                   RedirectAttributes redirectAttributes) {
@@ -182,14 +190,15 @@ public class UserController {
             redirectAttributes.addFlashAttribute("withdrawMessage", "계정 탈퇴가 완료됐어요. 언제든 다시 가입할 수 있어요.");
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             new SecurityContextLogoutHandler().logout(request, response, authentication);
-            return "redirect:/login";
+            return "redirect:/login?lang=" + normalizeLanguage(lang);
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("withdrawError", ex.getMessage());
-            return "redirect:/ko/settings#danger";
+            return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#danger";
         }
     }
 
     @PostMapping("/signup")
+    @Transactional
     public String signup(@RequestParam(defaultValue = "personal") String accountType,
                          @RequestParam String loginId,
                          @RequestParam String password,
@@ -216,15 +225,9 @@ public class UserController {
             if (!password.equals(passwordConfirm)) {
                 throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
             }
-            User user = userService.registerLocalUser(
-                    loginId,
-                    password,
-                    name,
-                    email
-            );
+            OwnerRequestService.OwnerApplicationDraft ownerDraft = null;
             if ("owner".equals(accountType)) {
-                ownerRequestService.apply(
-                        user.getId(),
+                ownerDraft = ownerRequestService.prepareApplication(
                         storeName,
                         ownerName,
                         startDate,
@@ -234,12 +237,23 @@ public class UserController {
                         menuFile
                 );
             }
+            User user = userService.registerLocalUser(
+                    loginId,
+                    password,
+                    name,
+                    email
+            );
+            if (ownerDraft != null) {
+                ownerRequestService.apply(user.getId(), ownerDraft);
+            }
             return "redirect:/login?registered=true&lang=" + selected;
         } catch (IllegalArgumentException ex) {
-            model.addAttribute("signupError", ex.getMessage());
+            restoreSignupForm(model, loginId, name, email, storeName, ownerName, startDate, businessRegistrationNumber);
+            model.addAttribute("signupError", signupErrorMessage(accountType, ex.getMessage()));
             return "user/login";
         } catch (IllegalStateException ex) {
-            model.addAttribute("signupError", ex.getMessage());
+            restoreSignupForm(model, loginId, name, email, storeName, ownerName, startDate, businessRegistrationNumber);
+            model.addAttribute("signupError", signupErrorMessage(accountType, ex.getMessage()));
             return "user/login";
         }
     }
@@ -286,8 +300,25 @@ public class UserController {
     }
 
     private boolean isSupportedLanguage(String language) {
-        return "ko".equals(language) || "en".equals(language)
-                || "ja".equals(language) || "zh-CN".equals(language);
+        if (language == null || language.isBlank()) {
+            return false;
+        }
+        String normalized = normalizeLanguage(language);
+        return "ko".equals(normalized) || "en".equals(normalized)
+                || "ja".equals(normalized) || "zh".equals(normalized)
+                || "fr".equals(normalized);
+    }
+
+    private String normalizeLanguage(String language) {
+        if (language == null || language.isBlank()) {
+            return "ko";
+        }
+        String normalized = language.trim().toLowerCase().replace('_', '-');
+        if (normalized.startsWith("en")) return "en";
+        if (normalized.startsWith("ja") || normalized.startsWith("jp")) return "ja";
+        if (normalized.startsWith("zh")) return "zh";
+        if (normalized.startsWith("fr")) return "fr";
+        return "ko";
     }
 
     private boolean isSafeRedirectPath(String redirect) {
@@ -295,5 +326,29 @@ public class UserController {
                 && redirect.startsWith("/")
                 && !redirect.startsWith("//")
                 && !redirect.startsWith("/login");
+    }
+
+    private void restoreSignupForm(Model model,
+                                   String loginId,
+                                   String name,
+                                   String email,
+                                   String storeName,
+                                   String ownerName,
+                                   String startDate,
+                                   String businessRegistrationNumber) {
+        model.addAttribute("signupLoginId", loginId);
+        model.addAttribute("signupName", name);
+        model.addAttribute("signupEmail", email);
+        model.addAttribute("storeName", storeName);
+        model.addAttribute("ownerName", ownerName);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("businessRegistrationNumber", businessRegistrationNumber);
+    }
+
+    private String signupErrorMessage(String accountType, String message) {
+        if ("owner".equals(accountType)) {
+            return "회원가입이 완료되지 않았습니다. " + message;
+        }
+        return message;
     }
 }

@@ -491,19 +491,59 @@ h2 {
 }
 
 .saved-place-check {
-    width: 26px;
+    width: 30px;
     height: 58px;
-    flex: 0 0 26px;
+    flex: 0 0 30px;
     display: grid;
     place-items: center;
     cursor: pointer;
 }
 
+.saved-place-list:not(.is-selecting) .saved-place-check {
+    display: none;
+}
+
 .saved-place-check input {
-    width: 17px;
-    height: 17px;
-    accent-color: #1a7de0;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 999px;
+    background: #ffffff;
     cursor: pointer;
+    transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.saved-place-check input::after {
+    content: "";
+    width: 9px;
+    height: 5px;
+    border-left: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    transform: rotate(-45deg) scale(0);
+    transform-origin: center;
+    transition: transform 0.16s ease;
+}
+
+.saved-place-check input:hover {
+    border-color: #3b9eff;
+    box-shadow: 0 0 0 4px rgba(59, 158, 255, 0.12);
+}
+
+.saved-place-check input:checked {
+    border-color: #1a7de0;
+    background: #1a7de0;
+}
+
+.saved-place-check input:checked::after {
+    transform: rotate(-45deg) scale(1);
+}
+
+.saved-place-card.is-selected {
+    border-color: #93c5fd;
+    background: #f8fbff;
 }
 
 .saved-place-main {
@@ -722,6 +762,10 @@ h2 {
     font-size: 12px;
     font-weight: 800;
     cursor: pointer;
+}
+
+.mini-btn[hidden] {
+    display: none;
 }
 
 .mini-btn.primary {

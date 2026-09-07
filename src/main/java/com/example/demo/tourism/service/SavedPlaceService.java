@@ -1,12 +1,14 @@
 package com.example.demo.tourism.service;
 
 import com.example.demo.tourism.client.TourApiClient;
+import com.example.demo.tourism.config.TourPlaceI18n;
 import com.example.demo.tourism.dto.SavedPlaceDto;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.example.demo.tourism.entity.SavedPlace;
 import com.example.demo.tourism.repository.SavedPlaceRepository;
 import com.example.demo.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class SavedPlaceService {
 
     private final SavedPlaceRepository savedPlaceRepository;
     private final TourApiClient tourApiClient;
+    private final TourPlaceI18n tourPlaceI18n;
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
@@ -35,8 +38,9 @@ public class SavedPlaceService {
                 ? savedPlaceRepository.findByUserIdOrderByCreatedAtDesc(userId)
                 : savedPlaceRepository.findByUserIdAndKindOrderByCreatedAtDesc(userId, kind);
         Map<String, String> foodCategories = foodCategoriesFor(rows);
+        String lang = currentLanguage();
         return rows.stream()
-                .map(row -> SavedPlaceDto.from(row, displayKind(row, foodCategories)))
+                .map(row -> localizedDto(row, displayKind(row, foodCategories), lang))
                 .toList();
     }
 
@@ -138,5 +142,16 @@ public class SavedPlaceService {
             return normalized;
         }
         return TourApiClient.FOOD_CONTENT_TYPE.equals(row.getContentTypeId()) ? "food" : "tourism";
+    }
+
+    private SavedPlaceDto localizedDto(SavedPlace row, String kind, String lang) {
+        String title = tourPlaceI18n.translateTitle(lang, row.getContentId(), row.getTitle());
+        String addr = tourPlaceI18n.translateAddress(lang, row.getContentId(), row.getAddr());
+        return SavedPlaceDto.from(row, kind, title, addr);
+    }
+
+    private String currentLanguage() {
+        String lang = LocaleContextHolder.getLocale().getLanguage();
+        return lang == null || lang.isBlank() ? "ko" : lang.toLowerCase();
     }
 }
