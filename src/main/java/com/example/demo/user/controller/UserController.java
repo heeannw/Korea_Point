@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -190,6 +191,7 @@ public class UserController {
     }
 
     @PostMapping("/signup")
+    @Transactional
     public String signup(@RequestParam(defaultValue = "personal") String accountType,
                          @RequestParam String loginId,
                          @RequestParam String password,
@@ -216,15 +218,9 @@ public class UserController {
             if (!password.equals(passwordConfirm)) {
                 throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
             }
-            User user = userService.registerLocalUser(
-                    loginId,
-                    password,
-                    name,
-                    email
-            );
+            OwnerRequestService.OwnerApplicationDraft ownerDraft = null;
             if ("owner".equals(accountType)) {
-                ownerRequestService.apply(
-                        user.getId(),
+                ownerDraft = ownerRequestService.prepareApplication(
                         storeName,
                         ownerName,
                         startDate,
@@ -234,12 +230,23 @@ public class UserController {
                         menuFile
                 );
             }
+            User user = userService.registerLocalUser(
+                    loginId,
+                    password,
+                    name,
+                    email
+            );
+            if (ownerDraft != null) {
+                ownerRequestService.apply(user.getId(), ownerDraft);
+            }
             return "redirect:/login?registered=true&lang=" + selected;
         } catch (IllegalArgumentException ex) {
-            model.addAttribute("signupError", ex.getMessage());
+            restoreSignupForm(model, loginId, name, email, storeName, ownerName, startDate, businessRegistrationNumber);
+            model.addAttribute("signupError", signupErrorMessage(accountType, ex.getMessage()));
             return "user/login";
         } catch (IllegalStateException ex) {
-            model.addAttribute("signupError", ex.getMessage());
+            restoreSignupForm(model, loginId, name, email, storeName, ownerName, startDate, businessRegistrationNumber);
+            model.addAttribute("signupError", signupErrorMessage(accountType, ex.getMessage()));
             return "user/login";
         }
     }
@@ -295,5 +302,29 @@ public class UserController {
                 && redirect.startsWith("/")
                 && !redirect.startsWith("//")
                 && !redirect.startsWith("/login");
+    }
+
+    private void restoreSignupForm(Model model,
+                                   String loginId,
+                                   String name,
+                                   String email,
+                                   String storeName,
+                                   String ownerName,
+                                   String startDate,
+                                   String businessRegistrationNumber) {
+        model.addAttribute("signupLoginId", loginId);
+        model.addAttribute("signupName", name);
+        model.addAttribute("signupEmail", email);
+        model.addAttribute("storeName", storeName);
+        model.addAttribute("ownerName", ownerName);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("businessRegistrationNumber", businessRegistrationNumber);
+    }
+
+    private String signupErrorMessage(String accountType, String message) {
+        if ("owner".equals(accountType)) {
+            return "회원가입이 완료되지 않았습니다. " + message;
+        }
+        return message;
     }
 }

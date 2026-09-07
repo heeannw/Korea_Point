@@ -308,11 +308,12 @@
                         <input id="accountTypeInput" name="accountType" type="hidden" th:value="${accountType == 'owner'} ? 'owner' : 'personal'"/>
                         <input type="hidden" name="lang" th:value="${lang}"/>
 
-                        <input name="name" type="text" placeholder="이름" autocomplete="name"
+                        <input name="name" type="text" placeholder="이름" autocomplete="name" th:value="${signupName}"
                                class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
                         <input id="signupLoginId" name="loginId" type="text" placeholder="아이디" autocomplete="username"
                                pattern="(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{4,20}"
                                title="아이디는 영문과 숫자를 포함한 4~20자로 입력해 주세요."
+                               th:value="${signupLoginId}"
                                class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
                         <p class="text-[12px] text-gray-400 -mt-1">영문과 숫자를 포함해 4~20자로 입력해 주세요.</p>
                         <div class="password-field">
@@ -332,7 +333,7 @@
                                 <i data-lucide="eye"></i>
                             </button>
                         </div>
-                        <input name="email" type="email" placeholder="이메일"
+                        <input name="email" type="email" placeholder="이메일" th:value="${signupEmail}"
                                class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
 
                         <div id="personalPanel" class="account-panel">
@@ -348,13 +349,13 @@
                                     <strong class="text-[14px] text-gray-900">입점 서류 등록</strong>
                                     <span class="ml-auto text-[11px] text-blue-600 bg-white border border-blue-100 rounded-full px-2 py-1">검토 대기</span>
                                 </div>
-                                <input name="storeName" type="text" placeholder="가게명"
+                                <input name="storeName" type="text" placeholder="가게명" th:value="${storeName}"
                                        class="owner-required-field mb-2 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
-                                <input name="ownerName" type="text" placeholder="대표자명"
+                                <input name="ownerName" type="text" placeholder="대표자명" th:value="${ownerName}"
                                        class="owner-required-field mb-2 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
-                                <input name="startDate" type="text" placeholder="개업일자 (YYYYMMDD)" inputmode="numeric" maxlength="8"
+                                <input name="startDate" type="text" placeholder="개업일자 (YYYYMMDD)" inputmode="numeric" maxlength="8" th:value="${startDate}"
                                        class="owner-required-field mb-2 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
-                                <input name="businessRegistrationNumber" type="text" placeholder="사업자등록번호"
+                                <input name="businessRegistrationNumber" type="text" placeholder="사업자등록번호" th:value="${businessRegistrationNumber}"
                                        class="owner-required-field mb-3 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
                                 <label class="block text-[12px] text-gray-500 mb-1">사업자등록증</label>
                                 <input name="businessRegistrationFile" type="file"
