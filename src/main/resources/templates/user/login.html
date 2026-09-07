@@ -40,6 +40,9 @@
         .brand-logo{font-family:"Playfair Display",Georgia,serif;font-size:34px;font-weight:900;letter-spacing:-.04em;color:#1a7de0;line-height:1}
         .brand-logo span{color:#0f172a}
         .login-mode .brand-logo{font-size:30px}
+        .page-toast{position:fixed;top:18px;left:50%;z-index:60;display:flex;max-width:min(520px,calc(100vw - 32px));align-items:center;gap:10px;border-radius:12px;background:#111827;color:#fff;padding:13px 16px;box-shadow:0 18px 45px rgba(15,23,42,.22);font-size:13px;font-weight:700;line-height:1.45;opacity:0;transform:translate(-50%,-24px);pointer-events:none;transition:opacity .22s ease,transform .22s ease}
+        .page-toast.active{opacity:1;transform:translate(-50%,0)}
+        .page-toast i{width:18px;height:18px;flex:0 0 auto;color:#facc15}
         @media (max-width: 768px){.auth-wrap.choice-active{max-width:460px}.signup-choice-card{min-height:0}.auth-card{padding:24px}.brand-logo{font-size:28px}}
     </style>
 </head>
@@ -47,6 +50,10 @@
       th:classappend="${signupMode} ? ' signup-mode' : ' login-mode'">
 
     <div id="google_translate_element" style="display:none"></div>
+    <div id="signupToast" class="page-toast" role="alert" aria-live="assertive" th:if="${signupError}">
+        <i data-lucide="circle-alert" aria-hidden="true"></i>
+        <span th:text="${signupError}">회원가입 정보를 확인해 주세요.</span>
+    </div>
     <header class="signup-header w-full h-[88px] items-center justify-center border-b border-blue-100 bg-white shadow-[0_2px_18px_rgba(59,158,255,0.08)]">
         <a th:href="${lang == 'ko'} ? @{/ko} : @{/}"
            class="brand-logo no-underline"
@@ -71,11 +78,6 @@
             <div th:if="${param.error}"
                  class="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-red-600">
                 아이디 또는 비밀번호를 확인해 주세요.
-            </div>
-            <div th:if="${signupError}"
-                 th:text="${signupError}"
-                 class="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-[13px] text-red-600">
-                회원가입 정보를 확인해 주세요.
             </div>
             <div th:if="${param.registered}"
                  class="mb-5 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg text-[13px] text-blue-700">
@@ -308,11 +310,12 @@
                         <input id="accountTypeInput" name="accountType" type="hidden" th:value="${accountType == 'owner'} ? 'owner' : 'personal'"/>
                         <input type="hidden" name="lang" th:value="${lang}"/>
 
-                        <input name="name" type="text" placeholder="이름" autocomplete="name"
+                        <input name="name" type="text" placeholder="이름" autocomplete="name" th:value="${signupName}"
                                class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
                         <input id="signupLoginId" name="loginId" type="text" placeholder="아이디" autocomplete="username"
                                pattern="(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{4,20}"
                                title="아이디는 영문과 숫자를 포함한 4~20자로 입력해 주세요."
+                               th:value="${signupLoginId}"
                                class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
                         <p class="text-[12px] text-gray-400 -mt-1">영문과 숫자를 포함해 4~20자로 입력해 주세요.</p>
                         <div class="password-field">
@@ -332,7 +335,7 @@
                                 <i data-lucide="eye"></i>
                             </button>
                         </div>
-                        <input name="email" type="email" placeholder="이메일"
+                        <input name="email" type="email" placeholder="이메일" th:value="${signupEmail}"
                                class="w-full h-12 rounded-xl border border-gray-200 px-4 text-[14px] outline-none focus:border-blue-500" required/>
 
                         <div id="personalPanel" class="account-panel">
@@ -348,13 +351,13 @@
                                     <strong class="text-[14px] text-gray-900">입점 서류 등록</strong>
                                     <span class="ml-auto text-[11px] text-blue-600 bg-white border border-blue-100 rounded-full px-2 py-1">검토 대기</span>
                                 </div>
-                                <input name="storeName" type="text" placeholder="가게명"
+                                <input name="storeName" type="text" placeholder="가게명" th:value="${storeName}"
                                        class="owner-required-field mb-2 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
-                                <input name="ownerName" type="text" placeholder="대표자명"
+                                <input name="ownerName" type="text" placeholder="대표자명" th:value="${ownerName}"
                                        class="owner-required-field mb-2 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
-                                <input name="startDate" type="text" placeholder="개업일자 (YYYYMMDD)" inputmode="numeric" maxlength="8"
+                                <input name="startDate" type="text" placeholder="개업일자 (YYYYMMDD)" inputmode="numeric" maxlength="8" th:value="${startDate}"
                                        class="owner-required-field mb-2 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
-                                <input name="businessRegistrationNumber" type="text" placeholder="사업자등록번호"
+                                <input name="businessRegistrationNumber" type="text" placeholder="사업자등록번호" th:value="${businessRegistrationNumber}"
                                        class="owner-required-field mb-3 w-full h-11 rounded-lg border border-gray-200 bg-white px-3 text-[13px] outline-none focus:border-blue-500"/>
                                 <label class="block text-[12px] text-gray-500 mb-1">사업자등록증</label>
                                 <input name="businessRegistrationFile" type="file"
@@ -404,6 +407,7 @@
         const loginIdInput = document.getElementById('loginIdInput');
         const rememberLoginId = document.getElementById('rememberLoginId');
         const signupLink = document.getElementById('signupLink');
+        const signupToast = document.getElementById('signupToast');
 
         function showAuthPanel(panelId, options = {}) {
             document.querySelectorAll('.auth-panel').forEach(panel => panel.classList.remove('active'));
@@ -480,6 +484,12 @@
             startOnSignupForm ? showSignupForm(initialAccountType) : showSignupChoice();
         } else {
             showAccountPanel(initialAccountType);
+        }
+        if (signupToast) {
+            requestAnimationFrame(() => {
+                signupToast.classList.add('active');
+                window.setTimeout(() => signupToast.classList.remove('active'), 4200);
+            });
         }
         const savedLoginId = localStorage.getItem('koreaPointLoginId');
         if (savedLoginId && loginIdInput && rememberLoginId) {
