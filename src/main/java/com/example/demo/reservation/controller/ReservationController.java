@@ -164,7 +164,7 @@ public class ReservationController {
             return "redirect:/ko/reservation/payment/" + reservationId;
         }
         if (reservation.getPayment() != null && reservation.getPayment().getStatus() != PaymentStatus.PAID) {
-            return "redirect:/ko/mypage#reservations";
+            return "redirect:/ko/mypage?lang=" + reservationLanguage(reservation) + "#reservations";
         }
         TourApiPlaceDto place = tourApiReservationService.findDetail(
                 reservation.getContentId(), reservation.getContentTypeId(), reservationLanguage(reservation));
@@ -262,6 +262,7 @@ public class ReservationController {
                              @RequestParam MultipartFile businessRegistrationFile,
                              @RequestParam MultipartFile businessLicenseFile,
                              @RequestParam MultipartFile menuFile,
+                             @RequestParam(defaultValue = "ko") String lang,
                              RedirectAttributes redirectAttributes) {
         try {
             ownerRequestService.apply(
@@ -278,7 +279,7 @@ public class ReservationController {
         } catch (IllegalArgumentException | IllegalStateException ex) {
             redirectAttributes.addFlashAttribute("ownerRequestError", ex.getMessage());
         }
-        return "redirect:/ko/mypage";
+        return "redirect:/ko/mypage?lang=" + normalizeReservationLang(lang);
     }
 
     @GetMapping("/api/tourapi/places")
