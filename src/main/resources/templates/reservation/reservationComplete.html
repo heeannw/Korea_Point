@@ -7,11 +7,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
     <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
+    <link rel="stylesheet" th:href="@{/css/reservation/booking.css}">
 </head>
-<body>
+<body class="booking-page booking-complete">
 <div th:replace="~{fragments/app-header :: header(${lang == 'zh-CN' ? 'zh' : lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <main class="page">
+    <ol class="booking-steps" aria-label="Reservation progress"><li><span>1</span><span th:text="#{reservation.ui.step.details}">예약 정보</span></li><li><span>2</span><span th:text="#{reservation.ui.step.payment}">예약금 결제</span></li><li class="active" aria-current="step"><span>3</span><span th:text="#{reservation.ui.step.complete}">예약 완료</span></li></ol>
+    <div class="booking-success-mark" aria-hidden="true">✓</div>
     <section class="page-head">
         <div>
             <p class="eyebrow" th:text="#{reservation.complete.eyebrow}">예약 완료</p>

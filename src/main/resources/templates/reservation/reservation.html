@@ -7,11 +7,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
     <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
+    <link rel="stylesheet" th:href="@{/css/reservation/booking.css}">
 </head>
-<body>
+<body class="booking-page booking-browse">
 <div th:replace="~{fragments/app-header :: header(${lang == 'zh-CN' ? 'zh' : lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <main class="page">
+    <div class="booking-breadcrumb"><a th:href="@{/ko(lang=${lang})}">KoreaPoint</a><span aria-hidden="true">/</span><span th:text="#{reservation.list.title}">관광지 예약</span></div>
     <section class="reservation-search-panel">
         <div class="page-head reservation-page-head">
             <div>
@@ -20,22 +22,28 @@
                 <p class="sub" id="reservationSubtitle">부산의 관광지를 둘러보고 방문 일정을 예약해보세요.</p>
             </div>
             <button type="button" class="saved-places-heart" id="savedPlacesButton" aria-pressed="false">
-                <span aria-hidden="true">♥</span>
-                <span class="sr-only" id="savedPlacesLabel">찜한 곳</span>
+                <span aria-hidden="true">♡</span><span id="savedPlacesLabel">찜한 곳</span>
             </button>
         </div>
-
         <div class="notice warning" th:unless="${hasTourApiKey}"
              th:text="#{reservation.list.apiKeyRequired}">
             관광지 목록을 불러오기 위한 TourAPI 서비스 키 설정이 필요합니다.
         </div>
-
         <form class="toolbar" id="searchForm">
             <div class="search-row">
-                <input class="input" id="keyword" name="keyword" th:value="${keyword}" placeholder="관광지명 또는 주소로 검색">
+                <label class="booking-search-field" for="keyword">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+                    <span class="sr-only" th:text="#{reservation.list.placeholder}">관광지명 또는 주소로 검색</span>
+                    <input class="input" id="keyword" name="keyword" th:value="${keyword}" placeholder="관광지명 또는 주소로 검색">
+                </label>
                 <button class="btn" id="searchButton" type="submit">검색</button>
             </div>
             <input type="hidden" id="contentTypeId" name="contentTypeId" th:value="${contentTypeId}">
+        </form>
+    </section>
+    <div class="booking-browse-layout">
+        <aside class="booking-filters">
+            <h2 th:text="#{reservation.ui.category}">어떤 여행을 찾으세요?</h2>
             <div class="category-buttons" role="group" aria-label="카테고리 선택">
                 <button type="button" class="category-btn" data-content-type="" data-label-key="all">전체</button>
                 <button type="button" class="category-btn" data-content-type="tourist_spot" data-label-key="tourist">관광지</button>
@@ -47,13 +55,14 @@
                 <button type="button" class="category-btn" data-content-type="shopping" data-label-key="shopping">쇼핑</button>
                 <button type="button" class="category-btn" data-content-type="restaurant" data-label-key="restaurant">음식점</button>
             </div>
-        </form>
-    </section>
-
-    <section id="placeGrid" class="grid" aria-live="polite"></section>
-    <div id="emptyState" class="empty">부산 관광지 목록을 불러오는 중입니다.</div>
-    <div class="card-actions" style="justify-content: center; margin-top: 24px;">
-        <button class="btn secondary" id="loadMoreBtn" type="button" style="display: none;">더보기</button>
+            <div class="booking-filter-note"><span aria-hidden="true">↗</span><p th:text="#{reservation.ui.explore}">가고 싶은 곳을 찾고, 나만의 부산 여행을 시작해보세요.</p></div>
+        </aside>
+        <section class="booking-results" aria-labelledby="resultsTitle">
+            <div class="booking-results-head"><h2 id="resultsTitle" th:text="#{reservation.ui.places}">부산의 발견</h2><span class="booking-result-count" id="resultCount" aria-live="polite"></span></div>
+            <section id="placeGrid" class="grid" aria-live="polite"></section>
+            <div id="emptyState" class="empty" role="status">부산 관광지 목록을 불러오는 중입니다.</div>
+            <div class="card-actions booking-load-more"><button class="btn secondary" id="loadMoreBtn" type="button" style="display: none;">더보기</button></div>
+        </section>
     </div>
 </main>
 
@@ -66,6 +75,8 @@
 </dialog>
 
 <script th:src="@{/js/common/header-menu.js}"></script>
+<script th:src="@{/js/reservation/fallback-catalog.js}"></script>
+<script th:src="@{/js/reservation/fallback-images.js}"></script>
 <script th:inline="javascript">
     const PAGE_LANG = /*[[${lang}]]*/ "ko";
     const T = {
@@ -99,7 +110,12 @@
         noAddress: /*[[#{reservation.list.noAddress}]]*/ "주소 정보 없음",
         noTel: /*[[#{reservation.list.noTel}]]*/ "전화번호 정보 없음",
         imageAlt: /*[[#{reservation.list.imageAlt}]]*/ "부산 관광지",
-        more: /*[[#{reservation.list.more}]]*/ "더보기"
+        more: /*[[#{reservation.list.more}]]*/ "더보기",
+        exampleImage: /*[[#{reservation.ui.exampleImage}]]*/ "예시 이미지",
+        count: /*[[#{reservation.ui.count}]]*/ "{0}곳 표시 중",
+        deposit: /*[[#{reservation.ui.deposit}]]*/ "1인 예약금",
+        depositNote: /*[[#{reservation.ui.depositNote}]]*/ "현장 이용금액 별도",
+        won: /*[[#{reservation.form.won('{0}')}]]*/ "{0}원"
     };
     const grid = document.getElementById("placeGrid");
     const emptyState = document.getElementById("emptyState");
@@ -150,84 +166,117 @@
             .replaceAll("'", "&#039;");
     }
 
-    function defaultImageUrl(contentTypeId) {
-        const images = {
-            "12": "/images/reservation/defaults/tourist-attraction.jpg",
-            "14": "/images/reservation/defaults/culture.jpg",
-            "15": "/images/reservation/defaults/festival.jpg",
-            "25": "/images/reservation/defaults/travel-course.jpg",
-            "28": "/images/reservation/defaults/leports.jpg",
-            "32": "/images/reservation/defaults/lodging.jpg",
-            "38": "/images/reservation/defaults/shopping.jpg",
-            "39": "/images/reservation/defaults/food.jpg"
-            ,"75": "/images/reservation/defaults/leports.jpg"
-            ,"76": "/images/reservation/defaults/tourist-attraction.jpg"
-            ,"77": "/images/reservation/defaults/travel-course.jpg"
-            ,"78": "/images/reservation/defaults/culture.jpg"
-            ,"79": "/images/reservation/defaults/shopping.jpg"
-            ,"80": "/images/reservation/defaults/lodging.jpg"
-            ,"82": "/images/reservation/defaults/food.jpg"
-            ,"85": "/images/reservation/defaults/festival.jpg"
-        };
-        return images[String(contentTypeId || "")] || images["12"];
+    function fallbackMarkup(scene) {
+        if (!scene) return "";
+        // Inset atlas tiles to exclude slight generated grid offsets and separator pixels.
+        const inset = scene.columns > 1 ? 0.1 : 0;
+        const x = (scene.tile % scene.columns) * 3 + inset * 3;
+        const y = Math.floor(scene.tile / scene.columns) * 2 + inset * 2;
+        return `<svg class="fallback-image" viewBox="${x} ${y} ${3 * (1 - 2 * inset)} ${2 * (1 - 2 * inset)}" preserveAspectRatio="xMidYMid slice"
+                     role="img" aria-label="${escapeHtml(T.exampleImage)}">
+                    <image href="${escapeHtml(scene.url)}" width="${scene.columns * 3}" height="${scene.rows * 2}"
+                           preserveAspectRatio="none" />
+                </svg>`;
+    }
+
+    function handlePlaceImageError(image) {
+        image.onerror = null;
+        const wrapper = image.closest(".place-image");
+        const scene = ReservationFallbackImages.get({contentId: wrapper.dataset.contentId,
+            contentTypeId: wrapper.dataset.contentTypeId, title: wrapper.dataset.placeTitle,
+            address: wrapper.dataset.placeAddress});
+        wrapper.classList.add("is-fallback");
+        wrapper.dataset.imageKey = scene?.key || "";
+        wrapper.innerHTML = fallbackMarkup(scene);
     }
 
     function imageMarkup(place) {
-        const fallbackUrl = defaultImageUrl(place.contentTypeId);
-        const imageUrl = place.imageUrl || fallbackUrl;
-        return `
-            <div class="place-image">
-                <img src="${escapeHtml(imageUrl)}"
-                     data-fallback="${escapeHtml(fallbackUrl)}"
-                     alt="${escapeHtml(place.title || T.imageAlt)}"
-                     loading="lazy"
-                     onerror="this.onerror=null; this.src=this.dataset.fallback;">
-            </div>
-        `;
+        const scene = place.imageUrl ? null : ReservationFallbackImages.get(place);
+        const key = place.imageUrl || scene?.key || "";
+        return `<div class="place-image${place.imageUrl ? "" : " is-fallback"}"
+                     data-image-key="${escapeHtml(key)}" data-content-id="${escapeHtml(place.contentId)}"
+                     data-content-type-id="${escapeHtml(place.contentTypeId)}"
+                     data-place-title="${escapeHtml(place.title)}" data-place-address="${escapeHtml(place.address)}">
+                    ${place.imageUrl ? `<img src="${escapeHtml(place.imageUrl)}"
+                        alt="${escapeHtml(place.title || T.imageAlt)}" loading="lazy"
+                        onerror="handlePlaceImageError(this)">` : fallbackMarkup(scene)}
+                </div>`;
     }
 
     function imageKey(place) {
-        return place.imageUrl || defaultImageUrl(place.contentTypeId);
+        return place.imageUrl || ReservationFallbackImages.get(place)?.key || `empty:${place.contentId}`;
     }
 
-    function arrangePlacesForDistinctImages(places) {
-        const remaining = [...places];
-        const arranged = [];
-        const cardsPerRow = window.matchMedia("(max-width: 900px)").matches ? 1 : 3;
+    function arrangePlacesForDistinctImages(places, previousImageKey = null) {
+        const groups = new Map();
+        places.forEach(place => {
+            const key = imageKey(place);
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(place);
+        });
 
-        while (remaining.length) {
-            const rowStart = Math.floor(arranged.length / cardsPerRow) * cardsPerRow;
-            const rowImageKeys = new Set(arranged.slice(rowStart).map(imageKey));
-            let nextIndex = remaining.findIndex(place => !rowImageKeys.has(imageKey(place)));
-            if (nextIndex < 0) nextIndex = 0;
-            arranged.push(remaining.splice(nextIndex, 1)[0]);
+        const arranged = [];
+        while (arranged.length < places.length) {
+            let nextKey = null;
+            let nextGroup = null;
+            // 많이 남은 사진부터 번갈아 배치해 같은 사진이 끝에 몰리지 않게 한다.
+            // 같은 사진을 쓰는 장소끼리는 원래 순서를 유지한다.
+            for (const [key, group] of groups) {
+                if (key !== previousImageKey && group.length > (nextGroup?.length || 0)) {
+                    nextKey = key;
+                    nextGroup = group;
+                }
+            }
+            if (!nextGroup) {
+                nextKey = previousImageKey;
+                nextGroup = groups.get(nextKey);
+            }
+            arranged.push(nextGroup.shift());
+            if (!nextGroup.length) groups.delete(nextKey);
+            previousImageKey = nextKey;
         }
         return arranged;
+    }
+
+    function categoryLabel(type) {
+        const labels = {12:"tourist",14:"culture",15:"festival",25:"course",28:"leports",32:"lodging",38:"shopping",39:"restaurant",75:"leports",76:"tourist",77:"course",78:"culture",79:"shopping",80:"lodging",82:"restaurant",85:"festival"};
+        return T[labels[String(type)]] || T.tourist;
+    }
+
+    function updateResultCount() {
+        document.getElementById("resultCount").textContent = T.count.replace("{0}", new Intl.NumberFormat(PAGE_LANG).format(grid.children.length));
     }
 
     function renderPlaces(places, append = false) {
         if (!append) {
             grid.innerHTML = "";
+            document.getElementById("resultCount").textContent = "";
         }
 
         if (!places.length && !append) {
             emptyState.style.display = "block";
             emptyState.textContent = T.empty;
+            updateResultCount();
             loadMoreBtn.style.display = "none";
             return;
         }
 
         emptyState.style.display = "none";
-        const arrangedPlaces = arrangePlacesForDistinctImages(places);
+        const previousImageKey = append
+            ? grid.lastElementChild?.querySelector(".place-image")?.dataset.imageKey || null
+            : null;
+        const arrangedPlaces = arrangePlacesForDistinctImages(places, previousImageKey);
         grid.insertAdjacentHTML("beforeend", arrangedPlaces.map(place => {
             const detailUrl = `/ko/reservation/new?contentId=${encodeURIComponent(place.contentId || "")}&contentTypeId=${encodeURIComponent(place.contentTypeId || "")}&placeTitle=${encodeURIComponent(place.title || "")}&lang=${encodeURIComponent(PAGE_LANG)}`;
             return `
                 <article class="place-card" data-content-id="${escapeHtml(place.contentId)}" data-content-type-id="${escapeHtml(place.contentTypeId)}" tabindex="0">
                     ${imageMarkup(place)}
                     <div class="place-body">
+                        <span class="booking-category">${escapeHtml(categoryLabel(place.contentTypeId))}</span>
                         <h2 class="place-title">${escapeHtml(place.title || T.noTitle)}</h2>
                         <p class="meta">${escapeHtml(place.address || T.noAddress)}</p>
-                        <p class="meta">${escapeHtml(place.tel || T.noTel)}</p>
+                        ${place.tel ? `<p class="meta booking-phone">${escapeHtml(place.tel)}</p>` : ""}
+                        <div class="booking-price"><span>${escapeHtml(T.deposit)}</span><strong>${escapeHtml(T.won.replace("{0}", new Intl.NumberFormat(PAGE_LANG).format(5000)))}</strong><small>${escapeHtml(T.depositNote)}</small></div>
                         <div class="card-actions">
                             <button class="btn secondary detail-button" type="button">${T.detail}</button>
                             <a class="btn" href="${detailUrl}">${T.reserve}</a>
@@ -237,6 +286,7 @@
             `;
         }).join(""));
 
+        updateResultCount();
         loadMoreBtn.style.display = places.length >= pageSize ? "inline-flex" : "none";
     }
 
@@ -305,6 +355,7 @@
             const overview = document.createElement("p");
             overview.className = "reservation-detail-overview";
             overview.textContent = place.overview || T.noOverview;
+            detailContent.insertAdjacentHTML("beforeend", imageMarkup({...place, contentId: place.contentId || contentId, contentTypeId: place.contentTypeId || contentTypeId}));
             detailContent.append(title, address, overview);
             if (place.operatingInformation) {
                 const list = document.createElement("dl");
@@ -320,6 +371,11 @@
                 });
                 detailContent.append(list);
             }
+            const reserveLink = document.createElement("a");
+            reserveLink.className = "btn full booking-detail-reserve";
+            reserveLink.textContent = T.reserve;
+            reserveLink.href = card.querySelector("a").href;
+            detailContent.append(reserveLink);
         } catch (error) {
             detailContent.textContent = T.detailFailed;
         }
