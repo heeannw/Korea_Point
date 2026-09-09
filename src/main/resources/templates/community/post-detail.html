@@ -26,6 +26,17 @@
         .post-content img { max-width: 100%; border-radius: 0.5rem; margin: 0.75rem 0; }
         .post-content a { color: #1a7de0; text-decoration: underline; }
         .post-content blockquote { border-left: 3px solid #e5e7eb; padding-left: 1rem; color: #6b7280; margin: 0.75rem 0; }
+        /* 본문에 삽입된 장소 카드 (글쓰기 에디터와 같은 마크업) */
+        .post-content .place-embed {
+            display: flex; align-items: center; gap: 10px;
+            margin: 14px 0; padding: 12px 14px;
+            border: 1px solid #d9e6f7; border-radius: 10px; background: #f5f9ff;
+            font-size: 15px; color: #16181d; text-decoration: none;
+        }
+        a.place-embed:hover { background: #eaf2fe; }
+        .post-content .place-embed-badge { flex: none; padding: 2px 8px; border-radius: 999px; background: #1a7de0; color: #fff; font-size: 12px; font-weight: 700; }
+        .post-content .place-embed-title { font-weight: 600; }
+        .post-content .place-embed-hint { margin-left: auto; font-size: 12px; color: #8b919c; }
 
         /* Footer */
         :root { --primary-dark: #1a7de0; }
@@ -114,6 +125,22 @@
             <!-- 본문 (에디터 HTML) -->
             <div class="post-content min-h-[168px] text-[18.5px] text-[#33383f] leading-[1.75]"
                  th:utext="${#locale.language == 'en' and post.contentEn != null ? post.contentEn : (#locale.language != 'en' and post.contentKo != null ? post.contentKo : post.content)}">본문 내용</div>
+
+            <!-- 이 글에서 소개한 장소 -->
+            <div th:if="${post.places != null and !post.places.isEmpty()}"
+                 class="mt-9 pt-7 border-t border-[#e8eaed]">
+                <div class="text-[15px] text-[#8b919c] mb-3" style="font-weight:700;">📍 이 글에서 소개한 장소</div>
+                <div class="flex flex-col gap-2.5">
+                    <a th:each="pl : ${post.places}"
+                       th:href="@{${pl.kind == 'food' ? '/tour/food' : (pl.kind == 'cafe' ? '/tour/cafe' : '/tour/all')}(focus=${pl.contentId}, lang=${#locale.language})}"
+                       class="flex items-center gap-3 px-4 py-3 rounded-md border border-[#e8eaed] no-underline hover:bg-gray-50 transition-colors">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[13px] text-[#5b6270]"
+                              th:text="${pl.kind == 'food' ? '맛집' : (pl.kind == 'cafe' ? '카페' : '관광')}">관광</span>
+                        <span class="truncate text-[16px] text-[#16181d]" style="font-weight:600;" th:text="${pl.title}">장소명</span>
+                        <span class="ml-auto text-[#8b919c]">&rsaquo;</span>
+                    </a>
+                </div>
+            </div>
 
             <div th:if="${currentUserId != null and currentUserId != post.userId}"
                  class="flex justify-end mt-7 pt-5 border-t border-[#f1f2f4]">
@@ -661,6 +688,22 @@
         document.getElementById('confirmModal').classList.add('hidden');
         _confirmCallback = null;
     }
+
+    // 본문에 박힌 장소 카드를 해당 관광/맛집/카페 화면으로 링크 연결
+    document.addEventListener('DOMContentLoaded', () => {
+        const lang = document.documentElement.lang || 'ko';
+        document.querySelectorAll('.post-content div.place-embed').forEach(el => {
+            const id = el.dataset.contentId;
+            if (!id) return;
+            const kind = el.dataset.kind;
+            const base = kind === 'food' ? '/tour/food' : (kind === 'cafe' ? '/tour/cafe' : '/tour/all');
+            const a = document.createElement('a');
+            a.href = base + '?focus=' + encodeURIComponent(id) + '&lang=' + encodeURIComponent(lang);
+            a.className = 'place-embed place-embed-link';
+            a.innerHTML = el.innerHTML;
+            el.replaceWith(a);
+        });
+    });
 
     // 신고 모달 라디오 활성화
     document.addEventListener('DOMContentLoaded', () => {
