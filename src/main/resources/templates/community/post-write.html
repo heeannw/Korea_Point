@@ -64,7 +64,6 @@
         .footer-social-link.blog-link:hover { background: transparent; }
         .footer-copy { font-size: 11px; letter-spacing: 0.04em; color: #a0aabc; }
     </style>
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
 <body class="min-h-screen bg-white flex flex-col">
 
@@ -76,50 +75,50 @@
 <div th:replace="~{fragments/app-header :: header(${#locale.language}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <main class="flex-1">
-    <div class="max-w-[760px] mx-auto px-6 py-8">
+    <div class="max-w-[912px] mx-auto px-7 py-10">
 
         <!-- 뒤로가기 -->
         <a th:href="@{/community/post-list}"
-           class="inline-flex items-center gap-1.5 text-[13px] text-[#8b919c] no-underline hover:text-[#16181d] transition-colors mb-6">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i> <span th:text="#{community.detail.back}">Back to Community</span>
+           class="inline-flex items-center gap-2 text-[15.5px] text-[#8b919c] no-underline hover:text-[#16181d] transition-colors mb-7">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i> <span th:text="#{community.detail.back}">Back to Community</span>
         </a>
 
         <div>
-            <h1 class="text-[24px] text-[#16181d] pb-5 mb-6 border-b border-[#e8eaed]" style="font-weight:700;" th:text="#{community.write.title}">Write a Post</h1>
+            <h1 class="text-[29px] text-[#16181d] pb-6 mb-7 border-b border-[#e8eaed]" style="font-weight:700;" th:text="#{community.write.title}">Write a Post</h1>
 
             <!--
                 th:action을 사용하면 thymeleaf-extras-springsecurity6가
                 CSRF 토큰을 hidden input으로 자동 삽입함
             -->
-            <form id="postForm" th:action="@{/community/post/write}" method="post" class="flex flex-col gap-5">
+            <form id="postForm" th:action="@{/community/post/write}" method="post" class="flex flex-col gap-6">
                 <input type="hidden" name="placeContentId" th:value="${placeContentId}"/>
                 <input type="hidden" name="placeContentTypeId" th:value="${placeContentTypeId}"/>
                 <input type="hidden" name="placeTitle" th:value="${placeTitle}"/>
 
                 <div th:if="${placeContentId != null and !#strings.isEmpty(placeContentId)}"
-                     class="flex items-center gap-3 px-4 py-2.5 bg-gray-50 rounded-md border border-[#e8eaed]">
-                    <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-[#5b6270]">⌖</span>
+                     class="flex items-center gap-3.5 px-5 py-3 bg-gray-50 rounded-md border border-[#e8eaed]">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-[#5b6270]">⌖</span>
                     <div class="min-w-0">
-                        <div class="text-[11px] text-[#8b919c]" style="font-weight:600;">장소 태그</div>
-                        <div class="truncate text-[14px] text-[#16181d]" style="font-weight:700;" th:text="${placeTitle}">장소명</div>
+                        <div class="text-[13px] text-[#8b919c]" style="font-weight:600;">장소 태그</div>
+                        <div class="truncate text-[17px] text-[#16181d]" style="font-weight:700;" th:text="${placeTitle}">장소명</div>
                     </div>
                 </div>
 
                 <!-- 포인트 잔액 -->
-                <div class="flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-md border border-[#e8eaed]">
-                    <span class="text-[13px] text-[#5b6270]" th:text="#{community.write.point.label}">Points Balance</span>
-                    <div class="flex items-center gap-3">
-                        <span class="text-[14px] text-[#1a7de0]" style="font-weight:700;"
+                <div class="flex items-center justify-between px-5 py-3 bg-gray-50 rounded-md border border-[#e8eaed]">
+                    <span class="text-[15.5px] text-[#5b6270]" th:text="#{community.write.point.label}">Points Balance</span>
+                    <div class="flex items-center gap-3.5">
+                        <span class="text-[17px] text-[#1a7de0]" style="font-weight:700;"
                               th:text="${currentUserPoint} + 'P'">1000P</span>
-                        <span class="text-[12px] text-[#8b919c]" th:text="#{community.write.point.recharge}">Recharge</span>
-                        <span class="px-2.5 py-1 bg-gray-100 text-[#8b919c] text-[12px] rounded-md cursor-not-allowed"
+                        <span class="text-[14.5px] text-[#8b919c]" th:text="#{community.write.point.recharge}">Recharge</span>
+                        <span class="px-3 py-1 bg-gray-100 text-[#8b919c] text-[14.5px] rounded-md cursor-not-allowed"
                               th:text="#{community.write.point.coming}">Coming Soon</span>
                     </div>
                 </div>
 
                 <!-- 포인트 부족 에러 -->
-                <div th:if="${pointError}" class="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-md text-[13px] text-red-600">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <div th:if="${pointError}" class="flex items-center gap-2.5 px-5 py-3.5 bg-red-50 border border-red-200 rounded-md text-[15.5px] text-red-600">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
                     <span th:text="${pointError}">포인트가 부족합니다.</span>
@@ -127,9 +126,9 @@
 
                 <!-- 카테고리 선택 -->
                 <div>
-                    <label class="block text-[13px] text-[#5b6270] mb-1.5" style="font-weight:600;" th:text="#{community.write.label.category}">Category</label>
+                    <label class="block text-[15.5px] text-[#5b6270] mb-2" style="font-weight:600;" th:text="#{community.write.label.category}">Category</label>
                     <select name="categoryId" id="categorySelect" required
-                            class="w-full px-3 py-2 border border-[#e8eaed] rounded-md text-[14px] text-[#5b6270] bg-white focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100 cursor-pointer">
+                            class="w-full px-3.5 py-2.5 border border-[#e8eaed] rounded-md text-[17px] text-[#5b6270] bg-white focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100 cursor-pointer">
                         <option value="" disabled selected th:text="#{community.write.placeholder.category}">Select a category</option>
                         <option th:each="cat : ${categories}"
                                 th:value="${cat.categoryId}"
@@ -137,7 +136,7 @@
                                 th:text="${cat.icon + ' ' + (#locale.language == 'en' and cat.nameEn != null ? cat.nameEn : cat.name)}">Category</option>
                     </select>
                     <!-- 홍보 카테고리 선택 시 포인트 차감 안내 -->
-                    <p id="promoNotice" class="hidden mt-2 text-[12px] text-amber-600"
+                    <p id="promoNotice" class="hidden mt-2.5 text-[14.5px] text-amber-600"
                        th:text="#{community.write.point.promo}">
                         📢 500P will be deducted for promotional posts.
                     </p>
@@ -145,15 +144,15 @@
 
                 <!-- 제목 -->
                 <div>
-                    <label class="block text-[13px] text-[#5b6270] mb-1.5" style="font-weight:600;" th:text="#{community.write.label.title}">Title</label>
+                    <label class="block text-[15.5px] text-[#5b6270] mb-2" style="font-weight:600;" th:text="#{community.write.label.title}">Title</label>
                     <input type="text" name="title" required maxlength="200"
                            th:placeholder="#{community.write.placeholder.title}"
-                           class="w-full px-4 py-2 border border-[#e8eaed] rounded-md text-[14px] text-[#16181d] placeholder:text-[#8b919c] focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100"/>
+                           class="w-full px-5 py-2.5 border border-[#e8eaed] rounded-md text-[17px] text-[#16181d] placeholder:text-[#8b919c] focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100"/>
                 </div>
 
                 <!-- 내용 — Quill 에디터 -->
                 <div>
-                    <label class="block text-[13px] text-[#5b6270] mb-1.5" style="font-weight:600;" th:text="#{community.write.label.content}">Content</label>
+                    <label class="block text-[15.5px] text-[#5b6270] mb-2" style="font-weight:600;" th:text="#{community.write.label.content}">Content</label>
                     <!-- Quill이 이 div를 에디터로 교체함 -->
                     <div id="quillEditor"></div>
                     <!--
@@ -164,15 +163,15 @@
                 </div>
 
                 <!-- 에러 메시지 (내용 미입력) -->
-                <p id="contentError" class="hidden text-[13px] text-red-500">내용을 입력해주세요.</p>
+                <p id="contentError" class="hidden text-[15.5px] text-red-500">내용을 입력해주세요.</p>
 
                 <!-- 버튼 -->
-                <div class="flex items-center justify-end gap-3 pt-2">
+                <div class="flex items-center justify-end gap-3.5 pt-2.5">
                     <a th:href="@{/community/post-list}"
-                       class="px-5 py-2 border border-[#e8eaed] text-[#5b6270] rounded-md text-[14px] no-underline hover:bg-gray-50 transition-colors"
+                       class="px-6 py-2.5 border border-[#e8eaed] text-[#5b6270] rounded-md text-[17px] no-underline hover:bg-gray-50 transition-colors"
                        style="font-weight:500;" th:text="#{community.write.btn.cancel}">Cancel</a>
                     <button type="submit"
-                            class="px-5 py-2 bg-[#3b9eff] text-white rounded-md text-[13px] hover:bg-[#1a7de0] transition-colors cursor-pointer"
+                            class="px-6 py-2.5 bg-[#3b9eff] text-white rounded-md text-[15.5px] hover:bg-[#1a7de0] transition-colors cursor-pointer"
                             style="font-weight:500;" th:text="#{community.write.btn.submit}">
                         Publish Post
                     </button>

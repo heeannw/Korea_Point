@@ -62,6 +62,58 @@ public interface PostRepository extends JpaRepository<Post, Long> {
                                              Pageable pageable);
 
     /**
+     * 기간을 한정한 인기 글. since 가 null 이면 전체 기간이다.
+     *
+     * <p>CAST 를 쓰는 이유: 파라미터가 null 일 때 하이버네이트가 타입을 못 정해
+     * "could not determine data type" 으로 실패한다.
+     */
+    @EntityGraph(attributePaths = {"user", "category"})
+    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL "
+            + "AND (p.category IS NULL OR p.category.id <> :excludedCategoryId) "
+            + "AND (CAST(:since AS LocalDateTime) IS NULL OR p.createdAt >= :since) "
+            + "ORDER BY p.viewCount DESC")
+    List<Post> findTrendingInPeriod(@Param("excludedCategoryId") Long excludedCategoryId,
+                                    @Param("since") LocalDateTime since,
+                                    Pageable pageable);
+
+    /**
+     * 베스트 목록. 기간 안에서 조회수가 많은 순이다.
+     *
+     * <p>홍보 글은 뺀다 — 돈을 내고 올린 광고가 베스트에 오르면 그건 베스트가 아니다.
+     */
+    @EntityGraph(attributePaths = {"user", "category"})
+    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL "
+            + "AND (p.category IS NULL OR p.category.id <> :excludedCategoryId) "
+            + "AND (CAST(:since AS LocalDateTime) IS NULL OR p.createdAt >= :since)")
+    Page<Post> findBestInPeriod(@Param("excludedCategoryId") Long excludedCategoryId,
+                                @Param("since") LocalDateTime since,
+                                Pageable pageable);
+
+    /**
+     * 베스트 목록 + 카테고리.
+     *
+     * <p>여기서는 홍보 글을 빼지 않는다. 광고를 빼는 건 일반 글과 한 목록에서 겨룰 때
+     * 불공평하기 때문인데, 카테고리로 좁힌 목록은 이미 같은 종류끼리만 모여 있다.
+     * 홍보 탭에서 베스트를 눌렀는데 0건이 나오는 쪽이 더 고장 나 보인다.
+     */
+    @EntityGraph(attributePaths = {"user", "category"})
+    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL "
+            + "AND p.category.id = :categoryId "
+            + "AND (CAST(:since AS LocalDateTime) IS NULL OR p.createdAt >= :since)")
+    Page<Post> findBestInPeriodByCategory(@Param("categoryId") Long categoryId,
+                                          @Param("since") LocalDateTime since,
+                                          Pageable pageable);
+
+    /** 불꽃 기준을 잡을 표본. 조회수와 올라온 시각만 있으면 된다. */
+    @Query("SELECT new com.example.demo.community.dto.PostViewStat(p.viewCount, p.createdAt) "
+            + "FROM Post p WHERE p.deletedAt IS NULL "
+            + "AND (p.category IS NULL OR p.category.id <> :excludedCategoryId) "
+            + "AND p.createdAt >= :since")
+    List<com.example.demo.community.dto.PostViewStat> findViewStatsSince(
+            @Param("excludedCategoryId") Long excludedCategoryId,
+            @Param("since") LocalDateTime since);
+
+    /**
      * 아직 노출 기간이 남은 홍보 글.
      *
      * <p>무작위로 뽑을 것이라 정렬은 의미가 없다. 후보만 가져와 자바에서 섞는다.
