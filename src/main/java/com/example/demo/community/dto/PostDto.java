@@ -27,6 +27,8 @@ public class PostDto {
     private LocalDateTime createdAt;
     private String contentPreview; // HTML 태그 제거 + 120자 요약 (목록용)
     private String thumbnailUrl;   // 본문 첫 이미지 (목록 썸네일용, nullable)
+    private boolean fresh;         // 최근에 올라온 글인지 (목록 NEW 배지용)
+    private boolean hot;           // 조회수가 많이 붙은 글인지 (목록 불꽃용)
     private String categoryNameEn;   // 영문 카테고리명 (nullable)
     private String titleEn;          // 영문 번역 제목 (nullable)
     private String contentEn;        // 영문 번역 내용 (nullable)
