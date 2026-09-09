@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 // 게시글 응답 DTO (목록/상세 조회)
 @Getter
@@ -40,6 +42,21 @@ public class PostDto {
     private String placeContentTypeId;
     private String placeTitle;
 
+    /** 글에 붙인 내부 장소들 (상세 화면 "이 글에서 소개한 장소"). 상세 조회 때만 채운다. */
+    private List<PlaceRef> places;
+
+    /** 글 ↔ 장소 연결 한 건. 글쓰기 폼 입력과 상세 출력에 함께 쓴다. */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PlaceRef {
+        private String contentId;
+        private String contentTypeId;
+        private String title;
+        private String kind; // tour / food / cafe
+    }
+
     // 게시글 작성 요청 DTO
     @Getter
     @Setter
@@ -57,5 +74,8 @@ public class PostDto {
         private String placeContentId;
         private String placeContentTypeId;
         private String placeTitle;
+
+        /** 다중 장소 첨부. 폼에서 places[0].contentId 형태로 넘어온다. */
+        private List<PlaceRef> places = new ArrayList<>();
     }
 }

@@ -5,7 +5,9 @@ import com.example.demo.community.dto.PostDto;
 import com.example.demo.community.dto.TrendingPeriod;
 import com.example.demo.community.entity.Category;
 import com.example.demo.community.entity.Post;
+import com.example.demo.community.entity.PostPlace;
 import com.example.demo.community.repository.CategoryRepository;
+import com.example.demo.community.repository.PostPlaceRepository;
 import com.example.demo.community.repository.PostRepository;
 import com.example.demo.user.entity.AccountStatus;
 import com.example.demo.user.entity.User;
@@ -19,7 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -28,6 +32,7 @@ import java.util.Set;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final PostPlaceRepository postPlaceRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final TranslationService translationService;
@@ -148,7 +153,9 @@ public class PostService {
             viewed.add(postId);
         }
 
-        return toDto(post);
+        PostDto dto = toDto(post);
+        dto.setPlaces(loadPlaceRefs(postId));
+        return dto;
     }
 
     @Transactional
@@ -185,6 +192,7 @@ public class PostService {
         }
 
         Post saved = postRepository.save(post);
+        savePlaces(saved.getId(), req.getPlaces());
 
         if (promo) {
             userRepository.updatePoint(userId, -communityProperties.getPromoCost());
@@ -194,11 +202,47 @@ public class PostService {
         return saved.getId();
     }
 
+    /** 글에 붙인 장소들을 순서대로 저장한다. 같은 장소가 중복되면 첫 것만 남긴다. */
+    private void savePlaces(Long postId, List<PostDto.PlaceRef> refs) {
+        if (refs == null || refs.isEmpty()) return;
+        Set<String> seen = new HashSet<>();
+        int order = 0;
+        for (PostDto.PlaceRef r : refs) {
+            String contentId = blankToNull(r.getContentId());
+            if (contentId == null || !seen.add(contentId)) continue;
+            postPlaceRepository.save(PostPlace.builder()
+                    .postId(postId)
+                    .contentId(contentId)
+                    .contentTypeId(blankToNull(r.getContentTypeId()))
+                    .title(blankToNull(r.getTitle()))
+                    .kind(blankToNull(r.getKind()))
+                    .sortOrder(order++)
+                    .build());
+        }
+    }
+
+    private List<PostDto.PlaceRef> loadPlaceRefs(Long postId) {
+        return postPlaceRepository.findByPostIdOrderBySortOrder(postId).stream()
+                .map(pp -> new PostDto.PlaceRef(pp.getContentId(), pp.getContentTypeId(),
+                        pp.getTitle(), pp.getKind()))
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public List<PostDto> getPostsByPlace(String contentId) {
         if (contentId == null || contentId.isBlank()) return List.of();
-        return postRepository.findTop10ByPlaceContentIdAndDeletedAtIsNullOrderByCreatedAtDesc(contentId)
-                .stream().map(this::toDto).toList();
+        // 기존 단일 컬럼(place_content_id) + 다중 장소 표(post_place) 양쪽을 합친다.
+        Set<Long> ids = new LinkedHashSet<>();
+        postRepository.findTop10ByPlaceContentIdAndDeletedAtIsNullOrderByCreatedAtDesc(contentId)
+                .forEach(p -> ids.add(p.getId()));
+        ids.addAll(postPlaceRepository.findPostIdsByContentId(contentId));
+        if (ids.isEmpty()) return List.of();
+        return postRepository.findAllById(ids).stream()
+                .filter(p -> p.getDeletedAt() == null)
+                .sorted(Comparator.comparing(Post::getCreatedAt).reversed())
+                .limit(10)
+                .map(this::toDto)
+                .toList();
     }
 
     @Transactional

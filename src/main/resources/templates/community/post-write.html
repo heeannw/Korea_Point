@@ -41,6 +41,34 @@
         .ql-toolbar:focus-within {
             border-color: #3b9eff;
         }
+        /* 툴바 장소 버튼 */
+        button.ql-place { width: auto !important; padding: 0 6px !important; font-size: 14px; line-height: 1; }
+        /* 본문에 박히는 장소 카드 (에디터·상세 공통 클래스) */
+        .place-embed {
+            display: flex; align-items: center; gap: 10px;
+            margin: 14px 0; padding: 12px 14px;
+            border: 1px solid #d9e6f7; border-radius: 10px; background: #f5f9ff;
+            font-size: 15px; color: #16181d;
+        }
+        .place-embed-badge {
+            flex: none; padding: 2px 8px; border-radius: 999px;
+            background: #1a7de0; color: #fff; font-size: 12px; font-weight: 700;
+        }
+        .place-embed-title { font-weight: 600; }
+        .place-embed-hint { margin-left: auto; font-size: 12px; color: #8b919c; }
+        /* 장소 검색 모달 */
+        #placeModal { position: fixed; inset: 0; z-index: 60; display: none; align-items: flex-start; justify-content: center; background: rgba(15,23,42,.45); }
+        #placeModal.open { display: flex; }
+        #placeModal .pm-box { margin-top: 12vh; width: min(520px, 92vw); background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+        #placeModal .pm-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #eef1f5; }
+        #placeModal .pm-head input { flex: 1; border: 1px solid #e8eaed; border-radius: 8px; padding: 9px 12px; font-size: 15px; outline: none; }
+        #placeModal .pm-head input:focus { border-color: #3b9eff; }
+        #placeModal .pm-close { border: none; background: none; font-size: 20px; color: #8b919c; cursor: pointer; line-height: 1; }
+        #placeModal .pm-list { max-height: 46vh; overflow: auto; }
+        #placeModal .pm-list button { display: flex; width: 100%; align-items: center; gap: 10px; padding: 11px 16px; border: none; background: none; text-align: left; cursor: pointer; }
+        #placeModal .pm-list button:hover { background: #f5f7fa; }
+        #placeModal .pm-kind { flex: none; font-size: 12px; padding: 2px 6px; border-radius: 6px; background: #eef1f5; color: #5b6270; }
+        #placeModal .pm-empty { padding: 18px 16px; font-size: 14px; color: #8b919c; }
         /* Footer */
         :root { --primary-dark: #1a7de0; }
         footer { background: #ffffff; padding: 32px 80px 28px; border-top: 1px solid #dbe5f2; }
@@ -150,7 +178,7 @@
                            class="w-full px-5 py-2.5 border border-[#e8eaed] rounded-md text-[17px] text-[#16181d] placeholder:text-[#8b919c] focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100"/>
                 </div>
 
-                <!-- 내용 — Quill 에디터 -->
+                <!-- 내용 — Quill 에디터 (툴바의 📍 버튼으로 본문에 장소 카드를 넣는다) -->
                 <div>
                     <label class="block text-[15.5px] text-[#5b6270] mb-2" style="font-weight:600;" th:text="#{community.write.label.content}">Content</label>
                     <!-- Quill이 이 div를 에디터로 교체함 -->
@@ -160,6 +188,8 @@
                         폼 제출 시 JS로 Quill의 HTML을 이 hidden input에 복사해서 서버로 전송.
                     -->
                     <input type="hidden" name="content" id="contentInput"/>
+                    <!-- 본문에 넣은 장소들을 places[i].* 로 직렬화 (post_place 저장·역참조용) -->
+                    <div id="placeInputs"></div>
                 </div>
 
                 <!-- 에러 메시지 (내용 미입력) -->
@@ -181,6 +211,19 @@
 
     </div>
 </main>
+
+<!-- 장소 검색 모달 (Quill 툴바 📍 버튼) -->
+<div id="placeModal" aria-hidden="true">
+    <div class="pm-box" role="dialog" aria-modal="true" aria-label="장소 검색">
+        <div class="pm-head">
+            <input type="text" id="pmInput" autocomplete="off" placeholder="관광지·맛집·카페 이름 검색"/>
+            <button type="button" class="pm-close" id="pmClose" aria-label="닫기">&times;</button>
+        </div>
+        <div class="pm-list" id="pmList">
+            <div class="pm-empty">두 글자 이상 입력하세요.</div>
+        </div>
+    </div>
+</div>
 
 <footer>
     <div class="footer-inner">
@@ -246,6 +289,13 @@
         }
     });
 
+    const KIND_LABEL = { tour: '관광', food: '맛집', cafe: '카페' };
+    function escText(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+    function placeLink(p) {
+        const base = p.kind === 'food' ? '/tour/food' : (p.kind === 'cafe' ? '/tour/cafe' : '/tour/all');
+        return base + '?focus=' + encodeURIComponent(p.contentId) + '&lang=' + (document.documentElement.lang || 'ko');
+    }
+
     // Quill 에디터 초기화
     const quill = new Quill('#quillEditor', {
         theme: 'snow',
@@ -303,6 +353,9 @@
         input.click();
     }
 
+    // 📍 버튼으로 본문에 넣은 장소들 (post_place 저장·역참조용)
+    const pickedPlaces = [];
+
     // 폼 제출 시 Quill HTML → hidden input으로 복사 후 유효성 검사
     document.getElementById('postForm').addEventListener('submit', function (e) {
         const html = quill.root.innerHTML;
@@ -315,8 +368,126 @@
         }
 
         document.getElementById('contentError').classList.add('hidden');
+
+        // 본문에 실제로 남아 있는 링크만 places[i].* 로 직렬화 (지운 장소는 제외)
+        const inputs = document.getElementById('placeInputs');
+        inputs.innerHTML = '';
+        let i = 0;
+        pickedPlaces.forEach(function (p) {
+            if (!html.includes('focus=' + encodeURIComponent(p.contentId))) return;
+            const vals = { contentId: p.contentId, contentTypeId: p.contentTypeId || '',
+                           title: p.title || '', kind: p.kind || 'tour' };
+            Object.keys(vals).forEach(function (key) {
+                const el = document.createElement('input');
+                el.type = 'hidden';
+                el.name = 'places[' + i + '].' + key;
+                el.value = vals[key];
+                inputs.appendChild(el);
+            });
+            i++;
+        });
+
         document.getElementById('contentInput').value = html;
     });
+
+    // ── 툴바 📍 버튼 + 장소 검색 모달 → 본문에 장소 카드 삽입 ──
+    (function () {
+        const modal = document.getElementById('placeModal');
+        const pmInput = document.getElementById('pmInput');
+        const pmList = document.getElementById('pmList');
+        let savedRange = null;
+        let timer;
+
+        // 툴바 오른쪽 끝에 장소 버튼 추가
+        const grp = document.createElement('span');
+        grp.className = 'ql-formats';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ql-place';
+        btn.title = '장소 추가';
+        btn.textContent = '📍';
+        grp.appendChild(btn);
+        quill.getModule('toolbar').container.appendChild(grp);
+
+        function open() {
+            savedRange = quill.getSelection(true);
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+            pmInput.value = '';
+            pmList.innerHTML = '<div class="pm-empty">두 글자 이상 입력하세요.</div>';
+            setTimeout(function () { pmInput.focus(); }, 0);
+        }
+        function close() {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        btn.addEventListener('click', open);
+        document.getElementById('pmClose').addEventListener('click', close);
+        modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) close(); });
+
+        async function runSearch(q) {
+            try {
+                const res = await fetch('/community/api/place-search?q=' + encodeURIComponent(q));
+                const list = res.ok ? await res.json() : [];
+                pmList._list = list;
+                pmList.innerHTML = list.length ? list.map(function (p, idx) {
+                    return '<button type="button" data-i="' + idx + '">'
+                        + '<span class="pm-kind">' + (KIND_LABEL[p.kind] || '장소') + '</span>'
+                        + '<span style="min-width:0">'
+                        + '<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;color:#16181d">' + escText(p.title) + '</span>'
+                        + '<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#8b919c">' + escText(p.addr || '') + '</span>'
+                        + '</span></button>';
+                }).join('') : '<div class="pm-empty">검색 결과가 없습니다.</div>';
+            } catch (e) {
+                pmList.innerHTML = '<div class="pm-empty">검색에 실패했습니다.</div>';
+            }
+        }
+
+        pmInput.addEventListener('input', function () {
+            clearTimeout(timer);
+            const q = pmInput.value.trim();
+            if (q.length < 2) { pmList.innerHTML = '<div class="pm-empty">두 글자 이상 입력하세요.</div>'; return; }
+            timer = setTimeout(function () { runSearch(q); }, 250);
+        });
+
+        // 장소를 본문에 한 줄 링크로 삽입한다. Quill 기본 link 포맷이라 커스텀 블롯 없이 안전.
+        function insertPlace(p, at) {
+            const place = {
+                contentId: p.contentId,
+                contentTypeId: p.contentTypeId || '',
+                kind: p.kind || 'tour',
+                title: p.title || p.contentId
+            };
+            if (!pickedPlaces.some(function (x) { return x.contentId === place.contentId; })) {
+                pickedPlaces.push(place);
+            }
+            const label = '📍 ' + place.title;
+            quill.insertText(at, label, { link: placeLink(place) }, 'user');
+            quill.insertText(at + label.length, '\n', 'user');
+            quill.setSelection(at + label.length + 1, 0, 'silent');
+        }
+
+        pmList.addEventListener('click', function (e) {
+            const b = e.target.closest('button[data-i]');
+            if (!b || !pmList._list) return;
+            const at = (savedRange ? savedRange.index : quill.getLength());
+            insertPlace(pmList._list[+b.dataset.i], at);
+            close();
+        });
+
+        // '이 장소로 글쓰기'로 넘어온 경우 본문 맨 앞에 장소 링크 삽입
+        const seedId = document.querySelector('input[name="placeContentId"]')?.value;
+        if (seedId) {
+            insertPlace({
+                contentId: seedId,
+                contentTypeId: document.querySelector('input[name="placeContentTypeId"]')?.value || '',
+                kind: 'tour',
+                title: document.querySelector('input[name="placeTitle"]')?.value || seedId
+            }, 0);
+        }
+    })();
 </script>
 <script th:src="@{/js/common/header-menu.js}"></script>
 </body>
