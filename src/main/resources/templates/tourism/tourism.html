@@ -66,6 +66,28 @@
     .pop-age-row::-webkit-scrollbar{display:none}
     .pop-age{padding:4px 11px;border-radius:50px;border:1px solid var(--border);background:var(--white);font-size:11px;font-weight:600;color:var(--gray);cursor:pointer;white-space:nowrap;transition:all .15s}
     .pop-age.active{background:var(--blue-lt);color:var(--blue-dk);border-color:var(--blue)}
+    /* ── ✨ 나를 위한 추천 ── */
+    .for-you{flex-shrink:0;padding:12px 16px 4px;border-bottom:8px solid var(--light)}
+    .fy-head{font-size:13px;font-weight:800;color:var(--dark);margin-bottom:8px}
+    .fy-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:8px}
+    .fy-row::-webkit-scrollbar{display:none}
+    .fy-card{flex:0 0 132px;border:1px solid var(--border);border-radius:12px;background:var(--white);padding:0 0 8px;text-align:left;cursor:pointer;overflow:hidden;transition:box-shadow .15s}
+    .fy-card:hover{box-shadow:0 4px 14px rgba(59,158,255,.18)}
+    .fy-thumb{height:74px;background:var(--light) center/cover no-repeat}
+    .fy-name{font-size:12px;font-weight:700;color:var(--dark);margin:7px 9px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .fy-reason{font-size:11px;line-height:1.4;color:var(--gray);margin:0 9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .fy-onboard{font-size:12px;color:var(--mid)}
+    .fy-onboard>span{display:block;margin-bottom:8px;color:var(--gray)}
+    .fy-onboard-btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+    .fy-pref{padding:6px 11px;border-radius:50px;border:1.5px solid var(--border);background:var(--white);font:600 12px inherit;color:var(--gray);cursor:pointer}
+    .fy-pref.on{background:var(--blue);border-color:var(--blue);color:#fff}
+    .fy-pref-go{width:100%;padding:9px;border:0;border-radius:9px;background:var(--blue-dk);color:#fff;font:700 13px inherit;cursor:pointer}
+    .fy-pref-go:disabled{background:#cbd5e1;cursor:default}
+    .dp-related .section-title{margin-bottom:10px}
+    .dp-related-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+    .dp-related-row::-webkit-scrollbar{display:none}
+    .dp-related-row .fy-card{flex:0 0 118px}
+    .dp-related-row .fy-thumb{height:66px}
     .chip[data-cat="All"].active{background:var(--blue);border-color:var(--blue);color:#fff}
     .chip[data-cat="attraction"]:hover,.chip[data-cat="attraction"].active{background:#ef4444;border-color:#ef4444;color:#fff}
     .chip[data-cat="culture"]:hover,.chip[data-cat="culture"].active{background:#f59e0b;border-color:#f59e0b;color:#fff}
@@ -124,6 +146,7 @@
 <div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 <div class="app-body">
   <div class="sidebar">
+    <section id="forYou" class="for-you" hidden></section>
     <div class="search-bar">
       <form action="/tour/search/" method="get" id="searchForm">
         <div class="search-wrap">
@@ -251,6 +274,7 @@
           <div class="dp-info-row" id="dpInfoRow"></div>
           <div class="section-card"><div class="section-title" th:text="#{tour.detail.about}">About</div><div class="dp-desc" id="dpDesc"></div></div>
           <div class="dp-course" id="dpCourse" hidden></div>
+          <div class="dp-related" id="dpRelated" hidden></div>
         </section>
         <section class="tab-panel" id="tab-reviews" hidden><div id="dpReviews"></div></section>
         <section class="tab-panel" id="tab-community" hidden><div id="dpCommunity"></div></section>
@@ -804,6 +828,7 @@
     document.querySelectorAll('.chip').forEach(ch =>
             ch.classList.toggle('active', ch.dataset.cat === c)
     );
+    if (PREF_SLUGS.includes(c)) logActivity({ action: 'CATEGORY', categorySlug: c });
     syncPopAgeRow();
     render();
   }
@@ -1249,6 +1274,7 @@
         } else {
           await csrfFetch('/tour/api/saved-places', 'POST',
             { contentId: key, contentTypeId: p.type ?? '', kind: 'tourism' });
+          logPlace('SAVE', p);
         }
       } catch (e) {
         if (wasOn) savedIds.add(key); else savedIds.delete(key);  // 실패 시 롤백
@@ -1284,6 +1310,7 @@
 
     if (!p) return;
     currentDetailPlace = p;
+    logPlace('DETAIL_VIEW', p);
     showDetailTab('info');
     const color = getCatColor(p.type);
     document.getElementById('dpTitle').textContent = p.title ?? '-';
@@ -1299,6 +1326,7 @@
     document.getElementById('dpDesc').textContent = I18N.detail.preparing;
     renderReviews(p);
     loadCommunityPosts(p);
+    loadRelated(p);
     updateSaveButton(p);
 
     // 이 관광지를 기준점으로 삼아 새 맛집 화면으로 넘긴다.
@@ -1391,6 +1419,7 @@
   }
   let searchFilterTimer;
   function onSearchInput(val) {
+    logSearch(val);
     // 타이핑하는 동안 로드된 목록을 즉시 필터한다. Enter/버튼은 폼 submit → 서버 검색(미로드 결과·최근검색어 저장).
     clearTimeout(searchFilterTimer);
     searchFilterTimer = setTimeout(render, 150);
@@ -1462,6 +1491,129 @@
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return res;
   }
+
+  // ── ✨ 개인화 추천: 행동 로그 + "나를 위한 추천" ──
+  const RECO_LANG = document.documentElement.lang || 'ko';
+  const PREF_SLUGS = ['attraction', 'culture', 'leisure', 'shopping', 'festival'];
+  const FY_TITLE   = /*[[#{tour.forYou.title}]]*/ 'For you';
+  const FY_ONBOARD = /*[[#{tour.forYou.onboard}]]*/ 'Pick 2–3 things you like';
+  const FY_GO      = /*[[#{tour.forYou.go}]]*/ 'Get recommendations';
+  const REL_TITLE  = /*[[#{tour.detail.related}]]*/ 'People also visit';
+
+  function areaOfAddr(addr) {
+    if (!addr) return null;
+    for (const t of String(addr).split(/\s+/)) if (t.endsWith('구') || t.endsWith('군')) return t;
+    return null;
+  }
+  function logActivity(payload) {
+    if (!LOGGED_IN) return;
+    csrfFetch('/tour/api/activity', 'POST', payload).catch(() => {});
+  }
+  function logPlace(action, p) {
+    logActivity({ action, contentId: p.id, contentTypeId: p.type,
+                  categorySlug: p.typeDetailName ?? null, area: areaOfAddr(p.addr) });
+  }
+  let _logSearchT;
+  function logSearch(kw) {
+    if (!LOGGED_IN || !kw || kw.trim().length < 2) return;
+    clearTimeout(_logSearchT);
+    _logSearchT = setTimeout(() => logActivity({ action: 'SEARCH', keyword: kw.trim() }), 1200);
+  }
+
+  async function loadForYou() {
+    const wrap = document.getElementById('forYou');
+    if (!wrap || !LOGGED_IN) return;
+    let recos = [];
+    try {
+      const res = await fetch('/tour/api/reco/for-you?lang=' + RECO_LANG);
+      if (res.ok) recos = await res.json();
+    } catch (e) { /* 무시 */ }
+
+    if (!recos.length) { await renderOnboarding(wrap); return; }
+
+    wrap.hidden = false;
+    wrap.innerHTML = `<div class="fy-head">✨ ${escapeDetail(FY_TITLE)}</div><div class="fy-row">`
+      + recos.map(r => {
+          const p = PLACES.find(x => String(x.id) === String(r.contentId));
+          const img = (p && p.image) || r.image || '';
+          const name = (p && p.title) || r.title || '';
+          const reason = r.genReason || (r.reasons || []).join(' · ');
+          return `<button class="fy-card" type="button" data-id="${escapeDetail(String(r.contentId))}">
+            <div class="fy-thumb" style="background-image:url('${escapeDetail(img)}')"></div>
+            <div class="fy-name">${escapeDetail(name)}</div>
+            <div class="fy-reason">${escapeDetail(reason)}</div></button>`;
+        }).join('') + `</div>`;
+
+    wrap.querySelectorAll('.fy-card').forEach(btn => btn.onclick = () => {
+      const p = PLACES.find(x => String(x.id) === btn.dataset.id);
+      if (!p) return;
+      const i = (window._currentList || PLACES).indexOf(p);
+      if (i >= 0) selectPlace(i); else openDetail(p);
+    });
+  }
+
+  async function renderOnboarding(wrap) {
+    try {
+      const r = await fetch('/tour/api/tour-pref');
+      if (r.ok && ((await r.json()).categories || []).length) { wrap.hidden = true; return; }
+    } catch (e) { wrap.hidden = true; return; }
+
+    const labels = { attraction: '📍 관광지', culture: '🏛️ 문화시설',
+                     leisure: '🏄 레저·액티비티', shopping: '🛍️ 쇼핑', festival: '🎉 축제·행사' };
+    wrap.hidden = false;
+    wrap.innerHTML = `<div class="fy-head">✨ ${escapeDetail(FY_TITLE)}</div>
+      <div class="fy-onboard"><span>${escapeDetail(FY_ONBOARD)}</span>
+        <div class="fy-onboard-btns">`
+      + PREF_SLUGS.map(s => `<button type="button" class="fy-pref" data-s="${s}">${labels[s]}</button>`).join('')
+      + `</div><button type="button" class="fy-pref-go" disabled>${escapeDetail(FY_GO)}</button></div>`;
+
+    const chosen = new Set();
+    wrap.querySelectorAll('.fy-pref').forEach(b => b.onclick = () => {
+      const s = b.dataset.s;
+      if (chosen.has(s)) { chosen.delete(s); b.classList.remove('on'); }
+      else if (chosen.size < 3) { chosen.add(s); b.classList.add('on'); }
+      wrap.querySelector('.fy-pref-go').disabled = chosen.size < 2;
+    });
+    wrap.querySelector('.fy-pref-go').onclick = async () => {
+      try { await csrfFetch('/tour/api/tour-pref', 'POST', { categories: [...chosen] }); } catch (e) {}
+      loadForYou();
+    };
+  }
+
+  // 상세 패널 맨 하단: 연관 관광지 (다른 여행자 방문 동선). 최대 3개.
+  async function loadRelated(p) {
+    const root = document.getElementById('dpRelated');
+    if (!root) return;
+    root.hidden = true; root.innerHTML = '';
+    let rel = [];
+    try {
+      const res = await fetch('/tour/api/related/' + encodeURIComponent(p.id));
+      if (res.ok) rel = await res.json();
+    } catch (e) { return; }
+    if (currentDetailPlace !== p) return;
+
+    const cards = rel
+      .map(r => PLACES.find(x => String(x.id) === String(r.contentId)))
+      .filter(x => x && String(x.id) !== String(p.id))
+      .slice(0, 3);
+    if (!cards.length) return;
+
+    root.innerHTML = `<div class="section-card"><div class="section-title">${escapeDetail(REL_TITLE)}</div>
+      <div class="dp-related-row">` + cards.map(x => `
+        <button type="button" class="fy-card dp-rel-card" data-id="${escapeDetail(String(x.id))}">
+          <div class="fy-thumb" style="background-image:url('${escapeDetail(x.image || '')}')"></div>
+          <div class="fy-name">${escapeDetail(x.title || '-')}</div>
+          <div class="fy-reason">${escapeDetail(x.typeDetailName || typeName(x.type))}</div>
+        </button>`).join('') + `</div></div>`;
+    root.hidden = false;
+
+    root.querySelectorAll('.dp-rel-card').forEach(btn => btn.onclick = () => {
+      const x = PLACES.find(v => String(v.id) === btn.dataset.id);
+      if (!x) return;
+      const i = (window._currentList || PLACES).indexOf(x);
+      if (i >= 0) selectPlace(i); else openDetail(x);
+    });
+  }
   function deleteKeyword(kw, event) {
     event.preventDefault();
     event.stopPropagation();
@@ -1488,6 +1640,7 @@
 
   applyAllChipLabel();
   syncPopAgeRow();
+  loadForYou();
   if (NEAR_TITLE) {
     const note = document.getElementById('nearNote');
     note.innerHTML = i18nFmt(I18N.nearNote, escapeDetail(NEAR_TITLE));
