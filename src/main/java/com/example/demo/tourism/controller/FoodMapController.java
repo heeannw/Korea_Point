@@ -2,7 +2,6 @@ package com.example.demo.tourism.controller;
 
 import com.example.demo.tourism.dto.FoodPlaceDto;
 import com.example.demo.tourism.service.FoodMapService;
-import com.example.demo.tourism.service.UnsplashImageService;
 import com.example.demo.user.util.SecurityUtil;               // ✅ 추가
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +22,6 @@ public class FoodMapController {
     private String kakaoKey;
 
     private final FoodMapService foodMapService;
-    private final UnsplashImageService unsplashImageService;
 
     // ── KO 전체 ──────────────────────────────────────────────────────────────
     @GetMapping("/foodmap/all")
@@ -137,8 +135,6 @@ public class FoodMapController {
         model.addAttribute("keyword", keyword);
         model.addAttribute("category", category);
         model.addAttribute("lang", lang);
-        model.addAttribute("foodThumbMap",   unsplashImageService.getAllThumbLists());
-        model.addAttribute("foodRegularMap", unsplashImageService.getAllRegularLists());
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());               // ✅ 추가
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
     }

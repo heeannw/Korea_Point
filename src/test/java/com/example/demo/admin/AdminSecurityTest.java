@@ -33,7 +33,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = {AdminPageController.class, AdminApiController.class})
+@WebMvcTest(controllers = {AdminPageController.class, AdminApiController.class},
+        excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(
+                type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE,
+                classes = com.example.demo.community.config.CommunityUploadConfig.class))
 @Import(SecurityConfig.class)
 class AdminSecurityTest {
 
@@ -53,7 +56,7 @@ class AdminSecurityTest {
     void unauthenticatedUser_isRedirectedFromAdminPage() throws Exception {
         mockMvc.perform(get("/admin"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("**/login"));
+                .andExpect(redirectedUrl("/ko"));
     }
 
     @Test
@@ -127,6 +130,22 @@ class AdminSecurityTest {
                         .contentType("application/json")
                         .content("{}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void adminCanListOtherMembers_andRegularUserCannot() throws Exception {
+        var members = List.of(
+                AdminDto.UserItem.builder().id(1L).role("ADMIN").provider("google").build(),
+                AdminDto.UserItem.builder().id(2L).role("USER").provider("kakao").build());
+        when(adminService.getUsers(0, 10, null, null, null, null, null, null))
+                .thenReturn(AdminDto.PageResponse.<AdminDto.UserItem>builder()
+                        .items(members).page(0).size(10).totalElements(2).totalPages(1).build());
+        mockMvc.perform(get("/admin/api/users").with(authentication("ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.totalElements").value(2))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.items[1].id").value(2));
+        mockMvc.perform(get("/admin/api/users").with(authentication("USER")))
+                .andExpect(status().isForbidden());
     }
 
     private RequestPostProcessor authentication(String role) {

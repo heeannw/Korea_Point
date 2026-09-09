@@ -6,24 +6,15 @@
     <title th:text="#{reservation.form.pageTitle} + ' | KoreaPoint'">예약 정보 입력 | KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
+    <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
+    <link rel="stylesheet" th:href="@{/css/reservation/booking.css}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
 </head>
-<body>
-<header>
-    <a class="logo" th:href="@{/ko}">Korea<span>Point</span></a>
-    <div class="header-right">
-        <select class="h-btn" id="languageSelect" translate="no" onchange="switchReservationLanguage(this.value)" aria-label="언어 선택">
-            <option value="ko" th:selected="${lang == 'ko'}">한국어</option>
-            <option value="en" th:selected="${lang == 'en'}">English</option>
-            <option value="ja" th:selected="${lang == 'ja'}">日本語</option>
-            <option value="zh-CN" th:selected="${lang == 'zh-CN'}">中文</option>
-            <option value="fr" th:selected="${lang == 'fr'}">Français</option>
-        </select>
-        <a class="h-btn" th:href="@{/ko/mypage}" href="/ko/mypage" th:text="${currentUserName}">User</a>
-    </div>
-</header>
+<body class="booking-page booking-form">
+<div th:replace="~{fragments/app-header :: header(${lang == 'zh-CN' ? 'zh' : lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <main class="page">
+    <ol class="booking-steps" aria-label="Reservation progress"><li class="active" aria-current="step"><span>1</span><span th:text="#{reservation.ui.step.details}">예약 정보</span></li><li><span>2</span><span th:text="#{reservation.ui.step.payment}">예약금 결제</span></li><li><span>3</span><span th:text="#{reservation.ui.step.complete}">예약 완료</span></li></ol>
     <section class="page-head">
         <div>
             <p class="eyebrow" th:text="#{reservation.form.eyebrow}">예약</p>
@@ -33,27 +24,17 @@
         <a class="btn secondary" th:href="@{/ko/reservation(lang=${lang})}" th:text="#{reservation.form.back}">목록으로</a>
     </section>
 
-    <section class="panel" style="margin-bottom: 18px;">
-        <h2 class="place-title" th:text="${place != null ? place.title : reservationForm.placeTitle}">관광지명</h2>
-        <p class="meta" th:text="${place != null && place.address != null && !place.address.isBlank() ? place.address : #messages.msg('reservation.list.noAddress')}">주소</p>
-        <p class="meta" th:text="${place != null && place.tel != null && !place.tel.isBlank() ? place.tel : #messages.msg('reservation.list.noTel')}">전화번호</p>
-        <p class="meta" th:if="${place != null && place.overview != null && !place.overview.isBlank()}" th:text="${place.overview}">설명</p>
-        <dl class="reservation-operating-info"
-            th:if="${place != null && place.operatingInformation != null && !place.operatingInformation.isEmpty()}">
-            <div th:each="detail : ${place.operatingInformation}">
-                <dt th:text="${detail.key}">운영 정보</dt>
-                <dd th:text="${detail.value}">내용</dd>
-            </div>
-        </dl>
-    </section>
+    <div class="booking-checkout-layout">
 
-    <form class="panel" th:action="@{/ko/reservation/complete}" th:object="${reservationForm}" method="post">
+
+    <form class="panel booking-input-panel" th:action="@{/ko/reservation/complete}" th:object="${reservationForm}" method="post">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
         <input type="hidden" th:field="*{contentId}">
         <input type="hidden" th:field="*{contentTypeId}">
         <input type="hidden" th:field="*{placeTitle}">
         <input type="hidden" th:field="*{lang}">
 
+        <h2 class="section-title" th:text="#{reservation.ui.visit}">방문 정보</h2>
         <div class="form-grid">
             <label class="field">
                 <span class="label" th:text="#{reservation.form.date}">예약 날짜</span>
@@ -104,12 +85,29 @@
             <a class="btn secondary" th:href="@{/ko/reservation(lang=${lang})}" th:text="#{reservation.form.cancel}">취소</a>
         </div>
     </form>
+    <aside class="panel booking-place-summary">
+        <img class="booking-summary-image" th:if="${place != null && place.imageUrl != null && !place.imageUrl.isBlank()}" th:src="${place.imageUrl}" th:alt="${place.title}" onerror="this.hidden=true">
+        <p class="eyebrow" th:text="#{reservation.payment.summary}">예약 정보</p>
+        <h2 class="place-title" th:text="${place != null ? place.title : reservationForm.placeTitle}">관광지명</h2>
+        <p class="meta" th:text="${place != null && place.address != null && !place.address.isBlank() ? place.address : #messages.msg('reservation.list.noAddress')}">주소</p>
+        <p class="meta" th:text="${place != null && place.tel != null && !place.tel.isBlank() ? place.tel : #messages.msg('reservation.list.noTel')}">전화번호</p>
+        <p class="meta" th:if="${place != null && place.overview != null && !place.overview.isBlank()}" th:text="${place.overview}">설명</p>
+        <dl class="reservation-operating-info"
+            th:if="${place != null && place.operatingInformation != null && !place.operatingInformation.isEmpty()}">
+            <div th:each="detail : ${place.operatingInformation}">
+                <dt th:text="${detail.key}">운영 정보</dt>
+                <dd th:text="${detail.value}">내용</dd>
+            </div>
+        </dl>
+    </aside>
+    </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ja.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/zh.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"></script>
+<script th:src="@{/js/common/header-menu.js}"></script>
 <script th:inline="javascript">
     const PAGE_LOCALE = /*[[${lang}]]*/ "ko";
     const depositPattern = /*[[#{reservation.form.won('{0}')}]]*/ "{0}원";
@@ -135,7 +133,7 @@
     }
     peopleInput.addEventListener('input', updateDeposit);
     updateDeposit();
-    function switchReservationLanguage(lang) {
+    function switchLang(lang) {
         const url = new URL(window.location.href);
         url.searchParams.set('lang', lang);
         window.location.href = url.toString();

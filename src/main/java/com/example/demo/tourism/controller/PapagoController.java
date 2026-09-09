@@ -18,7 +18,7 @@ import java.util.Map;
 @RestController
 public class PapagoController {
 
-    /** application-secret.properties(gitignore)에서 주입. 노출된 기존 키는 네이버 클라우드에서 폐기·재발급 필요. */
+    /** application-local.properties(gitignore)에서 주입. 노출된 기존 키는 네이버 클라우드에서 폐기·재발급 필요. */
     @Value("${papago.client-id:}")
     private String clientId;
     @Value("${papago.client-secret:}")

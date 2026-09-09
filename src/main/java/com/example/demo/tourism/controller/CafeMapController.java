@@ -2,7 +2,6 @@ package com.example.demo.tourism.controller;
 
 import com.example.demo.tourism.dto.CafeDto;
 import com.example.demo.tourism.service.CafeService;
-import com.example.demo.tourism.service.UnsplashImageService;
 import com.example.demo.user.util.SecurityUtil;               // ✅ 추가
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +21,6 @@ public class CafeMapController {
     private String kakaokey;
 
     private final CafeService cafeService;
-    private final UnsplashImageService unsplashImageService;
 
     // ─────────────────────────────────────────────────────────────────────────
     // KO 버전
@@ -109,8 +107,6 @@ public class CafeMapController {
         model.addAttribute("userlon", lng);
         model.addAttribute("keyword", keyword);
         model.addAttribute("lang", lang);
-        model.addAttribute("cafeThumbList",   unsplashImageService.getThumbList("카페"));
-        model.addAttribute("cafeRegularList", unsplashImageService.getRegularList("카페"));
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());               // ✅ 추가
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());  // ✅ 추가
     }
