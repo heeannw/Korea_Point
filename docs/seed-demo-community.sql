@@ -130,12 +130,13 @@ JOIN users   u ON u.provider = 'demo' AND u.provider_id = v.author
 WHERE NOT EXISTS (SELECT 1 FROM post p WHERE p.title = v.title);
 
 -- ── 3. 가게 홍보 글 ──────────────────────────────────────────
---  홍보 글은 오른쪽 레일에 뜬다. promo_until 이 노출 기간이고,
---  이 값이 비어 있으면 레일에 안 나온다.
+--  홍보 글은 오른쪽 레일에 뜬다. promo_until 이 노출 기간이다.
+--  이 값이 비어 있거나 이미 지났으면 레일에 안 나온다 — 레일이 비어 보이면 여기부터 확인할 것.
+--  만료일은 흩뿌린다. 전부 같은 날 끝나면 그날 이후 레일이 통째로 빈다.
 INSERT INTO post (id, user_id, category_id, title, content, title_en, content_en,
                   place_title, view_count, comment_count, created_at, promo_until)
 SELECT nextval('post_sequence'), u.id, c.id, v.title, v.content, v.title_en, v.content_en,
-       v.place, v.views, 0, NOW() - v.ago, NOW() + INTERVAL '7 days'
+       v.place, v.views, 0, NOW() - v.ago, NOW() + ((3 + (length(v.title) % 12)) || ' days')::interval
 FROM (VALUES
  ('[해운대] 새벽 5시부터 여는 해장국집입니다',
   '<p>해운대해수욕장 뒷골목에서 12년째 하고 있습니다. 새벽 5시에 문 열어서 낮 3시까지 합니다.</p><p>외국인 손님이 요즘 부쩍 늘어서 영어 메뉴판 만들어 뒀습니다.</p>',

@@ -1,6 +1,8 @@
 package com.example.demo.community.controller;
 
 import com.example.demo.community.dto.PostDto;
+import com.example.demo.community.dto.CommunityListView;
+import com.example.demo.community.dto.TrendingPeriod;
 import com.example.demo.community.service.CommunitySidebarService;
 import com.example.demo.community.service.CommentService;
 import com.example.demo.community.service.CommunityService;
@@ -39,16 +41,23 @@ public class CommunityController {
                            @RequestParam(required = false) String keyword,
                            @RequestParam(required = false, defaultValue = "false") boolean mine,
                            @RequestParam(defaultValue = "0") int page,
-                           @RequestParam(defaultValue = "latest") String sort,
+                           @RequestParam(required = false) String period,
+                           @RequestParam(required = false) String view,
                            Model model) {
-        Sort sortOrder = "popular".equals(sort)
-                ? Sort.by("viewCount").descending()
-                : Sort.by("createdAt").descending();
+        CommunityListView listView = CommunityListView.from(view);
+        // 카테고리와 기간을 동시에 좁히면 남는 글이 몇 건 안 된다. 카테고리별 베스트를
+        // 처음 열 때는 전체 기간으로 보여 주고, 좁히는 건 이용자가 직접 고르게 한다.
+        TrendingPeriod trendingPeriod = period != null
+                ? TrendingPeriod.from(period)
+                : (listView.isBest() && categoryId != null ? TrendingPeriod.ALL : TrendingPeriod.WEEK);
+        Sort sortOrder = listView == CommunityListView.LATEST
+                ? Sort.by("createdAt").descending()
+                : Sort.by("viewCount").descending();
         var pageable = PageRequest.of(page, 10, sortOrder);
         boolean myPostsOnly = mine && SecurityUtil.isLoggedIn();
         var data = myPostsOnly
                 ? communityService.getMyCommunityPageData(SecurityUtil.getCurrentUserId(), categoryId, keyword, pageable)
-                : communityService.getCommunityPageData(categoryId, keyword, pageable);
+                : communityService.getCommunityPageData(categoryId, keyword, listView, trendingPeriod, pageable);
 
         int totalPages = data.getPosts().getTotalPages();
         int currentPage = data.getPosts().getNumber();
@@ -61,14 +70,14 @@ public class CommunityController {
         model.addAttribute("endPage", endPage);
         model.addAttribute("selectedCategory", categoryId);
         model.addAttribute("keyword", keyword != null ? keyword : "");
-        model.addAttribute("sort", sort);
+        model.addAttribute("period", trendingPeriod.key());
+        model.addAttribute("view", listView.key());
         model.addAttribute("mine", myPostsOnly);
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         model.addAttribute("communitySuspended", isCommunitySuspended());
-        // 레일. 비어 있으면 화면에서 그 칸이 통째로 사라진다(축제는 TourAPI 가 죽어도 목록을 막지 않는다).
+        // 레일. 노출 중인 홍보 글이 없으면 화면에서 그 칸이 통째로 사라진다.
         model.addAttribute("promoPosts", sidebarService.promoPosts());
-        model.addAttribute("festivals", sidebarService.festivals(org.springframework.context.i18n.LocaleContextHolder.getLocale().getLanguage()));
         return "community/post-list";
     }
 
