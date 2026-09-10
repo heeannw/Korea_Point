@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${lang == 'en'} ? 'en' : 'ko'" lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Korea Point | Discover Busan</title>
+    <title th:text="#{home.title}">Korea Point | 부산 여행 가이드</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Cormorant+Garamond:wght@600;700&family=Sora:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!--
-        home.html map
-        1. style: page-wide CSS
-        2. header: logo / language buttons / login button
-        3. hero: main slider and headline
-        4. categories: service shortcuts
-        5. place-section: Busan attraction cards
-        6. community-section: latest posts
-        7. footer: policy links and social links
-        8. script: hero slider behavior
+        home.html 구조 안내 (국문·영문 공용. 문구는 messages*.properties)
+        1. style: 전체 CSS
+        2. header: 로고 / 언어 버튼 / 로그인 버튼
+        3. hero: 메인 슬라이더와 대표 문구
+        4. categories: 주요 서비스 바로가기
+        5. place-section: 부산 관광지 카드
+        6. community-section: 최신 게시글 목록
+        7. footer: 정책 링크와 소셜 링크
+        8. script: 히어로 슬라이더 동작
     -->
     <style>
-        /* ===== 1. Design Tokens And Base Reset ===== */
+        /* ===== 1. 디자인 토큰 및 기본 리셋 ===== */
         :root {
             --primary: #3b9eff;
             --primary-dark: #1a7de0;
@@ -51,10 +51,11 @@
         }
 
         body {
-            font-family: "Sora", "Noto Sans KR", sans-serif;
+            font-family: "Noto Sans KR", "Sora", sans-serif;
             background: var(--surface);
             color: var(--dark);
             overflow-x: hidden;
+            word-break: keep-all;
         }
 
         a,
@@ -63,7 +64,105 @@
             font: inherit;
         }
 
-        /* ===== 2. Header ===== */
+
+        /* ===== 언어별 타이포 =====
+           국문 값을 기본으로 두고 영문에서만 덧씌운다. 파일이 둘로 나뉘어 있던
+           동안 영문 쪽만 따로 다듬어져 있었다 — 섹션 제목은 세리프였고, 히어로는
+           문구·자간·그라데이션이 달랐다. 그 차이를 그대로 옮겨 둔 것이라
+           두 언어 모두 예전 모습이 유지된다.
+           ko 를 기본에 둔 이유는 ja/zh/fr 도 이 화면을 쓰기 때문이다. */
+        html[lang="en"] body {
+            word-break: normal;   /* 국문 기본값 keep-all 을 되돌린다 */
+        }
+
+        html[lang="en"] .h-btn {
+            font-family: "Sora", "Noto Sans KR", sans-serif;
+        }
+
+        html[lang="en"] .hero-content {
+            align-items: flex-start;
+        }
+
+        html[lang="en"] .hero-eyebrow {
+            font-size: 12px;
+            letter-spacing: 0.34em;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.84);
+            margin-bottom: 20px;
+            text-shadow: 0 6px 18px rgba(15, 23, 42, 0.24);
+        }
+
+        html[lang="en"] .hero-sub {
+            max-width: 560px;
+            font-size: clamp(16px, 1.5vw, 18px);
+            font-weight: 400;
+            line-height: 1.7;
+            letter-spacing: -0.01em;
+            color: rgba(255, 255, 255, 0.92);
+            text-shadow: 0 8px 24px rgba(15, 23, 42, 0.24);
+        }
+
+        html[lang="en"] .hero-title {
+            max-width: 620px;
+            font-family: "Sora", "Noto Sans KR", sans-serif;
+            font-weight: 700;
+            line-height: 0.96;
+            letter-spacing: -0.06em;
+            margin-bottom: 22px;
+        }
+
+        html[lang="en"] .section-label span {
+            letter-spacing: 0.22em;
+        }
+
+        html[lang="en"] .section-title {
+            font-family: "Cormorant Garamond", serif;
+            letter-spacing: normal;   /* 국문 기본값 -0.03em 을 되돌린다 */
+        }
+
+        html[lang="en"] .see-all {
+            letter-spacing: 0.1em;
+        }
+
+        html[lang="en"] .slide::after {
+            background: linear-gradient( 115deg, rgba(15, 23, 42, 0.56) 0%, rgba(15, 23, 42, 0.30) 38%, rgba(15, 23, 42, 0.16) 62%, rgba(15, 23, 42, 0.38) 100% );
+        }
+
+        html[lang="en"] body {
+            font-family: "Sora", "Noto Sans KR", sans-serif;
+        }
+
+        @media (max-width: 480px) {
+            html[lang="en"] .hero-eyebrow {
+                font-size: 11px;
+                letter-spacing: 0.28em;
+            }
+            html[lang="en"] .hero-sub {
+                max-width: 320px;
+                font-size: 15px;
+                line-height: 1.65;
+            }
+            html[lang="en"] .hero-title {
+                font-size: 40px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            html[lang="en"] .hero-content {
+                padding: 0 24px 88px;
+            }
+            html[lang="en"] .hero-sub {
+                max-width: 460px;
+                font-size: 16px;
+            }
+            html[lang="en"] .hero-title {
+                font-size: 48px;
+                line-height: 1;
+            }
+        }
+
+
+        /* ===== 2. 헤더 ===== */
         header {
             position: sticky;
             top: 0;
@@ -113,7 +212,7 @@
             border: 1.5px solid var(--border);
             background: transparent;
             color: var(--dark);
-            font-family: "Sora", "Noto Sans KR", sans-serif;
+            font-family: "Noto Sans KR", "Sora", sans-serif;
             font-size: 12px;
             font-weight: 600;
             line-height: 1;
@@ -141,7 +240,7 @@
             color: #ffffff;
         }
 
-        /* ===== 3. Hero ===== */
+        /* ===== 3. 히어로 ===== */
         .hero {
             position: relative;
             /* 배너형 슬라이더. 화면을 꽉 채우지 않고 아래 내용이 걸치게 둔다. */
@@ -205,15 +304,13 @@
             border-radius: 0;
             pointer-events: none;
             background: linear-gradient(
-                    115deg,
-                    rgba(15, 23, 42, 0.56) 0%,
-                    rgba(15, 23, 42, 0.30) 38%,
-                    rgba(15, 23, 42, 0.16) 62%,
-                    rgba(15, 23, 42, 0.38) 100%
+                    135deg,
+                    rgba(15, 23, 42, 0.36) 0%,
+                    rgba(15, 23, 42, 0.12) 55%,
+                    rgba(15, 23, 42, 0.32) 100%
             );
         }
 
-        /* Lift the copy slightly and keep a safer reading area away from the edges. */
         .hero-content::before {
             content: "";
             position: absolute;
@@ -233,7 +330,6 @@
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
-            align-items: flex-start;
             /* 가운데 배너 안쪽에 문구가 놓이도록 트랙 폭(64%)에 맞춘다 */
             padding: 0 64px 64px;
         }
@@ -252,50 +348,46 @@
             .hero-content > * { max-width: 100%; }
         }
 
-        /* Wider tracking keeps the eyebrow premium while staying easy to scan. */
         .hero-eyebrow,
         .hero-title,
         .hero-sub { position: relative; z-index: 1; }
 
         .hero-eyebrow {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
-            letter-spacing: 0.34em;
-            line-height: 1.4;
+            letter-spacing: 0.28em;
             text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.84);
-            margin-bottom: 20px;
-            text-shadow: 0 6px 18px rgba(15, 23, 42, 0.24);
+            color: var(--accent);
+            margin-bottom: 18px;
             opacity: 0;
             transform: translateY(16px);
             animation: fadeUp 0.7s 0.2s ease forwards;
         }
 
-        /* Use a clearer sans-serif title so "Discover Busan" reads quickly on first view. */
         .hero-title {
-            max-width: 620px;
-            font-family: "Sora", "Noto Sans KR", sans-serif;
+            font-family: "Noto Sans KR", "Sora", sans-serif;
             font-size: clamp(40px, 5.5vw, 68px);
-            font-weight: 700;
-            line-height: 0.96;
-            letter-spacing: -0.06em;
+            font-weight: 600;
+            line-height: 1.02;
+            letter-spacing: -0.045em;
             color: #ffffff;
-            margin-bottom: 22px;
             text-shadow: 0 2px 18px rgba(15, 23, 42, 0.45);
+            margin-bottom: 24px;
             opacity: 0;
             transform: translateY(24px);
             animation: fadeUp 0.8s 0.35s ease forwards;
         }
 
-        /* Keep the supporting copy smaller, brighter, and sturdy enough over photography. */
+        .hero-title em {
+            font-style: normal;
+        }
+
         .hero-sub {
-            max-width: 560px;
-            font-size: clamp(16px, 1.5vw, 18px);
-            font-weight: 400;
-            line-height: 1.7;
-            letter-spacing: -0.01em;
-            color: rgba(255, 255, 255, 0.92);
-            text-shadow: 0 8px 24px rgba(15, 23, 42, 0.24);
+            max-width: 440px;
+            font-size: 15px;
+            font-weight: 300;
+            line-height: 1.75;
+            color: rgba(255, 255, 255, 0.78);
             opacity: 0;
             transform: translateY(16px);
             animation: fadeUp 0.7s 0.5s ease forwards;
@@ -498,7 +590,7 @@
             line-height: 1.35;
         }
 
-        /* ===== 4. Shared Section Heading Styles ===== */
+        /* ===== 4. 공통 섹션 제목 스타일 ===== */
         .section {
             max-width: 1440px;
             margin: 0 auto;
@@ -530,16 +622,17 @@
         .section-label span {
             font-size: 11px;
             font-weight: 600;
-            letter-spacing: 0.22em;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--primary);
         }
 
         .section-title {
-            font-family: "Cormorant Garamond", serif;
+            font-family: "Noto Sans KR", "Sora", sans-serif;
             font-size: clamp(26px, 2.2vw, 32px);
             font-weight: 700;
             line-height: 1.1;
+            letter-spacing: -0.03em;
             color: var(--dark);
         }
 
@@ -559,7 +652,7 @@
             text-decoration: none;
             font-size: 12px;
             font-weight: 600;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.02em;
             text-transform: uppercase;
             transition: gap 0.25s ease;
         }
@@ -568,7 +661,7 @@
             gap: 12px;
         }
 
-        /* ===== 5. Popular Attractions ===== */
+        /* ===== 5. 인기 관광지 ===== */
         .popular-section .section-header,
         .festival-section .section-header,
         .place-section .section-header {
@@ -927,7 +1020,7 @@
             font-weight: 400;
         }
 
-        /* ===== 6. Community Feed ===== */
+        /* ===== 6. 커뮤니티 피드 ===== */
         /* 커뮤니티 목록과 같은 문법을 쓴다. 홈에서 본 글을 커뮤니티에서 다시 만나도
            같은 배지·같은 색이어야 두 화면이 이어진다. */
         .community-section {
@@ -1093,7 +1186,7 @@
         }
 
 
-        /* ===== 7. Footer ===== */
+        /* ===== 7. 푸터 ===== */
         footer {
             background: #ffffff;
             padding: 32px 80px 28px;
@@ -1239,7 +1332,7 @@
             color: #a0aabc;
         }
 
-        /* ===== 8. Responsive Rules ===== */
+        /* ===== 8. 반응형 규칙 ===== */
         @media (max-width: 1024px) {
             .section,
             .community-inner,
@@ -1299,7 +1392,7 @@
             }
 
             .hero-content {
-                padding: 0 24px 88px;
+                padding: 0 24px 60px;
             }
 
             .hero-counter {
@@ -1307,13 +1400,7 @@
             }
 
             .hero-title {
-                font-size: 48px;
-                line-height: 1;
-            }
-
-            .hero-sub {
-                max-width: 460px;
-                font-size: 16px;
+                font-size: 46px;
             }
 
             .section,
@@ -1353,18 +1440,7 @@
             }
 
             .hero-title {
-                font-size: 40px;
-            }
-
-            .hero-eyebrow {
-                font-size: 11px;
-                letter-spacing: 0.28em;
-            }
-
-            .hero-sub {
-                max-width: 320px;
-                font-size: 15px;
-                line-height: 1.65;
+                font-size: 38px;
             }
 
             .category-item {
@@ -1374,17 +1450,17 @@
     </style>
     <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
 </head>
-<body>
-<!-- Header: top navigation and language buttons -->
+<body th:with="langPath=${lang == 'en'} ? 'en' : 'ko'">
+<!-- 헤더: 상단 로고와 언어 버튼 -->
 <div th:replace="~{fragments/app-header :: header(${lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
-<!-- Hero: full-width slider with the main home message -->
+<!-- 히어로: 메인 문구가 들어가는 전체 폭 슬라이더 -->
 <section class="hero">
     <div class="slider-track" id="sliderTrack">
         <a class="slide"
            th:each="slide : ${slides}"
-           th:href="@{/tour/all(lang='en',focus=${slide.contentId})}"
-           href="/tour/all?lang=en"
+           th:href="@{/tour/all(lang=${lang},focus=${slide.contentId})}"
+           href="/tour/all?lang=ko"
            th:attr="aria-label=${slide.title}"
            th:style="|background-image:url('${slide.imageUrl}')|"
            style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/c/cc/N_Seoul_Tower_%2813952097192%29.jpg')"></a>
@@ -1400,12 +1476,12 @@
             <path d="M9 18l6-6-6-6"></path>
         </svg>
     </button>
-    <!-- Updated hero copy for stronger first-view readability. -->
     <div class="hero-content">
-        <p class="hero-eyebrow">THE BUSAN TRAVEL GUIDE</p>
-        <h1 class="hero-title" th:text="${heroTitle}">Discover Busan</h1>
-        <p class="hero-sub" th:text="${heroDescription}">
-            Curated guides to the best attractions, food, and local experiences.
+        <p class="hero-eyebrow" th:text="#{home.hero.eyebrow}">부산 여행 가이드</p>
+        <!-- 국문은 두 줄로 끊고 둘째 줄을 <em> 로 감싼다. 문구가 태그를 품고 있어 utext 를 쓴다. -->
+        <h1 class="hero-title" th:utext="#{home.hero.title}">부산을<br><em>만나보세요</em></h1>
+        <p class="hero-sub" th:text="#{home.hero.sub}">
+            대표 관광지부터 숨은 맛집, 실용적인 교통 팁까지 한국 여행에 필요한 정보를 한곳에서 만나보세요.
         </p>
     </div>
     <div class="hero-dots" id="heroDots">
@@ -1425,74 +1501,74 @@
     </div>
 </section>
 
-<!-- Categories: shortcuts to each major service page -->
-<!-- Categories: shown after the content, as a jump-off point -->
+<!-- 카테고리: 주요 서비스 페이지로 이동하는 바로가기 -->
+<!-- 카테고리: 콘텐츠를 먼저 보여준 뒤 다른 화면으로 넘어가는 자리 -->
 <section class="categories" id="categorySection">
     <div class="category-grid">
-        <a class="category-item" th:href="@{/tour/food(lang='en')}" href="/tour/food?lang=en">
+        <a class="category-item" th:href="@{/tour/food(lang=${lang})}" href="/tour/food?lang=ko">
             <span class="category-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6a2 2 0 0 0 4 0V3"/><path d="M8 11v10"/><path d="M17 3c1.5 2 1.5 6 0 8v10"/></svg>
             </span>
-            <span>Food &amp; Cafe</span>
+            <span th:text="#{home.cat.food}">맛집</span>
         </a>
-        <a class="category-item" th:href="@{/tour/all(lang='en')}" href="/tour/all?lang=en">
+        <a class="category-item" th:href="@{/tour/all(lang=${lang})}" href="/tour/all?lang=ko">
             <span class="category-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="17" cy="6" r="3"/><path d="M3 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M3 19c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/></svg>
             </span>
-            <span>Tour</span>
+            <span th:text="#{home.cat.tour}">관광</span>
         </a>
-        <a class="category-item" th:href="@{/en/transport/search}" href="/en/transport/search">
+        <a class="category-item" th:href="@{${lang == 'en'} ? '/en/transport/search' : '/transport/search'}" href="/transport/search">
             <span class="category-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="12" rx="2"/><path d="M4 10h16"/><path d="M7 16v2M17 16v2"/><circle cx="8" cy="19" r="1.2"/><circle cx="16" cy="19" r="1.2"/></svg>
             </span>
-            <span>Transport</span>
+            <span th:text="#{home.cat.transport}">교통</span>
         </a>
-        <a class="category-item" th:href="@{/community/post-list(lang='en')}" href="/community/post-list?lang=en">
+        <a class="category-item" th:href="@{/community/post-list(lang=${lang})}" href="/community/post-list?lang=ko">
             <span class="category-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 16v4l5-4"/><path d="M8 9h8M8 12h5"/></svg>
             </span>
-            <span>Community</span>
+            <span th:text="#{home.cat.community}">커뮤니티</span>
         </a>
-        <a class="category-item" th:href="@{/en/trip}" href="/en/trip">
+        <a class="category-item" th:href="@{'/' + ${langPath} + '/trip'}" href="/ko/trip">
             <span class="category-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>
             </span>
-            <span>Custom Trip</span>
+            <span th:text="#{home.cat.trip}">나만의 여행</span>
         </a>
         <a class="category-item" th:href="@{/ko/reservation}" href="/ko/reservation">
             <span class="category-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M15 6v12"/></svg>
             </span>
-            <span>Reservation</span>
+            <span th:text="#{home.cat.reservation}">예약</span>
         </a>
         <a class="category-item" th:href="@{/chatbot}" href="/chatbot">
             <span class="category-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="4" r="1"/><path d="M9 13h.01M15 13h.01"/><path d="M9 17h6"/></svg>
             </span>
-            <span>Chatbot</span>
+            <span th:text="#{home.cat.chatbot}">챗봇</span>
         </a>
     </div>
 </section>
 
-<!-- Happening in Busan: ongoing & upcoming festivals (KTO searchFestival2) -->
+<!-- 지금 부산에서: 진행중·예정 축제 (한국관광공사 행사정보조회) -->
 <section class="section festival-section" th:if="${!#lists.isEmpty(festivals)}">
     <div class="section-header">
         <div>
-            <h2 class="section-title">Happening in Busan</h2>
-            <p class="section-sub">Festivals and events running now or starting soon</p>
+            <h2 class="section-title" th:text="#{home.festival.title}">지금 부산에서</h2>
+            <p class="section-sub" th:text="#{home.festival.sub}">진행 중이거나 곧 열리는 축제와 행사</p>
         </div>
-        <a class="see-all" th:href="@{/tour/all(lang='en')}" href="/tour/all?lang=en">See all</a>
+        <a class="see-all" th:href="@{/tour/all(lang=${lang})}" href="/tour/all?lang=ko" th:text="#{home.seeAll}">전체보기</a>
     </div>
 
     <div class="festival-rail">
-        <button class="rail-arrow left" type="button" aria-label="Previous">
+        <button class="rail-arrow left" type="button" th:aria-label="#{home.festival.prev}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
@@ -1500,12 +1576,12 @@
                 <div class="festival-track">
         <a class="festival-card"
            th:each="festival : ${festivals}"
-           th:href="@{/tour/all(lang='en',focus=${festival.contentId})}"
-           href="/tour/all?lang=en">
+           th:href="@{/tour/all(lang=${lang},focus=${festival.contentId})}"
+           href="/tour/all?lang=ko">
             <div class="festival-media" th:style="|background-image:url('${festival.thumbnailUrl ?: festival.imageUrl}')|">
                 <span class="festival-badge"
                       th:classappend="${festival.ongoing} ? ' is-on'"
-                      th:text="${festival.badgeEn}">Now on</span>
+                      th:text="${lang == 'en' and festival.badgeEn != null ? festival.badgeEn : festival.badge}">진행중</span>
                 <img class="festival-image"
                      th:classappend="${festival.imageModifiable} ? ' can-crop'"
                      th:src="${festival.imageUrl}"
@@ -1514,12 +1590,12 @@
             </div>
             <div class="festival-body">
                 <div class="festival-period" th:text="${festival.period}">9.4 ~ 9.5</div>
-                <div class="festival-title" th:text="${festival.title}">Busan Festival</div>
-                <div class="festival-address" th:text="${festival.address}">Busan</div>
+                <div class="festival-title" th:text="${festival.title}">부산 축제</div>
+                <div class="festival-address" th:text="${festival.address}">부산광역시</div>
             </div>
         </a>
     </div>
-            <button class="rail-arrow right" type="button" aria-label="Next">
+            <button class="rail-arrow right" type="button" th:aria-label="#{home.festival.next}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
         </button>
@@ -1527,22 +1603,22 @@
 </section>
 
 
-<!-- Places to visit: each card opens that place in the tour page -->
-<!-- Places to visit in Busan (KTO areaBasedList2) -->
+<!-- 인기 관광지: 한국어 홈에서 보여주는 상위 3개 관광지 카드 -->
+<!-- 가볼 만한 곳: 부산 관광지 (한국관광공사 지역기반 관광정보조회) -->
 <section class="section place-section" th:if="${!#lists.isEmpty(places)}">
     <div class="section-header">
         <div>
-            <h2 class="section-title">Places to visit</h2>
-            <p class="section-sub">Handpicked attractions around Busan</p>
+            <h2 class="section-title" th:text="#{home.place.title}">가볼 만한 곳</h2>
+            <p class="section-sub" th:text="#{home.place.sub}">부산의 관광지를 골라 담았습니다</p>
         </div>
-        <a class="see-all" th:href="@{/tour/all(lang='en')}" href="/tour/all?lang=en">See all</a>
+        <a class="see-all" th:href="@{/tour/all(lang=${lang})}" href="/tour/all?lang=ko" th:text="#{home.seeAll}">전체보기</a>
     </div>
 
     <div class="place-grid">
         <a class="place-card"
            th:each="place : ${places}"
-           th:href="@{/tour/all(lang='en',focus=${place.contentId})}"
-           href="/tour/all?lang=en">
+           th:href="@{/tour/all(lang=${lang},focus=${place.contentId})}"
+           href="/tour/all?lang=ko">
             <div class="place-media" th:style="|background-image:url('${place.thumbnailUrl ?: place.imageUrl}')|">
                 <img class="place-image"
                      th:classappend="${place.imageModifiable} ? ' can-crop'"
@@ -1551,30 +1627,30 @@
                      loading="lazy" alt="">
             </div>
             <div class="place-body">
-                <div class="place-title" th:text="${place.title}">Busan attraction</div>
-                <div class="place-address" th:text="${place.address}">Busan</div>
+                <div class="place-title" th:text="${place.title}">부산 관광지</div>
+                <div class="place-address" th:text="${place.address}">부산광역시</div>
             </div>
         </a>
     </div>
 </section>
 
-<!-- Where to eat in Busan: restaurants and cafes (KTO areaBasedList2) -->
+<!-- 부산 맛집: 음식점 + 카페 (한국관광공사 지역기반 관광정보조회) -->
 <section class="section place-section" th:if="${!#lists.isEmpty(foods)}">
     <div class="section-header">
         <div>
-            <h2 class="section-title">Where to eat</h2>
-            <p class="section-sub">Local restaurants and cafes in Busan</p>
+            <h2 class="section-title" th:text="#{home.food.title}">부산 맛집</h2>
+            <p class="section-sub" th:text="#{home.food.sub}">현지 음식점과 카페를 함께 담았습니다</p>
         </div>
-        <a class="see-all" th:href="@{/tour/food(lang='en')}" href="/tour/food?lang=en">See all</a>
+        <a class="see-all" th:href="@{/tour/food(lang=${lang})}" href="/tour/food?lang=ko" th:text="#{home.seeAll}">전체보기</a>
     </div>
 
     <div class="place-grid">
         <a class="place-card"
            th:each="food : ${foods}"
-           th:href="@{/tour/food(lang='en',focus=${food.contentId})}"
-           href="/tour/food?lang=en">
+           th:href="@{/tour/food(lang=${lang},focus=${food.contentId})}"
+           href="/tour/food?lang=ko">
             <div class="place-media" th:style="|background-image:url('${food.thumbnailUrl ?: food.imageUrl}')|">
-                <span class="place-badge" th:if="${food.category}" th:text="${food.category}">Restaurant</span>
+                <span class="place-badge" th:if="${food.category}" th:text="${food.category}">한식</span>
                 <img class="place-image"
                      th:classappend="${food.imageModifiable} ? ' can-crop'"
                      th:src="${food.imageUrl}"
@@ -1582,8 +1658,8 @@
                      loading="lazy" alt="">
             </div>
             <div class="place-body">
-                <div class="place-title" th:text="${food.title}">Busan restaurant</div>
-                <div class="place-address" th:text="${food.address}">Busan</div>
+                <div class="place-title" th:text="${food.title}">부산 맛집</div>
+                <div class="place-address" th:text="${food.address}">부산광역시</div>
             </div>
         </a>
     </div>
@@ -1596,30 +1672,30 @@
             <div>
                 <div class="section-label">
                     <div class="section-label-bar"></div>
-                    <span>From the Community</span>
+                    <span th:text="#{home.community.label}">커뮤니티 소식</span>
                 </div>
-                <h2 class="section-title">Travel Stories &amp; Tips</h2>
-                <p class="section-sub">Latest travel reviews and practical tips from visitors</p>
+                <h2 class="section-title" th:text="#{home.community.title}">여행 후기와 팁</h2>
+                <p class="section-sub" th:text="#{home.community.sub}">여행자들이 남긴 최신 후기와 실용적인 팁</p>
             </div>
-            <a class="see-all" th:href="@{/community/post-list(lang='en')}">See all</a>
+            <a class="see-all" th:href="@{/community/post-list(lang=${lang})}" th:text="#{home.seeAll}">전체보기</a>
         </div>
 
-        <!-- Nothing posted yet: invite a first post instead of leaving a blank -->
+        <!-- 아직 글이 없을 때: 빈칸으로 두지 않고 글쓰기로 유도한다 -->
         <div class="post-empty" th:if="${#lists.isEmpty(trendingPosts)}">
-            No travel stories yet.<br>
-            Be the first to share what you found in Busan.
-            <a class="post-empty-btn" th:href="@{/community/post-list(lang='en')}"
-               href="/community/post-list?lang=en">Go to community</a>
+            <!-- 문구가 <br> 을 품고 있어 utext 로 넣는다. 버튼은 그 아래 따로 둔다. -->
+            <span th:utext="#{home.community.empty}">아직 올라온 여행 이야기가 없어요.<br>부산에서 겪은 일을 첫 번째로 남겨보세요.</span>
+            <a class="post-empty-btn" th:href="@{/community/post-list(lang=${lang})}"
+               href="/community/post-list?lang=ko" th:text="#{home.community.emptyBtn}">커뮤니티 가기</a>
         </div>
 
         <div class="post-colhead" th:unless="${#lists.isEmpty(trendingPosts)}">
             <span class="post-colhead-gap"></span>
-            <span class="post-author" style="text-align:left">Author</span><span class="post-views">Views</span></div>
+            <span class="post-author" style="text-align:left" th:text="#{home.col.author}">작성자</span><span class="post-views" th:text="#{home.col.views}">조회</span></div>
 
         <div class="post-list" th:unless="${#lists.isEmpty(trendingPosts)}">
             <a class="post-item"
                th:each="post, iter : ${trendingPosts}"
-               th:href="@{/community/post/{id}(id=${post.postId},lang='en')}"
+               th:href="@{/community/post/{id}(id=${post.postId},lang=${lang})}"
                href="/community/post/1">
                 <!-- 1~3위만 왕관. 조회수 순으로 줄 세운 목록이라는 게 드러나야 한다. -->
                 <span class="post-rank">
@@ -1633,9 +1709,9 @@
                     <span th:unless="${iter.count <= 3}" th:text="${iter.count}">4</span>
                 </span>
                 <span class="post-tag" th:classappend="'cat-' + ${post.categoryId % 6}"
-                      th:text="${post.categoryNameEn != null ? post.categoryNameEn : post.categoryName}">카테고리</span>
+                      th:text="${lang == 'en' and post.categoryNameEn != null ? post.categoryNameEn : post.categoryName}">카테고리</span>
                 <div class="post-main">
-                    <span class="post-title" th:text="${post.titleEn != null ? post.titleEn : post.title}">샘플 게시글 제목</span>
+                    <span class="post-title" th:text="${lang == 'en' ? (post.titleEn != null ? post.titleEn : post.title) : (post.titleKo != null ? post.titleKo : post.title)}">샘플 게시글 제목</span>
                     <span th:if="${post.commentCount > 0}" class="post-cmt"
                           th:text="'[' + ${post.commentCount} + ']'">[0]</span>
                     
@@ -1647,56 +1723,65 @@
     </div>
 </section>
 
-<!-- Footer: service info, policy links, and social links -->
+<!-- 푸터: 서비스 정보, 정책 링크, 소셜 링크 -->
 <footer>
     <div class="footer-inner">
         <div class="footer-top">
             <div>
                 <div class="footer-logo">Korea<span>Point</span></div>
-                <div class="footer-tagline">Your gateway to discovering Busan</div>
+                <div class="footer-tagline" th:text="#{home.footer.tagline}">부산 여행을 만나는 가장 쉬운 방법</div>
             </div>
         </div>
 
         <div class="footer-info">
-            <p>KoreaPoint Travel Guide Platform · Email: help@koreapoint.com · Customer Center: 1644-0000</p>
-            <p class="footer-credit">Tourism data and photos provided by the Korea Tourism Organization (KOGL Type 1 &amp; Type 3)</p>
+            <p th:text="#{home.footer.platform}">KoreaPoint 여행 가이드 플랫폼</p>
+            <p th:text="#{home.footer.email}">이메일: help@koreapoint.com</p>
+            <p th:text="#{home.footer.center}">고객센터: 1644-0000</p>
+            <p class="footer-credit" th:text="#{home.footer.credit}">관광 정보·사진 제공: 한국관광공사 (공공누리 제1유형·제3유형)</p>
         </div>
 
-        <div class="footer-policy-links" aria-label="Footer policies">
-            <a href="#" onclick="return false;">About Us</a>
-            <a href="#" onclick="return false;">Partnerships</a>
-            <a href="#" onclick="return false;">Careers</a>
-            <a href="#" onclick="return false;">Privacy Policy</a>
-            <a href="#" onclick="return false;">Youth Protection Policy</a>
-            <a href="#" onclick="return false;">Terms of Service</a>
-            <a href="#" onclick="return false;">Location Terms</a>
-            <a href="#" onclick="return false;">Ticket Terms</a>
-            <a href="#" onclick="return false;">Business Info</a>
-            <a href="#" onclick="return false;">E-Finance Terms</a>
-            <a href="#" onclick="return false;">User Notice</a>
-            <a href="#" onclick="return false;">Dispute Resolution</a>
+        <div class="footer-policy-links" th:aria-label="#{home.footer.policyLinks}">
+            <a href="#" onclick="return false;" th:text="#{home.footer.about}">회사소개</a>
+            <a href="#" onclick="return false;" th:text="#{home.footer.ads}">광고제휴문의</a>
+            <a href="#" onclick="return false;" th:text="#{home.footer.careers}">인재채용</a>
+            <a href="#" onclick="return false;" th:text="#{home.footer.privacy}">개인정보처리방침</a>
+            <a href="#" onclick="return false;" th:text="#{home.footer.youth}">청소년보호정책</a>
+            <a href="#" onclick="return false;" th:text="#{home.footer.terms}">서비스 이용약관</a>
+            <a href="#" onclick="return false;" th:text="#{home.footer.location}">위치정보 이용약관</a>
+            <a href="#" onclick="return false;" th:text="#{home.footer.ticket}">NOL 티켓 이용약관</a>
+            <a href="#" onclick="return false;" th:text="#{home.footer.bizInfo}">사업자 정보확인</a>
+            <a href="#" onclick="return false;" th:text="#{home.footer.efinance}">전자금융거래 이용약관</a>
+            <a href="#" onclick="return false;" th:text="#{home.footer.efinanceNote}">전자금융거래 이용자 유의사항</a>
+            <a href="#" onclick="return false;" th:text="#{home.footer.dispute}">분쟁해결기준</a>
         </div>
 
-        <div class="footer-social" aria-label="Social channels">
-            <a class="footer-social-link" href="#" onclick="return false;" aria-label="Instagram">
+        <div class="footer-social" th:aria-label="#{home.footer.social}">
+            <a class="footer-social-link" href="#" onclick="return false;" th:aria-label="#{home.footer.instagram}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect>
                     <circle cx="12" cy="12" r="4.2"></circle>
                     <circle cx="17.3" cy="6.7" r="1"></circle>
                 </svg>
             </a>
-            <a class="footer-social-link" href="#" onclick="return false;" aria-label="YouTube">
+            <a class="footer-social-link" href="#" onclick="return false;" th:aria-label="#{home.footer.youtube}">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M21.2 7.2a2.8 2.8 0 0 0-2-2C17.4 4.7 12 4.7 12 4.7s-5.4 0-7.2.5a2.8 2.8 0 0 0-2 2C2.3 9 2.3 12 2.3 12s0 3 .5 4.8a2.8 2.8 0 0 0 2 2c1.8.5 7.2.5 7.2.5s5.4 0 7.2-.5a2.8 2.8 0 0 0 2-2c.5-1.8.5-4.8.5-4.8s0-3-.5-4.8Z"></path>
                     <path d="m10.2 15.5 4.8-3.5-4.8-3.5v7Z" fill="#ffffff"></path>
                 </svg>
             </a>
-            <a class="footer-social-link" href="#" onclick="return false;" aria-label="Facebook">
+            <a class="footer-social-link" href="#" onclick="return false;" th:aria-label="#{home.footer.facebook}">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M13.4 20.5v-7h2.4l.4-2.8h-2.8V8.9c0-.8.2-1.4 1.4-1.4h1.5V5a18 18 0 0 0-2.2-.1c-2.2 0-3.8 1.4-3.8 3.9v1.9H7.9v2.8h2.4v7h3.1Z"></path>
                 </svg>
             </a>
-            <a class="footer-social-link blog-link" href="#" onclick="return false;" aria-label="Blog">blog</a>
+            <a class="footer-social-link blog-link" href="#" onclick="return false;" th:aria-label="#{home.footer.blog}">blog</a>
+        </div>
+
+        <div class="footer-links" style="display:none;">
+            <a th:href="@{'/' + ${langPath}}" href="/ko" th:text="#{home.nav.home}">홈</a>
+            <a th:href="@{/tour/all}" href="/tour/all" th:text="#{home.cat.tour}">관광</a>
+            <a th:href="@{${lang == 'en'} ? '/en/transport/search' : '/transport/search'}" href="/transport/search" th:text="#{home.cat.transport}">교통</a>
+            <a th:href="@{/community/post-list}" href="/community/post-list" th:text="#{home.cat.community}">커뮤니티</a>
         </div>
 
         <div class="footer-copy">Copyright 2025 KoreaPoint. All rights reserved.</div>
@@ -1705,7 +1790,7 @@
 
 <script th:inline="javascript">
     const isLoggedIn = /*[[${isLoggedIn}]]*/ false;
-    const currentLang = /*[[${lang}]]*/ 'en';
+    const currentLang = /*[[${lang}]]*/ 'ko';
     const loginOpenButton = document.querySelector(".header-right a.h-btn-fill[href^='/login']");
 
     function openLoginWindow(event, redirectUrl) {
@@ -1753,7 +1838,6 @@
         });
     }
 
-    // Slider state shared by arrows, dots, and autoplay.
     /* 히어로 배너: 한 화면에 3장, 한 번 누르면 보이는 만큼 넘어간다.
        목록을 한 벌 복제해 뒤에 이어 붙이고, 복제 구간에 들어서면 스크롤 위치만
        조용히 되돌린다. 그래서 마지막에서 다음을 눌러도 되감기지 않고 계속
@@ -1863,6 +1947,3 @@
 <script th:src="@{/js/common/header-menu.js}"></script>
 </body>
 </html>
-
-
-
