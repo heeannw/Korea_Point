@@ -279,9 +279,6 @@ public class TourismController {
                               @RequestParam(value = "lang", defaultValue = "KR") String lang) {
         String encoded = java.net.URLEncoder.encode(title, java.nio.charset.StandardCharsets.UTF_8);
         String base = "en".equalsIgnoreCase(lang) ? "/en/transport/search" : "/ko/transport/search";
-        return "redirect:" + base
-                + "?startLat=" + userlat
-                + "&startLng=" + userlon
-                + "&end=" + encoded;
+        return "redirect:" + base + "?end=" + encoded;
     }
 }

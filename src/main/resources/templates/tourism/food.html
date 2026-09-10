@@ -1012,17 +1012,7 @@
     if (!p) return;
     const end = encodeURIComponent(p.title ?? '');
     const base = isEn ? '/en/transport/search' : '/ko/transport/search';
-    const go = (lat, lon) => { location.href = (lat && lon)
-      ? `${base}?startLat=${lat}&startLng=${lon}&end=${end}`
-      : `${base}?end=${end}`; };
-    // 현위치를 출발지로. 권한 거부/실패 시 세션에 저장된 내 위치, 그것도 없으면 목적지만.
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => go(pos.coords.latitude, pos.coords.longitude),
-        () => go(userLat, userLon));
-    } else {
-      go(userLat, userLon);
-    }
+    location.href = `${base}?end=${end}`;
   };
 
   document.getElementById('btnNearTour').onclick = function () {

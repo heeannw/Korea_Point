@@ -1352,22 +1352,7 @@
     document.getElementById('itineraryBtn2').onclick = function() {
       if (!(p.lat && p.lng)) { alert(I18N.noCoords); return; }
       const endTitle = encodeURIComponent(p.title ?? '');
-      navigator.geolocation.getCurrentPosition(
-              function(pos) {
-                const uLat = pos.coords.latitude;
-                const uLon = pos.coords.longitude;
-                location.href = `/${lang.toLowerCase()}/transport/search?startLat=${uLat}&startLng=${uLon}&end=${endTitle}`;
-              },
-              function() {
-                const sLat = /*[[${userlat}]]*/ null;
-                const sLon = /*[[${userlon}]]*/ null;
-                if (sLat && sLon) {
-                  location.href = `/${lang.toLowerCase()}/transport/search?startLat=${sLat}&startLng=${sLon}&end=${endTitle}`;
-                } else {
-                  location.href = `/${lang.toLowerCase()}/transport/search?end=${endTitle}`;
-                }
-              }
-      );
+      location.href = `/${lang.toLowerCase()}/transport/search?end=${endTitle}`;
     };
 
     renderCourseSection(p);

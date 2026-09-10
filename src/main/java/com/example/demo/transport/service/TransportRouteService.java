@@ -137,64 +137,6 @@ public class TransportRouteService {
     }
 
     // -----------------------------------------------
-    // 현재위치(좌표) → 경로 조회
-    // -----------------------------------------------
-    public List<TransportRouteDto> getTransportRoutesByCoords(
-            double lat, double lng, String end) throws Exception {
-
-        String cleanEnd = end.split("\\s+")[0];
-        double[] endCoords = getTransportCoords(cleanEnd);
-        if (endCoords == null) return List.of();
-
-        List<TransportRouteDto> result = searchAndClassify(
-                lng, lat,
-                endCoords[0], endCoords[1],
-                "현재위치", end
-        );
-
-        //GPS 좌표 저장
-        final double endLng2 = endCoords[0];
-        final double endLat2 = endCoords[1];
-        result.forEach(dto -> {
-            dto.setStartLat(lat);
-            dto.setStartLng(lng);
-            dto.setEndLat(endLat2);
-            dto.setEndLng(endLng2);
-        });
-
-        return result;
-    }
-
-    // -----------------------------------------------
-    // BUG3 FIX: 출발지·도착지 모두 좌표 직접 사용 (지오코딩 없음)
-    //   음식점·카페처럼 정확한 좌표를 이미 알고 있을 때 사용.
-    //   기존 getTransportRoutesByCoords()는 end 이름으로 카카오 지오코딩을 해서
-    //   동명 장소가 있으면 엉뚱한 곳으로 경로가 안내되는 문제가 있었음.
-    //   이 메서드는 그 지오코딩 단계를 완전히 건너뜀.
-    // -----------------------------------------------
-    public List<TransportRouteDto> getTransportRoutesByCoordsToCoords(
-            double startLat, double startLng,
-            double endLat,   double endLng,
-            String endName) throws Exception {
-
-        // searchAndClassify 는 (X=경도, Y=위도) 순서로 받음 (카카오/ODsay 공통 규칙)
-        List<TransportRouteDto> result = searchAndClassify(
-                startLng, startLat,   // 출발 X(경도), Y(위도)
-                endLng,   endLat,     // 도착 X(경도), Y(위도)
-                "현재위치", endName
-        );
-
-        result.forEach(dto -> {
-            dto.setStartLat(startLat);
-            dto.setStartLng(startLng);
-            dto.setEndLat(endLat);
-            dto.setEndLng(endLng);
-        });
-
-        return result;
-    }
-
-    // -----------------------------------------------
     // TMAP 대중교통 검색 + ML 분류 (공통 로직)
     // -----------------------------------------------
     private List<TransportRouteDto> searchAndClassify(
