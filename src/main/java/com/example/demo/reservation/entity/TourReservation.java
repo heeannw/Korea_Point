@@ -64,7 +64,36 @@ public class TourReservation {
 
     @Column(nullable = false, length = 20)
     @Builder.Default
-    private String status = "결제 대기";
+    private String status = "승인 대기";
+
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(length = 20)
+    private ReservationReviewStatus reviewStatus;
+    private Long reviewedBy;
+    private LocalDateTime reviewedAt;
+    @Column(length = 1000)
+    private String reviewNote;
+    private LocalDateTime paymentDeadline;
+
+    public String getApplicationStatus() {
+        if ("예약 취소".equals(status)) return "CANCELED";
+        if (payment != null && payment.getStatus() == PaymentStatus.PAID) return "CONFIRMED";
+        // Preserve legacy confirmed reservations; legacy unpaid requests need individual approval.
+        if (reviewStatus == null && "예약 완료".equals(status)) return "CONFIRMED";
+        if (reviewStatus == ReservationReviewStatus.APPROVED) {
+            return paymentDeadline == null || !LocalDateTime.now().isBefore(paymentDeadline) ? "EXPIRED" : "APPROVED";
+        }
+        return reviewStatus == null ? "PENDING" : reviewStatus.name();
+    }
+
+    public boolean isPayable() {
+        return "APPROVED".equals(getApplicationStatus()) && payment != null && payment.getAmount() > 0
+                && (payment.getStatus() == PaymentStatus.READY || payment.getStatus() == PaymentStatus.FAILED);
+    }
+
+    public boolean isApplicationEditable() {
+        return "PENDING".equals(getApplicationStatus()) || "APPROVED".equals(getApplicationStatus());
+    }
 
     @OneToOne(mappedBy = "reservation")
     @JsonIgnore

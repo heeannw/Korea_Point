@@ -24,11 +24,12 @@ public class ReservationService {
 
     private final TourReservationRepository tourReservationRepository;
     private final ReservationPaymentRepository reservationPaymentRepository;
-
-    public static final int DEPOSIT_PER_PERSON = 5_000;
+    private final ReservationPlacePolicyService placePolicyService;
 
     @Transactional
     public TourReservation create(Long userId, ReservationFormDto form) {
+        placePolicyService.requireApplicationAllowed(form.getContentId());
+        requireFutureVisit(form.getReservationDate(), form.getReservationTime());
         TourReservation reservation = TourReservation.builder()
                 .userId(userId)
                 .reservationNo(createReservationNo(userId, form))
@@ -40,15 +41,11 @@ public class ReservationService {
                 .reservationTime(form.getReservationTime())
                 .peopleCount(form.getPeopleCount())
                 .memo(form.getMemo())
+                .reviewStatus(com.example.demo.reservation.entity.ReservationReviewStatus.PENDING)
+                .status("승인 대기")
                 .build();
 
-        TourReservation saved = tourReservationRepository.save(reservation);
-        ReservationPayment payment = ReservationPayment.builder()
-                .reservation(saved)
-                .amount(form.getPeopleCount() * DEPOSIT_PER_PERSON)
-                .build();
-        saved.setPayment(reservationPaymentRepository.save(payment));
-        return saved;
+        return tourReservationRepository.save(reservation);
     }
 
     public List<TourReservation> findMyReservations(Long userId) {
@@ -62,23 +59,28 @@ public class ReservationService {
 
     @Transactional
     public TourReservation update(Long id, Long userId, ReservationFormDto form) {
-        TourReservation reservation = findMine(id, userId);
-        if ("예약 취소".equals(reservation.getStatus())) {
-            throw new IllegalStateException("취소된 예약은 수정할 수 없습니다.");
-        }
+        TourReservation reservation = findMineForUpdate(id, userId);
+        if (!reservation.isApplicationEditable()) throw new PlaceBookingUnavailableException();
+        placePolicyService.requireApplicationAllowed(reservation.getContentId());
+        requireFutureVisit(form.getReservationDate(), form.getReservationTime());
         reservation.setReservationDate(form.getReservationDate());
         reservation.setReservationTime(form.getReservationTime());
         reservation.setPeopleCount(form.getPeopleCount());
         reservation.setMemo(form.getMemo());
-        if (reservation.getPayment() != null && reservation.getPayment().getStatus() == PaymentStatus.READY) {
-            reservation.getPayment().setAmount(form.getPeopleCount() * DEPOSIT_PER_PERSON);
-        }
+        reservation.setReviewStatus(com.example.demo.reservation.entity.ReservationReviewStatus.PENDING);
+        reservation.setStatus("승인 대기");
+        reservation.setReviewedBy(null);
+        reservation.setReviewedAt(null);
+        reservation.setReviewNote(null);
+        reservation.setPaymentDeadline(null);
+        if (reservation.getPayment() != null) reservation.getPayment().setStatus(PaymentStatus.CANCELED);
         return reservation;
     }
 
     @Transactional
     public TourReservation cancel(Long id, Long userId) {
-        TourReservation reservation = findMine(id, userId);
+        TourReservation reservation = findMineForUpdate(id, userId);
+        if ("예약 취소".equals(reservation.getStatus())) return reservation;
         reservation.setStatus("예약 취소");
         ReservationPayment payment = reservation.getPayment();
         if (payment != null && payment.getStatus() == PaymentStatus.PAID) {
@@ -92,6 +94,24 @@ public class ReservationService {
             payment.setStatus(PaymentStatus.CANCELED);
         }
         return reservation;
+    }
+
+    @Transactional
+    public TourReservation findMineForUpdate(Long id, Long userId) {
+        return tourReservationRepository.findLockedById(id)
+                .filter(reservation -> java.util.Objects.equals(userId, reservation.getUserId()))
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND));
+    }
+
+    private void requireFutureVisit(LocalDate date, String time) {
+        try {
+            if (date != null && time != null && LocalDateTime.of(date, LocalTime.parse(time)).isAfter(LocalDateTime.now())) {
+                return;
+            }
+        } catch (java.time.format.DateTimeParseException ignored) {
+            // Invalid input is a visit-time error, not a place policy restriction.
+        }
+        throw new InvalidReservationTimeException();
     }
 
     private boolean isBeforeFreeCancellationDeadline(TourReservation reservation) {

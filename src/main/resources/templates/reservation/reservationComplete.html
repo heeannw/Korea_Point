@@ -13,7 +13,7 @@
 <div th:replace="~{fragments/app-header :: header(${lang == 'zh-CN' ? 'zh' : lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <main class="page">
-    <ol class="booking-steps" aria-label="Reservation progress"><li><span>1</span><span th:text="#{reservation.ui.step.details}">예약 정보</span></li><li><span>2</span><span th:text="#{reservation.ui.step.payment}">예약금 결제</span></li><li class="active" aria-current="step"><span>3</span><span th:text="#{reservation.ui.step.complete}">예약 완료</span></li></ol>
+    <ol class="booking-steps" aria-label="Reservation progress"><li><span>1</span><span th:text="#{reservation.request.apply}"></span></li><li><span>2</span><span th:text="#{reservation.request.review}"></span></li><li><span>3</span><span th:text="#{reservation.ui.step.payment}"></span></li><li class="active" aria-current="step"><span>4</span><span th:text="#{reservation.ui.step.complete}"></span></li></ol>
     <div class="booking-success-mark" aria-hidden="true">✓</div>
     <section class="page-head">
         <div>

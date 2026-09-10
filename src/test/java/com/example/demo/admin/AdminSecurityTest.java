@@ -33,12 +33,68 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = {AdminPageController.class, AdminApiController.class},
+@WebMvcTest(controllers = {AdminPageController.class, AdminApiController.class, com.example.demo.admin.controller.AdminReservationPlaceController.class, com.example.demo.admin.controller.AdminReservationReviewController.class},
         excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(
                 type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE,
                 classes = com.example.demo.community.config.CommunityUploadConfig.class))
 @Import(SecurityConfig.class)
 class AdminSecurityTest {
+
+    @MockBean
+    private com.example.demo.reservation.repository.TourReservationRepository reservations;
+    @MockBean
+    private com.example.demo.reservation.service.ReservationReviewService reviews;
+
+    @Test
+    void reviewingRequestsRequiresAdminCsrfAndValidInput() throws Exception {
+        String url = "/admin/api/reservation-requests/1/review";
+        String body = "{\"decision\":\"APPROVE\",\"amount\":17000,\"note\":\"Verified\"}";
+        for (String role : List.of("USER", "OWNER")) {
+            mockMvc.perform(post(url).with(authentication(role)).with(csrf()).contentType("application/json").content(body))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(get("/admin/api/reservation-requests").with(authentication(role)))
+                    .andExpect(status().isForbidden());
+        }
+        mockMvc.perform(post(url).with(authentication("ADMIN")).contentType("application/json").content(body))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post(url).with(authentication("ADMIN")).with(csrf()).contentType("application/json").content("{\"decision\":\"REJECT\",\"note\":\" \"}"))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verifyNoInteractions(reviews);
+        when(reviews.review(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(com.example.demo.reservation.entity.TourReservation.builder().id(1L).build());
+        mockMvc.perform(post(url).with(authentication("ADMIN")).with(csrf()).contentType("application/json").content(body))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/admin/reservation-requests").with(authentication("ADMIN"))).andExpect(status().isOk());
+        when(reviews.review(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new com.example.demo.reservation.service.PlaceBookingUnavailableException());
+        mockMvc.perform(post(url).with(authentication("ADMIN")).with(csrf()).contentType("application/json").content(body))
+                .andExpect(status().isConflict());
+    }
+
+    @MockBean
+    private com.example.demo.reservation.service.TourApiReservationService tourApiReservationService;
+    @MockBean
+    private com.example.demo.reservation.repository.ReservationPlacePolicyRepository placePolicyRepository;
+    @MockBean
+    private com.example.demo.reservation.service.ReservationPlaceAdminService placeAdminService;
+
+    @Test
+    void placePolicyWritesRequireAdminAndCsrf() throws Exception {
+        String body = "{\"feeStatus\":\"PAID\",\"reservationEnabled\":true,\"feeNote\":\"Verified\",\"version\":null}";
+        for (String role : List.of("USER", "OWNER")) {
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/admin/api/reservation-places/123")
+                    .with(authentication(role)).with(csrf()).contentType("application/json").content(body))
+                    .andExpect(status().isForbidden());
+        }
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/admin/api/reservation-places/123")
+                .with(authentication("ADMIN")).contentType("application/json").content(body))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/admin/api/reservation-places/123")
+                .with(authentication("ADMIN")).with(csrf()).contentType("application/json").content(body))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/admin/reservation-places").with(authentication("ADMIN"))).andExpect(status().isOk());
+        org.mockito.Mockito.verify(placeAdminService).update(org.mockito.ArgumentMatchers.eq("123"),org.mockito.ArgumentMatchers.any(),org.mockito.ArgumentMatchers.any());
+    }
 
     @Autowired
     private MockMvc mockMvc;

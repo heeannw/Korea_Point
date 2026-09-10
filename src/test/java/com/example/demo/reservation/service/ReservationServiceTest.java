@@ -18,20 +18,30 @@ import static org.mockito.Mockito.when;
 
 class ReservationServiceTest {
 
+    @Test
+    void pastVisitIsAnInputErrorAndDoesNotSaveAnApplication() {
+        var form = form(2);
+        form.setReservationDate(LocalDate.now());
+        form.setReservationTime("00:00");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.create(7L, form))
+                .isInstanceOf(InvalidReservationTimeException.class);
+        org.mockito.Mockito.verifyNoInteractions(reservationRepository, paymentRepository);
+    }
+
     private final TourReservationRepository reservationRepository = mock(TourReservationRepository.class);
     private final ReservationPaymentRepository paymentRepository = mock(ReservationPaymentRepository.class);
-    private final ReservationService service = new ReservationService(reservationRepository, paymentRepository);
+    private final ReservationService service = new ReservationService(reservationRepository, paymentRepository, mock(ReservationPlacePolicyService.class));
 
     @Test
-    void createsPerPersonDepositTogetherWithPendingReservation() {
+    void createsPendingApplicationWithoutPayment() {
         when(reservationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(paymentRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         TourReservation reservation = service.create(7L, form(3));
 
-        assertThat(reservation.getStatus()).isEqualTo("결제 대기");
-        assertThat(reservation.getPayment()).isNotNull();
-        assertThat(reservation.getPayment().getAmount()).isEqualTo(15_000);
+        assertThat(reservation.getApplicationStatus()).isEqualTo("PENDING");
+        assertThat(reservation.getPayment()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(paymentRepository);
     }
 
     @Test
@@ -49,7 +59,7 @@ class ReservationServiceTest {
                 .status(PaymentStatus.PAID)
                 .build();
         reservation.setPayment(payment);
-        when(reservationRepository.findByIdAndUserId(3L, 7L)).thenReturn(Optional.of(reservation));
+        when(reservationRepository.findLockedById(3L)).thenReturn(Optional.of(reservation));
 
         service.cancel(3L, 7L);
 
@@ -67,5 +77,33 @@ class ReservationServiceTest {
         form.setReservationTime("18:00");
         form.setPeopleCount(peopleCount);
         return form;
+    }
+
+    @Test
+    void editingApprovedApplicationRequiresAnotherReviewAndCancelsOldPayment() {
+        TourReservation reservation = TourReservation.builder().id(3L).userId(7L).contentId("123")
+                .reviewStatus(com.example.demo.reservation.entity.ReservationReviewStatus.APPROVED)
+                .reviewedBy(9L).reviewNote("Verified").paymentDeadline(java.time.LocalDateTime.now().plusHours(12)).build();
+        ReservationPayment payment = ReservationPayment.builder().amount(15000).status(PaymentStatus.READY).build();
+        reservation.setPayment(payment);
+        when(reservationRepository.findLockedById(3L)).thenReturn(Optional.of(reservation));
+        service.update(3L, 7L, form(4));
+        assertThat(reservation.getApplicationStatus()).isEqualTo("PENDING");
+        assertThat(reservation.getPeopleCount()).isEqualTo(4);
+        assertThat(reservation.getReviewedBy()).isNull();
+        assertThat(reservation.getPaymentDeadline()).isNull();
+        assertThat(reservation.isPayable()).isFalse();
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.CANCELED);
+    }
+
+    @Test
+    void anotherUserCannotModifyOrCancelApplication() {
+        var reservation = TourReservation.builder().id(3L).userId(8L).build();
+        when(reservationRepository.findLockedById(3L)).thenReturn(Optional.of(reservation));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.update(3L, 7L, form(2)))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.cancel(3L, 7L))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+        assertThat(reservation.getStatus()).isEqualTo("승인 대기");
     }
 }

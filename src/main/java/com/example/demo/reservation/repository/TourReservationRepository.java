@@ -13,4 +13,18 @@ public interface TourReservationRepository extends JpaRepository<TourReservation
 
     @EntityGraph(attributePaths = "payment")
     Optional<TourReservation> findByIdAndUserId(Long id, Long userId);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select r from TourReservation r where r.id = :id")
+    Optional<TourReservation> findLockedById(@org.springframework.data.repository.query.Param("id") Long id);
+
+    @EntityGraph(attributePaths = "payment")
+    @org.springframework.data.jpa.repository.Query("select r from TourReservation r left join r.payment p where " +
+            "(:pendingOnly = false or ((r.reviewStatus is null or r.reviewStatus = :pending) " +
+            "and r.status not in ('예약 취소', '예약 완료') and (p is null or p.status <> :paid)))")
+    org.springframework.data.domain.Page<TourReservation> findReviewQueue(
+            @org.springframework.data.repository.query.Param("pendingOnly") boolean pendingOnly,
+            @org.springframework.data.repository.query.Param("pending") com.example.demo.reservation.entity.ReservationReviewStatus pending,
+            @org.springframework.data.repository.query.Param("paid") com.example.demo.reservation.entity.PaymentStatus paid,
+            org.springframework.data.domain.Pageable pageable);
 }

@@ -14,7 +14,7 @@
 <div th:replace="~{fragments/app-header :: header(${lang == 'zh-CN' ? 'zh' : lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <main class="page">
-    <ol class="booking-steps" aria-label="Reservation progress"><li class="active" aria-current="step"><span>1</span><span th:text="#{reservation.ui.step.details}">예약 정보</span></li><li><span>2</span><span th:text="#{reservation.ui.step.payment}">예약금 결제</span></li><li><span>3</span><span th:text="#{reservation.ui.step.complete}">예약 완료</span></li></ol>
+    <ol class="booking-steps" aria-label="Reservation progress"><li class="active" aria-current="step"><span>1</span><span th:text="#{reservation.request.apply}"></span></li><li><span>2</span><span th:text="#{reservation.request.review}"></span></li><li><span>3</span><span th:text="#{reservation.ui.step.payment}"></span></li><li><span>4</span><span th:text="#{reservation.ui.step.complete}"></span></li></ol>
     <section class="page-head">
         <div>
             <p class="eyebrow" th:text="#{reservation.form.eyebrow}">예약</p>
@@ -74,14 +74,13 @@
 
         <div class="deposit-preview">
             <div>
-                <strong th:text="#{reservation.form.deposit}">결제할 예약금</strong>
-                <p th:text="#{reservation.form.depositGuide}">전체 이용금액이 아닌 노쇼 방지용 예약금입니다. 현장 이용금액은 별도입니다.</p>
+                <strong th:text="#{reservation.request.afterApproval}">승인 후 결제</strong>
+                <p th:text="#{reservation.request.applyGuide}">관리자가 이용 가능 여부와 총 예약금을 확인한 후 안내합니다. 신청만으로 예약이 확정되지 않습니다.</p>
             </div>
-            <strong id="depositAmount">5,000원</strong>
         </div>
 
         <div class="card-actions">
-            <button class="btn" type="submit" th:text="#{reservation.form.submit}">예약금 결제로 이동</button>
+            <button class="btn" type="submit" th:text="#{reservation.request.apply}">예약 신청</button>
             <a class="btn secondary" th:href="@{/ko/reservation(lang=${lang})}" th:text="#{reservation.form.cancel}">취소</a>
         </div>
     </form>
@@ -110,7 +109,6 @@
 <script th:src="@{/js/common/header-menu.js}"></script>
 <script th:inline="javascript">
     const PAGE_LOCALE = /*[[${lang}]]*/ "ko";
-    const depositPattern = /*[[#{reservation.form.won('{0}')}]]*/ "{0}원";
     const minReservationDate = /*[[${today}]]*/ "2026-01-01";
     const calendarLocales = {ko: "ko", ja: "ja", "zh-CN": "zh", fr: "fr", en: "default"};
     const calendarFormats = {ko: "Y년 m월 d일", ja: "Y年m月d日", "zh-CN": "Y年m月d日", fr: "d/m/Y", en: "Y-m-d"};
@@ -125,15 +123,7 @@
             disableMobile: true
         });
     }
-    const peopleInput = document.querySelector('[name="peopleCount"]');
-    const depositAmount = document.getElementById('depositAmount');
-    function updateDeposit() {
-        const people = Math.max(1, Number(peopleInput.value) || 1);
-        depositAmount.textContent = depositPattern.replace('{0}', new Intl.NumberFormat(PAGE_LOCALE).format(people * 5000));
-    }
-    peopleInput.addEventListener('input', updateDeposit);
-    updateDeposit();
-    function switchLang(lang) {
+function switchLang(lang) {
         const url = new URL(window.location.href);
         url.searchParams.set('lang', lang);
         window.location.href = url.toString();
