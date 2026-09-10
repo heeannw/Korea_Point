@@ -1087,13 +1087,6 @@
             font-variant-numeric: tabular-nums;
         }
 
-        .post-date {
-            width: 94px;
-            flex: 0 0 auto;
-            text-align: right;
-            font-size: 14.5px;
-            color: var(--muted);
-        }
 
         /* ===== 7. 푸터 ===== */
         footer {
@@ -1601,8 +1594,7 @@
 
         <div class="post-colhead" th:unless="${#lists.isEmpty(trendingPosts)}">
             <span class="post-colhead-gap"></span>
-            <span class="post-author" style="text-align:left">작성자</span><span class="post-views">조회</span><span class="post-date">날짜</span>
-        </div>
+            <span class="post-author" style="text-align:left">작성자</span><span class="post-views">조회</span></div>
 
         <div class="post-list" th:unless="${#lists.isEmpty(trendingPosts)}">
             <a class="post-item"
@@ -1630,8 +1622,6 @@
                 </div>
                 <span class="post-author" th:text="${post.authorName}">Author</span>
                 <span class="post-views" th:text="${#numbers.formatInteger(post.viewCount, 0, 'COMMA')}">0</span>
-                <span class="post-date"
-                      th:text="${#temporals.format(post.createdAt, 'MM.dd HH:mm')}">09.09 12:00</span>
             </a>
         </div>
     </div>
