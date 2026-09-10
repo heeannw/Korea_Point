@@ -18,9 +18,17 @@
         body { font-family: "Noto Sans KR", "Sora", sans-serif; }
         /* 카테고리 배지. 폭을 고정해야 제목들이 세로로 줄을 맞춘다.
            확인해 본 커뮤니티 11곳 모두 카테고리를 색으로 구분했다(회색 평문은 없었다). */
+        /* 순위. 숫자 폭이 제각각이라 자리를 고정해야 제목이 줄을 맞춘다. */
+        .rank { display:inline-flex; align-items:center; justify-content:center;
+                width:30px; height:25px; font-size:17px; font-weight:700; letter-spacing:-0.02em; }
+        .rank-plain { color:#a8adb7; }
+        /* 1·2·3위. 금·은·동은 순위를 나타내는 오래된 약속이라 색만으로도 읽힌다. */
+        .crown-1 { color:#f5a524; }
+        .crown-2 { color:#9aa4b2; }
+        .crown-3 { color:#c98a5b; }
         .cat-badge { display:inline-flex; align-items:center; justify-content:center;
-                     width:48px; height:19px; border-radius:4px;
-                     font-size:11px; font-weight:600; letter-spacing:-0.01em;
+                     width:58px; height:23px; border-radius:5px;
+                     font-size:13px; font-weight:600; letter-spacing:-0.01em;
                      overflow:hidden; white-space:nowrap; }
         /* 홈은 UI 를 무채색으로 두고 색은 사진이 내게 한다. 배지는 구분만 되면 되므로
            바탕을 옅은 무채색 하나로 통일하고 글자색만 아주 낮은 채도로 나눈다. */
@@ -54,7 +62,6 @@
         .footer-social-link.blog-link:hover { background: transparent; }
         .footer-copy { font-size: 11px; letter-spacing: 0.04em; color: #a0aabc; }
     </style>
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
 <body class="min-h-screen bg-white flex flex-col">
 
@@ -65,224 +72,263 @@
 <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
 <div th:replace="~{fragments/app-header :: header(${#locale.language}, ${isLoggedIn}, ${currentUserName})}"></div>
 <main class="flex-1">
-    <div class="max-w-[1400px] mx-auto px-6 py-6 flex items-start gap-6">
+    <div class="max-w-[1680px] mx-auto px-7 py-7 flex items-start gap-7">
         <div class="flex-1 min-w-0">
 
-        <div th:if="${communityError}" class="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-md text-[13px] text-red-600">
+        <div th:if="${communityError}" class="mb-5 px-5 py-3.5 bg-red-50 border border-red-200 rounded-md text-[15.5px] text-red-600">
             <span th:text="${communityError}">커뮤니티 기능이 정지된 계정입니다.</span>
         </div>
 
         <!-- 탭 · 검색 · 글쓰기 한 줄 -->
-        <div class="flex items-center gap-3 border-b border-[#e8eaed]">
+        <div class="flex items-center gap-3.5 border-b border-[#e8eaed]">
             <nav class="flex items-center overflow-x-auto -mb-px">
-                <a th:href="@{/community/post-list(sort=${sort}, mine=${mine})}"
+                <a th:href="@{/community/post-list(mine=${mine},
+                                                  view=${view == 'best'} ? 'best' : null,
+                                                  period=${view == 'best'} ? ${period} : null)}"
                    th:classappend="${selectedCategory == null} ? 'text-[#3b9eff] border-[#3b9eff]' : 'text-[#8b919c] border-transparent hover:text-[#5b6270]'"
-                   class="shrink-0 flex items-center h-10 px-3 text-[13.5px] border-b-2 no-underline transition-colors"
+                   class="shrink-0 flex items-center h-12 px-3.5 text-[16px] border-b-2 no-underline transition-colors"
                    style="font-weight:600;">
                     <span th:text="#{community.all}">All</span>
                 </a>
                 <a th:each="cat : ${data.categories}"
-                   th:href="@{/community/post-list(categoryId=${cat.categoryId}, sort=${sort}, mine=${mine})}"
+                   th:href="@{/community/post-list(categoryId=${cat.categoryId}, mine=${mine},
+                                                  view=${view == 'best'} ? 'best' : null,
+                                                  period=${view == 'best'} ? ${period} : null)}"
                    th:classappend="${selectedCategory != null and selectedCategory == cat.categoryId} ? 'text-[#3b9eff] border-[#3b9eff]' : 'text-[#8b919c] border-transparent hover:text-[#5b6270]'"
-                   class="shrink-0 flex items-center h-10 px-3 text-[13.5px] border-b-2 no-underline transition-colors"
+                   class="shrink-0 flex items-center h-12 px-3.5 text-[16px] border-b-2 no-underline transition-colors"
                    style="font-weight:600;">
                     <span th:text="${#locale.language == 'en' and cat.nameEn != null ? cat.nameEn : cat.name}">Category</span>
                 </a>
             </nav>
 
-            <div class="ml-auto flex items-center gap-2 shrink-0 pb-1.5">
+            <div class="ml-auto flex items-center gap-2.5 shrink-0 pb-2">
                 <form th:action="@{/community/post-list}" method="get" class="relative">
                     <input type="hidden" name="categoryId" th:if="${selectedCategory != null}" th:value="${selectedCategory}"/>
-                    <input type="hidden" name="sort" th:value="${sort}"/>
                     <input type="hidden" name="mine" th:if="${mine}" value="true"/>
-                    <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8b919c]"></i>
+                    <i data-lucide="search" class="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8b919c]"></i>
                     <input type="text" name="keyword" th:value="${keyword}"
                            th:placeholder="#{community.search.placeholder}"
-                           class="w-[170px] h-[30px] pl-8 pr-3 bg-gray-50 border border-transparent rounded-md text-[12.5px] text-[#16181d] placeholder:text-[#8b919c] focus:outline-none focus:bg-white focus:border-[#3b9eff] transition-all"/>
+                           class="w-[204px] h-[36px] pl-10 pr-3.5 bg-gray-50 border border-transparent rounded-md text-[15px] text-[#16181d] placeholder:text-[#8b919c] focus:outline-none focus:bg-white focus:border-[#3b9eff] transition-all"/>
                 </form>
                 <a th:if="${isLoggedIn and !communitySuspended}" th:href="@{/community/post/write}"
-                   class="flex items-center gap-1.5 h-[30px] px-3 bg-[#3b9eff] text-white rounded-md text-[12.5px] no-underline hover:bg-[#1a7de0] transition-colors"
+                   class="flex items-center gap-2 h-[36px] px-3.5 bg-[#3b9eff] text-white rounded-md text-[15px] no-underline hover:bg-[#1a7de0] transition-colors"
                    style="font-weight:500;">
-                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i> <span th:text="#{community.btn.write}">Write Post</span>
+                    <i data-lucide="pencil" class="w-4 h-4"></i> <span th:text="#{community.btn.write}">Write Post</span>
                 </a>
                 <span th:if="${isLoggedIn and communitySuspended}"
-                      class="h-[30px] px-3 flex items-center bg-red-50 text-red-600 rounded-md text-[12.5px] border border-red-200"
+                      class="h-[36px] px-3.5 flex items-center bg-red-50 text-red-600 rounded-md text-[15px] border border-red-200"
                       style="font-weight:500;">
                     커뮤니티 작성 제한 계정
                 </span>
             </div>
         </div>
 
-        <!-- 인기 글. 테두리 박스는 무겁다. 한 줄짜리 글머리로만 둔다 -->
-        <div th:if="${!#lists.isEmpty(data.trendingPosts)}"
-             class="flex items-center gap-2.5 mt-4 mb-1 text-[12.5px] overflow-hidden">
-            <span class="shrink-0 flex items-center gap-1 text-[#1a7de0]" style="font-weight:700;">
-                <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
-                <span th:text="#{community.sidebar.trending}">Trending</span>
+        <!-- 보기 토글. 1단계는 상자로 묶고 2단계(기간)는 맨 텍스트로 둔다.
+             형태가 같으면 부모-자식이 평평한 선택지 여섯 개로 보인다(디시 방식). -->
+        <div class="flex items-center gap-3.5 mt-4">
+            <span class="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-[#f2f3f5]">
+                <a th:href="@{/community/post-list(categoryId=${selectedCategory}, keyword=${keyword}, mine=${mine})}"
+                   th:classappend="${view != 'best'}
+                                   ? 'bg-white text-[#16181d] shadow-sm' : 'text-[#8b919c] hover:text-[#5b6270]'"
+                   class="px-3 py-1 rounded-md text-[14.5px] no-underline transition-colors"
+                   style="font-weight:700;"
+                   th:text="#{community.view.all}">All posts</a>
+                <a th:href="@{/community/post-list(view='best', categoryId=${selectedCategory})}"
+                   th:classappend="${view == 'best'}
+                                   ? 'bg-white text-[#16181d] shadow-sm' : 'text-[#8b919c] hover:text-[#5b6270]'"
+                   class="flex items-center gap-1 px-3 py-1 rounded-md text-[14.5px] no-underline transition-colors"
+                   style="font-weight:700;">
+                    <i data-lucide="crown" class="w-4 h-4 text-[#f5a524]"></i>
+                    <span th:text="#{community.view.best}">Best</span>
+                </a>
             </span>
-            <span th:each="post, st : ${data.trendingPosts}" th:if="${st.index < 3}"
-                  class="flex items-center gap-2.5 min-w-0">
-                <span th:if="${st.index > 0}" class="text-gray-300 shrink-0" aria-hidden="true">·</span>
-                <a th:href="@{/community/post/{id}(id=${post.postId})}"
-                   class="text-[#5b6270] truncate max-w-[290px] no-underline hover:text-[#16181d] hover:underline decoration-1 underline-offset-2 transition-colors"
-                   th:text="${#locale.language == 'en' and post.titleEn != null ? post.titleEn : (#locale.language != 'en' and post.titleKo != null ? post.titleKo : post.title)}">Title</a>
+
+            <!-- 기간은 베스트에 딸린 2단계다. 한 단계 작고 흐리게 둬야 종속으로 읽힌다.
+                 활성은 색이 아니라 굵기로 표시한다 — 파랑은 '누를 수 있음'이라
+                 이미 고른 것을 파랗게 칠하면 안 누른 것처럼 보인다. -->
+            <!-- 전체글은 최신순 하나뿐이라 고를 것이 없다. 다만 무슨 순서인지는
+                 밝혀 둔다 — 토글의 '전체글'은 무엇을 볼지를 말할 뿐 순서를 말하지 않는다. -->
+            <span th:unless="${view == 'best'}" class="text-[13.5px] text-[#a8adb7]"
+                  style="font-weight:500;" th:text="#{community.sort.latest}">Latest</span>
+
+            <span th:if="${view == 'best'}" class="flex items-center gap-2.5">
+                <a th:each="opt : ${ {'daily','week','month','all'} }"
+                   th:href="@{/community/post-list(view='best', period=${opt}, categoryId=${selectedCategory})}"
+                   th:classappend="${period == opt} ? 'text-[#16181d]' : 'text-[#a8adb7] hover:text-[#5b6270]'"
+                   class="text-[13.5px] no-underline transition-colors"
+                   th:style="${period == opt} ? 'font-weight:700;' : 'font-weight:500;'"
+                   th:text="${opt == 'daily'} ? #{community.period.daily}
+                            : (${opt == 'week'} ? #{community.period.week}
+                            : (${opt == 'month'} ? #{community.period.month} : #{community.period.hall}))">일간</a>
             </span>
         </div>
 
-        <!-- 정렬 · 건수. 클리앙도 목록 바로 위에 정렬을 둔다 -->
-        <div class="flex items-center justify-between h-10 border-b border-[#e8eaed]">
-            <div class="flex items-center gap-2.5">
-                <a th:href="@{/community/post-list(categoryId=${selectedCategory}, keyword=${keyword}, sort='latest', mine=${mine})}"
-                   th:classappend="${sort != 'popular'} ? 'text-[#3b9eff]' : 'text-[#8b919c] hover:text-[#5b6270]'"
-                   class="text-[12.5px] no-underline transition-colors" style="font-weight:600;"
-                   th:text="#{community.sort.latest}">Latest</a>
-                <span class="w-px h-2.5 bg-gray-300"></span>
-                <a th:href="@{/community/post-list(categoryId=${selectedCategory}, keyword=${keyword}, sort='popular', mine=${mine})}"
-                   th:classappend="${sort == 'popular'} ? 'text-[#3b9eff]' : 'text-[#8b919c] hover:text-[#5b6270]'"
-                   class="text-[12.5px] no-underline transition-colors" style="font-weight:600;"
-                   th:text="#{community.sort.popular}">Popular</a>
-                <span class="text-gray-300" aria-hidden="true">·</span>
-                <span class="text-[12px] text-[#8b919c]"
-                      th:text="#{community.count(${data.posts.totalElements})}">0 posts</span>
+        <!-- 목록 머리. 왼쪽은 지금 뜨는 글, 오른쪽은 컬럼 라벨.
+             라벨 둘만 두면 줄의 대부분이 빈 띠였다 — 우리 행은 표가 아니라
+             제목과 작성자가 한 묶음이고 오른쪽 두 칸만 컬럼이기 때문이다.
+             그 자리를 인기 글로 채워 줄 하나를 줄인다. -->
+        <div class="flex items-center gap-3.5 h-10 mt-3 border-b border-[#e8eaed]">
+            <!-- 인기 글. 한 번에 하나만 보여 주고 몇 초마다 위로 굴린다.
+                 셋을 늘어놓으면 제목이 잘리고 시선도 흩어진다. -->
+            <div th:if="${!#lists.isEmpty(data.trendingPosts)}"
+                 class="flex items-center gap-2.5 flex-1 min-w-0 text-[15px]">
+                <span class="shrink-0 flex items-center gap-1 text-[#1a7de0]" style="font-weight:700;">
+                    <i data-lucide="trending-up" class="w-4 h-4"></i>
+                    <span th:text="${period == 'week'} ? #{community.trending.week} : #{community.sidebar.trending}">Trending</span>
+                </span>
+                <!-- 높이를 한 줄로 고정하고 넘치는 건 감춘다. 안쪽 목록을 밀어 올리는 방식이다 -->
+                <div class="js-roll relative flex-1 min-w-0 h-[26px] overflow-hidden">
+                    <ul class="js-roll-track list-none m-0 p-0">
+                        <li th:each="post, st : ${data.trendingPosts}"
+                            class="h-[26px] flex items-center gap-2">
+                            <!-- 순위. 폭을 고정해야 굴러갈 때 제목이 좌우로 흔들리지 않는다 -->
+                            <span class="shrink-0 w-4 flex items-center justify-center">
+                                <i th:if="${st.count <= 3}" data-lucide="crown"
+                                   class="w-4 h-4 text-[#f5a524]"
+                                   th:attr="aria-label=${st.count} + '위'"></i>
+                                <span th:unless="${st.count <= 3}"
+                                      class="text-[13px] text-[#a8adb7]" style="font-weight:700;"
+                                      th:text="${st.count}">4</span>
+                            </span>
+                            <a th:href="@{/community/post/{id}(id=${post.postId})}"
+                               class="text-[#5b6270] truncate no-underline hover:text-[#16181d] hover:underline decoration-1 underline-offset-2 transition-colors"
+                               th:text="${#locale.language == 'en' and post.titleEn != null ? post.titleEn : (#locale.language != 'en' and post.titleKo != null ? post.titleKo : post.title)}">Title</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
-            <!-- 오른쪽 숫자 컬럼의 머리글. 행의 gap-3 과 폭을 그대로 맞춰야 줄이 선다 -->
-            <div class="flex items-center gap-3">
-                <span class="w-14 text-right text-[11.5px] text-[#a8adb7]" th:text="#{community.col.views}">Views</span>
-                <span class="w-[78px] text-right text-[11.5px] text-[#a8adb7]" th:text="#{community.col.date}">Date</span>
+
+            <div class="flex items-center gap-3.5 ml-auto text-[13px]">
+                <span class="w-[110px] text-[#c2c7d0]" th:text="#{community.col.author}">Author</span>
+                <!-- 누르는 곳이 아니라 컬럼 이름이다. 삼각형을 달았더니 방향을 뒤집는
+                     버튼으로 읽혔는데, 실제로는 그런 일을 하지 않았다. -->
+                <span class="w-16 text-right text-[#c2c7d0]" th:text="#{community.col.views}">Views</span>
+                <span class="w-[93.5px] text-right text-[#c2c7d0]" th:text="#{community.col.date}">Date</span>
             </div>
         </div>
 
-        <div th:if="${data.posts.isEmpty()}"
-             class="py-24 text-center text-[#8b919c] text-[14px]" th:text="#{community.empty}">
-            No posts found.
+        <!-- 비었을 때. 베스트에서 기간을 좁혀 비었다면 막다른 길이 아니라
+             넓히는 길을 준다 — 그냥 '글 없음'만 두면 고장 난 것처럼 읽힌다. -->
+        <div th:if="${data.posts.isEmpty()}" class="py-28 text-center">
+            <p class="m-0 text-[#8b919c] text-[17px]" th:text="#{community.empty}">No posts found.</p>
+            <a th:if="${view == 'best' and period != 'all'}"
+               th:href="@{/community/post-list(view='best', period='all', categoryId=${selectedCategory})}"
+               class="inline-block mt-3 text-[15px] text-[#1a7de0] no-underline hover:underline decoration-1 underline-offset-2"
+               style="font-weight:600;"
+               th:text="#{community.empty.widen}">See all time</a>
         </div>
 
         <!-- 목록. 한 행에 필요한 것만 넣어 한 화면에 열 개가 들어오게 한다 -->
         <div>
-            <a th:each="post : ${data.posts}"
+            <a th:each="post, postStat : ${data.posts}"
                th:href="@{/community/post/{id}(id=${post.postId})}"
-               class="group flex items-center gap-3 py-2 border-b border-[#f1f2f4] no-underline">
+               class="group flex items-center gap-3.5 py-3 border-b border-[#f1f2f4] no-underline">
 
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-baseline gap-2 min-w-0">
-                        <!-- 카테고리를 제목 앞 컬러 배지로. 폭을 고정해야 제목이 세로로 줄을 맞춘다 -->
-                        <span class="cat-badge shrink-0"
-                              th:classappend="'cat-' + ${post.categoryId % 6}"
-                              th:text="${#locale.language == 'en' and post.categoryNameEn != null ? post.categoryNameEn : post.categoryName}">Category</span>
-                        <h3 class="text-[15px] leading-[1.4] text-[#16181d] truncate group-hover:underline decoration-1 underline-offset-2"
+                <!-- 왼쪽은 폭이 남는 대로 늘어나는 제목 칸, 오른쪽은 폭 고정 컬럼들 -->
+                <div class="flex-1 min-w-0 flex items-center gap-2.5">
+                    <!-- 베스트일 때만 순위. 1~3위는 왕관, 나머지는 숫자 -->
+                    <span th:if="${view == 'best'}" class="rank shrink-0">
+                        <i th:if="${data.posts.number * data.posts.size + postStat.count} <= 3" data-lucide="crown" class="w-[18px] h-[18px]"
+                           th:classappend="${data.posts.number * data.posts.size + postStat.count} == 1 ? 'crown-1'
+                                           : (${data.posts.number * data.posts.size + postStat.count} == 2 ? 'crown-2' : 'crown-3')"
+                           th:attr="aria-label=${data.posts.number * data.posts.size + postStat.count} + '위'"></i>
+                        <span th:unless="${data.posts.number * data.posts.size + postStat.count} <= 3" class="rank-plain"
+                              th:text="${data.posts.number * data.posts.size + postStat.count}">4</span>
+                    </span>
+                    <!-- 카테고리 배지. 폭을 고정해야 제목이 세로로 줄을 맞춘다 -->
+                    <span class="cat-badge shrink-0"
+                          th:classappend="'cat-' + ${post.categoryId % 6}"
+                          th:text="${#locale.language == 'en' and post.categoryNameEn != null ? post.categoryNameEn : post.categoryName}">Category</span>
+
+                    <div class="flex-1 min-w-0 flex items-baseline gap-2.5">
+                        <h3 class="text-[18px] leading-[1.4] text-[#16181d] truncate group-hover:underline decoration-1 underline-offset-2"
                             style="font-weight:500;"
                             th:text="${#locale.language == 'en' and post.titleEn != null ? post.titleEn : (#locale.language != 'en' and post.titleKo != null ? post.titleKo : post.title)}">Title</h3>
                         <!-- 댓글 수를 제목 옆에. 한국 커뮤니티에서 이건 사실상 관용 표현이다 -->
                         <span th:if="${post.commentCount > 0}"
-                              class="shrink-0 text-[12px] text-[#1a7de0]" style="font-weight:700;"
+                              class="shrink-0 text-[14.5px] text-[#e8590c]" style="font-weight:700;"
                               th:text="'[' + ${post.commentCount} + ']'">[0]</span>
-                    </div>
-
-                    <div class="flex items-center gap-1.5 mt-0.5 pl-[56px] text-[12px] text-[#8b919c]">
-                        <span class="w-[18px] h-[18px] rounded-full bg-gray-100 overflow-hidden flex items-center justify-center shrink-0">
-                            <img th:if="${post.authorProfileImage != null}" th:src="${post.authorProfileImage}"
-                                 class="w-full h-full object-cover" alt=""/>
-                            <span th:unless="${post.authorProfileImage != null}"
-                                  class="text-[10px] text-[#8b919c]" style="font-weight:600;"
-                                  th:text="${#strings.isEmpty(post.authorName)} ? '?' : ${#strings.substring(post.authorName, 0, 1)}">A</span>
-                        </span>
-                        <span class="truncate max-w-[160px] text-[#5b6270]" style="font-weight:500;"
-                              th:text="${post.authorName}">Author</span>
-                        <span th:if="${post.placeTitle != null}" aria-hidden="true">·</span>
+                        <!-- 조회수가 많이 붙은 글. 커뮤니티에서 불꽃은 'HOT' 이라는 약속된 표시다 -->
+                        <i th:if="${post.hot}" data-lucide="flame"
+                           class="w-4 h-4 shrink-0 text-[#f4511e]" aria-label="인기 글"></i>
+                        <!-- 하루 안에 올라온 글. 빨강도 관습이라 다른 색을 쓰면 눈에 안 들어온다 -->
+                        <span th:if="${post.fresh}"
+                              class="shrink-0 px-1.5 py-px rounded text-[11px] leading-[16px] bg-[#fdecec] text-[#d92d20]"
+                              style="font-weight:700;">NEW</span>
+                        <!-- 장소는 제목에 딸린 꼬리표라 제목 줄 끝에 붙인다.
+                             따로 한 줄을 주면 장소 없는 글만 행 높이가 달라진다. -->
                         <span th:if="${post.placeTitle != null}"
-                              class="flex items-center gap-0.5 min-w-0 text-[#1a7de0]">
-                            <i data-lucide="map-pin" class="w-3 h-3 shrink-0"></i>
+                              class="shrink-0 flex items-center gap-0.5 max-w-[150px] text-[13.5px] text-[#1a7de0]">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 shrink-0"></i>
                             <span class="truncate" style="font-weight:500;" th:text="${post.placeTitle}">장소</span>
                         </span>
                     </div>
                 </div>
 
-                <!-- 숫자는 폭 고정 · 우측 정렬. 행마다 자리가 같아야 표로 읽힌다 -->
-                <span class="w-14 shrink-0 text-right text-[12.5px] text-[#8b919c] tabular-nums"
+                <!-- 글쓴이·조회·날짜는 폭 고정. 행마다 자리가 같아야 표로 읽힌다.
+                     아바타는 뺐다 — 행마다 색 원이 하나씩 붙으면 이름 줄이 흐려진다. -->
+                <span class="w-[110px] shrink-0 truncate text-[14.5px] text-[#5b6270]"
+                      style="font-weight:500;" th:text="${post.authorName}">Author</span>
+                <span class="w-16 shrink-0 text-right text-[15px] text-[#8b919c] tabular-nums"
                       th:text="${post.viewCount}">0</span>
-                <span class="w-[78px] shrink-0 text-right text-[12px] text-[#8b919c] js-relative-date"
+                <span class="w-[93.5px] shrink-0 text-right text-[14.5px] text-[#8b919c] js-relative-date"
                       th:attr="data-at=${post.createdAt}"
                       th:text="${#temporals.format(post.createdAt, 'yyyy.MM.dd')}">Date</span>
             </a>
         </div>
 
-        <div th:if="${data.posts.totalPages > 1}" class="flex justify-center gap-1 mt-8">
-            <a th:with="prevUrl=@{/community/post-list(page=${data.posts.number - 1}, categoryId=${selectedCategory}, keyword=${keyword}, sort=${sort}, mine=${mine})}"
+        <div th:if="${data.posts.totalPages > 1}" class="flex justify-center gap-1 mt-10">
+            <a th:with="prevUrl=@{/community/post-list(page=${data.posts.number - 1}, categoryId=${selectedCategory}, keyword=${keyword}, period=${period}, view=${view}, mine=${mine})}"
                th:href="${data.posts.first} ? '#' : ${prevUrl}"
                th:classappend="${data.posts.first} ? 'pointer-events-none text-gray-300' : 'text-[#5b6270] hover:bg-gray-100'"
-               class="flex items-center justify-center w-8 h-8 rounded-md text-[13px] transition-colors no-underline">&laquo;</a>
+               class="flex items-center justify-center w-10 h-10 rounded-md text-[15.5px] transition-colors no-underline">&laquo;</a>
             <a th:each="i : ${#numbers.sequence(startPage, endPage)}"
-               th:href="@{/community/post-list(page=${i}, categoryId=${selectedCategory}, keyword=${keyword}, sort=${sort}, mine=${mine})}"
+               th:href="@{/community/post-list(page=${i}, categoryId=${selectedCategory}, keyword=${keyword}, period=${period}, view=${view}, mine=${mine})}"
                th:text="${i + 1}"
                th:classappend="${i == data.posts.number} ? 'bg-[#3b9eff] text-white' : 'text-[#5b6270] hover:bg-gray-100'"
-               class="flex items-center justify-center w-8 h-8 rounded-md text-[13px] transition-colors no-underline" style="font-weight:500;">1</a>
-            <a th:with="nextUrl=@{/community/post-list(page=${data.posts.number + 1}, categoryId=${selectedCategory}, keyword=${keyword}, sort=${sort}, mine=${mine})}"
+               class="flex items-center justify-center w-10 h-10 rounded-md text-[15.5px] transition-colors no-underline" style="font-weight:500;">1</a>
+            <a th:with="nextUrl=@{/community/post-list(page=${data.posts.number + 1}, categoryId=${selectedCategory}, keyword=${keyword}, period=${period}, view=${view}, mine=${mine})}"
                th:href="${data.posts.last} ? '#' : ${nextUrl}"
                th:classappend="${data.posts.last} ? 'pointer-events-none text-gray-300' : 'text-[#5b6270] hover:bg-gray-100'"
-               class="flex items-center justify-center w-8 h-8 rounded-md text-[13px] transition-colors no-underline">&raquo;</a>
+               class="flex items-center justify-center w-10 h-10 rounded-md text-[15.5px] transition-colors no-underline">&raquo;</a>
         </div>
         </div>
 
         <!-- 오른쪽 레일. 1120px 미만에서만 숨긴다.
              기준을 1400 으로 잡았더니 브라우저 줌만 켜도 레일이 통째로 사라졌다.
              1120 이면 목록에 800px 넘게 남아 찌그러지지 않는다. -->
-        <aside class="hidden min-[1120px]:block w-[240px] shrink-0 sticky top-6 space-y-5">
+        <aside class="hidden min-[1344px]:block w-[288px] shrink-0 sticky top-6 space-y-6">
 
-            <!-- 부산 축제. TourAPI 캐시에 있는 것만 그린다. 비면 이 칸이 통째로 사라진다 -->
-            <section th:if="${!#lists.isEmpty(festivals)}">
-                <h2 class="flex items-center gap-1.5 mb-2.5 text-[12.5px] text-[#16181d]" style="font-weight:700;">
-                    <i data-lucide="party-popper" class="w-3.5 h-3.5 text-[#e8590c]"></i>
-                    <span th:text="#{community.rail.festival}">Festivals in Busan</span>
-                </h2>
-                <div class="space-y-2">
-                    <a th:each="f : ${festivals}"
-                       th:href="@{'/tour/all'}"
-                       class="group block rounded-lg border border-[#e8eaed] overflow-hidden no-underline hover:border-gray-300 transition-colors">
-                        <span th:if="${f.image != null and !#strings.isEmpty(f.image)}"
-                              class="block h-[74px] bg-gray-100 overflow-hidden">
-                            <img th:src="${f.image}" alt="" loading="lazy"
-                                 class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"/>
-                        </span>
-                        <span class="block px-3 py-2.5">
-                            <span class="block text-[12.5px] leading-snug text-[#16181d] line-clamp-2 group-hover:text-[#1a7de0] transition-colors"
-                                  style="font-weight:600;" th:text="${f.title}">축제명</span>
-                            <span th:if="${f.eventStartDate != null}"
-                                  class="block mt-1 text-[11px] text-[#8b919c]"
-                                  th:text="${#strings.substring(f.eventStartDate,0,4)} + '.' + ${#strings.substring(f.eventStartDate,4,6)} + '.' + ${#strings.substring(f.eventStartDate,6,8)} + ' ~ ' + ${#strings.substring(f.eventEndDate,4,6)} + '.' + ${#strings.substring(f.eventEndDate,6,8)}">기간</span>
-                        </span>
-                    </a>
-                </div>
-            </section>
 
             <!-- 가게 홍보. 사장님들이 홍보 카테고리에 올린 글이다 -->
             <section th:if="${!#lists.isEmpty(promoPosts)}">
-                <h2 class="flex items-center gap-1.5 mb-2.5 text-[12.5px] text-[#16181d]" style="font-weight:700;">
-                    <i data-lucide="store" class="w-3.5 h-3.5 text-[#1a7de0]"></i>
+                <h2 class="flex items-center gap-2 mb-3 text-[15px] text-[#16181d]" style="font-weight:700;">
+                    <i data-lucide="store" class="w-4 h-4 text-[#1a7de0]"></i>
                     <span th:text="#{community.rail.promo}">From local businesses</span>
                 </h2>
-                <div class="space-y-2">
+                <div class="space-y-2.5">
                     <a th:each="promo : ${promoPosts}"
                        th:href="@{/community/post/{id}(id=${promo.postId})}"
                        class="group block rounded-lg border border-[#e8eaed] overflow-hidden no-underline hover:border-gray-300 transition-colors">
                         <span th:if="${promo.thumbnailUrl != null}"
-                              class="block h-[74px] bg-gray-100 overflow-hidden">
+                              class="block h-[89px] bg-gray-100 overflow-hidden">
                             <img th:src="${promo.thumbnailUrl}" alt="" loading="lazy"
                                  class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"/>
                         </span>
-                        <span class="block px-3 py-2.5">
-                            <span class="block text-[12.5px] leading-snug text-[#16181d] line-clamp-2 group-hover:text-[#1a7de0] transition-colors"
+                        <span class="block px-3.5 py-3">
+                            <span class="block text-[15px] leading-snug text-[#16181d] line-clamp-2 group-hover:text-[#1a7de0] transition-colors"
                                   style="font-weight:600;"
                                   th:text="${#locale.language == 'en' and promo.titleEn != null ? promo.titleEn : (#locale.language != 'en' and promo.titleKo != null ? promo.titleKo : promo.title)}">홍보 제목</span>
                             <span th:if="${promo.placeTitle != null}"
-                                  class="flex items-center gap-0.5 mt-1 text-[11px] text-[#8b919c]">
-                                <i data-lucide="map-pin" class="w-2.5 h-2.5 shrink-0"></i>
+                                  class="flex items-center gap-0.5 mt-1 text-[13px] text-[#8b919c]">
+                                <i data-lucide="map-pin" class="w-3 h-3 shrink-0"></i>
                                 <span class="truncate" th:text="${promo.placeTitle}">장소</span>
                             </span>
                         </span>
                     </a>
                 </div>
                 <!-- 광고 자리임을 숨기지 않는다. 커뮤니티 글과 섞여 보이면 안 된다 -->
-                <p class="mt-2 text-[10.5px] text-[#a8adb7]" th:text="#{community.rail.promo.notice}">Posted by business members</p>
+                <p class="mt-2.5 text-[12.5px] text-[#a8adb7]" th:text="#{community.rail.promo.notice}">Posted by business members</p>
             </section>
         </aside>
     </div>
@@ -297,7 +343,10 @@
             </div>
         </div>
         <div class="footer-info">
-            <p>KoreaPoint Travel Guide Platform · Email: help@koreapoint.com · Customer Center: 1644-0000</p>
+            <p>KoreaPoint Travel Guide Platform · Representative: Lee Yerin</p>
+            <p>200 Salgoji-gil, Seongdong-gu, Seoul · Email: koreapoint.official@gmail.com</p>
+            <p>Business Registration Number: N/A · Mail-Order Business Number: N/A
+               &mdash; a non-commercial demo for the 2026 Korea Tourism Data Competition</p>
         </div>
         <div class="footer-policy-links" aria-label="Footer policies">
             <a href="#" onclick="return false;">About Us</a>
@@ -340,6 +389,58 @@
 
 <script>lucide.createIcons();</script>
 <script th:src="@{/js/common/header-menu.js}"></script>
+<script>
+  // 인기 게시글을 한 줄씩 굴린다.
+  // 마지막에서 첫 항목으로 돌아갈 때 위로 되감기면 어색하므로,
+  // 첫 항목을 하나 복제해 끝에 붙이고 그 자리에서 소리 없이 처음으로 되돌린다.
+  (function () {
+    var STEP = 26;        // 한 줄 높이. 마크업의 h-[26px] 와 같아야 한다
+    var INTERVAL = 2500;   // 5개 기준 한 바퀴 12.5초
+
+    document.querySelectorAll('.js-roll').forEach(function (box) {
+      var track = box.querySelector('.js-roll-track');
+      if (!track) return;
+      var items = track.children.length;
+      if (items < 2) return;                       // 한 개뿐이면 굴릴 것이 없다
+
+      // 움직임을 줄여 달라고 설정한 이용자에게는 첫 항목만 보여 준다
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      track.appendChild(track.children[0].cloneNode(true));
+
+      var index = 0;
+      var timer = null;
+
+      function show(withMotion) {
+        track.style.transition = withMotion ? 'transform .45s cubic-bezier(.22,.61,.36,1)' : 'none';
+        track.style.transform = 'translateY(-' + (index * STEP) + 'px)';
+      }
+
+      function tick() {
+        index += 1;
+        show(true);
+        if (index === items) {
+          // 복제본까지 밀어 올린 뒤라 화면은 첫 항목과 같다. 애니메이션 없이 되돌린다.
+          setTimeout(function () { index = 0; show(false); }, 460);
+        }
+      }
+
+      function start() { if (!timer) timer = setInterval(tick, INTERVAL); }
+      function stop() { clearInterval(timer); timer = null; }
+
+      // 읽는 중에 넘어가면 불편하다. 올려 두면 멈춘다.
+      box.addEventListener('mouseenter', stop);
+      box.addEventListener('mouseleave', start);
+      // 다른 탭에 가 있는 동안 헛돌지 않게 한다
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) stop(); else start();
+      });
+
+      start();
+    });
+  })();
+</script>
+
 
 <span id="dateLabels" hidden
       th:attr="data-today=#{community.date.today}, data-days=#{community.date.daysAgo}"></span>

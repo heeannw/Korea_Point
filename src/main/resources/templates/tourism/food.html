@@ -74,9 +74,7 @@
     .card-save:hover{color:#ef4444;transform:scale(1.1)}
     .card-save.saved{color:#ef4444}
     .place-card.active{border-color:var(--blue);background:var(--light)}
-    .thumb{width:72px;height:72px;flex:none;border-radius:10px;background:#e2e8f0 center/cover no-repeat;position:relative}
-    .rank{position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:6px;color:#fff;
-      font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+    .thumb{width:72px;height:72px;flex:none;border-radius:10px;background:#e2e8f0 center/cover no-repeat}
     .card-info{flex:1;min-width:0}
     .card-cat{font-size:11px;font-weight:700;margin-bottom:2px}
     .card-name{font-size:14px;font-weight:600;margin-bottom:4px;line-height:1.3}
@@ -635,9 +633,7 @@
         <button class="card-save${savedIds.has(String(p.id)) ? ' saved' : ''}" type="button"
                 data-id="${escapeHtml(String(p.id ?? ''))}" data-type="${escapeHtml(p.type ?? '39')}"
                 onclick="cardSaveClick(event, this)">${savedIds.has(String(p.id)) ? '♥' : '♡'}</button>
-        <div class="thumb" style="background-image:url('${escapeHtml(p.image ?? '')}')">
-          <div class="rank" style="background:${cardColorOf(p)}">${activeSort === 'popular' ? p.popularRank : i + 1}</div>
-        </div>
+        <div class="thumb" style="background-image:url('${escapeHtml(p.image ?? '')}')"></div>
         <div class="card-info">
           <div class="card-cat" style="color:${cardColorOf(p)}">${cardEmojiOf(p)} ${escapeHtml(catLabel(p))}</div>
           <div class="card-name">${escapeHtml(p.title ?? '-')}</div>
@@ -1016,17 +1012,7 @@
     if (!p) return;
     const end = encodeURIComponent(p.title ?? '');
     const base = isEn ? '/en/transport/search' : '/ko/transport/search';
-    const go = (lat, lon) => { location.href = (lat && lon)
-      ? `${base}?startLat=${lat}&startLng=${lon}&end=${end}`
-      : `${base}?end=${end}`; };
-    // 현위치를 출발지로. 권한 거부/실패 시 세션에 저장된 내 위치, 그것도 없으면 목적지만.
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => go(pos.coords.latitude, pos.coords.longitude),
-        () => go(userLat, userLon));
-    } else {
-      go(userLat, userLon);
-    }
+    location.href = `${base}?end=${end}`;
   };
 
   document.getElementById('btnNearTour').onclick = function () {

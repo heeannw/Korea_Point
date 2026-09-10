@@ -39,13 +39,10 @@ public class TransportRouteController {
         return transportRouteService.reverseGeocode(x, y);
     }
 
-    // ✅ BUG3 FIX: /transport/search 리다이렉트에 endLat/endLng 파라미터 추가
     @GetMapping("/transport/search")
     public String transportSearchRedirect(
             @RequestParam(required = false) String start,
             @RequestParam(required = false) String end,
-            @RequestParam(required = false) String startLat,
-            @RequestParam(required = false) String startLng,
             @RequestParam(required = false) String endLat,
             @RequestParam(required = false) String endLng) {
         StringBuilder sb = new StringBuilder("redirect:/ko/transport/search");
@@ -53,9 +50,6 @@ public class TransportRouteController {
         try {
             if (start    != null && !start.isEmpty())    params.add("start="    + URLEncoder.encode(start,    StandardCharsets.UTF_8));
             if (end      != null && !end.isEmpty())      params.add("end="      + URLEncoder.encode(end,      StandardCharsets.UTF_8));
-            if (startLat != null && !startLat.isEmpty()) params.add("startLat=" + URLEncoder.encode(startLat, StandardCharsets.UTF_8));
-            if (startLng != null && !startLng.isEmpty()) params.add("startLng=" + URLEncoder.encode(startLng, StandardCharsets.UTF_8));
-            // ✅ 추가: 도착지 좌표도 리다이렉트 시 유지
             if (endLat   != null && !endLat.isEmpty())   params.add("endLat="   + URLEncoder.encode(endLat,   StandardCharsets.UTF_8));
             if (endLng   != null && !endLng.isEmpty())   params.add("endLng="   + URLEncoder.encode(endLng,   StandardCharsets.UTF_8));
         } catch (Exception e) {
@@ -69,24 +63,20 @@ public class TransportRouteController {
     public String transportSearchKo(
             @RequestParam(required = false) String start,
             @RequestParam(required = false) String end,
-            @RequestParam(required = false) String startLat,
-            @RequestParam(required = false) String startLng,
-            @RequestParam(required = false) String endLat,   // 추가
-            @RequestParam(required = false) String endLng,   // 추가
+            @RequestParam(required = false) String endLat,
+            @RequestParam(required = false) String endLng,
             Model model) {
-        return handleSearch(start, end, startLat, startLng, endLat, endLng, model, "transport/transport");
+        return handleSearch(start, end, model, "transport/transport");
     }
 
     @GetMapping("/en/transport/search")
     public String transportSearchEn(
             @RequestParam(required = false) String start,
             @RequestParam(required = false) String end,
-            @RequestParam(required = false) String startLat,
-            @RequestParam(required = false) String startLng,
-            @RequestParam(required = false) String endLat,   // 추가
-            @RequestParam(required = false) String endLng,   // 추가
+            @RequestParam(required = false) String endLat,
+            @RequestParam(required = false) String endLng,
             Model model) {
-        return handleSearch(start, end, startLat, startLng, endLat, endLng, model, "transport/transportEn");
+        return handleSearch(start, end, model, "transport/transportEn");
     }
 
     // 검색 기록 저장
@@ -105,11 +95,7 @@ public class TransportRouteController {
         return "ok";
     }
 
-    // BUG3 FIX: endLat/endLng 파라미터 추가 → 도착지 좌표를 직접 사용해 지오코딩 오류 방지
-    private String handleSearch(String start, String end,
-                                String startLat, String startLng,
-                                String endLat, String endLng,
-                                Model model, String viewName) {
+    private String handleSearch(String start, String end, Model model, String viewName) {
 
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
@@ -126,15 +112,8 @@ public class TransportRouteController {
         try {
             List<TransportRouteDto> routes;
 
-            boolean hasStartCoords = startLat != null && !startLat.isEmpty()
-                    && startLng != null && !startLng.isEmpty();
-
-            // 도착지 좌표 여부 확인
-            boolean hasEndCoords = endLat != null && !endLat.isEmpty()
-                    && endLng != null && !endLng.isEmpty();
-
             // 시작점 없으면 검색 안 함 (최근 검색만 표시)
-            if ((start == null || start.isEmpty()) && !hasStartCoords) {
+            if (start == null || start.isEmpty()) {
                 if (end != null && !end.isEmpty()) model.addAttribute("end", end);
                 return viewName;
             }
@@ -144,26 +123,8 @@ public class TransportRouteController {
                 return viewName;
             }
 
-            if (hasStartCoords) {
-                double sLat = Double.parseDouble(startLat);
-                double sLng = Double.parseDouble(startLng);
-
-                if (hasEndCoords) {
-                    // 핵심 수정: 도착지 좌표가 있으면 이름 지오코딩 없이 좌표 직접 사용
-                    double eLat = Double.parseDouble(endLat);
-                    double eLng = Double.parseDouble(endLng);
-                    routes = transportRouteService.getTransportRoutesByCoordsToCoords(
-                            sLat, sLng, eLat, eLng, end);
-                } else {
-                    // 도착지 좌표 없으면 기존 방식 (이름으로 지오코딩)
-                    routes = transportRouteService.getTransportRoutesByCoords(sLat, sLng, end);
-                }
-                model.addAttribute("start", lang.equals("en") ? "Current Location" : "현재위치");
-
-            } else {
-                routes = transportRouteService.getTransportRoutes(start, end);
-                model.addAttribute("start", start);
-            }
+            routes = transportRouteService.getTransportRoutes(start, end);
+            model.addAttribute("start", start);
 
             System.out.println("=== 경로 조회 결과 ===");
             System.out.println("총 경로 수: " + routes.size());

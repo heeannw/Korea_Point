@@ -2,9 +2,12 @@ package com.example.demo.community.service;
 
 import com.example.demo.community.config.CommunityProperties;
 import com.example.demo.community.dto.PostDto;
+import com.example.demo.community.dto.TrendingPeriod;
 import com.example.demo.community.entity.Category;
 import com.example.demo.community.entity.Post;
+import com.example.demo.community.entity.PostPlace;
 import com.example.demo.community.repository.CategoryRepository;
+import com.example.demo.community.repository.PostPlaceRepository;
 import com.example.demo.community.repository.PostRepository;
 import com.example.demo.user.entity.AccountStatus;
 import com.example.demo.user.entity.User;
@@ -12,12 +15,15 @@ import com.example.demo.user.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -26,10 +32,12 @@ import java.util.Set;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final PostPlaceRepository postPlaceRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final TranslationService translationService;
     private final CommunityProperties communityProperties;
+    private final HotPostPolicy hotPostPolicy;
 
 
     /*
@@ -83,13 +91,48 @@ public class PostService {
 
     /** 인기 글. 여기에도 홍보 글이 오르면 목록 맨 위가 광고가 된다. */
     @Transactional(readOnly = true)
-    public List<PostDto> getTrendingPosts() {
+    public List<PostDto> getTrendingPosts(TrendingPeriod period) {
         return postRepository
-                .findTrendingExcludingCategory(communityProperties.getPromoCategoryId(),
+                .findTrendingInPeriod(communityProperties.getPromoCategoryId(), period.since(),
                         org.springframework.data.domain.PageRequest.of(0, 5))
                 .stream()
                 .map(this::toDto)
                 .toList();
+    }
+
+    /** 베스트 목록. 기간 안에서 조회수가 많은 순이며, 전체 보기에서는 홍보 글을 뺀다. */
+    @Transactional(readOnly = true)
+    public Page<PostDto> getBestPosts(Long categoryId, TrendingPeriod period, Pageable pageable) {
+        Page<Post> found = categoryId == null
+                ? postRepository.findBestInPeriod(
+                        communityProperties.getPromoCategoryId(), period.since(), pageable)
+                : postRepository.findBestInPeriodByCategory(categoryId, period.since(), pageable);
+        return period == TrendingPeriod.ALL
+                ? withinHallOfFame(found, pageable)
+                : found.map(this::toDto);
+    }
+
+    /**
+     * 명예의 전당은 정원까지만 보여 준다.
+     *
+     * <p>기간 조건이 없어 그냥 두면 게시판 전체가 들어온다. 끝까지 넘기면 조회수
+     * 한 자릿수 글까지 나오는데, 아무나 들어가는 곳은 전당이 아니다.
+     *
+     * <p>이미 뽑아 온 한 쪽만 잘라 낸다. 정원만큼을 통째로 읽어 오면 뒤 페이지를
+     * 안 볼 때도 백 건을 매번 읽는다.
+     */
+    private Page<PostDto> withinHallOfFame(Page<Post> found, Pageable pageable) {
+        int capacity = communityProperties.getHallOfFameSize();
+        long total = Math.min(found.getTotalElements(), capacity);
+        long offset = pageable.getOffset();
+        if (offset >= capacity) {
+            return new PageImpl<>(List.of(), pageable, total);
+        }
+        int keep = (int) Math.min(found.getContent().size(), capacity - offset);
+        List<PostDto> content = found.getContent().subList(0, keep).stream()
+                .map(this::toDto)
+                .toList();
+        return new PageImpl<>(content, pageable, total);
     }
 
     @Transactional
@@ -110,7 +153,9 @@ public class PostService {
             viewed.add(postId);
         }
 
-        return toDto(post);
+        PostDto dto = toDto(post);
+        dto.setPlaces(loadPlaceRefs(postId));
+        return dto;
     }
 
     @Transactional
@@ -147,6 +192,7 @@ public class PostService {
         }
 
         Post saved = postRepository.save(post);
+        savePlaces(saved.getId(), req.getPlaces());
 
         if (promo) {
             userRepository.updatePoint(userId, -communityProperties.getPromoCost());
@@ -156,11 +202,47 @@ public class PostService {
         return saved.getId();
     }
 
+    /** 글에 붙인 장소들을 순서대로 저장한다. 같은 장소가 중복되면 첫 것만 남긴다. */
+    private void savePlaces(Long postId, List<PostDto.PlaceRef> refs) {
+        if (refs == null || refs.isEmpty()) return;
+        Set<String> seen = new HashSet<>();
+        int order = 0;
+        for (PostDto.PlaceRef r : refs) {
+            String contentId = blankToNull(r.getContentId());
+            if (contentId == null || !seen.add(contentId)) continue;
+            postPlaceRepository.save(PostPlace.builder()
+                    .postId(postId)
+                    .contentId(contentId)
+                    .contentTypeId(blankToNull(r.getContentTypeId()))
+                    .title(blankToNull(r.getTitle()))
+                    .kind(blankToNull(r.getKind()))
+                    .sortOrder(order++)
+                    .build());
+        }
+    }
+
+    private List<PostDto.PlaceRef> loadPlaceRefs(Long postId) {
+        return postPlaceRepository.findByPostIdOrderBySortOrder(postId).stream()
+                .map(pp -> new PostDto.PlaceRef(pp.getContentId(), pp.getContentTypeId(),
+                        pp.getTitle(), pp.getKind()))
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public List<PostDto> getPostsByPlace(String contentId) {
         if (contentId == null || contentId.isBlank()) return List.of();
-        return postRepository.findTop10ByPlaceContentIdAndDeletedAtIsNullOrderByCreatedAtDesc(contentId)
-                .stream().map(this::toDto).toList();
+        // 기존 단일 컬럼(place_content_id) + 다중 장소 표(post_place) 양쪽을 합친다.
+        Set<Long> ids = new LinkedHashSet<>();
+        postRepository.findTop10ByPlaceContentIdAndDeletedAtIsNullOrderByCreatedAtDesc(contentId)
+                .forEach(p -> ids.add(p.getId()));
+        ids.addAll(postPlaceRepository.findPostIdsByContentId(contentId));
+        if (ids.isEmpty()) return List.of();
+        return postRepository.findAllById(ids).stream()
+                .filter(p -> p.getDeletedAt() == null)
+                .sorted(Comparator.comparing(Post::getCreatedAt).reversed())
+                .limit(10)
+                .map(this::toDto)
+                .toList();
     }
 
     @Transactional
@@ -205,6 +287,14 @@ public class PostService {
         return toDto(post);
     }
 
+    /** NEW 배지를 붙일 기준 시간. 하루가 지나면 더 이상 새 글로 보지 않는다. */
+    // NEW 를 붙여 두는 시간은 게시판 활동량에 맞춰야 해서 설정값으로 뺐다.
+
+    private boolean isFresh(LocalDateTime createdAt) {
+        return createdAt != null
+                && createdAt.isAfter(LocalDateTime.now().minusHours(communityProperties.getFreshHours()));
+    }
+
     private PostDto toDto(Post post) {
         return PostDto.builder()
                 .postId(post.getId())
@@ -217,6 +307,8 @@ public class PostService {
                 .content(post.getContent())
                 .contentPreview(buildPreview(post.getContent()))
                 .thumbnailUrl(firstImageUrl(post.getContent()))
+                .fresh(isFresh(post.getCreatedAt()))
+                .hot(hotPostPolicy.isHot(post))
                 .titleEn(post.getTitleEn())
                 .contentEn(post.getContentEn())
                 .contentEnPreview(post.getContentEn() != null ? buildPreview(post.getContentEn()) : null)

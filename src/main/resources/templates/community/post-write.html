@@ -41,6 +41,34 @@
         .ql-toolbar:focus-within {
             border-color: #3b9eff;
         }
+        /* 툴바 장소 버튼 */
+        button.ql-place { width: auto !important; padding: 0 6px !important; font-size: 14px; line-height: 1; }
+        /* 본문에 박히는 장소 카드 (에디터·상세 공통 클래스) */
+        .place-embed {
+            display: flex; align-items: center; gap: 10px;
+            margin: 14px 0; padding: 12px 14px;
+            border: 1px solid #d9e6f7; border-radius: 10px; background: #f5f9ff;
+            font-size: 15px; color: #16181d;
+        }
+        .place-embed-badge {
+            flex: none; padding: 2px 8px; border-radius: 999px;
+            background: #1a7de0; color: #fff; font-size: 12px; font-weight: 700;
+        }
+        .place-embed-title { font-weight: 600; }
+        .place-embed-hint { margin-left: auto; font-size: 12px; color: #8b919c; }
+        /* 장소 검색 모달 */
+        #placeModal { position: fixed; inset: 0; z-index: 60; display: none; align-items: flex-start; justify-content: center; background: rgba(15,23,42,.45); }
+        #placeModal.open { display: flex; }
+        #placeModal .pm-box { margin-top: 12vh; width: min(520px, 92vw); background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+        #placeModal .pm-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #eef1f5; }
+        #placeModal .pm-head input { flex: 1; border: 1px solid #e8eaed; border-radius: 8px; padding: 9px 12px; font-size: 15px; outline: none; }
+        #placeModal .pm-head input:focus { border-color: #3b9eff; }
+        #placeModal .pm-close { border: none; background: none; font-size: 20px; color: #8b919c; cursor: pointer; line-height: 1; }
+        #placeModal .pm-list { max-height: 46vh; overflow: auto; }
+        #placeModal .pm-list button { display: flex; width: 100%; align-items: center; gap: 10px; padding: 11px 16px; border: none; background: none; text-align: left; cursor: pointer; }
+        #placeModal .pm-list button:hover { background: #f5f7fa; }
+        #placeModal .pm-kind { flex: none; font-size: 12px; padding: 2px 6px; border-radius: 6px; background: #eef1f5; color: #5b6270; }
+        #placeModal .pm-empty { padding: 18px 16px; font-size: 14px; color: #8b919c; }
         /* Footer */
         :root { --primary-dark: #1a7de0; }
         footer { background: #ffffff; padding: 32px 80px 28px; border-top: 1px solid #dbe5f2; }
@@ -64,7 +92,6 @@
         .footer-social-link.blog-link:hover { background: transparent; }
         .footer-copy { font-size: 11px; letter-spacing: 0.04em; color: #a0aabc; }
     </style>
-    <script defer th:src="@{/js/trip/trip-translate.js}"></script>
 </head>
 <body class="min-h-screen bg-white flex flex-col">
 
@@ -76,50 +103,50 @@
 <div th:replace="~{fragments/app-header :: header(${#locale.language}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <main class="flex-1">
-    <div class="max-w-[760px] mx-auto px-6 py-8">
+    <div class="max-w-[912px] mx-auto px-7 py-10">
 
         <!-- 뒤로가기 -->
         <a th:href="@{/community/post-list}"
-           class="inline-flex items-center gap-1.5 text-[13px] text-[#8b919c] no-underline hover:text-[#16181d] transition-colors mb-6">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i> <span th:text="#{community.detail.back}">Back to Community</span>
+           class="inline-flex items-center gap-2 text-[15.5px] text-[#8b919c] no-underline hover:text-[#16181d] transition-colors mb-7">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i> <span th:text="#{community.detail.back}">Back to Community</span>
         </a>
 
         <div>
-            <h1 class="text-[24px] text-[#16181d] pb-5 mb-6 border-b border-[#e8eaed]" style="font-weight:700;" th:text="#{community.write.title}">Write a Post</h1>
+            <h1 class="text-[29px] text-[#16181d] pb-6 mb-7 border-b border-[#e8eaed]" style="font-weight:700;" th:text="#{community.write.title}">Write a Post</h1>
 
             <!--
                 th:action을 사용하면 thymeleaf-extras-springsecurity6가
                 CSRF 토큰을 hidden input으로 자동 삽입함
             -->
-            <form id="postForm" th:action="@{/community/post/write}" method="post" class="flex flex-col gap-5">
+            <form id="postForm" th:action="@{/community/post/write}" method="post" class="flex flex-col gap-6">
                 <input type="hidden" name="placeContentId" th:value="${placeContentId}"/>
                 <input type="hidden" name="placeContentTypeId" th:value="${placeContentTypeId}"/>
                 <input type="hidden" name="placeTitle" th:value="${placeTitle}"/>
 
                 <div th:if="${placeContentId != null and !#strings.isEmpty(placeContentId)}"
-                     class="flex items-center gap-3 px-4 py-2.5 bg-gray-50 rounded-md border border-[#e8eaed]">
-                    <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-[#5b6270]">⌖</span>
+                     class="flex items-center gap-3.5 px-5 py-3 bg-gray-50 rounded-md border border-[#e8eaed]">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-[#5b6270]">⌖</span>
                     <div class="min-w-0">
-                        <div class="text-[11px] text-[#8b919c]" style="font-weight:600;">장소 태그</div>
-                        <div class="truncate text-[14px] text-[#16181d]" style="font-weight:700;" th:text="${placeTitle}">장소명</div>
+                        <div class="text-[13px] text-[#8b919c]" style="font-weight:600;">장소 태그</div>
+                        <div class="truncate text-[17px] text-[#16181d]" style="font-weight:700;" th:text="${placeTitle}">장소명</div>
                     </div>
                 </div>
 
                 <!-- 포인트 잔액 -->
-                <div class="flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-md border border-[#e8eaed]">
-                    <span class="text-[13px] text-[#5b6270]" th:text="#{community.write.point.label}">Points Balance</span>
-                    <div class="flex items-center gap-3">
-                        <span class="text-[14px] text-[#1a7de0]" style="font-weight:700;"
+                <div class="flex items-center justify-between px-5 py-3 bg-gray-50 rounded-md border border-[#e8eaed]">
+                    <span class="text-[15.5px] text-[#5b6270]" th:text="#{community.write.point.label}">Points Balance</span>
+                    <div class="flex items-center gap-3.5">
+                        <span class="text-[17px] text-[#1a7de0]" style="font-weight:700;"
                               th:text="${currentUserPoint} + 'P'">1000P</span>
-                        <span class="text-[12px] text-[#8b919c]" th:text="#{community.write.point.recharge}">Recharge</span>
-                        <span class="px-2.5 py-1 bg-gray-100 text-[#8b919c] text-[12px] rounded-md cursor-not-allowed"
+                        <span class="text-[14.5px] text-[#8b919c]" th:text="#{community.write.point.recharge}">Recharge</span>
+                        <span class="px-3 py-1 bg-gray-100 text-[#8b919c] text-[14.5px] rounded-md cursor-not-allowed"
                               th:text="#{community.write.point.coming}">Coming Soon</span>
                     </div>
                 </div>
 
                 <!-- 포인트 부족 에러 -->
-                <div th:if="${pointError}" class="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-md text-[13px] text-red-600">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <div th:if="${pointError}" class="flex items-center gap-2.5 px-5 py-3.5 bg-red-50 border border-red-200 rounded-md text-[15.5px] text-red-600">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
                     <span th:text="${pointError}">포인트가 부족합니다.</span>
@@ -127,9 +154,9 @@
 
                 <!-- 카테고리 선택 -->
                 <div>
-                    <label class="block text-[13px] text-[#5b6270] mb-1.5" style="font-weight:600;" th:text="#{community.write.label.category}">Category</label>
+                    <label class="block text-[15.5px] text-[#5b6270] mb-2" style="font-weight:600;" th:text="#{community.write.label.category}">Category</label>
                     <select name="categoryId" id="categorySelect" required
-                            class="w-full px-3 py-2 border border-[#e8eaed] rounded-md text-[14px] text-[#5b6270] bg-white focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100 cursor-pointer">
+                            class="w-full px-3.5 py-2.5 border border-[#e8eaed] rounded-md text-[17px] text-[#5b6270] bg-white focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100 cursor-pointer">
                         <option value="" disabled selected th:text="#{community.write.placeholder.category}">Select a category</option>
                         <option th:each="cat : ${categories}"
                                 th:value="${cat.categoryId}"
@@ -137,7 +164,7 @@
                                 th:text="${cat.icon + ' ' + (#locale.language == 'en' and cat.nameEn != null ? cat.nameEn : cat.name)}">Category</option>
                     </select>
                     <!-- 홍보 카테고리 선택 시 포인트 차감 안내 -->
-                    <p id="promoNotice" class="hidden mt-2 text-[12px] text-amber-600"
+                    <p id="promoNotice" class="hidden mt-2.5 text-[14.5px] text-amber-600"
                        th:text="#{community.write.point.promo}">
                         📢 500P will be deducted for promotional posts.
                     </p>
@@ -145,15 +172,15 @@
 
                 <!-- 제목 -->
                 <div>
-                    <label class="block text-[13px] text-[#5b6270] mb-1.5" style="font-weight:600;" th:text="#{community.write.label.title}">Title</label>
+                    <label class="block text-[15.5px] text-[#5b6270] mb-2" style="font-weight:600;" th:text="#{community.write.label.title}">Title</label>
                     <input type="text" name="title" required maxlength="200"
                            th:placeholder="#{community.write.placeholder.title}"
-                           class="w-full px-4 py-2 border border-[#e8eaed] rounded-md text-[14px] text-[#16181d] placeholder:text-[#8b919c] focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100"/>
+                           class="w-full px-5 py-2.5 border border-[#e8eaed] rounded-md text-[17px] text-[#16181d] placeholder:text-[#8b919c] focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100"/>
                 </div>
 
-                <!-- 내용 — Quill 에디터 -->
+                <!-- 내용 — Quill 에디터 (툴바의 📍 버튼으로 본문에 장소 카드를 넣는다) -->
                 <div>
-                    <label class="block text-[13px] text-[#5b6270] mb-1.5" style="font-weight:600;" th:text="#{community.write.label.content}">Content</label>
+                    <label class="block text-[15.5px] text-[#5b6270] mb-2" style="font-weight:600;" th:text="#{community.write.label.content}">Content</label>
                     <!-- Quill이 이 div를 에디터로 교체함 -->
                     <div id="quillEditor"></div>
                     <!--
@@ -161,18 +188,20 @@
                         폼 제출 시 JS로 Quill의 HTML을 이 hidden input에 복사해서 서버로 전송.
                     -->
                     <input type="hidden" name="content" id="contentInput"/>
+                    <!-- 본문에 넣은 장소들을 places[i].* 로 직렬화 (post_place 저장·역참조용) -->
+                    <div id="placeInputs"></div>
                 </div>
 
                 <!-- 에러 메시지 (내용 미입력) -->
-                <p id="contentError" class="hidden text-[13px] text-red-500">내용을 입력해주세요.</p>
+                <p id="contentError" class="hidden text-[15.5px] text-red-500">내용을 입력해주세요.</p>
 
                 <!-- 버튼 -->
-                <div class="flex items-center justify-end gap-3 pt-2">
+                <div class="flex items-center justify-end gap-3.5 pt-2.5">
                     <a th:href="@{/community/post-list}"
-                       class="px-5 py-2 border border-[#e8eaed] text-[#5b6270] rounded-md text-[14px] no-underline hover:bg-gray-50 transition-colors"
+                       class="px-6 py-2.5 border border-[#e8eaed] text-[#5b6270] rounded-md text-[17px] no-underline hover:bg-gray-50 transition-colors"
                        style="font-weight:500;" th:text="#{community.write.btn.cancel}">Cancel</a>
                     <button type="submit"
-                            class="px-5 py-2 bg-[#3b9eff] text-white rounded-md text-[13px] hover:bg-[#1a7de0] transition-colors cursor-pointer"
+                            class="px-6 py-2.5 bg-[#3b9eff] text-white rounded-md text-[15.5px] hover:bg-[#1a7de0] transition-colors cursor-pointer"
                             style="font-weight:500;" th:text="#{community.write.btn.submit}">
                         Publish Post
                     </button>
@@ -183,6 +212,19 @@
     </div>
 </main>
 
+<!-- 장소 검색 모달 (Quill 툴바 📍 버튼) -->
+<div id="placeModal" aria-hidden="true">
+    <div class="pm-box" role="dialog" aria-modal="true" aria-label="장소 검색">
+        <div class="pm-head">
+            <input type="text" id="pmInput" autocomplete="off" placeholder="관광지·맛집·카페 이름 검색"/>
+            <button type="button" class="pm-close" id="pmClose" aria-label="닫기">&times;</button>
+        </div>
+        <div class="pm-list" id="pmList">
+            <div class="pm-empty">두 글자 이상 입력하세요.</div>
+        </div>
+    </div>
+</div>
+
 <footer>
     <div class="footer-inner">
         <div class="footer-top">
@@ -192,7 +234,10 @@
             </div>
         </div>
         <div class="footer-info">
-            <p>KoreaPoint Travel Guide Platform · Email: help@koreapoint.com · Customer Center: 1644-0000</p>
+            <p>KoreaPoint Travel Guide Platform · Representative: Lee Yerin</p>
+            <p>200 Salgoji-gil, Seongdong-gu, Seoul · Email: koreapoint.official@gmail.com</p>
+            <p>Business Registration Number: N/A · Mail-Order Business Number: N/A
+               &mdash; a non-commercial demo for the 2026 Korea Tourism Data Competition</p>
         </div>
         <div class="footer-policy-links" aria-label="Footer policies">
             <a href="#" onclick="return false;">About Us</a>
@@ -246,6 +291,13 @@
             notice.classList.add('hidden');
         }
     });
+
+    const KIND_LABEL = { tour: '관광', food: '맛집', cafe: '카페' };
+    function escText(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+    function placeLink(p) {
+        const base = p.kind === 'food' ? '/tour/food' : (p.kind === 'cafe' ? '/tour/cafe' : '/tour/all');
+        return base + '?focus=' + encodeURIComponent(p.contentId) + '&lang=' + (document.documentElement.lang || 'ko');
+    }
 
     // Quill 에디터 초기화
     const quill = new Quill('#quillEditor', {
@@ -304,6 +356,9 @@
         input.click();
     }
 
+    // 📍 버튼으로 본문에 넣은 장소들 (post_place 저장·역참조용)
+    const pickedPlaces = [];
+
     // 폼 제출 시 Quill HTML → hidden input으로 복사 후 유효성 검사
     document.getElementById('postForm').addEventListener('submit', function (e) {
         const html = quill.root.innerHTML;
@@ -316,8 +371,126 @@
         }
 
         document.getElementById('contentError').classList.add('hidden');
+
+        // 본문에 실제로 남아 있는 링크만 places[i].* 로 직렬화 (지운 장소는 제외)
+        const inputs = document.getElementById('placeInputs');
+        inputs.innerHTML = '';
+        let i = 0;
+        pickedPlaces.forEach(function (p) {
+            if (!html.includes('focus=' + encodeURIComponent(p.contentId))) return;
+            const vals = { contentId: p.contentId, contentTypeId: p.contentTypeId || '',
+                           title: p.title || '', kind: p.kind || 'tour' };
+            Object.keys(vals).forEach(function (key) {
+                const el = document.createElement('input');
+                el.type = 'hidden';
+                el.name = 'places[' + i + '].' + key;
+                el.value = vals[key];
+                inputs.appendChild(el);
+            });
+            i++;
+        });
+
         document.getElementById('contentInput').value = html;
     });
+
+    // ── 툴바 📍 버튼 + 장소 검색 모달 → 본문에 장소 카드 삽입 ──
+    (function () {
+        const modal = document.getElementById('placeModal');
+        const pmInput = document.getElementById('pmInput');
+        const pmList = document.getElementById('pmList');
+        let savedRange = null;
+        let timer;
+
+        // 툴바 오른쪽 끝에 장소 버튼 추가
+        const grp = document.createElement('span');
+        grp.className = 'ql-formats';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ql-place';
+        btn.title = '장소 추가';
+        btn.textContent = '📍';
+        grp.appendChild(btn);
+        quill.getModule('toolbar').container.appendChild(grp);
+
+        function open() {
+            savedRange = quill.getSelection(true);
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+            pmInput.value = '';
+            pmList.innerHTML = '<div class="pm-empty">두 글자 이상 입력하세요.</div>';
+            setTimeout(function () { pmInput.focus(); }, 0);
+        }
+        function close() {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        btn.addEventListener('click', open);
+        document.getElementById('pmClose').addEventListener('click', close);
+        modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('open')) close(); });
+
+        async function runSearch(q) {
+            try {
+                const res = await fetch('/community/api/place-search?q=' + encodeURIComponent(q));
+                const list = res.ok ? await res.json() : [];
+                pmList._list = list;
+                pmList.innerHTML = list.length ? list.map(function (p, idx) {
+                    return '<button type="button" data-i="' + idx + '">'
+                        + '<span class="pm-kind">' + (KIND_LABEL[p.kind] || '장소') + '</span>'
+                        + '<span style="min-width:0">'
+                        + '<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;color:#16181d">' + escText(p.title) + '</span>'
+                        + '<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#8b919c">' + escText(p.addr || '') + '</span>'
+                        + '</span></button>';
+                }).join('') : '<div class="pm-empty">검색 결과가 없습니다.</div>';
+            } catch (e) {
+                pmList.innerHTML = '<div class="pm-empty">검색에 실패했습니다.</div>';
+            }
+        }
+
+        pmInput.addEventListener('input', function () {
+            clearTimeout(timer);
+            const q = pmInput.value.trim();
+            if (q.length < 2) { pmList.innerHTML = '<div class="pm-empty">두 글자 이상 입력하세요.</div>'; return; }
+            timer = setTimeout(function () { runSearch(q); }, 250);
+        });
+
+        // 장소를 본문에 한 줄 링크로 삽입한다. Quill 기본 link 포맷이라 커스텀 블롯 없이 안전.
+        function insertPlace(p, at) {
+            const place = {
+                contentId: p.contentId,
+                contentTypeId: p.contentTypeId || '',
+                kind: p.kind || 'tour',
+                title: p.title || p.contentId
+            };
+            if (!pickedPlaces.some(function (x) { return x.contentId === place.contentId; })) {
+                pickedPlaces.push(place);
+            }
+            const label = '📍 ' + place.title;
+            quill.insertText(at, label, { link: placeLink(place) }, 'user');
+            quill.insertText(at + label.length, '\n', 'user');
+            quill.setSelection(at + label.length + 1, 0, 'silent');
+        }
+
+        pmList.addEventListener('click', function (e) {
+            const b = e.target.closest('button[data-i]');
+            if (!b || !pmList._list) return;
+            const at = (savedRange ? savedRange.index : quill.getLength());
+            insertPlace(pmList._list[+b.dataset.i], at);
+            close();
+        });
+
+        // '이 장소로 글쓰기'로 넘어온 경우 본문 맨 앞에 장소 링크 삽입
+        const seedId = document.querySelector('input[name="placeContentId"]')?.value;
+        if (seedId) {
+            insertPlace({
+                contentId: seedId,
+                contentTypeId: document.querySelector('input[name="placeContentTypeId"]')?.value || '',
+                kind: 'tour',
+                title: document.querySelector('input[name="placeTitle"]')?.value || seedId
+            }, 0);
+        }
+    })();
 </script>
 <script th:src="@{/js/common/header-menu.js}"></script>
 </body>

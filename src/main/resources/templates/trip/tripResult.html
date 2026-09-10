@@ -924,42 +924,10 @@
             } catch (e) { /* 공유 취소는 무시 */ }
         };
 
-        // ── 교통 검색 버튼(길찾기) — 위치 권한 요청 전 토스트로 안내 ──
+        // ── 교통 검색 버튼(길찾기) ──
         document.getElementById('dpTransBtn').onclick = () => {
             const dest = encodeURIComponent(slot.placeName);
-            const base = `/ko/transport/search?end=${dest}`;
-
-            if (!navigator.geolocation) {
-                location.href = base;
-                return;
-            }
-
-            // 이미 위치 확보된 경우 바로 사용
-            if (myLoc) {
-                showToast(I18N.usingCurrentLocation);
-                location.href = `${base}&startLat=${myLoc.lat}&startLng=${myLoc.lng}`;
-                return;
-            }
-
-            showToast(I18N.usingCurrentLocation);
-
-            const btn = document.getElementById('dpTransBtn');
-            const orig = btn.innerHTML;
-            btn.innerHTML = I18N.checkingLocation;
-            btn.disabled = true;
-
-            navigator.geolocation.getCurrentPosition(
-                pos => {
-                    myLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    location.href = `${base}&startLat=${myLoc.lat}&startLng=${myLoc.lng}`;
-                },
-                () => {
-                    btn.innerHTML = orig;
-                    btn.disabled = false;
-                    location.href = base;
-                },
-                { timeout: 5000 }
-            );
+            location.href = `/ko/transport/search?end=${dest}`;
         };
 
         document.getElementById('dpSwapBtn').style.display = isAlt ? 'flex' : 'none';

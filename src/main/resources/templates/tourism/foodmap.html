@@ -725,17 +725,7 @@
     const p = window._detailPlace || currentPopupPlace;
     if (!p) return;
     const endTitle  = encodeURIComponent(p.name);
-    // ✅ BUG3 FIX: 이름만 넘기면 카카오 지오코딩이 동명 장소로 오작동
-    //   → 음식점의 실제 좌표(endLat, endLng)도 함께 전달
-    const endCoords = `&endLat=${p.lat}&endLng=${p.lng}`;
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-              pos => location.href = `${TRANSPORT_PREFIX}/transport/search?startLat=${pos.coords.latitude}&startLng=${pos.coords.longitude}&end=${endTitle}${endCoords}`,
-              ()   => location.href = `${TRANSPORT_PREFIX}/transport/search?startLat=${userLat}&startLng=${userLon}&end=${endTitle}${endCoords}`
-      );
-    } else {
-      location.href = `${TRANSPORT_PREFIX}/transport/search?startLat=${userLat}&startLng=${userLon}&end=${endTitle}${endCoords}`;
-    }
+    location.href = `${TRANSPORT_PREFIX}/transport/search?end=${endTitle}`;
   }
   function openTourMap() {
     const p = window._detailPlace || currentPopupPlace;

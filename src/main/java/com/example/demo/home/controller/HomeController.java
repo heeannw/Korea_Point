@@ -37,7 +37,7 @@ public class HomeController {
         session(model);
         model.addAttribute("lang", lang);
         populateModel(model, lang);
-        return "home/home";         // templates/home/home.html 을 찾아서 렌더링
+        return "home/home";         // 국문·영문 공용 템플릿
     }
 
     // @GetMapping: "/ko" 또는 "/kr" 접속 시 이 메서드 실행 (한국어 버전)
@@ -52,7 +52,7 @@ public class HomeController {
         // 일본어·중국어·불어는 국문 화면을 쓰되 장소 이름·주소는 해당 언어로 바꿔 끼운다
         // (TourPlaceI18n 오버레이가 en/ja/zh/fr 을 갖고 있다).
         populateModel(model, lang);
-        return "home/home.ko";      // templates/home/home.ko.html 을 찾아서 렌더링
+        return "home/home";         // 국문·영문 공용 템플릿
     }
 
     // homeEn, homeKo 두 메서드가 공통으로 사용하는 데이터 세팅 메서드
@@ -75,22 +75,9 @@ public class HomeController {
     private void populateModel(Model model, String lang) {
 
 
-        // ── 히어로 섹션 텍스트 (영어) ──────────────────────────────────────────
-        // Thymeleaf에서 ${heroTitle} 로 꺼내 쓸 수 있음
-        model.addAttribute("heroTitle", "Discover Busan");
-
-        // 히어로 서브타이틀 (영어)
-        model.addAttribute("heroSubTitle", "Busan");
-
-        // 히어로 설명 문구 (영어)
-        model.addAttribute("heroDescription",
-                "Festivals, beaches, and local food - everything you need for a trip to Busan.");
-
-        // ── 히어로 섹션 텍스트 (한국어) ───────────────────────────────────────
-        model.addAttribute("heroTitleKo", "부산을");
-        model.addAttribute("heroSubTitleKo", "만나보세요");
-        model.addAttribute("heroDescriptionKo",
-                "지금 열리는 축제부터 바다와 맛집까지, 부산 여행에 필요한 정보를 한곳에 담았습니다.");
+        // 히어로 문구는 messages*.properties 의 home.hero.* 에 있다.
+        // 화면마다 컨트롤러가 언어별 문자열을 들고 있으면, 언어가 늘 때마다
+        // 자바 코드를 고쳐야 한다.
 
         // ── 히어로 슬라이더 이미지 ────────────────────────────────────────
         // 예전에는 서울 사진 3장(남산타워·북촌·광화문)이 위키미디어 주소로 박혀 있었다.

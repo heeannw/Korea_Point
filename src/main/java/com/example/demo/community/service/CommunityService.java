@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.community.dto.PostDto;
+import com.example.demo.community.dto.CommunityListView;
+import com.example.demo.community.dto.TrendingPeriod;
 
 import java.util.List;
 
@@ -21,22 +23,28 @@ public class CommunityService {
 
     // 커뮤니티 메인 페이지 데이터 (게시글 목록 + 카테고리 목록 + 인기글)
     @Transactional(readOnly = true)
-    public CommunityDto getCommunityPageData(Long categoryId, String keyword, Pageable pageable) {
+    public CommunityDto getCommunityPageData(Long categoryId, String keyword,
+                                             CommunityListView view, TrendingPeriod period,
+                                             Pageable pageable) {
         boolean hasCategory = categoryId != null;
         boolean hasKeyword = keyword != null && !keyword.isBlank();
 
-        var posts = hasCategory && hasKeyword
-                ? postService.searchPostsByCategory(categoryId, keyword, pageable)  // 카테고리 + 검색어 동시
+        // 전체글은 최신순 하나뿐이고, 조회수로 보는 일은 베스트가 맡는다.
+        // 검색 중에는 기간을 걸지 않는다 — 찾는 글이 기간 밖이면 안 나와서 검색이 고장 난 것처럼 보인다.
+        var posts = hasKeyword
+                ? (hasCategory
+                    ? postService.searchPostsByCategory(categoryId, keyword, pageable)
+                    : postService.searchPosts(keyword, pageable))
+                : view.isBest()
+                ? postService.getBestPosts(categoryId, period, pageable)
                 : hasCategory
-                ? postService.getPostsByCategory(categoryId, pageable)              // 카테고리만
-                : hasKeyword
-                ? postService.searchPosts(keyword, pageable)                        // 검색어만
-                : postService.getPosts(pageable);                                   // 전체
+                ? postService.getPostsByCategory(categoryId, pageable)
+                : postService.getPosts(pageable);
 
         return CommunityDto.builder()
                 .posts(posts)
                 .categories(getAllCategories())
-                .trendingPosts(postService.getTrendingPosts())
+                .trendingPosts(postService.getTrendingPosts(period))
                 .build();
     }
 
@@ -56,7 +64,7 @@ public class CommunityService {
         return CommunityDto.builder()
                 .posts(posts)
                 .categories(getAllCategories())
-                .trendingPosts(postService.getTrendingPosts())
+                .trendingPosts(postService.getTrendingPosts(TrendingPeriod.WEEK))
                 .build();
     }
 
