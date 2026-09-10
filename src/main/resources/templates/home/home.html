@@ -1227,6 +1227,12 @@
             font-weight: 400;
         }
 
+        /* 비영리 시연 안내. 법정 표기 옆에 붙어 '왜 번호가 없는지'를 설명한다. */
+        .footer-nonprofit {
+            margin-top: 6px;
+            color: #98a2b3;
+        }
+
         .footer-credit {
             margin-top: 6px;
         }
@@ -1734,9 +1740,15 @@
         </div>
 
         <div class="footer-info">
+            <!-- 전자상거래법이 화면에서 확인되기를 요구하는 항목이다.
+                 우리는 공모전 출품작이라 등록 대상이 아니어서, 없는 번호를 지어내는
+                 대신 '해당 없음'과 그 사유를 함께 적는다. -->
             <p th:text="#{home.footer.platform}">KoreaPoint 여행 가이드 플랫폼</p>
-            <p th:text="#{home.footer.email}">이메일: help@koreapoint.com</p>
-            <p th:text="#{home.footer.center}">고객센터: 1644-0000</p>
+            <p th:text="#{home.footer.bizName}">상호명 KoreaPoint · 대표자 이예린</p>
+            <p th:text="#{home.footer.address}">소재지 서울특별시 성동구 살곶이길 200</p>
+            <p th:text="#{home.footer.contact}">이메일 koreapoint.official@gmail.com</p>
+            <p th:text="#{home.footer.bizNumber}">사업자등록번호 해당 없음 · 통신판매업 신고번호 해당 없음</p>
+            <p class="footer-nonprofit" th:text="#{home.footer.nonprofit}">본 사이트는 시연용 서비스입니다.</p>
             <p class="footer-credit" th:text="#{home.footer.credit}">관광 정보·사진 제공: 한국관광공사 (공공누리 제1유형·제3유형)</p>
         </div>
 
