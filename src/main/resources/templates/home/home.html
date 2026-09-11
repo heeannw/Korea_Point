@@ -559,33 +559,47 @@
         }
 
         .category-item:hover {
-            background: var(--light);
             transform: translateY(-3px);
         }
 
-        .category-icon svg {
-            width: 24px;
-            height: 24px;
+        .category-item:hover .category-icon {
+            background: #eceef2;
         }
 
+        .category-icon svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        /* 타일은 무채색으로 낮추고 색은 아이콘에만 준다.
+           같은 파랑 선 아이콘 일곱 개가 나란히 있으면 어느 게 무엇인지 눈에 안 걸린다.
+           색이 다르면 글자를 읽기 전에 자리로 기억하게 된다. */
         .category-icon {
-            width: 48px;
-            height: 48px;
+            width: 56px;
+            height: 56px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: var(--radius-lg);
-            background: var(--light);
-            color: var(--primary);
-            font-size: 28px;
-            box-shadow: inset 0 0 0 1px rgba(59, 158, 255, 0.16);   /* 타일이 연해서 테두리로 형태를 잡는다 */
+            border-radius: 18px;
+            background: #f3f4f6;
+            transition: background 0.2s ease;
         }
+
+        /* 아이콘 색. 채도를 맞춰 한 벌로 보이게 하고, 챗봇만 무채색으로 눌러
+           일곱 개가 무지개처럼 흩어지지 않게 잡아 준다. */
+        .ic-food        { color: #ff6b45; }
+        .ic-tour        { color: #17bd7d; }
+        .ic-transport   { color: #3d82f6; }
+        .ic-community   { color: #8b5cf6; }
+        .ic-trip        { color: #ff5f9e; }
+        .ic-reservation { color: #ffa724; }
+        .ic-chatbot     { color: #414a59; }
 
         .category-item span:last-child {
             font-size: 13px;
             white-space: nowrap;
             font-weight: 600;
-            color: var(--gray);
+            color: #3f4653;
             text-align: center;
             line-height: 1.35;
         }
@@ -1511,52 +1525,90 @@
 <!-- 카테고리: 콘텐츠를 먼저 보여준 뒤 다른 화면으로 넘어가는 자리 -->
 <section class="categories" id="categorySection">
     <div class="category-grid">
+        <!-- 아이콘은 선이 아니라 면으로 그린다. 48px 남짓한 자리에서는 선이 가늘어
+             형태가 뭉개지고, 색을 줘도 눈에 안 들어온다. 흰색은 아이콘 안을 파낸
+             자리라 타일 색이 바뀌어도 그대로 읽힌다. -->
         <a class="category-item" th:href="@{/tour/food(lang=${lang})}" href="/tour/food?lang=ko">
-            <span class="category-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6a2 2 0 0 0 4 0V3"/><path d="M8 11v10"/><path d="M17 3c1.5 2 1.5 6 0 8v10"/></svg>
+            <span class="category-icon ic-food">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <!-- 김. 좌우 길이를 다르게 둔다. 같은 높이로 두면 그릇 위의 두 점이
+                         눈처럼 읽혀서 아이콘 전체가 얼굴이 된다. -->
+                    <path d="M9.5 2.4c-1.1 1.1-1.1 2.2 0 3.3s1.1 2.2 0 3.3" fill="none" stroke="currentColor"
+                          stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+                    <path d="M14.2 4.2c-.9.9-.9 1.8 0 2.7s.9 1.8 0 2.7" fill="none" stroke="currentColor"
+                          stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
+                    <!-- 그릇. 테두리를 따로 그려야 국그릇으로 읽힌다. -->
+                    <rect x="1.8" y="10.6" width="20.4" height="2.6" rx="1.3" fill="currentColor"/>
+                    <path d="M3.7 13.8h16.6a.9.9 0 0 1 .9 1c-.5 3.9-3.7 6.8-7.5 6.8h-3.4c-3.8 0-7-2.9-7.5-6.8a.9.9 0 0 1 .9-1z" fill="currentColor"/>
+                </svg>
             </span>
             <span th:text="#{home.cat.food}">맛집</span>
         </a>
         <a class="category-item" th:href="@{/tour/all(lang=${lang})}" href="/tour/all?lang=ko">
-            <span class="category-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="17" cy="6" r="3"/><path d="M3 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M3 19c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/></svg>
+            <span class="category-icon ic-tour">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="17.2" cy="6.4" r="2.7" fill="currentColor" opacity=".45"/>
+                    <path d="M2.7 18.6 8 10.2a1.3 1.3 0 0 1 2.2 0l2.3 3.6 1.4-2.2a1.3 1.3 0 0 1 2.2 0l4.5 7a1.3 1.3 0 0 1-1.1 2H3.8a1.3 1.3 0 0 1-1.1-2z" fill="currentColor"/>
+                </svg>
             </span>
             <span th:text="#{home.cat.tour}">관광</span>
         </a>
         <a class="category-item" th:href="@{${lang == 'en'} ? '/en/transport/search' : '/transport/search'}" href="/transport/search">
-            <span class="category-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="12" rx="2"/><path d="M4 10h16"/><path d="M7 16v2M17 16v2"/><circle cx="8" cy="19" r="1.2"/><circle cx="16" cy="19" r="1.2"/></svg>
+            <span class="category-icon ic-transport">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6.4 2.8h11.2a3.2 3.2 0 0 1 3.2 3.2v9.6a3.2 3.2 0 0 1-3.2 3.2H6.4a3.2 3.2 0 0 1-3.2-3.2V6a3.2 3.2 0 0 1 3.2-3.2z" fill="currentColor"/>
+                    <rect x="5.6" y="5.8" width="12.8" height="5" rx="1.3" fill="#fff"/>
+                    <circle cx="7.6" cy="14.4" r="1.3" fill="#fff"/>
+                    <circle cx="16.4" cy="14.4" r="1.3" fill="#fff"/>
+                    <circle cx="7.4" cy="19.6" r="1.9" fill="currentColor"/>
+                    <circle cx="16.6" cy="19.6" r="1.9" fill="currentColor"/>
+                </svg>
             </span>
             <span th:text="#{home.cat.transport}">교통</span>
         </a>
         <a class="category-item" th:href="@{/community/post-list(lang=${lang})}" href="/community/post-list?lang=ko">
-            <span class="category-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 16v4l5-4"/><path d="M8 9h8M8 12h5"/></svg>
+            <span class="category-icon ic-community">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3c-5.2 0-9.4 3.4-9.4 7.6 0 2.4 1.4 4.6 3.6 6l-1 3.4a.8.8 0 0 0 1.2.9l4.2-2.4c.5.1 1 .1 1.4.1 5.2 0 9.4-3.4 9.4-7.6S17.2 3 12 3z" fill="currentColor"/>
+                    <circle cx="8.2" cy="10.4" r="1.25" fill="#fff"/>
+                    <circle cx="12" cy="10.4" r="1.25" fill="#fff"/>
+                    <circle cx="15.8" cy="10.4" r="1.25" fill="#fff"/>
+                </svg>
             </span>
             <span th:text="#{home.cat.community}">커뮤니티</span>
         </a>
         <a class="category-item" th:href="@{'/' + ${langPath} + '/trip'}" href="/ko/trip">
-            <span class="category-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>
+            <span class="category-icon ic-trip">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8.9 3.2 3.4 5.1a1.1 1.1 0 0 0-.7 1v13.1a1.1 1.1 0 0 0 1.5 1l4.7-1.7V3.2z" fill="currentColor"/>
+                    <path d="M15.1 5 8.9 3.2v15.3L15.1 20.3V5z" fill="currentColor" opacity=".45"/>
+                    <path d="M20.6 3.1 15.1 5v15.3l5.5-1.9a1.1 1.1 0 0 0 .7-1V4.1a1.1 1.1 0 0 0-1.5-1z" fill="currentColor"/>
+                </svg>
             </span>
             <span th:text="#{home.cat.trip}">나만의 여행</span>
         </a>
         <a class="category-item" th:href="@{/ko/reservation}" href="/ko/reservation">
-            <span class="category-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M15 6v12"/></svg>
+            <span class="category-icon ic-reservation">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="6.3" y="1.8" width="2.5" height="5" rx="1.25" fill="currentColor"/>
+                    <rect x="15.2" y="1.8" width="2.5" height="5" rx="1.25" fill="currentColor"/>
+                    <path d="M5.6 4.4h12.8a3 3 0 0 1 3 3v11.2a3 3 0 0 1-3 3H5.6a3 3 0 0 1-3-3V7.4a3 3 0 0 1 3-3z" fill="currentColor"/>
+                    <path d="m8.4 13.6 2.4 2.4 4.8-4.9" fill="none" stroke="#fff" stroke-width="2.3"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
             </span>
             <span th:text="#{home.cat.reservation}">예약</span>
         </a>
         <a class="category-item" th:href="@{/chatbot}" href="/chatbot">
-            <span class="category-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="4" r="1"/><path d="M9 13h.01M15 13h.01"/><path d="M9 17h6"/></svg>
+            <span class="category-icon ic-chatbot">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="2.9" r="1.5" fill="currentColor"/>
+                    <rect x="11.1" y="3.6" width="1.8" height="3.6" rx=".9" fill="currentColor"/>
+                    <path d="M6 6.4h12a3.4 3.4 0 0 1 3.4 3.4v7.4a3.4 3.4 0 0 1-3.4 3.4H6a3.4 3.4 0 0 1-3.4-3.4V9.8A3.4 3.4 0 0 1 6 6.4z" fill="currentColor"/>
+                    <circle cx="9" cy="12.4" r="1.6" fill="#fff"/>
+                    <circle cx="15" cy="12.4" r="1.6" fill="#fff"/>
+                    <rect x="8.6" y="16" width="6.8" height="1.9" rx=".95" fill="#fff" opacity=".85"/>
+                </svg>
             </span>
             <span th:text="#{home.cat.chatbot}">챗봇</span>
         </a>
