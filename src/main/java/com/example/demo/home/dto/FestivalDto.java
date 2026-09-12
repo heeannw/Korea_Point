@@ -40,11 +40,14 @@ public class FestivalDto {
     private final boolean ongoing;
 
     /**
-     * 카드에 붙일 짧은 상태 문구.
-     * 진행중이면 "진행중", 예정이면 "D-3" 같은 식.
+     * 시작까지 남은 날. 진행중이면 0.
+     *
+     * <p>예전에는 여기에 "진행중" / "3일 뒤" 같은 완성된 문구가 국문·영문
+     * 두 벌로 들어 있었다. 그러면 언어가 늘 때마다 자바를 고쳐야 하고,
+     * 실제로 일본어·중국어·불어 화면에 한국어 배지가 그대로 나왔다.
+     * 숫자만 넘기고 문구는 messages 파일에서 고른다.
      */
-    private final String badge;
-    private final String badgeEn;
+    private final long daysLeft;
 
     /**
      * 이미지를 잘라내거나 필터를 씌워도 되는지.
