@@ -1,5 +1,11 @@
 <!DOCTYPE html>
-<html th:lang="${lang == 'en'} ? 'en' : 'ko'" lang="ko" xmlns:th="http://www.thymeleaf.org">
+<!-- lang 은 실제 언어 코드를 그대로 내보낸다. 예전에는 영어가 아니면 전부 ko 로
+     적었는데, 그러면 일본어·중국어·프랑스어 화면이 브라우저와 읽기 도구에
+     한국어라고 알려진다.
+     latin 은 조판 묶음이다. 라틴 문자는 단어 중간에서 끊어도 되고 한글 폰트가
+     필요 없다. 한국어·일본어·중국어는 반대라 기본 조판을 그대로 쓴다. -->
+<html th:lang="${lang}" th:classappend="${lang == 'en' or lang == 'fr'} ? 'latin' : ''"
+      lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -70,20 +76,22 @@
            동안 영문 쪽만 따로 다듬어져 있었다 — 섹션 제목은 세리프였고, 히어로는
            문구·자간·그라데이션이 달랐다. 그 차이를 그대로 옮겨 둔 것이라
            두 언어 모두 예전 모습이 유지된다.
-           ko 를 기본에 둔 이유는 ja/zh/fr 도 이 화면을 쓰기 때문이다. */
-        html[lang="en"] body {
+           영어 전용이 아니라 라틴 문자 전용 묶음이다. 프랑스어도 같은 조판을
+           써야 해서 lang 대신 latin 클래스로 건다. 일본어·중국어는 한글과
+           마찬가지로 기본 조판이 맞아 여기 들어오지 않는다. */
+        html.latin body {
             word-break: normal;   /* 국문 기본값 keep-all 을 되돌린다 */
         }
 
-        html[lang="en"] .h-btn {
+        html.latin .h-btn {
             font-family: "Sora", "Noto Sans KR", sans-serif;
         }
 
-        html[lang="en"] .hero-content {
+        html.latin .hero-content {
             align-items: flex-start;
         }
 
-        html[lang="en"] .hero-eyebrow {
+        html.latin .hero-eyebrow {
             font-size: 12px;
             letter-spacing: 0.34em;
             line-height: 1.4;
@@ -92,7 +100,7 @@
             text-shadow: 0 6px 18px rgba(15, 23, 42, 0.24);
         }
 
-        html[lang="en"] .hero-sub {
+        html.latin .hero-sub {
             max-width: 560px;
             font-size: clamp(16px, 1.5vw, 18px);
             font-weight: 400;
@@ -102,7 +110,7 @@
             text-shadow: 0 8px 24px rgba(15, 23, 42, 0.24);
         }
 
-        html[lang="en"] .hero-title {
+        html.latin .hero-title {
             max-width: 620px;
             font-family: "Sora", "Noto Sans KR", sans-serif;
             font-weight: 700;
@@ -111,51 +119,51 @@
             margin-bottom: 22px;
         }
 
-        html[lang="en"] .section-label span {
+        html.latin .section-label span {
             letter-spacing: 0.22em;
         }
 
-        html[lang="en"] .section-title {
+        html.latin .section-title {
             font-family: "Cormorant Garamond", serif;
             letter-spacing: normal;   /* 국문 기본값 -0.03em 을 되돌린다 */
         }
 
-        html[lang="en"] .see-all {
+        html.latin .see-all {
             letter-spacing: 0.1em;
         }
 
-        html[lang="en"] .slide::after {
+        html.latin .slide::after {
             background: linear-gradient( 115deg, rgba(15, 23, 42, 0.56) 0%, rgba(15, 23, 42, 0.30) 38%, rgba(15, 23, 42, 0.16) 62%, rgba(15, 23, 42, 0.38) 100% );
         }
 
-        html[lang="en"] body {
+        html.latin body {
             font-family: "Sora", "Noto Sans KR", sans-serif;
         }
 
         @media (max-width: 480px) {
-            html[lang="en"] .hero-eyebrow {
+            html.latin .hero-eyebrow {
                 font-size: 11px;
                 letter-spacing: 0.28em;
             }
-            html[lang="en"] .hero-sub {
+            html.latin .hero-sub {
                 max-width: 320px;
                 font-size: 15px;
                 line-height: 1.65;
             }
-            html[lang="en"] .hero-title {
+            html.latin .hero-title {
                 font-size: 40px;
             }
         }
 
         @media (max-width: 768px) {
-            html[lang="en"] .hero-content {
+            html.latin .hero-content {
                 padding: 0 24px 88px;
             }
-            html[lang="en"] .hero-sub {
+            html.latin .hero-sub {
                 max-width: 460px;
                 font-size: 16px;
             }
-            html[lang="en"] .hero-title {
+            html.latin .hero-title {
                 font-size: 48px;
                 line-height: 1;
             }
