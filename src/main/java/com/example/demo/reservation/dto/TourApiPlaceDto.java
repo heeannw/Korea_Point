@@ -9,6 +9,9 @@ import java.util.Map;
 @Builder
 public class TourApiPlaceDto {
 
+    @lombok.Setter
+    private PlaceBookingPolicyDto bookingPolicy;
+
     private final String contentId;
     private final String contentTypeId;
     private final String title;

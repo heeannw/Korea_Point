@@ -39,5 +39,6 @@ public class ReservationFormDto {
     @Max(10)
     private int peopleCount = 1;
 
+    @jakarta.validation.constraints.Size(max = 500)
     private String memo;
 }

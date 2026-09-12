@@ -21,10 +21,12 @@ public class ReservationPaymentService {
 
     private final ReservationService reservationService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ReservationPlacePolicyService placePolicyService;
 
     @Transactional
     public ReservationPayment process(Long reservationId, Long userId, ReservationPaymentRequest request) {
-        TourReservation reservation = reservationService.findMine(reservationId, userId);
+        TourReservation reservation = reservationService.findMineForUpdate(reservationId, userId);
+        if (reservation.getPayment() == null) throw new PlaceBookingUnavailableException();
         ReservationPayment payment = requirePayment(reservation);
 
         if (payment.getStatus() == PaymentStatus.PAID) {
@@ -36,6 +38,8 @@ public class ReservationPaymentService {
             throw new IllegalStateException("취소되었거나 환불된 예약은 다시 결제할 수 없습니다.");
         }
 
+        if (!reservation.isPayable()) throw new PlaceBookingUnavailableException();
+        placePolicyService.requireApplicationAllowed(reservation.getContentId());
         payment.setMethod(request.getPaymentMethod());
         payment.setStatus(PaymentStatus.PAID);
         payment.setPaidAt(LocalDateTime.now());

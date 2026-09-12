@@ -20,6 +20,16 @@ public class AdminPageController {
         return adminPage(model, "users", "사용자 관리");
     }
 
+    @GetMapping("/reservation-places")
+    public String reservationPlaces(Model model) {
+        return adminPage(model, "reservationPlaces", "장소 예약 설정");
+    }
+
+    @GetMapping("/reservation-requests")
+    public String reservationRequests(Model model) {
+        return adminPage(model, "reservationRequests", "예약 신청 검토");
+    }
+
     @GetMapping("/owner-applications")
     public String ownerApplications(Model model) {
         return adminPage(model, "ownerApplications", "사업자 신청 관리");

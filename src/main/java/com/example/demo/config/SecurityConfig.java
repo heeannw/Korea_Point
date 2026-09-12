@@ -27,6 +27,7 @@ public class SecurityConfig {
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/community/**").authenticated()
                 .requestMatchers("/api/comments/**").authenticated()
+                .requestMatchers("/api/reservations/**").authenticated()
                 .requestMatchers("/api/reports/**").authenticated()
                 .requestMatchers("/api/trip/plan/**").authenticated()
                 .requestMatchers("/api/trip/reservation/**").authenticated()

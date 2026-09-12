@@ -182,15 +182,15 @@
                         <p class="reservation-no" th:text="${reservation.reservationNo}">KP-00000000-0000</p>
                         <h3 th:text="${reservationTitleById[reservation.id]}">관광지명</h3>
                         <p th:text="|${reservation.reservationDate} · ${reservation.reservationTime} · ${reservation.peopleCount}#{mypage.common.peopleSuffix}|">2026-08-12 · 10:00 · 1명</p>
-                        <p class="payment-meta" th:if="${reservation.payment != null}"
+                        <p class="payment-meta" th:if="${reservation.payment != null and reservation.applicationStatus != 'PENDING'}"
                            th:text="|#{mypage.reservation.deposit} ${#numbers.formatInteger(reservation.payment.amount, 3, 'COMMA')}#{mypage.common.wonSuffix} · ${(reservation.payment.status.name() == 'READY') ? #messages.msg('mypage.status.paymentReady') : (reservation.payment.status.name() == 'PAID' ? #messages.msg('mypage.status.paymentPaid') : (reservation.payment.status.name() == 'FAILED' ? #messages.msg('mypage.status.paymentFailed') : (reservation.payment.status.name() == 'CANCELED' ? #messages.msg('mypage.status.paymentCanceled') : (reservation.payment.status.name() == 'REFUNDED' ? #messages.msg('mypage.status.paymentRefunded') : #messages.msg('mypage.status.paymentForfeited')))))}|">예약금 5,000원 · 결제 대기</p>
                     </div>
-                    <div class="reservation-side">
+                    <div class="reservation-side"><a class="mini-btn" th:href="@{/ko/reservation/requests/{id}(id=${reservation.id})}" th:text="#{reservation.request.open}">신청 상태 보기</a>
                         <span class="status-badge"
                               th:classappend="${reservation.status == '예약 취소'} ? ' muted' : ''"
-                              th:text="${reservation.status == '예약 취소'} ? #{mypage.status.reservationCanceled} : (${reservation.status == '예약 완료'} ? #{mypage.status.reservationConfirmed} : #{mypage.status.paymentReady})">예약 완료</span>
+                              th:text="${#messages.msg('reservation.request.state.' + reservation.applicationStatus)}">예약 완료</span>
                         <a class="mini-btn primary"
-                           th:if="${reservation.payment != null and (reservation.payment.status.name() == 'READY' or reservation.payment.status.name() == 'FAILED')}"
+                           th:if="${reservation.payable}"
                            th:href="@{/ko/reservation/payment/{id}(id=${reservation.id},lang=${lang})}" th:text="#{mypage.reservation.payDeposit}">예약금 결제</a>
                         <div class="kebab-wrap">
                             <button type="button" class="kebab-btn" onclick="toggleActionMenu(this, event)" th:aria-label="#{mypage.reservation.menuLabel}">⋯</button>
@@ -204,7 +204,7 @@
                                         th:data-time="${reservation.reservationTime}"
                                         th:data-people="${reservation.peopleCount}"
                                         th:data-memo="${reservation.memo}"
-                                        onclick="openReservationEdit(this, event)" th:text="#{mypage.common.edit}">수정</button>
+                                        th:if="${reservation.applicationEditable}" onclick="openReservationEdit(this, event)" th:text="#{mypage.common.edit}">수정</button>
                                 <button type="button" class="danger"
                                         th:data-id="${reservation.id}"
                                         onclick="cancelReservation(this, event)" th:text="#{mypage.common.cancel}">취소</button>
@@ -402,7 +402,7 @@
             </div>
             <button type="button" class="modal-close" onclick="closeReservationEdit()" th:aria-label="#{mypage.common.close}">×</button>
         </div>
-        <form class="reservation-edit-form" onsubmit="submitReservationEdit(event)">
+        <p class="notice" th:text="#{reservation.request.editGuide}"></p><form class="reservation-edit-form" onsubmit="submitReservationEdit(event)">
             <input type="hidden" id="editReservationId">
             <input type="hidden" id="editContentId">
             <input type="hidden" id="editContentTypeId">
@@ -459,15 +459,15 @@
                     <p class="reservation-no" th:text="${reservation.reservationNo}">KP-00000000-0000</p>
                     <h3 th:text="${reservationTitleById[reservation.id]}">관광지명</h3>
                     <p th:text="|${reservation.reservationDate} · ${reservation.reservationTime} · ${reservation.peopleCount}#{mypage.common.peopleSuffix}|">2026-08-12 · 10:00 · 1명</p>
-                    <p class="payment-meta" th:if="${reservation.payment != null}"
+                    <p class="payment-meta" th:if="${reservation.payment != null and reservation.applicationStatus != 'PENDING'}"
                        th:text="|#{mypage.reservation.deposit} ${#numbers.formatInteger(reservation.payment.amount, 3, 'COMMA')}#{mypage.common.wonSuffix} · ${(reservation.payment.status.name() == 'READY') ? #messages.msg('mypage.status.paymentReady') : (reservation.payment.status.name() == 'PAID' ? #messages.msg('mypage.status.paymentPaid') : (reservation.payment.status.name() == 'FAILED' ? #messages.msg('mypage.status.paymentFailed') : (reservation.payment.status.name() == 'CANCELED' ? #messages.msg('mypage.status.paymentCanceled') : (reservation.payment.status.name() == 'REFUNDED' ? #messages.msg('mypage.status.paymentRefunded') : #messages.msg('mypage.status.paymentForfeited')))))}|">예약금 5,000원 · 결제 대기</p>
                 </div>
-                <div class="reservation-side">
+                <div class="reservation-side"><a class="mini-btn" th:href="@{/ko/reservation/requests/{id}(id=${reservation.id})}" th:text="#{reservation.request.open}">신청 상태 보기</a>
                     <span class="status-badge"
                           th:classappend="${reservation.status == '예약 취소'} ? ' muted' : ''"
-                          th:text="${reservation.status == '예약 취소'} ? #{mypage.status.reservationCanceled} : (${reservation.status == '예약 완료'} ? #{mypage.status.reservationConfirmed} : #{mypage.status.paymentReady})">예약 완료</span>
+                          th:text="${#messages.msg('reservation.request.state.' + reservation.applicationStatus)}">예약 완료</span>
                     <a class="mini-btn primary"
-                       th:if="${reservation.payment != null and (reservation.payment.status.name() == 'READY' or reservation.payment.status.name() == 'FAILED')}"
+                       th:if="${reservation.payable}"
                        th:href="@{/ko/reservation/payment/{id}(id=${reservation.id},lang=${lang})}" th:text="#{mypage.reservation.payDeposit}">예약금 결제</a>
                     <div class="kebab-wrap" th:unless="${reservation.status == '예약 취소'}">
                         <button type="button" class="kebab-btn" onclick="toggleActionMenu(this, event)" th:aria-label="#{mypage.reservation.menuLabel}">⋯</button>
@@ -481,7 +481,7 @@
                                     th:data-time="${reservation.reservationTime}"
                                     th:data-people="${reservation.peopleCount}"
                                     th:data-memo="${reservation.memo}"
-                                    onclick="openReservationEdit(this, event)" th:text="#{mypage.common.edit}">수정</button>
+                                    th:if="${reservation.applicationEditable}" onclick="openReservationEdit(this, event)" th:text="#{mypage.common.edit}">수정</button>
                             <button type="button" class="danger"
                                     th:data-id="${reservation.id}"
                                     onclick="cancelReservation(this, event)" th:text="#{mypage.common.cancel}">취소</button>
@@ -577,6 +577,7 @@
         reservationFallback: /*[[#{mypage.js.reservationFallback}]]*/ '예약',
         reservationEditSuffix: /*[[#{mypage.js.reservationEditSuffix}]]*/ '수정',
         reservationUpdateFailed: /*[[#{mypage.js.reservationUpdateFailed}]]*/ '예약을 수정하지 못했습니다.',
+        futureVisit: /*[[#{reservation.form.futureVisit}]]*/ '현재 시각 이후의 방문 날짜와 시간을 선택해 주세요.',
         reservationCancelConfirm: /*[[#{mypage.js.reservationCancelConfirm}]]*/ '이 예약을 취소할까요?',
         reservationCancelFailed: /*[[#{mypage.js.reservationCancelFailed}]]*/ '예약을 취소하지 못했습니다.',
         savedRemoveConfirm: /*[[#{mypage.js.savedRemoveConfirm}]]*/ '이 장소를 저장 목록에서 해제할까요?',
@@ -866,7 +867,8 @@
             })
         });
         if (!response.ok) {
-            alert(msg.reservationUpdateFailed);
+            const error = await response.json().catch(() => null);
+            alert(error?.code === 'INVALID_VISIT_TIME' ? msg.futureVisit : msg.reservationUpdateFailed);
             return;
         }
         location.reload();

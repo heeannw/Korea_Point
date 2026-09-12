@@ -27,6 +27,9 @@
 
             <!-- 처리함: 관리자가 실제로 "해야 하는" 일. 밀린 건수를 배지로 보여 준다 -->
             <p class="nav-group">처리함</p>
+            <a class="nav-link" th:classappend="${activePage == 'reservationRequests'} ? ' active'" th:href="@{/admin/reservation-requests}">
+                <strong>예약 신청 검토</strong><span>승인·반려·무료 이용 안내</span>
+            </a>
             <a class="nav-link" th:classappend="${activePage == 'reports'} ? ' active'" th:href="@{/admin/reports}">
                 <strong>신고 처리<span class="nav-badge" id="navReportsBadge" hidden>0</span></strong>
                 <span>숨김과 정지까지 한 자리에서</span>
@@ -38,6 +41,9 @@
 
             <!-- 찾아보기: 밀린 일이 아니라 필요할 때 검색해서 들르는 곳 -->
             <p class="nav-group">찾아보기</p>
+            <a class="nav-link" th:classappend="${activePage == 'reservationPlaces'} ? ' active'" th:href="@{/admin/reservation-places}">
+                <strong>장소 예약 설정</strong><span>무료·유료 확인 및 예약 허용</span>
+            </a>
             <a class="nav-link" th:classappend="${activePage == 'users'} ? ' active'" th:href="@{/admin/users}">
                 <strong>사용자</strong>
                 <span>권한, 상태, 포인트 조정</span>
@@ -79,6 +85,44 @@
         </header>
 
         <div id="alertBanner" class="alert-banner" role="status" aria-live="polite"></div>
+
+        <section id="reservationPlacesPanel" class="page-panel">
+            <div class="section-head"><div><h2>장소 예약 설정</h2>
+                <p>미확인 장소는 결제 없이 예약 신청을 받습니다. 무료 장소와 예약 미운영 장소는 신청을 차단합니다.</p>
+                <p>예약 신청 검토 메뉴에서 신청별 요금과 예약 가능 여부를 확인하고 총 예약금을 정해 승인해 주세요.</p>
+            </div></div>
+            <form id="reservationPlacesFilter" class="filters">
+                <label>장소 검색<input id="reservationPlacesKeyword" placeholder="장소명, 주소 또는 장소 ID"></label>
+                <label>카테고리<select id="reservationPlacesType">
+                    <option value="">전체</option><option value="12">관광지</option><option value="14">문화시설</option>
+                    <option value="15">축제</option><option value="25">여행코스</option><option value="28">레포츠</option>
+                    <option value="32">숙박</option><option value="38">쇼핑</option><option value="39">음식점</option>
+                </select></label>
+                <button class="primary-button" type="submit">검색</button>
+            </form>
+            <p id="reservationPlacesMessage" role="status" aria-live="polite"></p>
+            <div id="reservationPlacesList"></div>
+            <div class="modal-actions">
+                <button id="reservationPlacesPrevious" class="ghost-button" type="button">이전</button>
+                <span id="reservationPlacesPage"></span>
+                <button id="reservationPlacesNext" class="ghost-button" type="button">다음</button>
+            </div>
+        </section>
+
+        <section id="reservationRequestsPanel" class="page-panel">
+            <div class="section-head"><div><h2>예약 신청 검토</h2>
+                <p>방문 가능 여부와 요금을 확인한 뒤 승인해 주세요. 승인 전에는 결제가 진행되지 않습니다.</p>
+                <p>총 예약금과 안내 사유는 신청자에게 표시됩니다. 결제 기한은 승인 후 24시간 또는 방문 시간 중 빠른 시각입니다.</p>
+            </div></div>
+            <form id="reservationRequestsFilter" class="filters">
+                <label>처리 상태<select id="reservationRequestsPending"><option value="true">승인 대기</option><option value="false">전체 신청</option></select></label>
+                <button class="primary-button" type="submit">조회</button>
+            </form>
+            <p id="reservationRequestsMessage" role="status" aria-live="polite"></p>
+            <div id="reservationRequestsList"></div>
+            <div class="modal-actions"><button id="reservationRequestsPrevious" class="ghost-button" type="button">이전</button>
+                <span id="reservationRequestsPage"></span><button id="reservationRequestsNext" class="ghost-button" type="button">다음</button></div>
+        </section>
 
         <section id="dashboardPanel" class="page-panel">
             <div class="section-head">
@@ -447,5 +491,7 @@
 
 <script th:src="@{/js/admin/admin.js}"></script>
 <script th:src="@{/js/admin/admin-v2.js}"></script>
+<script th:src="@{/js/admin/reservation-places.js}"></script>
+<script th:src="@{/js/admin/reservation-requests.js}"></script>
 </body>
 </html>

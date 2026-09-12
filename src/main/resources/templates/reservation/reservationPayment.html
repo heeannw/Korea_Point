@@ -13,7 +13,7 @@
 <div th:replace="~{fragments/app-header :: header(${lang == 'zh-CN' ? 'zh' : lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <main class="page payment-page">
-    <ol class="booking-steps" aria-label="Reservation progress"><li><span>1</span><span th:text="#{reservation.ui.step.details}">예약 정보</span></li><li class="active" aria-current="step"><span>2</span><span th:text="#{reservation.ui.step.payment}">예약금 결제</span></li><li><span>3</span><span th:text="#{reservation.ui.step.complete}">예약 완료</span></li></ol>
+    <ol class="booking-steps" aria-label="Reservation progress"><li><span>1</span><span th:text="#{reservation.request.apply}"></span></li><li><span>2</span><span th:text="#{reservation.request.review}"></span></li><li class="active" aria-current="step"><span>3</span><span th:text="#{reservation.ui.step.payment}"></span></li><li><span>4</span><span th:text="#{reservation.ui.step.complete}"></span></li></ol>
     <section class="page-head">
         <div>
             <p class="eyebrow" th:text="#{reservation.payment.eyebrow}">예약금 결제</p>
@@ -42,12 +42,12 @@
 
         <aside class="panel order-summary">
             <p class="eyebrow small" th:text="#{reservation.payment.summary}">예약 정보</p>
-            <h2 th:text="${reservation.placeTitle}">장소명</h2>
+            <h2 th:text="${reservation.placeTitle}">장소명</h2><p th:text="${reservation.reviewNote}"></p>
             <dl class="summary-list compact">
                 <div class="summary-row"><dt th:text="#{reservation.payment.date}">예약일</dt><dd th:text="${reservation.reservationDate}">2026-09-10</dd></div>
                 <div class="summary-row"><dt th:text="#{reservation.payment.time}">시간</dt><dd th:text="${reservation.reservationTime}">18:00</dd></div>
                 <div class="summary-row"><dt th:text="#{reservation.payment.people}">인원</dt><dd th:text="|${reservation.peopleCount}명|">2명</dd></div>
-                <div class="summary-row"><dt>1인 예약금</dt><dd>5,000원</dd></div>
+                <div class="summary-row"><dt th:text="#{reservation.request.deadline}"></dt><dd th:text="${#temporals.format(reservation.paymentDeadline, 'yyyy-MM-dd HH:mm')}"></dd></div>
                 <div class="summary-row total"><dt>결제할 예약금</dt><dd th:text="|${#numbers.formatInteger(payment.amount, 3, 'COMMA')}원|">10,000원</dd></div>
             </dl>
             <div class="deposit-policy">

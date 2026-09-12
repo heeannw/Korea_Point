@@ -173,3 +173,5 @@
 }
 .booking-page .summary-list .summary-row.total { grid-template-columns: minmax(120px, 1fr) auto; }
 
+
+.booking-page .booking-policy-status strong { font-size: 16px; color: #526174; }

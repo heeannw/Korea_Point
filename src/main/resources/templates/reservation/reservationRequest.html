@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko" th:lang="${lang}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{reservation.request.title}">예약 신청 내역</title>
+    <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
+    <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
+    <link rel="stylesheet" th:href="@{/css/reservation/booking.css}">
+</head>
+<body class="booking-page">
+<div th:replace="~{fragments/app-header :: header(${lang == 'zh-CN' ? 'zh' : lang}, ${isLoggedIn}, ${currentUserName})}"></div>
+<main class="page" th:with="state=${reservation.applicationStatus}">
+    <ol class="booking-steps"><li><span>1</span><span th:text="#{reservation.request.apply}">예약 신청</span></li>
+        <li class="active"><span>2</span><span th:text="#{reservation.request.review}">관리자 승인</span></li>
+        <li><span>3</span><span th:text="#{reservation.ui.step.payment}">결제</span></li>
+        <li><span>4</span><span th:text="#{reservation.ui.step.complete}">예약 확정</span></li></ol>
+    <h1 th:text="${#messages.msg('reservation.request.state.' + state)}">승인 대기</h1>
+    <p class="notice" th:text="${#messages.msg('reservation.request.guide.' + state)}">아직 예약이 확정되지 않았습니다.</p>
+    <section class="panel">
+        <p th:text="${reservation.reservationNo}"></p><h2 th:text="${reservation.placeTitle}"></h2>
+        <dl class="summary-list">
+            <div class="summary-row"><dt th:text="#{reservation.form.date}">방문일</dt><dd th:text="${reservation.reservationDate}"></dd></div>
+            <div class="summary-row"><dt th:text="#{reservation.form.time}">시간</dt><dd th:text="${reservation.reservationTime}"></dd></div>
+            <div class="summary-row"><dt th:text="#{reservation.payment.people}">인원</dt><dd th:text="${reservation.peopleCount}"></dd></div>
+            <div class="summary-row" th:if="${reservation.reviewNote != null}"><dt th:text="#{reservation.request.note}">관리자 안내</dt><dd style="white-space: pre-wrap; overflow-wrap: anywhere" th:text="${reservation.reviewNote}"></dd></div>
+            <div class="summary-row" th:if="${state == 'APPROVED' and reservation.payment != null}"><dt th:text="#{reservation.request.total}">총 예약금</dt><dd th:text="#{reservation.form.won(${#numbers.formatInteger(reservation.payment.amount, 1, 'COMMA')})}"></dd></div>
+            <div class="summary-row" th:if="${reservation.paymentDeadline != null}"><dt th:text="#{reservation.request.deadline}">결제 기한</dt><dd th:text="${#temporals.format(reservation.paymentDeadline, 'yyyy-MM-dd HH:mm')}"></dd></div>
+        </dl>
+        <div class="card-actions">
+            <a class="btn" th:if="${reservation.payable}" th:href="@{/ko/reservation/payment/{id}(id=${reservation.id})}" th:text="#{mypage.reservation.payDeposit}">예약금 결제</a>
+            <a class="btn secondary" th:href="@{/ko/mypage(lang=${lang})}" th:text="#{reservation.request.myPage}">마이페이지</a>
+            <a class="btn secondary" th:href="@{/ko/reservation(lang=${lang})}" th:text="#{reservation.policy.back}">목록으로</a>
+        </div>
+    </section>
+</main>
+<script th:src="@{/js/common/header-menu.js}"></script>
+</body></html>
