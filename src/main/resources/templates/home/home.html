@@ -1856,7 +1856,9 @@
             <a th:href="@{/community/post-list}" href="/community/post-list" th:text="#{home.cat.community}">커뮤니티</a>
         </div>
 
-        <div class="footer-copy">Copyright 2025 KoreaPoint. All rights reserved.</div>
+        <!-- 연도는 서버가 넣는다. 손으로 적어 두면 해가 바뀔 때마다 지난 연도가 남는다. -->
+        <div class="footer-copy"
+             th:text="|Copyright ${#temporals.year(#temporals.createNow())} KoreaPoint. All rights reserved.|">Copyright 2026 KoreaPoint. All rights reserved.</div>
     </div>
 </footer>
 
