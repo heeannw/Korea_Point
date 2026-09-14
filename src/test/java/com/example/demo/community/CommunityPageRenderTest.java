@@ -56,6 +56,56 @@ class CommunityPageRenderTest {
                 details, null, AuthorityUtils.createAuthorityList("ROLE_USER"));
     }
 
+    /**
+     * 화면 틀이 요청한 언어로 나오는지 본다.
+     *
+     * <p>messages_ja/zh/fr 에 community 키가 없던 동안, 일본어로 커뮤니티를 열면
+     * 글은 한국어이고 틀은 영어로 나왔다. 키가 빠져도 화면은 멀쩡히 그려지고
+     * 영어로 조용히 넘어가기 때문에 눈으로 보지 않으면 모른다. 그래서 여기서 잡는다.
+     *
+     * <p>글 제목과 본문은 아직 국문·영문 두 벌뿐이라 검사하지 않는다. 여기서 보는 것은
+     * 버튼·탭·안내 문구처럼 messages 파일에서 오는 것뿐이다.
+     */
+    @Test
+    void 목록_틀이_요청한_언어로_나온다() throws Exception {
+        // 글 쓰기 단추(community.btn.write)와 탭 제목으로 본다. 둘 다 messages 파일에서 온다.
+        String[][] cases = {
+                {"en", "Write Post", "Korea Point | Community"},
+                {"ja", "記事の作成", "Korea Point | コミュニティ"},
+                {"zh", "撰写文章", "Korea Point | 社区"},
+                {"fr", "Écrire un article", "Korea Point | Communauté"},
+        };
+        for (String[] c : cases) {
+            mockMvc.perform(get("/community/post-list")
+                            .param("lang", c[0])
+                            .with(authentication(asRealUser())))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString(c[1])))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString(c[2])))
+                    // html lang 이 en 으로 박혀 있던 적이 있다. 화면 읽어주는 프로그램이 이걸 본다.
+                    .andExpect(content().string(
+                            org.hamcrest.Matchers.containsString("<html lang=\"" + c[0] + "\"")));
+        }
+    }
+
+    /** 신고 창은 문구가 템플릿에 박혀 있어 오래 한국어·영어 두 벌뿐이었다. */
+    @Test
+    void 신고_창_문구도_언어를_탄다() throws Exception {
+        String[][] cases = {{"ja", "通報"}, {"zh", "举报"}, {"fr", "Signaler"}};
+        Long postId = postRepository.findAll().stream()
+                .filter(p -> p.getDeletedAt() == null)
+                .map(p -> p.getId())
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("글이 없어 확인할 수 없습니다"));
+        for (String[] c : cases) {
+            mockMvc.perform(get("/community/post/" + postId)
+                            .param("lang", c[0])
+                            .with(authentication(asRealUser())))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString(c[1])));
+        }
+    }
+
     @Test
     void 목록_화면이_그려진다() throws Exception {
         mockMvc.perform(get("/community/post-list").with(authentication(asRealUser())))

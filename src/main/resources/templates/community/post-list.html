@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>KoreaConnect - Community</title>
+    <title th:text="#{community.page.title}">Korea Point | 커뮤니티</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sora:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -97,7 +97,7 @@
                    th:classappend="${selectedCategory != null and selectedCategory == cat.categoryId} ? 'text-[#3b9eff] border-[#3b9eff]' : 'text-[#8b919c] border-transparent hover:text-[#5b6270]'"
                    class="shrink-0 flex items-center h-12 px-3.5 text-[16px] border-b-2 no-underline transition-colors"
                    style="font-weight:600;">
-                    <span th:text="${#locale.language == 'en' and cat.nameEn != null ? cat.nameEn : cat.name}">Category</span>
+                    <span th:text="${#messages.msgOrNull('community.category.' + cat.categoryId) ?: cat.name}">Category</span>
                 </a>
             </nav>
 
@@ -117,7 +117,7 @@
                 </a>
                 <span th:if="${isLoggedIn and communitySuspended}"
                       class="h-[36px] px-3.5 flex items-center bg-red-50 text-red-600 rounded-md text-[15px] border border-red-200"
-                      style="font-weight:500;">
+                      style="font-weight:500;" th:text="#{community.suspended}">
                     커뮤니티 작성 제한 계정
                 </span>
             </div>
@@ -238,7 +238,7 @@
                     <!-- 카테고리 배지. 폭을 고정해야 제목이 세로로 줄을 맞춘다 -->
                     <span class="cat-badge shrink-0"
                           th:classappend="'cat-' + ${post.categoryId % 6}"
-                          th:text="${#locale.language == 'en' and post.categoryNameEn != null ? post.categoryNameEn : post.categoryName}">Category</span>
+                          th:text="${#messages.msgOrNull('community.category.' + post.categoryId) ?: post.categoryName}">Category</span>
 
                     <div class="flex-1 min-w-0 flex items-baseline gap-2.5">
                         <h3 class="text-[18px] leading-[1.4] text-[#16181d] truncate group-hover:underline decoration-1 underline-offset-2"
@@ -250,7 +250,7 @@
                               th:text="'[' + ${post.commentCount} + ']'">[0]</span>
                         <!-- 조회수가 많이 붙은 글. 커뮤니티에서 불꽃은 'HOT' 이라는 약속된 표시다 -->
                         <i th:if="${post.hot}" data-lucide="flame"
-                           class="w-4 h-4 shrink-0 text-[#f4511e]" aria-label="인기 글"></i>
+                           class="w-4 h-4 shrink-0 text-[#f4511e]" th:aria-label="#{community.list.hot}" aria-label="인기 글"></i>
                         <!-- 하루 안에 올라온 글. 빨강도 관습이라 다른 색을 쓰면 눈에 안 들어온다 -->
                         <span th:if="${post.fresh}"
                               class="shrink-0 px-1.5 py-px rounded text-[11px] leading-[16px] bg-[#fdecec] text-[#d92d20]"
