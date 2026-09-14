@@ -1,5 +1,6 @@
 package com.example.demo.community.controller;
 
+import com.example.demo.community.service.CommunityTextResolver;
 import com.example.demo.community.dto.PostDto;
 import com.example.demo.community.dto.CommunityListView;
 import com.example.demo.community.dto.TrendingPeriod;
@@ -12,6 +13,7 @@ import com.example.demo.user.util.SecurityUtil;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
@@ -35,6 +37,8 @@ public class CommunityController {
     private final UserService userService;
     // 목록 오른쪽 레일(가게 홍보 · 축제). 커뮤니티 화면 전용이라 별도 서비스로 뺐다.
     private final CommunitySidebarService sidebarService;
+    // 글·댓글 문구를 화면 언어에 맞게 고르는 곳. 규칙을 화면마다 두지 않는다.
+    private final CommunityTextResolver textResolver;
 
     @GetMapping("/post-list")
     public String getPosts(@RequestParam(required = false) Long categoryId,
@@ -77,14 +81,29 @@ public class CommunityController {
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         model.addAttribute("communitySuspended", isCommunitySuspended());
         // 레일. 노출 중인 홍보 글이 없으면 화면에서 그 칸이 통째로 사라진다.
-        model.addAttribute("promoPosts", sidebarService.promoPosts());
+        var promoPosts = sidebarService.promoPosts();
+        model.addAttribute("promoPosts", promoPosts);
+
+        // 목록 본문·인기 글·홍보 레일이 같은 글을 서로 다르게 부르지 않도록 한 번에 고른다.
+        String lang = LocaleContextHolder.getLocale().getLanguage();
+        var shown = new java.util.ArrayList<com.example.demo.community.dto.PostDto>();
+        shown.addAll(data.getPosts().getContent());
+        if (data.getTrendingPosts() != null) shown.addAll(data.getTrendingPosts());
+        shown.addAll(promoPosts);
+        model.addAttribute("postText", textResolver.forPosts(shown, lang));
+
         return "community/post-list";
     }
 
     @GetMapping("/post/{id}")
     public String getPostDetail(@PathVariable Long id, Model model, HttpSession session) {
-        model.addAttribute("post", postService.getPostDetail(id, session));
-        model.addAttribute("comments", commentService.getCommentsByPost(id));
+        var post = postService.getPostDetail(id, session);
+        var comments = commentService.getCommentsByPost(id);
+        String lang = LocaleContextHolder.getLocale().getLanguage();
+        model.addAttribute("post", post);
+        model.addAttribute("comments", comments);
+        model.addAttribute("postText", textResolver.forPost(post, lang));
+        model.addAttribute("commentText", textResolver.forComments(comments, lang));
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         model.addAttribute("currentUserId", SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserId() : null);

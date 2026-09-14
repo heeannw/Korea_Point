@@ -94,7 +94,7 @@
 
             <!-- 제목 -->
             <h1 class="text-[32.5px] text-[#16181d] mb-6 leading-[1.35] tracking-[-0.01em]" style="font-weight:700;"
-                th:text="${#locale.language == 'en' and post.titleEn != null ? post.titleEn : (#locale.language != 'en' and post.titleKo != null ? post.titleKo : post.title)}">Title</h1>
+                th:text="${postText.title}">Title</h1>
 
             <!-- 작성자 정보 -->
             <div class="flex items-center justify-between border-b border-[#e8eaed] pb-6 mb-8">
@@ -125,7 +125,7 @@
 
             <!-- 본문 (에디터 HTML) -->
             <div class="post-content min-h-[168px] text-[18.5px] text-[#33383f] leading-[1.75]"
-                 th:utext="${#locale.language == 'en' and post.contentEn != null ? post.contentEn : (#locale.language != 'en' and post.contentKo != null ? post.contentKo : post.content)}">본문 내용</div>
+                 th:utext="${postText.content}">본문 내용</div>
 
             <!-- 이 글에서 소개한 장소 -->
             <div th:if="${post.places != null and !post.places.isEmpty()}"
@@ -209,7 +209,7 @@
                                           th:attr="data-time=${#temporals.format(comment.createdAt, 'yyyy-MM-dd') + 'T' + #temporals.format(comment.createdAt, 'HH:mm:ss')}">Date</span>
                                 </div>
                                 <p class="text-[17px] text-[#5b6270] leading-relaxed"
-                                   th:text="${#locale.language == 'en' and comment.contentEn != null ? comment.contentEn : (#locale.language != 'en' and comment.contentKo != null ? comment.contentKo : comment.content)}">Comment content</p>
+                                   th:text="${commentText[comment.id]}">Comment content</p>
                                 <div class="edit-form hidden mt-1">
                                     <textarea th:attr="data-comment-id=${comment.id}"
                                               class="w-full px-3.5 py-2.5 text-[15.5px] border border-[#e8eaed] rounded-md focus:outline-none focus:border-[#3b9eff] resize-none"
@@ -290,7 +290,7 @@
                                         </div>
                                         <p class="text-[15.5px] text-[#5b6270] leading-relaxed"
                                            th:if="${!reply.deleted}"
-                                           th:text="${#locale.language == 'en' and reply.contentEn != null ? reply.contentEn : (#locale.language != 'en' and reply.contentKo != null ? reply.contentKo : reply.content)}">Reply content</p>
+                                           th:text="${commentText[reply.id]}">Reply content</p>
                                         <p class="text-[15.5px] text-[#8b919c] italic"
                                            th:if="${reply.deleted}" th:text="#{community.comment.deleted}">삭제된 댓글입니다.</p>
                                         <div th:if="${!reply.deleted}" class="edit-form hidden mt-1">

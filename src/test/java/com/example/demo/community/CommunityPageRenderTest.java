@@ -42,6 +42,9 @@ class CommunityPageRenderTest {
     @Autowired
     com.example.demo.community.repository.PostRepository postRepository;
 
+    @Autowired
+    com.example.demo.community.repository.CommunityTranslationRepository translationRepository;
+
     /**
      * 앱이 principal 에서 사용자 id 를 꺼내 쓰므로 @WithMockUser 만으로는 부족하다.
      * 실제로 쓰는 LocalUserDetails 를 넣어 준다.
@@ -85,6 +88,42 @@ class CommunityPageRenderTest {
                     // html lang 이 en 으로 박혀 있던 적이 있다. 화면 읽어주는 프로그램이 이걸 본다.
                     .andExpect(content().string(
                             org.hamcrest.Matchers.containsString("<html lang=\"" + c[0] + "\"")));
+        }
+    }
+
+    /**
+     * 글 제목이 요청한 언어로 나오는지 본다.
+     *
+     * <p>화면 틀만 옮기고 글은 국문으로 두면, 일본어로 연 사람에게는 버튼만 일본어이고
+     * 정작 읽을 것은 한국어인 화면이 된다. 여기서 보는 것은 글이 실제로 그 언어로
+     * 바뀌어 나오는지다.
+     *
+     * <p>번역은 정기 작업이 뒤에서 채운다. 아직 안 채워진 DB 에서는 확인할 수 없으므로
+     * 그럴 때는 건너뛴다.
+     */
+    @Test
+    void 글_제목이_요청한_언어로_나온다() throws Exception {
+        for (String lang : new String[]{"ja", "zh", "fr"}) {
+            var row = translationRepository
+                    .findByTargetTypeAndLanguageAndTargetIdIn(
+                            com.example.demo.community.entity.CommunityTranslationTarget.POST,
+                            lang,
+                            postRepository.findAll().stream()
+                                    .filter(p -> p.getDeletedAt() == null)
+                                    .map(p -> p.getId())
+                                    .toList())
+                    .stream()
+                    .filter(t -> t.getTitle() != null && !t.getTitle().isBlank())
+                    .findFirst();
+            org.junit.jupiter.api.Assumptions.assumeTrue(
+                    row.isPresent(), lang + " 번역이 아직 없어 건너뛴다");
+
+            mockMvc.perform(get("/community/post/" + row.get().getTargetId())
+                            .param("lang", lang)
+                            .with(authentication(asRealUser())))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(
+                            org.hamcrest.Matchers.containsString(row.get().getTitle())));
         }
     }
 
