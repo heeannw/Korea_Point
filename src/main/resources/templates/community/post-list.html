@@ -185,7 +185,7 @@
                             <span class="shrink-0 w-4 flex items-center justify-center">
                                 <i th:if="${st.count <= 3}" data-lucide="crown"
                                    class="w-4 h-4 text-[#f5a524]"
-                                   th:attr="aria-label=${st.count} + '위'"></i>
+                                   th:aria-label="#{common.rank(${st.count})}"></i>
                                 <span th:unless="${st.count <= 3}"
                                       class="text-[13px] text-[#a8adb7]" style="font-weight:700;"
                                       th:text="${st.count}">4</span>
@@ -231,7 +231,7 @@
                         <i th:if="${data.posts.number * data.posts.size + postStat.count} <= 3" data-lucide="crown" class="w-[18px] h-[18px]"
                            th:classappend="${data.posts.number * data.posts.size + postStat.count} == 1 ? 'crown-1'
                                            : (${data.posts.number * data.posts.size + postStat.count} == 2 ? 'crown-2' : 'crown-3')"
-                           th:attr="aria-label=${data.posts.number * data.posts.size + postStat.count} + '위'"></i>
+                           th:aria-label="#{common.rank(${data.posts.number * data.posts.size + postStat.count})}"></i>
                         <span th:unless="${data.posts.number * data.posts.size + postStat.count} <= 3" class="rank-plain"
                               th:text="${data.posts.number * data.posts.size + postStat.count}">4</span>
                     </span>
