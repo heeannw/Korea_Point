@@ -1647,7 +1647,7 @@
             <div class="festival-media" th:style="|background-image:url('${festival.thumbnailUrl ?: festival.imageUrl}')|">
                 <span class="festival-badge"
                       th:classappend="${festival.ongoing} ? ' is-on'"
-                      th:text="${lang == 'en' and festival.badgeEn != null ? festival.badgeEn : festival.badge}">진행중</span>
+                      th:text="${festival.ongoing} ? #{home.festival.ongoing} : #{home.festival.daysLeft(${festival.daysLeft})}">진행중</span>
                 <img class="festival-image"
                      th:classappend="${festival.imageModifiable} ? ' can-crop'"
                      th:src="${festival.imageUrl}"
@@ -1768,14 +1768,14 @@
                     <svg th:if="${iter.count <= 3}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
                          th:classappend="${iter.count == 1} ? 'crown-1' : (${iter.count == 2} ? 'crown-2' : 'crown-3')"
-                         th:attr="aria-label=${iter.count} + '위'">
+                         th:aria-label="#{home.rank(${iter.count})}">
                         <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/>
                         <path d="M5 21h14"/>
                     </svg>
                     <span th:unless="${iter.count <= 3}" th:text="${iter.count}">4</span>
                 </span>
                 <span class="post-tag" th:classappend="'cat-' + ${post.categoryId % 6}"
-                      th:text="${lang == 'en' and post.categoryNameEn != null ? post.categoryNameEn : post.categoryName}">카테고리</span>
+                      th:text="${postCatLabel[post.categoryId] ?: post.categoryName}">카테고리</span>
                 <div class="post-main">
                     <span class="post-title" th:text="${lang == 'en' ? (post.titleEn != null ? post.titleEn : post.title) : (post.titleKo != null ? post.titleKo : post.title)}">샘플 게시글 제목</span>
                     <span th:if="${post.commentCount > 0}" class="post-cmt"
@@ -1856,7 +1856,9 @@
             <a th:href="@{/community/post-list}" href="/community/post-list" th:text="#{home.cat.community}">커뮤니티</a>
         </div>
 
-        <div class="footer-copy">Copyright 2025 KoreaPoint. All rights reserved.</div>
+        <!-- 연도는 서버가 넣는다. 손으로 적어 두면 해가 바뀔 때마다 지난 연도가 남는다. -->
+        <div class="footer-copy"
+             th:text="|Copyright ${#temporals.year(#temporals.createNow())} KoreaPoint. All rights reserved.|">Copyright 2026 KoreaPoint. All rights reserved.</div>
     </div>
 </footer>
 

@@ -93,8 +93,7 @@ public class HomeFestivalService {
                 .endDate(end)
                 .period(formatPeriod(start, end))
                 .ongoing(ongoing)
-                .badge(ongoing ? "진행중" : daysLeft + "일 뒤")
-                .badgeEn(ongoing ? "Now on" : "in " + daysLeft + " days")
+                .daysLeft(daysLeft)
                 .imageModifiable(item.isImageModifiable())
                 .build();
     }

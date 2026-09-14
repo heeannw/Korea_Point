@@ -1,6 +1,7 @@
 package com.example.demo.tourism.config;
 
 import com.example.demo.tourism.dto.TourPlaceDto;
+import com.example.demo.tourism.service.TourPlaceTranslationFiller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
@@ -19,7 +20,8 @@ import java.util.Map;
  * {@code tourdata/tourism/tour_i18n_<lang>.json} 이다.
  * TourAPI 언어별 서비스는 국문과 <b>contentId 체계가 완전히 달라</b>(교집합 0) 조인이 불가능해서,
  * 값은 전부 DeepL Free 기계번역이다(이름·주소만). 개요·운영정보는 v1에서 국문을 유지한다.
- * 표에 없는 contentId 는 국문 원문을 그대로 둔다.</p>
+ * 표에 없는 contentId 는 {@link TourPlaceTranslationFiller} 가 뒤에서 채운다.
+ * 채워지기 전까지는 국문 원문을 그대로 둔다.</p>
  */
 @Component
 public class TourPlaceI18n {
@@ -37,10 +39,12 @@ public class TourPlaceI18n {
     private record Entry(String title, String addr) { }
 
     private final ObjectMapper objectMapper;
+    private final TourPlaceTranslationFiller filler;
     private Map<String, Map<String, Entry>> byLang = Map.of();
 
-    public TourPlaceI18n(ObjectMapper objectMapper) {
+    public TourPlaceI18n(ObjectMapper objectMapper, TourPlaceTranslationFiller filler) {
         this.objectMapper = objectMapper;
+        this.filler = filler;
     }
 
     @PostConstruct
@@ -76,10 +80,25 @@ public class TourPlaceI18n {
         return table == null ? null : table.get(contentId);
     }
 
+    /**
+     * 표에서 찾고, 없으면 나중에 채운 것에서 찾는다. 둘 다 없으면 보충 대상으로 적어 두고
+     * null 을 돌려준다. 적어 두기만 할 뿐 여기서 번역기를 부르지는 않는다.
+     */
+    private Entry resolve(String lang, String contentId, String koTitle, String koAddress) {
+        Entry e = lookup(lang, contentId);
+        if (e != null) return e;
+
+        TourPlaceTranslationFiller.Text filled = filler.find(lang, contentId);
+        if (filled != null) return new Entry(filled.title(), filled.address());
+
+        filler.remember(lang, contentId, koTitle, koAddress);
+        return null;
+    }
+
     /** 국문으로 채워진 DTO의 이름·주소를 요청 언어로 바꿔 끼운다. 번역이 없으면 그대로 둔다. */
     public void apply(String lang, TourPlaceDto place) {
         if (place == null) return;
-        Entry e = lookup(lang, place.getId());
+        Entry e = resolve(lang, place.getId(), place.getTitle(), place.getAddr());
         if (e == null) return;
         if (e.title() != null && !e.title().isBlank()) place.setTitle(e.title());
         if (e.addr() != null && !e.addr().isBlank()) place.setAddr(e.addr());
@@ -87,13 +106,13 @@ public class TourPlaceI18n {
 
     /** 상세 패널 제목처럼 문자열 하나만 필요한 경우. 번역이 없으면 국문을 돌려준다. */
     public String translateTitle(String lang, String contentId, String koreanTitle) {
-        Entry e = lookup(lang, contentId);
+        Entry e = resolve(lang, contentId, koreanTitle, null);
         return (e != null && e.title() != null && !e.title().isBlank()) ? e.title() : koreanTitle;
     }
 
     /** 주소만 필요한 경우(홈 카드 등). 번역이 없으면 국문을 돌려준다. */
     public String translateAddress(String lang, String contentId, String koreanAddress) {
-        Entry e = lookup(lang, contentId);
+        Entry e = resolve(lang, contentId, null, koreanAddress);
         return (e != null && e.addr() != null && !e.addr().isBlank()) ? e.addr() : koreanAddress;
     }
 }

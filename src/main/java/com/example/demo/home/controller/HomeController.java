@@ -1,17 +1,21 @@
 package com.example.demo.home.controller;
 
+import com.example.demo.community.dto.PostDto;
 import com.example.demo.home.service.HomeFestivalService;
 import com.example.demo.home.service.HomeFoodService;
 import com.example.demo.home.service.HomePlaceService;
 import com.example.demo.home.service.HomeService;
 import com.example.demo.user.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Controller
@@ -22,6 +26,7 @@ public class HomeController {
     private final HomeFestivalService homeFestivalService;
     private final HomePlaceService homePlaceService;
     private final HomeFoodService homeFoodService;
+    private final MessageSource messageSource;
 
 
     // @GetMapping: 브라우저에서 GET 방식으로 "/" 또는 "/en" 에 접속했을 때 이 메서드 실행
@@ -72,6 +77,28 @@ public class HomeController {
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
     }
 
+    /**
+     * 커뮤니티 카테고리 이름(맛집·교통·관광·자유·홍보)을 화면 언어로 바꾼 표.
+     *
+     * <p>카테고리 표에는 국문·영문 칸만 있다. 그래서 일본어·중국어·불어로 홈을
+     * 열면 글 목록의 말머리만 한국어로 남았다. 카테고리는 다섯 개뿐이고 늘 일도
+     * 드물어 표에 칸을 더하는 대신 messages 파일에 둔다.
+     *
+     * <p>키가 없는 카테고리가 나중에 생기면 아무것도 담지 않는다. 그러면 화면이
+     * 표에 적힌 이름을 그대로 쓴다. 말머리 하나 때문에 홈 전체가 죽지는 않는다.
+     */
+    private Map<Long, String> postCatLabels(List<PostDto> posts) {
+        Locale locale = LocaleContextHolder.getLocale();
+        Map<Long, String> labels = new HashMap<>();
+        for (PostDto post : posts) {
+            Long id = post.getCategoryId();
+            if (id == null || labels.containsKey(id)) continue;
+            String label = messageSource.getMessage("home.postCat." + id, null, null, locale);
+            if (label != null) labels.put(id, label);
+        }
+        return labels;
+    }
+
     private void populateModel(Model model, String lang) {
 
 
@@ -99,7 +126,9 @@ public class HomeController {
         // post() 헬퍼 메서드를 호출하여 각 게시글 Map 을 생성
         // 총 5개의 게시글 데이터를 리스트로 묶어서 "posts" 이름으로 Model에 추가
         // Thymeleaf에서 th:each 로 반복하며 각 post.title, post.author 등을 꺼내 씀
-        model.addAttribute("trendingPosts", homeService.getTrendingPosts());
+        List<PostDto> trendingPosts = homeService.getTrendingPosts();
+        model.addAttribute("trendingPosts", trendingPosts);
+        model.addAttribute("postCatLabel", postCatLabels(trendingPosts));
 
         // ── 지금 부산에서 열리는 축제 ────────────────────────────────────────
         // 관광공사 데이터 중 유일하게 기간이 있는 자료라, 접속 시점에 따라 화면이 바뀐다.
