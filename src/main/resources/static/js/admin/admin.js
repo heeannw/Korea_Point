@@ -65,17 +65,20 @@ const REPORT_STATUS_LABELS = {
     REJECTED: "반려"
 };
 
+// 화면에 보이는 이름은 그대로다. 값 이름만 뜻에 맞게 바꿨다.
+// 전에는 성적 콘텐츠가 SPAM, 자살·자해가 MISINFORMATION, 스팸이 MISLEADING 으로
+// 저장돼서, DB 를 직접 보는 사람만 다르게 읽었다. 순서는 신고 창과 같다.
 const REPORT_REASON_LABELS = {
-    SPAM: "성적 콘텐츠",
+    SEXUAL: "성적 콘텐츠",
     ABUSE: "폭력·혐오 콘텐츠",
     HATE: "증오·악의적 콘텐츠",
     HARASSMENT: "괴롭힘·폭력",
     HARMFUL: "유해·위험 행위",
-    MISINFORMATION: "자살·자해",
-    WRONG_INFO: "잘못된 정보",
+    SELF_HARM: "자살·자해",
+    MISINFORMATION: "잘못된 정보",
     CHILD_ABUSE: "아동 학대",
     TERRORISM: "테러 조장",
-    MISLEADING: "스팸·혼동 콘텐츠",
+    SPAM: "스팸·혼동 콘텐츠",
     OTHER: "기타"
 };
 
