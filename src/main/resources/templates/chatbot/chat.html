@@ -933,11 +933,10 @@
         img.alt = '';
         img.className = 'answer-hero-img';
         img.addEventListener('error', () => img.remove());
-        // 이미지가 늦게 로딩되면서 말풍선 높이가 나중에 또 늘어나 스크롤이 다시 짧아지는 경우 —
-        // 이미지 붙이는 시점에 이미 맨 아래를 보고 있었을 때만, 로딩 완료 후 다시 맨 아래로 따라간다
-        // (위쪽 메시지를 일부러 보고 있는 중이면 이미지 로딩 때문에 화면을 확 끌어내리지 않는다).
-        const wasAtBottom = main.scrollTop + main.clientHeight >= main.scrollHeight - 40;
-        img.addEventListener('load', () => { if (wasAtBottom) main.scrollTop = main.scrollHeight; });
+        // 이미지가 늦게 로딩되면서 말풍선 높이가 나중에 또 늘어나 스크롤이 다시 짧아지는 문제 —
+        // prependImage는 항상 "방금 받은 답변/방금 누른 카드"에만 쓰이므로(과거 메시지를 조용히
+        // 갱신하는 경우가 없음) 무조건 로딩 완료 후 맨 아래로 다시 따라가면 된다.
+        img.addEventListener('load', () => { main.scrollTop = main.scrollHeight; });
         bubble.prepend(img);
     }
 
