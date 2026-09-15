@@ -465,7 +465,24 @@ body[data-page="reservationRequests"] #reservationRequestsPanel {
     font-size: 12px;
 }
 
-.queue-row .action-group { flex-shrink: 0; }
+/* 줄마다 버튼 짝이 달라서(해결+⋯ / 승인+반려) 시작 자리가 들쭉날쭉했다.
+   오른쪽 끝은 맞는데 왼쪽이 어긋나 목록이 흐트러져 보인다. 자리를 넉넉히 잡아
+   두고 오른쪽에 붙이면 줄이 바뀌어도 버튼이 같은 세로줄에 선다.
+   min-width 라서 "작성자 정지 해제"처럼 긴 것이 오면 그만큼 늘어난다. */
+.queue-row .action-group {
+    flex-shrink: 0;
+    justify-content: flex-end;
+}
+
+/* 오른쪽 끝을 맞추는 것만으로는 부족했다. 짝이 "해결 + ⋯" 과 "승인 + 반려" 로
+   달라서 두 번째 자리의 너비가 다르고, 그 바람에 첫 버튼의 왼쪽이 어긋났다.
+   두 자리를 같은 너비로 잡으면 줄이 바뀌어도 위아래가 한 줄로 선다. */
+.queue-row .action-group > button,
+.queue-row .action-group > .action-link,
+.queue-row .action-group > .more-menu,
+.queue-row .action-group > .more-menu > .more-btn {
+    min-width: 56px;
+}
 
 @media (max-width: 900px) {
     .queue-row { flex-wrap: wrap; }
@@ -474,9 +491,12 @@ body[data-page="reservationRequests"] #reservationRequestsPanel {
 
 /* ── 운영 규모 ──
    행동할 일이 아니라 배경 정보다. 한 줄로 눌러 두면 위 카드가 살아난다. */
+/* 일곱 칸을 격자에 넣으면 화면이 좁아질 때 마지막 줄에 빈 칸이 남는다.
+   칸 사이 1px 선이 배경색이라 그 빈 자리가 회색 덩어리로 보였다.
+   늘어나는 줄로 두면 몇 개가 한 줄에 들어가든 뒷자리가 비지 않는다. */
 .scale-strip {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 1px;
     margin-bottom: 20px;
     border-radius: var(--r);
@@ -486,6 +506,8 @@ body[data-page="reservationRequests"] #reservationRequestsPanel {
 }
 
 .scale-item {
+    flex: 1 1 110px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -553,17 +575,26 @@ body[data-page="reservationRequests"] #reservationRequestsPanel {
     color: var(--am);
 }
 
-/* ── Filters ── */
+/* ── Filters ──
+   칸 수를 미리 정한 격자였는데, 화면마다 거르개 개수가 달라서 맞지 않았다.
+   세 칸짜리 격자에 다섯 개를 넣으면 넷째가 버튼 자리로 밀려 홀쭉해지고,
+   버튼 둘은 서로 떨어져 가운데가 텅 빈다. 사용자 관리와 게시글 관리가 그랬다.
+
+   늘어나는 줄로 두면 개수를 세지 않아도 된다. 칸은 고르게 늘고, 버튼은 마지막
+   칸 뒤에 나란히 붙는다. 화면이 좁아지면 저절로 접힌다. */
 .filters {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
     gap: 10px 12px;
     margin-bottom: 16px;
     padding: 0 0 16px;
     border-bottom: 1px solid var(--al);
 }
 
-.filters.four { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; }
+/* 한 칸이 이보다 좁아지면 날짜 칸의 달력 아이콘이 글자를 밀어낸다.
+   max-width 가 없으면 줄 끝에 홀로 남은 칸이 줄 전체로 부풀어 혼자만 커 보인다. */
+.filters label { flex: 1 1 180px; min-width: 0; max-width: 320px; }
 
 .filters .primary-button {
     /* 그리드 칸을 다 차지하면 표보다 커진다. 글자만큼만 차지하게 둔다 */
@@ -574,6 +605,10 @@ body[data-page="reservationRequests"] #reservationRequestsPanel {
     border-radius: 9px;
     box-shadow: none;
 }
+
+/* 조치 열은 버튼 길이가 줄마다 다르다("정지" / "정지 해제" / "본인 계정").
+   왼쪽에 붙이면 뒤따르는 ⋯ 이 들쭉날쭉해진다. 오른쪽에 붙여 ⋯ 을 한 줄로 세운다. */
+td .action-group { justify-content: flex-end; }
 
 /* 화면 머리의 새로고침도 같은 이유로 줄인다. 주인공은 아래 내용이다 */
 .section-head .primary-button {
@@ -748,18 +783,29 @@ tbody tr:last-child td { border-bottom: none; }
 
 .action-group .primary-button:hover { transform: none; }
 
-/* 행에 바로 놓인 위험 버튼은 채워서 낸다.
-   연한 빨강 바탕에 빨간 글씨는 상태 배지("숨김")와 똑같이 생겨서,
-   조치 열의 "숨김"이 눌러야 하는 버튼인지 그냥 표시인지 구분되지 않았다.
+/* 행에 바로 놓인 위험 버튼은 테두리로 낸다.
+   한때 꽉 채운 빨강이었는데, 목록 한 화면에 줄마다 빨간 버튼이 서니 멀쩡한 글들이
+   전부 문제 있는 것처럼 보였다. 상태 칸은 초록 "활성"인데 바로 옆이 빨강이라
+   표 전체가 경고처럼 읽혔다. 한 표 안에서 빨강이 두 가지 뜻(지금 문제 있는 상태 /
+   누르면 위험한 일이 생김)으로 쓰인 탓이다. 채움은 상태 쪽에 넘기고 동작은 테두리로 낸다.
+
+   그 전에는 연한 빨강 바탕이었는데 상태 배지("숨김")와 똑같이 생겨서 눌러야 하는
+   것인지 구분되지 않았다. 테두리가 있고 높이가 30px 이라 작은 알약 배지와는 구분된다.
+
+   위험하다는 경고는 누른 뒤 확인 창이 맡는다.
    ⋯ 안에 접힌 것들은 메뉴 항목이라 지금의 옅은 스타일이 맞아 그대로 둔다. */
 .action-group > .danger-button {
-    background: var(--ad);
-    color: #ffffff;
-    border-color: transparent;
+    background: var(--ap);
+    color: var(--ad);
+    border: 1px solid rgba(229,72,77,0.38);
     font-weight: 600;
 }
 
-.action-group > .danger-button:hover { background: #dc2626; }
+.action-group > .danger-button:hover {
+    background: var(--adb);
+    border-color: var(--ad);
+}
+
 
 /* 주 동작 옆의 ⋯ 버튼과 그 안에 접힌 나머지 조치들 */
 .more-menu { position: relative; display: inline-flex; }
@@ -997,6 +1043,19 @@ tbody tr:last-child td { border-bottom: none; }
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 
+/* 확인 창의 위험 버튼은 채워서 낸다. 목록에서는 줄마다 서니 테두리로 물러섰지만,
+   여기는 마지막으로 한 번 묻는 자리라 눈에 띄어야 한다. */
+.modal-actions .danger-button {
+    padding: 10px 18px;
+    background: var(--ad);
+    color: #ffffff;
+    border-color: transparent;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.modal-actions .danger-button:hover { background: #dc2626; }
+
 /* ── Log Snapshot ── */
 .log-snapshot { max-width: 300px; }
 
@@ -1030,8 +1089,8 @@ tbody tr:last-child td { border-bottom: none; }
     .dashboard-grid.four {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .scale-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .filters.four { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; }
+    /* 늘어나는 줄이라 칸 수를 따로 정하지 않아도 알아서 접힌다 */
+    /* 늘어나는 줄이라 칸 수를 따로 정하지 않아도 알아서 접힌다 */
 }
 
 @media (max-width: 1100px) {
@@ -1048,9 +1107,10 @@ tbody tr:last-child td { border-bottom: none; }
     .admin-main { padding: 16px; }
     .admin-topbar { flex-direction: column; }
     .topbar-actions { justify-content: flex-start; }
-    .dashboard-grid, .dashboard-grid.four, .dashboard-grid.two,
-    .filters, .filters.four { grid-template-columns: 1fr; }
-    .scale-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dashboard-grid, .dashboard-grid.four, .dashboard-grid.two { grid-template-columns: 1fr; }
+    /* 거르개와 규모 띠는 늘어나는 줄이라 칸 수를 정하지 않는다.
+       다만 이 폭에서는 거르개 한 칸이 한 줄을 다 쓰는 편이 읽기 낫다. */
+    .filters label { flex-basis: 100%; }
     .modal-card { padding: 18px; }
     .modal-actions { flex-direction: column-reverse; }
 }

@@ -38,6 +38,7 @@ const ACTION_TYPE_LABELS = {
     POST_HIDE: "게시글 숨김",
     POST_RESTORE: "게시글 복구",
     POST_PURGE: "게시글 영구 삭제",
+    PROMO_TAKEDOWN: "광고 내리기",
     COMMENT_HIDE: "댓글 숨김",
     COMMENT_RESTORE: "댓글 복구",
     COMMENT_PURGE: "댓글 영구 삭제",
@@ -464,10 +465,10 @@ function renderQueueOwner(item) {
                     ${documentLink(item.id, item.menuFilePath, "menu", "메뉴")}
                 </div>
             </div>
-            <div class="action-group">
-                <button type="button" class="primary-button" data-owner-approve="${item.id}" data-store-name="${escapeHtml(item.storeName)}">승인</button>
-                <button type="button" class="danger-button" data-owner-reject="${item.id}" data-store-name="${escapeHtml(item.storeName)}">반려</button>
-            </div>
+            ${withMoreMenu(
+                `<button type="button" class="primary-button" data-owner-approve="${item.id}" data-store-name="${escapeHtml(item.storeName)}">승인</button>`,
+                [`<button type="button" class="danger-button" data-owner-reject="${item.id}" data-store-name="${escapeHtml(item.storeName)}">반려</button>`]
+            )}
         </div>
     `;
 }
@@ -729,14 +730,19 @@ async function loadOwnerApplications() {
     });
 }
 
+/* 조치 자리는 어느 화면에서나 "자주 쓰는 것 하나 + ⋯" 한 가지 모양으로 낸다.
+   전에는 줄마다 달랐다. 게시글은 버튼 하나, 신고는 버튼 하나에 ⋯, 사업자 신청은
+   버튼 둘에 ⋯ 없음. 같은 자리인데 생김새가 매번 바뀌어 어수선했다.
+
+   자주 쓰는 것을 메뉴 안에 넣지는 않는다. 관리자는 같은 일을 줄줄이 반복하는데
+   승인을 메뉴에 접으면 한 줄마다 클릭이 한 번씩 더 든다. 버튼만 봐도 그 줄이 어떤
+   상태인지 읽히는 것도 잃는다. */
 function renderOwnerApplicationActions(item) {
     if (item.status === "PENDING") {
-        return `
-            <div class="action-group">
-                <button type="button" class="primary-button" data-owner-approve="${item.id}" data-store-name="${escapeHtml(item.storeName)}">승인</button>
-                <button type="button" class="danger-button" data-owner-reject="${item.id}" data-store-name="${escapeHtml(item.storeName)}">반려</button>
-            </div>
-        `;
+        return withMoreMenu(
+            `<button type="button" class="primary-button" data-owner-approve="${item.id}" data-store-name="${escapeHtml(item.storeName)}">승인</button>`,
+            [`<button type="button" class="danger-button" data-owner-reject="${item.id}" data-store-name="${escapeHtml(item.storeName)}">반려</button>`]
+        );
     }
     if (item.status === "APPROVED") {
         return `
@@ -795,7 +801,8 @@ function openOwnerPointModal(userId, userName, currentPoint) {
         title: "사업자 포인트 지급",
         summary: `${userName} 사업자의 포인트를 조정합니다. (현재: ${numberFormat(currentPoint)}P)`,
         confirmText: "포인트 조정",
-        reasonOptions: toReasonOptions(["POINT_ADJUSTMENT", "ROLE_POLICY", "POLICY", "OTHER"]),
+        // 권한 정책은 권한을 바꿀 때 쓰는 사유다. 포인트를 주는 자리에는 오지 않는다.
+        reasonOptions: toReasonOptions(["POINT_ADJUSTMENT", "POLICY", "OTHER"]),
         extraHtml: `
             <label>조정 값
                 <input type="number" id="modalPointDelta" placeholder="지급: +1000 / 차감: -500">
@@ -817,6 +824,7 @@ function openOwnerApplicationModal(requestId, storeName, mode) {
     const isApprove = mode === "approve";
     openActionModal({
         title: isApprove ? "사업자 신청 승인" : "사업자 신청 반려",
+        danger: !isApprove,
         summary: `${storeName} 사업자 신청을 ${isApprove ? "승인" : "반려"}합니다.`,
         confirmText: isApprove ? "승인" : "반려",
         requireReasonCode: false,
@@ -841,7 +849,11 @@ function openUserPointModal(userId, userName, currentPoint) {
         title: "포인트 조정",
         summary: `${userName} 사용자의 포인트를 조정합니다. (현재: ${numberFormat(currentPoint)}P)`,
         confirmText: "포인트 조정",
-        reasonOptions: toReasonOptions(["POINT_ADJUSTMENT", "SPAM", "ABUSE", "POLICY", "REPORT_POLICY", "OTHER"]),
+        // 사유는 두 갈래다. 글이 왜 나쁜지(스팸·욕설·주제 무관·중복)와 어떤 규정으로
+        // 처리했는지(정지 정책·신고 처리 정책 따위). 포인트는 글을 손대는 조치가
+        // 아니라서 앞엣것이 들어갈 자리가 아니다. 욕을 해서 깎았다면 "운영 정책 위반",
+        // 신고 처리 끝에 깎았다면 "신고 처리 정책"으로 남는다.
+        reasonOptions: toReasonOptions(["POINT_ADJUSTMENT", "POLICY", "REPORT_POLICY", "OTHER"]),
         extraHtml: `
             <label>조정 값
                 <input type="number" id="modalPointDelta" placeholder="지급: +100 / 차감: -500">
@@ -863,6 +875,7 @@ function openUserStatusModal(userId, userName, currentStatus) {
     const nextStatus = currentStatus === "SUSPENDED" ? "ACTIVE" : "SUSPENDED";
     openActionModal({
         title: "계정 상태 변경",
+        danger: nextStatus === "SUSPENDED",
         summary: `${userName} 사용자를 ${labelForAccountStatus(nextStatus)} 상태로 변경합니다.`,
         confirmText: currentStatus === "SUSPENDED" ? "정지 해제" : "계정 정지",
         reasonOptions: toReasonOptions(nextStatus === "SUSPENDED"
@@ -966,6 +979,7 @@ function openPostActionModal(postId, mode, title) {
     const isRestore = mode === "restore";
     openActionModal({
         title: isRestore ? "게시글 복구" : "게시글 숨김",
+        danger: !isRestore,
         summary: `"${title}" 게시글을 ${isRestore ? "복구" : "숨김"}합니다.`,
         confirmText: isRestore ? "복구" : "숨김",
         reasonOptions: toReasonOptions(isRestore
@@ -995,10 +1009,13 @@ function openPostActionModal(postId, mode, title) {
 function openPromoTakedownModal(postId, title, promoUntil, refundAmount) {
     openActionModal({
         title: "광고 노출 내리기",
+        danger: true,
         summary: `"${title}" 글을 광고 자리에서 내립니다. 글 자체는 목록에 그대로 남습니다.`
             + (promoUntil ? ` (원래 노출 만료: ${formatDate(promoUntil)})` : ""),
         confirmText: "내리기",
-        reasonOptions: toReasonOptions(["SPAM", "ABUSE", "OFF_TOPIC", "POLICY", "DUPLICATE", "OTHER"]),
+        // 게시글 숨김 목록을 그대로 쓰고 있었다. 광고를 내리는 이유로 "중복 게시물"과
+        // "주제와 무관"은 오지 않고, 정작 자주 쓸 "신고 처리 정책"이 빠져 있었다.
+        reasonOptions: toReasonOptions(["POLICY", "SPAM", "ABUSE", "REPORT_POLICY", "OTHER"]),
         extraHtml: `
             <label class="checkbox-row">
                 <input type="checkbox" id="modalPromoRefund">
@@ -1024,6 +1041,7 @@ function openPromoTakedownModal(postId, title, promoUntil, refundAmount) {
 function openPostPurgeModal(postId, title) {
     openActionModal({
         title: "게시글 영구 삭제",
+        danger: true,
         summary: `"${title}" 게시글을 복구할 수 없도록 영구 삭제합니다.`,
         confirmText: "영구 삭제",
         reasonOptions: toReasonOptions(["PURGE_POLICY", "SPAM", "ABUSE", "POLICY", "OTHER"]),
@@ -1101,6 +1119,7 @@ function openCommentActionModal(commentId, mode) {
     const isRestore = mode === "restore";
     openActionModal({
         title: isRestore ? "댓글 복구" : "댓글 숨김",
+        danger: !isRestore,
         summary: `댓글 #${commentId}를 ${isRestore ? "복구" : "숨김"}합니다.`,
         confirmText: isRestore ? "복구" : "숨김",
         reasonOptions: toReasonOptions(isRestore
@@ -1121,6 +1140,7 @@ function openCommentActionModal(commentId, mode) {
 function openCommentPurgeModal(commentId) {
     openActionModal({
         title: "댓글 영구 삭제",
+        danger: true,
         summary: `댓글 #${commentId}를 복구할 수 없도록 영구 삭제합니다.`,
         confirmText: "영구 삭제",
         reasonOptions: toReasonOptions(["PURGE_POLICY", "SPAM", "ABUSE", "POLICY", "OTHER"]),
@@ -1246,6 +1266,7 @@ function openReportTargetModal(item) {
 
     openActionModal({
         title: `${what} ${isRestore ? "복구" : "숨김"}`,
+        danger: !isRestore,
         summary: `"${item.targetSummary}" ${what}을 ${isRestore ? "복구" : "숨김"}합니다.`,
         confirmText: isRestore ? "복구" : "숨김",
         reasonOptions: toReasonOptions(isRestore
@@ -1272,6 +1293,7 @@ function openReportAuthorModal(item) {
 
     openActionModal({
         title: "작성자 계정 상태 변경",
+        danger: nextStatus === "SUSPENDED",
         summary: `${item.targetAuthorName} 사용자를 ${labelForAccountStatus(nextStatus)} 상태로 변경합니다.`,
         confirmText: item.targetAuthorSuspended ? "정지 해제" : "계정 정지",
         reasonOptions: toReasonOptions(nextStatus === "SUSPENDED"
@@ -1370,7 +1392,12 @@ function openActionModal(config) {
     adminState.modal = config;
     document.getElementById("actionModalTitle").textContent = config.title;
     document.getElementById("actionModalSummary").textContent = config.summary;
-    document.getElementById("modalConfirmButton").textContent = config.confirmText || "실행";
+    /* 되돌리기 힘든 조치는 확인 버튼도 빨갛게 낸다. 목록에서 채움을 뺀 것은
+       "위험하다는 말은 확인 창이 한다"는 전제였는데, 정작 확인 창의 버튼이
+       파랬다. 숨김과 정지가 포인트 조정과 똑같이 생겨서는 안 된다. */
+    const confirmButton = document.getElementById("modalConfirmButton");
+    confirmButton.textContent = config.confirmText || "실행";
+    confirmButton.className = config.danger ? "danger-button" : "primary-button";
     const reasonCodeGroup = document.getElementById("modalReasonCodeGroup");
     const reasonDetailGroup = document.getElementById("modalReasonDetailGroup");
     const reasonDetail = document.getElementById("modalReasonDetail");
@@ -1379,7 +1406,7 @@ function openActionModal(config) {
     fillSelect("modalReasonCode", config.reasonOptions || REASON_OPTIONS, { firstLabel: "사유 코드를 선택해 주세요" });
     document.getElementById("modalReasonCode").value = "";
     document.getElementById("modalReasonDetailLabel").textContent = config.reasonDetailLabel || "상세 메모";
-    reasonDetail.placeholder = config.reasonDetailPlaceholder || "필요 시 조치 사유를 추가로 남겨 주세요. OTHER 선택 시 필수입니다.";
+    reasonDetail.placeholder = config.reasonDetailPlaceholder || "필요 시 조치 사유를 추가로 남겨 주세요. \"기타\"를 고르면 반드시 적어야 합니다.";
     reasonDetail.value = "";
     const extraFieldsEl = document.getElementById("modalExtraFields");
     if (extraFieldsEl) {
