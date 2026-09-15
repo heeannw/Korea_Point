@@ -10,6 +10,9 @@ import com.example.demo.trip.entity.TripPlan;
 import com.example.demo.trip.entity.TripPlanDay;
 import com.example.demo.trip.entity.TripPlanSlot;
 import com.example.demo.trip.repository.TripPlanRepository;
+import com.example.demo.tourism.dto.SavedPlaceDto;
+import com.example.demo.tourism.service.SavedPlaceService;
+import com.example.demo.user.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +30,8 @@ public class TripPlanService {
 
     private final TripPlanRepository tripPlanRepository;
     private final TripRecommendService tripRecommendService;
+    // 저장(찜) 기능 자체는 관광 모듈 소관이라 새로 만들지 않고 기존 서비스를 그대로 읽기만 한다.
+    private final SavedPlaceService savedPlaceService;
 
     // ────────────────────────────────────────────
     //  저장
@@ -229,6 +234,14 @@ public class TripPlanService {
         // 엉뚱하게 나오는 원인이라 반드시 같이 채워줘야 한다.
         req.setStartDate(plan.getStartDate());
         req.setTravelDays(plan.getTravelDays());
+        // 일정 생성 시 저장한 장소를 우선 배치하던 것과 동일하게, 저장한 일정을 다시 볼 때 옆에
+        // 뜨는 추천 리스트(관광/음식/카페)도 저장한 장소를 반영해서 다시 계산되게 한다.
+        try {
+            req.setSavedPlaceNames(savedPlaceService.list(SecurityUtil.getCurrentUserId(), null)
+                    .stream().map(SavedPlaceDto::title).filter(t -> t != null && !t.isBlank()).toList());
+        } catch (Exception e) {
+            log.warn("저장 장소 목록 조회 실패 — 저장 장소 반영 없이 계속 진행: {}", e.getMessage());
+        }
 
         List<DayScheduleDto> schedule = new ArrayList<>();
         for (TripPlanDay day : plan.getDays()) {

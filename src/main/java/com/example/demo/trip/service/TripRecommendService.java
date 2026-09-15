@@ -883,7 +883,7 @@ public class TripRecommendService {
                             weather = Optional.of(new WeatherForecast(slotAt, 25, 80, "RAIN", 5, 10, "OVERCAST"));
                         }
                         Optional<WeatherForecast> slotWeather = weather;
-                        ScoredPlace saved = pickSaved(tourism, used, savedNames);
+                        ScoredPlace saved = pickSaved(tourism, used, savedNames, anchorLat, anchorLng);
                         // 바로 전 슬롯과 같은 세부 유형은 후보 풀에서 우선 제외 — 다 걸러지면(그 유형밖에 안 남으면) 원래 풀로 되돌아간다.
                         List<ScoredPlace> tourismPool = tourism;
                         if (saved == null && !lastTourismType.isBlank()) {
@@ -914,7 +914,7 @@ public class TripRecommendService {
                     case "food" -> {
                         String fc = order.getFoodCategory();
                         List<ScoredPlace> pool = (fc != null && !fc.isBlank() && foodByCat.containsKey(fc)) ? foodByCat.get(fc) : food;
-                        ScoredPlace saved = pickSaved(pool, used, savedNames);
+                        ScoredPlace saved = pickSaved(pool, used, savedNames, anchorLat, anchorLng);
                         ScoredPlace p = saved != null ? saved : pickNext(pool, used, anchorLat, anchorLng, 8.0);
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "food", p.place);
@@ -928,7 +928,7 @@ public class TripRecommendService {
                         }
                     }
                     case "cafe" -> {
-                        ScoredPlace saved = pickSaved(cafe, used, savedNames);
+                        ScoredPlace saved = pickSaved(cafe, used, savedNames, anchorLat, anchorLng);
                         ScoredPlace p = saved != null ? saved : pickNext(cafe, used, anchorLat, anchorLng, 8.0);
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "cafe", p.place);
@@ -937,7 +937,7 @@ public class TripRecommendService {
                         }
                     }
                     case "bar" -> {
-                        ScoredPlace saved = pickSaved(bar, used, savedNames);
+                        ScoredPlace saved = pickSaved(bar, used, savedNames, anchorLat, anchorLng);
                         ScoredPlace p = saved != null ? saved : pickNext(bar, used, anchorLat, anchorLng, 8.0);
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "bar", p.place);
@@ -1000,12 +1000,17 @@ public class TripRecommendService {
      * 저장 목록에 있는 장소를 이 풀(pool)에서 찾아 최우선으로 돌려준다. 점수/거리는 보지 않는다.
      * 없으면 null을 반환해서 호출부가 기존 pickNext로 폴백하게 한다.
      */
-    private ScoredPlace pickSaved(List<ScoredPlace> list, Set<String> used, List<String> savedNames) {
+    // 동선이 들쭉날쭉하다는 피드백 — 저장한 장소는 목록에 나온 순서 그대로(findFirst) 아무 슬롯에나
+    // 꽂혀서, 그날 동선이랑 동떨어진 곳이라도 무조건 그 자리에 들어갔었다. 저장한 장소가 여러 개면
+    // 그중 지금 위치(anchor)에서 제일 가까운 걸 우선 배치하도록 바꾼다.
+    private ScoredPlace pickSaved(List<ScoredPlace> list, Set<String> used, List<String> savedNames,
+                                  double anchorLat, double anchorLng) {
         if (savedNames.isEmpty()) return null;
         return list.stream()
                 .filter(sp -> !used.contains(sp.place.name()))
                 .filter(sp -> savedNames.stream().anyMatch(sn -> sp.place.name().contains(sn) || sn.contains(sp.place.name())))
-                .findFirst().orElse(null);
+                .min(Comparator.comparingDouble(sp -> haversine(anchorLat, anchorLng, sp.place.lat(), sp.place.lng())))
+                .orElse(null);
     }
 
     // 매번 일정을 새로 만들어도 항상 똑같은(1등만 뽑는) 조합이 나온다는 피드백 —
@@ -1020,15 +1025,23 @@ public class TripRecommendService {
 
     private ScoredPlace pickNext(List<ScoredPlace> list, Set<String> used,
                                  double anchorLat, double anchorLng, double maxKm) {
+        // 동선이 들쭉날쭉하다는 피드백 — list는 점수순으로 정렬돼 있어서, 반경 안이라도
+        // "점수 높은 순으로 먼저 걸리는 후보"를 그대로 상위 4개로 뽑으면 반경 안에서도
+        // 굳이 더 먼 곳이 뽑힐 수 있었다. 반경 안에서는 실제 거리순으로 가까운 곳부터 고른다.
+        Comparator<ScoredPlace> byDistance = Comparator.comparingDouble(
+                sp -> haversine(anchorLat, anchorLng, sp.place.lat(), sp.place.lng()));
         List<ScoredPlace> nearby = list.stream()
                 .filter(sp -> !used.contains(sp.place.name()))
                 .filter(sp -> haversine(anchorLat, anchorLng, sp.place.lat(), sp.place.lng()) <= maxKm)
+                .sorted(byDistance)
                 .limit(PICK_POOL_SIZE)
                 .collect(Collectors.toList());
         if (!nearby.isEmpty()) return randomPick(nearby);
 
+        // 반경 안에 후보가 아예 없을 때도(폴백) 점수순 상위가 아니라 그나마 가장 가까운 곳부터 고른다.
         List<ScoredPlace> fallback = list.stream()
                 .filter(sp -> !used.contains(sp.place.name()))
+                .sorted(byDistance)
                 .limit(PICK_POOL_SIZE)
                 .collect(Collectors.toList());
         return randomPick(fallback);

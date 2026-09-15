@@ -732,10 +732,26 @@
     }
 
     /* ── 제출 ── */
-    function submitRecommend() {
+    /** 사용자가 관광/음식/카페 상세에서 하트로 저장해둔 장소를, 일정 생성 시 해당 슬롯에
+     *  우선 배치되도록 이름만 뽑아 전달한다. 저장 기능 자체는 관광 모듈 소관이라(SavedPlaceController)
+     *  새로 만들지 않고 기존 공개 API를 그대로 읽기만 한다. 비로그인이거나 호출이 실패해도
+     *  일정 생성 자체는 막지 않고 그냥 빈 배열로 넘어간다. */
+    async function fetchSavedPlaceNames() {
+        try {
+            const res = await fetch('/tour/api/saved-places');
+            if (!res.ok) return [];
+            const list = await res.json();
+            return list.map(p => p.title).filter(Boolean);
+        } catch (e) {
+            return [];
+        }
+    }
+
+    async function submitRecommend() {
         const areas    = getAreaChips(), cats = getCatChips();
         const mustList = document.getElementById('mustVisit').value.trim().split(',').map(s=>s.trim()).filter(Boolean);
         const slotOrders = getSlotOrders();
+        const savedPlaceNames = await fetchSavedPlaceNames();
 
         const payload = {
             age:              parseInt(document.getElementById('age').value) || 25,
@@ -761,7 +777,8 @@
             preferredAreas:   areas,
             mustVisit:        mustList,
             categories:       cats,
-            styleDescription: document.getElementById('styleDescription').value.trim()
+            styleDescription: document.getElementById('styleDescription').value.trim(),
+            savedPlaceNames
         };
 
         const ct = document.querySelector('meta[name="_csrf"]')?.content;
