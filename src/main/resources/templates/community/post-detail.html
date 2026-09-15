@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title th:text="${post.title} + ' - KoreaConnect'">Post - KoreaPoint</title>
+    <title th:text="'Korea Point | ' + ${postText.title}">Korea Point</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Sora:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -86,14 +86,14 @@
             <!-- 카테고리 + 날짜 -->
             <div class="flex items-center gap-2 mb-3.5 text-[15px] text-[#8b919c]">
                 <span class="text-[#5b6270]" style="font-weight:600;"
-                      th:text="${#locale.language == 'en' and post.categoryNameEn != null ? post.categoryNameEn : post.categoryName}">Category</span>
+                      th:text="${#messages.msgOrNull('community.category.' + post.categoryId) ?: post.categoryName}">Category</span>
                 <span aria-hidden="true">·</span>
                 <span th:text="${#temporals.format(post.createdAt, 'yyyy.MM.dd')}">Date</span>
             </div>
 
             <!-- 제목 -->
             <h1 class="text-[32.5px] text-[#16181d] mb-6 leading-[1.35] tracking-[-0.01em]" style="font-weight:700;"
-                th:text="${#locale.language == 'en' and post.titleEn != null ? post.titleEn : (#locale.language != 'en' and post.titleKo != null ? post.titleKo : post.title)}">Title</h1>
+                th:text="${postText.title}">Title</h1>
 
             <!-- 작성자 정보 -->
             <div class="flex items-center justify-between border-b border-[#e8eaed] pb-6 mb-8">
@@ -124,18 +124,18 @@
 
             <!-- 본문 (에디터 HTML) -->
             <div class="post-content min-h-[168px] text-[18.5px] text-[#33383f] leading-[1.75]"
-                 th:utext="${#locale.language == 'en' and post.contentEn != null ? post.contentEn : (#locale.language != 'en' and post.contentKo != null ? post.contentKo : post.content)}">본문 내용</div>
+                 th:utext="${postText.content}">본문 내용</div>
 
             <!-- 이 글에서 소개한 장소 -->
             <div th:if="${post.places != null and !post.places.isEmpty()}"
                  class="mt-9 pt-7 border-t border-[#e8eaed]">
-                <div class="text-[15px] text-[#8b919c] mb-3" style="font-weight:700;">📍 이 글에서 소개한 장소</div>
+                <div class="text-[15px] text-[#8b919c] mb-3" style="font-weight:700;" th:text="#{community.detail.places}">📍 이 글에서 소개한 장소</div>
                 <div class="flex flex-col gap-2.5">
                     <a th:each="pl : ${post.places}"
                        th:href="@{${pl.kind == 'food' ? '/tour/food' : (pl.kind == 'cafe' ? '/tour/cafe' : '/tour/all')}(focus=${pl.contentId}, lang=${#locale.language})}"
                        class="flex items-center gap-3 px-4 py-3 rounded-md border border-[#e8eaed] no-underline hover:bg-gray-50 transition-colors">
                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[13px] text-[#5b6270]"
-                              th:text="${pl.kind == 'food' ? '맛집' : (pl.kind == 'cafe' ? '카페' : '관광')}">관광</span>
+                              th:text="${pl.kind == 'food'} ? #{community.place.food} : (${pl.kind == 'cafe'} ? #{community.place.cafe} : #{community.place.tour})">관광</span>
                         <span class="truncate text-[16px] text-[#16181d]" style="font-weight:600;" th:text="${pl.title}">장소명</span>
                         <span class="ml-auto text-[#8b919c]">&rsaquo;</span>
                     </a>
@@ -147,7 +147,8 @@
                 <button type="button"
                         th:attr="data-post-id=${post.postId}"
                         onclick="reportPost(this)"
-                        class="px-5 py-2.5 text-[15.5px] text-[#5b6270] border border-[#e8eaed] rounded-md hover:bg-gray-50 transition-colors cursor-pointer">
+                        class="px-5 py-2.5 text-[15.5px] text-[#5b6270] border border-[#e8eaed] rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+                        th:text="#{community.detail.btn.report}">
                     신고하기
                 </button>
             </div>
@@ -207,7 +208,7 @@
                                           th:attr="data-time=${#temporals.format(comment.createdAt, 'yyyy-MM-dd') + 'T' + #temporals.format(comment.createdAt, 'HH:mm:ss')}">Date</span>
                                 </div>
                                 <p class="text-[17px] text-[#5b6270] leading-relaxed"
-                                   th:text="${#locale.language == 'en' and comment.contentEn != null ? comment.contentEn : (#locale.language != 'en' and comment.contentKo != null ? comment.contentKo : comment.content)}">Comment content</p>
+                                   th:text="${commentText[comment.id]}">Comment content</p>
                                 <div class="edit-form hidden mt-1">
                                     <textarea th:attr="data-comment-id=${comment.id}"
                                               class="w-full px-3.5 py-2.5 text-[15.5px] border border-[#e8eaed] rounded-md focus:outline-none focus:border-[#3b9eff] resize-none"
@@ -245,7 +246,7 @@
                                                 th:text="#{community.comment.edit}">Edit</button>
                                         <button type="button" th:attr="data-comment-id=${comment.id}"
                                                 onclick="deleteComment(this)"
-                                                class="w-full text-left px-3.5 py-2 text-[15.5px] text-red-500 hover:bg-gray-50 cursor-pointer">삭제</button>
+                                                class="w-full text-left px-3.5 py-2 text-[15.5px] text-red-500 hover:bg-gray-50 cursor-pointer" th:text="#{community.comment.delete}">삭제</button>
                                     </th:block>
                                     <th:block th:if="${currentUserId != comment.userId}">
                                         <button type="button" th:attr="data-comment-id=${comment.id}" onclick="reportComment(this)"
@@ -288,18 +289,18 @@
                                         </div>
                                         <p class="text-[15.5px] text-[#5b6270] leading-relaxed"
                                            th:if="${!reply.deleted}"
-                                           th:text="${#locale.language == 'en' and reply.contentEn != null ? reply.contentEn : (#locale.language != 'en' and reply.contentKo != null ? reply.contentKo : reply.content)}">Reply content</p>
+                                           th:text="${commentText[reply.id]}">Reply content</p>
                                         <p class="text-[15.5px] text-[#8b919c] italic"
-                                           th:if="${reply.deleted}">삭제된 댓글입니다.</p>
+                                           th:if="${reply.deleted}" th:text="#{community.comment.deleted}">삭제된 댓글입니다.</p>
                                         <div th:if="${!reply.deleted}" class="edit-form hidden mt-1">
                                             <textarea th:attr="data-comment-id=${reply.id}"
                                                       class="w-full px-3.5 py-2.5 text-[15.5px] border border-[#e8eaed] rounded-md focus:outline-none focus:border-[#3b9eff] resize-none"
                                                       rows="2"></textarea>
                                             <div class="flex gap-2.5 mt-1">
                                                 <button type="button" onclick="saveEdit(this)"
-                                                        class="px-3.5 py-1 bg-[#3b9eff] text-white text-[14.5px] rounded-md hover:bg-[#1a7de0] cursor-pointer">저장</button>
+                                                        class="px-3.5 py-1 bg-[#3b9eff] text-white text-[14.5px] rounded-md hover:bg-[#1a7de0] cursor-pointer" th:text="#{community.comment.btn.save}">저장</button>
                                                 <button type="button" onclick="cancelEdit(this)"
-                                                        class="px-3.5 py-1 text-[14.5px] text-[#8b919c] hover:text-[#5b6270] cursor-pointer">취소</button>
+                                                        class="px-3.5 py-1 text-[14.5px] text-[#8b919c] hover:text-[#5b6270] cursor-pointer" th:text="#{community.comment.btn.cancel}">취소</button>
                                             </div>
                                         </div>
                                         <div th:if="${!reply.deleted}" class="flex items-center gap-3.5 mt-1">
@@ -326,7 +327,7 @@
                                                         th:text="#{community.comment.edit}">Edit</button>
                                                 <button type="button" th:attr="data-comment-id=${reply.id}"
                                                         onclick="deleteComment(this)"
-                                                        class="w-full text-left px-3.5 py-2 text-[15.5px] text-red-500 hover:bg-gray-50 cursor-pointer">삭제</button>
+                                                        class="w-full text-left px-3.5 py-2 text-[15.5px] text-red-500 hover:bg-gray-50 cursor-pointer" th:text="#{community.comment.delete}">삭제</button>
                                             </th:block>
                                             <th:block th:if="${currentUserId != reply.userId}">
                                                 <button type="button" th:attr="data-comment-id=${reply.id}" onclick="reportComment(this)"
@@ -451,6 +452,13 @@
     </div>
 </footer>
 
+<script th:inline="javascript">
+    /* 자바스크립트가 띄우는 안내 문구. 여기에 한국어를 적으면 다른 언어로 열었을 때
+       그 부분만 한국어로 뜬다. */
+    const CD = {
+        loginRequired: /*[[#{community.alert.loginRequired}]]*/ '로그인이 필요합니다.'
+    };
+</script>
 <script>
     lucide.createIcons();
     const CURRENT_USER_NAME = /*[[${currentUserName}]]*/ '';
@@ -491,7 +499,7 @@
         })
             .then(res => {
                 if (res.ok) { location.reload(); }
-                else { showAlert('로그인이 필요합니다.'); }
+                else { showAlert(CD.loginRequired); }
             });
     }
 
@@ -664,7 +672,7 @@
         })
             .then(res => {
                 if (res.ok) { location.reload(); }
-                else { showAlert('로그인이 필요합니다.'); }
+                else { showAlert(CD.loginRequired); }
             });
     }
 
@@ -738,7 +746,7 @@
         <p id="alertMessage" class="text-[18px] text-[#16181d] leading-relaxed whitespace-pre-line"></p>
         <div class="flex justify-end">
             <button onclick="document.getElementById('alertModal').classList.add('hidden')"
-                    class="px-6 py-2.5 bg-[#3b9eff] text-white text-[17px] rounded-md hover:bg-[#1a7de0] cursor-pointer">확인</button>
+                    class="px-6 py-2.5 bg-[#3b9eff] text-white text-[17px] rounded-md hover:bg-[#1a7de0] cursor-pointer" th:text="#{community.dialog.ok}">확인</button>
         </div>
     </div>
 </div>
@@ -750,9 +758,9 @@
         <p id="confirmMessage" class="text-[18px] text-[#16181d] leading-relaxed"></p>
         <div class="flex justify-end gap-2.5">
             <button onclick="confirmCancel()"
-                    class="px-5 py-2.5 text-[17px] text-[#8b919c] bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer">취소</button>
+                    class="px-5 py-2.5 text-[17px] text-[#8b919c] bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer" th:text="#{community.dialog.cancel}">취소</button>
             <button onclick="confirmOk()"
-                    class="px-5 py-2.5 text-[17px] text-white bg-red-500 rounded-md hover:bg-red-600 cursor-pointer">확인</button>
+                    class="px-5 py-2.5 text-[17px] text-white bg-red-500 rounded-md hover:bg-red-600 cursor-pointer" th:text="#{community.dialog.ok}">확인</button>
         </div>
     </div>
 </div>
@@ -764,7 +772,7 @@
         <!-- 헤더 -->
         <div class="flex items-center justify-between px-7 pt-6 pb-3.5 border-b border-[#f1f2f4]">
             <span class="text-[20.5px] text-[#16181d]" style="font-weight:700;"
-                  th:text="${#locale.language == 'en'} ? 'Report' : '신고'">신고</span>
+                  th:text="#{community.report.title}">신고</span>
             <button onclick="closeReportModal()" class="p-1 rounded-full hover:bg-gray-100 cursor-pointer text-[#8b919c]">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -774,58 +782,58 @@
         <!-- 본문 -->
         <div class="overflow-y-auto px-7 py-5 flex flex-col gap-1">
             <p class="text-[18px] text-[#16181d] mb-1" style="font-weight:600;"
-               th:text="${#locale.language == 'en'} ? 'What is the issue?' : '어떤 문제인가요?'">어떤 문제인가요?</p>
+               th:text="#{community.report.question}">어떤 문제인가요?</p>
             <p class="text-[15.5px] text-[#8b919c] mb-5"
-               th:text="${#locale.language == 'en'} ? 'KoreaPoint reviews all reports. It does not need to be a perfect match.' : 'KoreaPoint에서 모든 커뮤니티 가이드에 대해 확인하므로 완벽히 들어맞지 않아도 괜찮습니다.'">KoreaPoint에서 모든 커뮤니티 가이드에 대해 확인하므로 완벽히 들어맞지 않아도 괜찮습니다.</p>
+               th:text="#{community.report.notice}">KoreaPoint에서 모든 커뮤니티 가이드에 대해 확인하므로 완벽히 들어맞지 않아도 괜찮습니다.</p>
             <label class="flex items-center gap-3.5 py-2.5 cursor-pointer hover:bg-gray-50 rounded-md px-1">
-                <input type="radio" name="reportReason" value="SPAM" class="w-5 h-5 accent-gray-800"/>
+                <input type="radio" name="reportReason" value="SEXUAL" class="w-5 h-5 accent-gray-800"/>
                 <span class="text-[17px] text-[#16181d]"
-                      th:text="${#locale.language == 'en'} ? 'Sexual content' : '성적인 콘텐츠'">성적인 콘텐츠</span>
+                      th:text="#{community.report.reason.sexual}">성적인 콘텐츠</span>
             </label>
             <label class="flex items-center gap-3.5 py-2.5 cursor-pointer hover:bg-gray-50 rounded-md px-1">
                 <input type="radio" name="reportReason" value="ABUSE" class="w-5 h-5 accent-gray-800"/>
                 <span class="text-[17px] text-[#16181d]"
-                      th:text="${#locale.language == 'en'} ? 'Violent or repulsive content' : '폭력적 또는 혐오스러운 콘텐츠'">폭력적 또는 혐오스러운 콘텐츠</span>
+                      th:text="#{community.report.reason.violent}">폭력적 또는 혐오스러운 콘텐츠</span>
             </label>
             <label class="flex items-center gap-3.5 py-2.5 cursor-pointer hover:bg-gray-50 rounded-md px-1">
                 <input type="radio" name="reportReason" value="HATE" class="w-5 h-5 accent-gray-800"/>
                 <span class="text-[17px] text-[#16181d]"
-                      th:text="${#locale.language == 'en'} ? 'Hateful or abusive content' : '증오 또는 악의적인 콘텐츠'">증오 또는 악의적인 콘텐츠</span>
+                      th:text="#{community.report.reason.hate}">증오 또는 악의적인 콘텐츠</span>
             </label>
             <label class="flex items-center gap-3.5 py-2.5 cursor-pointer hover:bg-gray-50 rounded-md px-1">
                 <input type="radio" name="reportReason" value="HARASSMENT" class="w-5 h-5 accent-gray-800"/>
                 <span class="text-[17px] text-[#16181d]"
-                      th:text="${#locale.language == 'en'} ? 'Harassment or bullying' : '괴롭힘 또는 폭력'">괴롭힘 또는 폭력</span>
+                      th:text="#{community.report.reason.harassment}">괴롭힘 또는 폭력</span>
             </label>
             <label class="flex items-center gap-3.5 py-2.5 cursor-pointer hover:bg-gray-50 rounded-md px-1">
                 <input type="radio" name="reportReason" value="HARMFUL" class="w-5 h-5 accent-gray-800"/>
                 <span class="text-[17px] text-[#16181d]"
-                      th:text="${#locale.language == 'en'} ? 'Harmful or dangerous acts' : '유해하거나 위험한 행위'">유해하거나 위험한 행위</span>
+                      th:text="#{community.report.reason.harmful}">유해하거나 위험한 행위</span>
+            </label>
+            <label class="flex items-center gap-3.5 py-2.5 cursor-pointer hover:bg-gray-50 rounded-md px-1">
+                <input type="radio" name="reportReason" value="SELF_HARM" class="w-5 h-5 accent-gray-800"/>
+                <span class="text-[17px] text-[#16181d]"
+                      th:text="#{community.report.reason.selfHarm}">자살, 자해 또는 섭식 장애</span>
             </label>
             <label class="flex items-center gap-3.5 py-2.5 cursor-pointer hover:bg-gray-50 rounded-md px-1">
                 <input type="radio" name="reportReason" value="MISINFORMATION" class="w-5 h-5 accent-gray-800"/>
                 <span class="text-[17px] text-[#16181d]"
-                      th:text="${#locale.language == 'en'} ? 'Suicide, self-harm or eating disorders' : '자살, 자해 또는 섭식 장애'">자살, 자해 또는 섭식 장애</span>
-            </label>
-            <label class="flex items-center gap-3.5 py-2.5 cursor-pointer hover:bg-gray-50 rounded-md px-1">
-                <input type="radio" name="reportReason" value="WRONG_INFO" class="w-5 h-5 accent-gray-800"/>
-                <span class="text-[17px] text-[#16181d]"
-                      th:text="${#locale.language == 'en'} ? 'Misinformation' : '잘못된 정보'">잘못된 정보</span>
+                      th:text="#{community.report.reason.wrongInfo}">잘못된 정보</span>
             </label>
             <label class="flex items-center gap-3.5 py-2.5 cursor-pointer hover:bg-gray-50 rounded-md px-1">
                 <input type="radio" name="reportReason" value="CHILD_ABUSE" class="w-5 h-5 accent-gray-800"/>
                 <span class="text-[17px] text-[#16181d]"
-                      th:text="${#locale.language == 'en'} ? 'Child abuse' : '아동 학대'">아동 학대</span>
+                      th:text="#{community.report.reason.childAbuse}">아동 학대</span>
             </label>
             <label class="flex items-center gap-3.5 py-2.5 cursor-pointer hover:bg-gray-50 rounded-md px-1">
                 <input type="radio" name="reportReason" value="TERRORISM" class="w-5 h-5 accent-gray-800"/>
                 <span class="text-[17px] text-[#16181d]"
-                      th:text="${#locale.language == 'en'} ? 'Promotes terrorism' : '테러 조장'">테러 조장</span>
+                      th:text="#{community.report.reason.terrorism}">테러 조장</span>
             </label>
             <label class="flex items-center gap-3.5 py-2.5 cursor-pointer hover:bg-gray-50 rounded-md px-1">
-                <input type="radio" name="reportReason" value="MISLEADING" class="w-5 h-5 accent-gray-800"/>
+                <input type="radio" name="reportReason" value="SPAM" class="w-5 h-5 accent-gray-800"/>
                 <span class="text-[17px] text-[#16181d]"
-                      th:text="${#locale.language == 'en'} ? 'Spam or misleading' : '스팸 또는 혼동을 야기하는 콘텐츠'">스팸 또는 혼동을 야기하는 콘텐츠</span>
+                      th:text="#{community.report.reason.spam}">스팸 또는 혼동을 야기하는 콘텐츠</span>
             </label>
         </div>
         <!-- 하단 버튼 -->
@@ -833,7 +841,7 @@
             <button id="reportSubmitBtn" onclick="submitReport()" disabled
                     class="w-full py-3.5 text-[17px] text-white bg-gray-800 rounded-md opacity-40 cursor-not-allowed"
                     style="font-weight:600;"
-                    th:text="${#locale.language == 'en'} ? 'Report' : '신고'">신고</button>
+                    th:text="#{community.report.submit}">신고</button>
         </div>
     </div>
 </div>

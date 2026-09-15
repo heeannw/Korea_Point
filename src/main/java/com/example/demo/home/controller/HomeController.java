@@ -93,7 +93,7 @@ public class HomeController {
         for (PostDto post : posts) {
             Long id = post.getCategoryId();
             if (id == null || labels.containsKey(id)) continue;
-            String label = messageSource.getMessage("home.postCat." + id, null, null, locale);
+            String label = messageSource.getMessage("community.category." + id, null, null, locale);
             if (label != null) labels.put(id, label);
         }
         return labels;
