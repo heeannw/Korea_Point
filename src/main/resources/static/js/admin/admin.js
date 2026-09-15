@@ -465,10 +465,10 @@ function renderQueueOwner(item) {
                     ${documentLink(item.id, item.menuFilePath, "menu", "메뉴")}
                 </div>
             </div>
-            <div class="action-group">
-                <button type="button" class="primary-button" data-owner-approve="${item.id}" data-store-name="${escapeHtml(item.storeName)}">승인</button>
-                <button type="button" class="danger-button" data-owner-reject="${item.id}" data-store-name="${escapeHtml(item.storeName)}">반려</button>
-            </div>
+            ${withMoreMenu(
+                `<button type="button" class="primary-button" data-owner-approve="${item.id}" data-store-name="${escapeHtml(item.storeName)}">승인</button>`,
+                [`<button type="button" class="danger-button" data-owner-reject="${item.id}" data-store-name="${escapeHtml(item.storeName)}">반려</button>`]
+            )}
         </div>
     `;
 }
@@ -730,14 +730,19 @@ async function loadOwnerApplications() {
     });
 }
 
+/* 조치 자리는 어느 화면에서나 "자주 쓰는 것 하나 + ⋯" 한 가지 모양으로 낸다.
+   전에는 줄마다 달랐다. 게시글은 버튼 하나, 신고는 버튼 하나에 ⋯, 사업자 신청은
+   버튼 둘에 ⋯ 없음. 같은 자리인데 생김새가 매번 바뀌어 어수선했다.
+
+   자주 쓰는 것을 메뉴 안에 넣지는 않는다. 관리자는 같은 일을 줄줄이 반복하는데
+   승인을 메뉴에 접으면 한 줄마다 클릭이 한 번씩 더 든다. 버튼만 봐도 그 줄이 어떤
+   상태인지 읽히는 것도 잃는다. */
 function renderOwnerApplicationActions(item) {
     if (item.status === "PENDING") {
-        return `
-            <div class="action-group">
-                <button type="button" class="primary-button" data-owner-approve="${item.id}" data-store-name="${escapeHtml(item.storeName)}">승인</button>
-                <button type="button" class="danger-button" data-owner-reject="${item.id}" data-store-name="${escapeHtml(item.storeName)}">반려</button>
-            </div>
-        `;
+        return withMoreMenu(
+            `<button type="button" class="primary-button" data-owner-approve="${item.id}" data-store-name="${escapeHtml(item.storeName)}">승인</button>`,
+            [`<button type="button" class="danger-button" data-owner-reject="${item.id}" data-store-name="${escapeHtml(item.storeName)}">반려</button>`]
+        );
     }
     if (item.status === "APPROVED") {
         return `

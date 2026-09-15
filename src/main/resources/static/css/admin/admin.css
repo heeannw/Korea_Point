@@ -806,21 +806,6 @@ tbody tr:last-child td { border-bottom: none; }
     border-color: var(--ad);
 }
 
-/* 승인 옆의 반려처럼 주 동작과 짝으로 놓인 것은 더 물러선다.
-   둘 다 눈에 띄게 하면 어디를 눌러야 할지 눈이 정하지 못한다. 반려는 승인만큼
-   자주 쓰는 동작이 아니다. 마우스를 올리면 빨개져서 무슨 버튼인지 알 수 있다. */
-.action-group > .primary-button + .danger-button {
-    background: var(--ap);
-    color: var(--am);
-    border-color: var(--al);
-    font-weight: 500;
-}
-
-.action-group > .primary-button + .danger-button:hover {
-    background: var(--adb);
-    color: var(--ad);
-    border-color: rgba(229,72,77,0.38);
-}
 
 /* 주 동작 옆의 ⋯ 버튼과 그 안에 접힌 나머지 조치들 */
 .more-menu { position: relative; display: inline-flex; }
