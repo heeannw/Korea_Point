@@ -933,6 +933,10 @@
         img.alt = '';
         img.className = 'answer-hero-img';
         img.addEventListener('error', () => img.remove());
+        // 이미지가 늦게 로딩되면서 말풍선 높이가 나중에 또 늘어나 스크롤이 다시 짧아지는 문제 —
+        // prependImage는 항상 "방금 받은 답변/방금 누른 카드"에만 쓰이므로(과거 메시지를 조용히
+        // 갱신하는 경우가 없음) 무조건 로딩 완료 후 맨 아래로 다시 따라가면 된다.
+        img.addEventListener('load', () => { main.scrollTop = main.scrollHeight; });
         bubble.prepend(img);
     }
 
@@ -1190,9 +1194,14 @@
             addSources(typingBubble, data.sources);
             conv.messages.push({ role: 'bot', text: data.answer, sources: data.sources });
             saveConversations();
+            // "타이핑 중..." 짧은 말풍선 기준으로 한 번 스크롤한 뒤로는 안 움직여서, 답변이 길게
+            // 채워져도 화면이 그 답변 맨 앞부분에 멈춰 있다는 피드백 — 실제 내용이 다 채워진
+            // 지금 다시 맨 아래로 스크롤한다(사진·출처 카드까지 렌더링된 뒤 높이 기준).
+            main.scrollTop = main.scrollHeight;
         } catch (error) {
             typingBubble.classList.remove('typing');
             typingBubble.textContent = I18N.answerError;
+            main.scrollTop = main.scrollHeight;
             console.error('chatbot ask error', error);
         } finally {
             sendBtn.disabled = false;

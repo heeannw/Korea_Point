@@ -47,6 +47,9 @@ public interface CommunityTranslationRepository extends JpaRepository<CommunityT
             """)
     List<Long> findCommentIdsMissing(@Param("language") String language, Pageable pageable);
 
+    /** 글·댓글이 고쳐지면 옛 번역을 지운다. 보충 작업이 다시 채운다. */
+    void deleteByTargetTypeAndTargetId(CommunityTranslationTarget targetType, Long targetId);
+
     boolean existsByTargetTypeAndTargetIdAndLanguage(
             CommunityTranslationTarget targetType, Long targetId, String language);
 }

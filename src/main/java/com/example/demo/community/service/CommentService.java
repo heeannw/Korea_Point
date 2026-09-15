@@ -2,8 +2,10 @@ package com.example.demo.community.service;
 
 import com.example.demo.community.dto.CommentDto;
 import com.example.demo.community.entity.Comment;
+import com.example.demo.community.entity.CommunityTranslationTarget;
 import com.example.demo.community.entity.Post;
 import com.example.demo.community.repository.CommentRepository;
+import com.example.demo.community.repository.CommunityTranslationRepository;
 import com.example.demo.community.repository.PostRepository;
 import com.example.demo.user.entity.AccountStatus;
 import com.example.demo.user.entity.User;
@@ -28,6 +30,7 @@ public class CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final TranslationService translationService;
+    private final CommunityTranslationRepository translationRepository;
 
     @Transactional(readOnly = true)
     public List<CommentDto> getCommentsByPost(Long postId) {
@@ -75,6 +78,10 @@ public class CommentService {
         validateCommunityAccess(comment.getUser());
         comment.setContent(content);
         translationService.translateCommentAsync(commentId, content);
+        // 옛 글로 만든 일본어·중국어·불어 번역을 지운다. 지우지 않으면 보충 작업이
+        // "번역 줄이 없는 것"만 찾으므로 고친 댓글은 옛 번역을 그대로 달고 있게 된다.
+        translationRepository.deleteByTargetTypeAndTargetId(
+                CommunityTranslationTarget.COMMENT, commentId);
     }
 
     @Transactional

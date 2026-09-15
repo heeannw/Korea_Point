@@ -290,6 +290,12 @@ public class TripRecommendService {
     // ────────────────────────────────────────────
     private List<PlaceData> fetchLiveTourism() {
         return tourismService.allList("ko").stream()
+                // 관광 모듈의 일반 목록엔 축제·행사(contentTypeId=15)도 섞여 나오는데, 여긴 실제
+                // 축제 시작·종료일이 toPlaceData()로 안 옮겨져서 날짜 확인 없이 그대로 후보가 됐다 —
+                // "여행 기간과 안 겹치는 축제도 추천에 들어간다"는 버그의 원인. 축제는 이미 날짜까지
+                // 걸러주는 별도 파이프라인(BusanFestivalClient → mergeFestivalsIntoPool)이 있으니
+                // 여기서는 축제 콘텐츠를 아예 빼서 중복·날짜 미확인 경로를 없앤다.
+                .filter(p -> !"15".equals(p.getType()))
                 .map(p -> toPlaceData(p, "tourism"))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
@@ -843,7 +849,17 @@ public class TripRecommendService {
         java.time.LocalDate tripStartDate = req.getStartDate() != null
                 ? req.getStartDate() : java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"));
 
+        // 좋아요(저장) 장소가 서로 멀리 떨어져 있으면 하루 동선이 도시를 가로지르게 되는 문제 —
+        // 저장한 장소끼리 가까운 것들만 묶어서 되도록 서로 다른 날에 나눠 배정해둔다.
+        final double baseAnchorLat = anchorLat, baseAnchorLng = anchorLng;
+        Map<Integer, Set<String>> savedByDay = assignSavedPlacesToDays(tourism, food, cafe, bar, savedNames, req.getTravelDays());
+
         for (int day = 1; day <= req.getTravelDays(); day++) {
+            // 하루가 바뀔 때마다 전날 마지막 장소에서 이어가지 않고, 원래 선호 지역 기준점으로
+            // 되돌아간다 — 안 그러면 전날 동선이 흘러간 방향으로 다음 날도 계속 끌려가면서
+            // 여행 전체가 한쪽으로 쏠린다(숙소는 보통 하루가 지나도 같은 지역이라고 가정).
+            anchorLat = baseAnchorLat; anchorLng = baseAnchorLng;
+            List<String> daySavedNames = List.copyOf(savedByDay.getOrDefault(day, Set.of()));
             DayScheduleDto d = new DayScheduleDto();
             d.setDay(day);
             java.time.LocalDate currentDate = tripStartDate.plusDays(day - 1L);
@@ -883,7 +899,7 @@ public class TripRecommendService {
                             weather = Optional.of(new WeatherForecast(slotAt, 25, 80, "RAIN", 5, 10, "OVERCAST"));
                         }
                         Optional<WeatherForecast> slotWeather = weather;
-                        ScoredPlace saved = pickSaved(tourism, used, savedNames);
+                        ScoredPlace saved = pickSaved(tourism, used, daySavedNames, anchorLat, anchorLng);
                         // 바로 전 슬롯과 같은 세부 유형은 후보 풀에서 우선 제외 — 다 걸러지면(그 유형밖에 안 남으면) 원래 풀로 되돌아간다.
                         List<ScoredPlace> tourismPool = tourism;
                         if (saved == null && !lastTourismType.isBlank()) {
@@ -914,7 +930,7 @@ public class TripRecommendService {
                     case "food" -> {
                         String fc = order.getFoodCategory();
                         List<ScoredPlace> pool = (fc != null && !fc.isBlank() && foodByCat.containsKey(fc)) ? foodByCat.get(fc) : food;
-                        ScoredPlace saved = pickSaved(pool, used, savedNames);
+                        ScoredPlace saved = pickSaved(pool, used, daySavedNames, anchorLat, anchorLng);
                         ScoredPlace p = saved != null ? saved : pickNext(pool, used, anchorLat, anchorLng, 8.0);
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "food", p.place);
@@ -928,7 +944,7 @@ public class TripRecommendService {
                         }
                     }
                     case "cafe" -> {
-                        ScoredPlace saved = pickSaved(cafe, used, savedNames);
+                        ScoredPlace saved = pickSaved(cafe, used, daySavedNames, anchorLat, anchorLng);
                         ScoredPlace p = saved != null ? saved : pickNext(cafe, used, anchorLat, anchorLng, 8.0);
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "cafe", p.place);
@@ -937,7 +953,7 @@ public class TripRecommendService {
                         }
                     }
                     case "bar" -> {
-                        ScoredPlace saved = pickSaved(bar, used, savedNames);
+                        ScoredPlace saved = pickSaved(bar, used, daySavedNames, anchorLat, anchorLng);
                         ScoredPlace p = saved != null ? saved : pickNext(bar, used, anchorLat, anchorLng, 8.0);
                         if (p != null) {
                             int duration = resolveDurationMinutes(order, "bar", p.place);
@@ -1000,12 +1016,69 @@ public class TripRecommendService {
      * 저장 목록에 있는 장소를 이 풀(pool)에서 찾아 최우선으로 돌려준다. 점수/거리는 보지 않는다.
      * 없으면 null을 반환해서 호출부가 기존 pickNext로 폴백하게 한다.
      */
-    private ScoredPlace pickSaved(List<ScoredPlace> list, Set<String> used, List<String> savedNames) {
+    // 동선이 들쭉날쭉하다는 피드백 — 저장한 장소는 목록에 나온 순서 그대로(findFirst) 아무 슬롯에나
+    // 꽂혀서, 그날 동선이랑 동떨어진 곳이라도 무조건 그 자리에 들어갔었다. 저장한 장소가 여러 개면
+    // 그중 지금 위치(anchor)에서 제일 가까운 걸 우선 배치하도록 바꾼다.
+    private ScoredPlace pickSaved(List<ScoredPlace> list, Set<String> used, List<String> savedNames,
+                                  double anchorLat, double anchorLng) {
         if (savedNames.isEmpty()) return null;
         return list.stream()
                 .filter(sp -> !used.contains(sp.place.name()))
                 .filter(sp -> savedNames.stream().anyMatch(sn -> sp.place.name().contains(sn) || sn.contains(sp.place.name())))
-                .findFirst().orElse(null);
+                .min(Comparator.comparingDouble(sp -> haversine(anchorLat, anchorLng, sp.place.lat(), sp.place.lng())))
+                .orElse(null);
+    }
+
+    /** 저장한(하트) 장소들끼리 6km 이내로 가까운 것만 같은 묶음으로 잡는 단순 클러스터링. */
+    private static final double SAVED_CLUSTER_RADIUS_KM = 6.0;
+
+    /**
+     * 좋아요(저장) 장소가 서로 멀리 떨어져 있으면(ex. 기장 카페 + 동래 맛집을 같은 날에 우겨넣기)
+     * 그날 동선이 도시를 가로지르게 된다는 피드백 — 저장한 장소를 거리순으로 묶어서 되도록
+     * 서로 다른 날에 나눠 배정해둔다. 날짜 수보다 묶음이 많으면 뒤 묶음부터 앞 날짜로 순환 배정된다
+     * (완전히 겹치지 않을 수는 있지만, 적어도 "전부 하루에 몰리는" 최악의 경우는 막아준다).
+     */
+    private Map<Integer, Set<String>> assignSavedPlacesToDays(List<ScoredPlace> tourism, List<ScoredPlace> food,
+                                                               List<ScoredPlace> cafe, List<ScoredPlace> bar,
+                                                               List<String> savedNames, int travelDays) {
+        Map<Integer, Set<String>> result = new HashMap<>();
+        if (savedNames.isEmpty() || travelDays <= 0) return result;
+
+        Map<String, ScoredPlace> matched = new LinkedHashMap<>();
+        for (List<ScoredPlace> pool : List.of(tourism, food, cafe, bar)) {
+            for (ScoredPlace sp : pool) {
+                if (matched.containsKey(sp.place.name())) continue;
+                boolean isSavedMatch = savedNames.stream()
+                        .anyMatch(sn -> sp.place.name().contains(sn) || sn.contains(sp.place.name()));
+                if (isSavedMatch) matched.put(sp.place.name(), sp);
+            }
+        }
+        if (matched.isEmpty()) return result;
+
+        List<ScoredPlace> remaining = new ArrayList<>(matched.values());
+        List<List<ScoredPlace>> clusters = new ArrayList<>();
+        while (!remaining.isEmpty()) {
+            ScoredPlace seed = remaining.remove(0);
+            List<ScoredPlace> cluster = new ArrayList<>();
+            cluster.add(seed);
+            Iterator<ScoredPlace> it = remaining.iterator();
+            while (it.hasNext()) {
+                ScoredPlace sp = it.next();
+                boolean nearCluster = cluster.stream().anyMatch(c -> haversine(
+                        c.place.lat(), c.place.lng(), sp.place.lat(), sp.place.lng()) <= SAVED_CLUSTER_RADIUS_KM);
+                if (nearCluster) { cluster.add(sp); it.remove(); }
+            }
+            clusters.add(cluster);
+        }
+        // 묶음이 클수록(저장 장소를 많이 포함할수록) 먼저 배정해서, 크게 뭉친 동네가 우선적으로
+        // 자기 날짜를 확보하게 한다.
+        clusters.sort(Comparator.comparingInt(List<ScoredPlace>::size).reversed());
+        for (int i = 0; i < clusters.size(); i++) {
+            int day = (i % travelDays) + 1;
+            Set<String> names = result.computeIfAbsent(day, d -> new HashSet<>());
+            for (ScoredPlace sp : clusters.get(i)) names.add(sp.place.name());
+        }
+        return result;
     }
 
     // 매번 일정을 새로 만들어도 항상 똑같은(1등만 뽑는) 조합이 나온다는 피드백 —
@@ -1020,15 +1093,23 @@ public class TripRecommendService {
 
     private ScoredPlace pickNext(List<ScoredPlace> list, Set<String> used,
                                  double anchorLat, double anchorLng, double maxKm) {
+        // 동선이 들쭉날쭉하다는 피드백 — list는 점수순으로 정렬돼 있어서, 반경 안이라도
+        // "점수 높은 순으로 먼저 걸리는 후보"를 그대로 상위 4개로 뽑으면 반경 안에서도
+        // 굳이 더 먼 곳이 뽑힐 수 있었다. 반경 안에서는 실제 거리순으로 가까운 곳부터 고른다.
+        Comparator<ScoredPlace> byDistance = Comparator.comparingDouble(
+                sp -> haversine(anchorLat, anchorLng, sp.place.lat(), sp.place.lng()));
         List<ScoredPlace> nearby = list.stream()
                 .filter(sp -> !used.contains(sp.place.name()))
                 .filter(sp -> haversine(anchorLat, anchorLng, sp.place.lat(), sp.place.lng()) <= maxKm)
+                .sorted(byDistance)
                 .limit(PICK_POOL_SIZE)
                 .collect(Collectors.toList());
         if (!nearby.isEmpty()) return randomPick(nearby);
 
+        // 반경 안에 후보가 아예 없을 때도(폴백) 점수순 상위가 아니라 그나마 가장 가까운 곳부터 고른다.
         List<ScoredPlace> fallback = list.stream()
                 .filter(sp -> !used.contains(sp.place.name()))
+                .sorted(byDistance)
                 .limit(PICK_POOL_SIZE)
                 .collect(Collectors.toList());
         return randomPick(fallback);
