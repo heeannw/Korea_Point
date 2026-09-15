@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
@@ -44,8 +46,9 @@ public class TourFoodController {
                            @RequestParam(value = "lon", required = false) Double lon,
                            @RequestParam(value = "category", required = false) String category,
                            @RequestParam(value = "near", required = false) String near,
+                           @RequestParam(value = "focus", required = false) String focus,
                            Model model, HttpSession session) {
-        return listPage(lang, lat, lon, category, near, model, session, false);
+        return listPage(lang, lat, lon, category, near, focus, model, session, false);
     }
 
     /** 카페·찻집은 성격이 달라 목록을 따로 뗀다. 화면은 음식점과 같은 템플릿을 쓴다. */
@@ -55,25 +58,39 @@ public class TourFoodController {
                            @RequestParam(value = "lon", required = false) Double lon,
                            @RequestParam(value = "category", required = false) String category,
                            @RequestParam(value = "near", required = false) String near,
+                           @RequestParam(value = "focus", required = false) String focus,
                            Model model, HttpSession session) {
-        return listPage(lang, lat, lon, category, near, model, session, true);
+        return listPage(lang, lat, lon, category, near, focus, model, session, true);
     }
 
-    private String listPage(String lang, Double lat, Double lon, String category, String near,
+    private String listPage(String lang, Double lat, Double lon, String category, String near, String focus,
                             Model model, HttpSession session, boolean cafeOnly) {
         Double originLat = lat != null ? lat : sessionLat(session);
         Double originLon = lon != null ? lon : sessionLon(session);
+        String normLang = normalize(lang);
 
         List<TourPlaceDto> places = cafeOnly
-                ? tourismService.cafeList(normalize(lang))
-                : tourismService.foodList(normalize(lang));
+                ? tourismService.cafeList(normLang)
+                : tourismService.foodList(normLang);
+
+        // 홈 "부산 맛집"처럼 음식점·카페를 섞어 보여주는 화면이 카페를 /tour/food로,
+        // 음식점을 /tour/cafe로 잘못 연결해도 조용히 안 열리는 대신 맞는 쪽으로 보내준다.
+        if (focus != null && !focus.isBlank() && places.stream().noneMatch(p -> focus.equals(p.getId()))) {
+            List<TourPlaceDto> other = cafeOnly ? tourismService.foodList(normLang) : tourismService.cafeList(normLang);
+            if (other.stream().anyMatch(p -> focus.equals(p.getId()))) {
+                String target = cafeOnly ? "/tour/food" : "/tour/cafe";
+                String encodedFocus = URLEncoder.encode(focus, StandardCharsets.UTF_8);
+                return "redirect:" + target + "?lang=" + normLang + "&focus=" + encodedFocus;
+            }
+        }
+
         if (originLat != null && originLon != null) {
             tourismService.allDistence(originLat, originLon, places);
         }
         model.addAttribute("category", category);
         model.addAttribute("near", near);
         model.addAttribute("cafeOnly", cafeOnly);
-        return renderPage(model, places, normalize(lang), originLat, originLon, null);
+        return renderPage(model, places, normLang, originLat, originLon, null);
     }
 
     @GetMapping("/tour/food/search")
