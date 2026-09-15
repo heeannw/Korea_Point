@@ -66,6 +66,8 @@ public class CommunityTranslationFiller {
     private final CommunityTranslationRepository translationRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
+    /** 지명을 늘 같은 이름으로 옮기게 하는 용어집. */
+    private final PlaceNameGlossary placeNames;
 
     @Value("${translation.api.key:}")
     private String apiKey;
@@ -82,23 +84,33 @@ public class CommunityTranslationFiller {
         return client;
     }
 
+    /** 어느 언어 차례인지. 그 언어에 할 일이 없을 때만 다음으로 넘어간다. */
+    private int turn = 0;
+
     /**
      * 아직 안 옮긴 것을 조금씩 채운다.
      *
-     * <p>한 차례에 한 언어당 한 종류만 한다. 글이 남아 있으면 글을, 다 됐으면 댓글을
-     * 손댄다. 실패하면 아무것도 남기지 않아서 다음 차례에 같은 것을 다시 만난다.
+     * <p>한 차례에 한 언어만 다룬다. 지명 용어집을 무료 계정에서는 하나만 둘 수 있어
+     * 언어를 바꿀 때마다 갈아 끼워야 하기 때문이다. 언어를 돌아가며 맡으므로 새 글
+     * 하나가 세 언어를 다 갖추는 데 마흔몇 초 걸린다.
+     *
+     * <p>글이 남아 있으면 글을, 다 됐으면 댓글을 손댄다. 실패하면 아무것도 남기지 않아서
+     * 다음 차례에 같은 것을 다시 만난다.
      */
     @Scheduled(fixedDelay = 15_000, initialDelay = 30_000)
     public void fill() {
         if (apiKey == null || apiKey.isBlank()) return;
-        for (String lang : LANGUAGES) {
+        for (int i = 0; i < LANGUAGES.size(); i++) {
+            String lang = LANGUAGES.get(Math.floorMod(turn, LANGUAGES.size()));
             try {
-                if (fillPosts(lang) == 0) {
-                    fillComments(lang);
-                }
+                // 할 일이 남아 있는 동안은 같은 언어에 머문다. 언어를 바꿀 때마다 용어집을
+                // 갈아 끼워야 해서, 오가며 하면 번역기에 용어집 만들기를 수십 번 조른다.
+                if (fillPosts(lang) > 0 || fillComments(lang) > 0) return;
             } catch (Exception e) {
                 log.warn("커뮤니티 번역 보충 실패 ({}): {}", lang, e.getMessage());
+                return;
             }
+            turn++;   // 이 언어는 다 됐다
         }
     }
 
@@ -206,13 +218,26 @@ public class CommunityTranslationFiller {
         }
     }
 
-    /** 여러 문장을 한 번에 보낸다. 순서는 보낸 대로 돌아온다. 실패하면 null. */
+    /**
+     * 여러 문장을 한 번에 보낸다. 순서는 보낸 대로 돌아온다. 실패하면 null.
+     *
+     * <p>지명이 들어 있는데 용어집을 못 얻었으면 아무것도 하지 않고 물러난다. 그대로
+     * 옮기면 이기대가 伊基代, 다대포가 大代浦 처럼 나오고, 한 번 저장되면 누가 다시
+     * 들여다보기 전까지 그대로 남는다. 늦게 채우는 편이 낫다.
+     */
     private List<String> translate(List<String> texts, String lang) {
+        String glossary = placeNames.idFor(lang);
+        if (glossary == null && texts.stream().anyMatch(placeNames::mentions)) {
+            log.warn("지명 용어집을 못 얻어 이번 차례는 건너뛴다 ({})", lang);
+            return null;
+        }
+
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         texts.forEach(t -> form.add("text", t));
         form.add("source_lang", "KO");
         form.add("target_lang", lang.toUpperCase());
         form.add("tag_handling", "html");   // Quill 에디터가 남긴 태그를 살린다
+        if (glossary != null) form.add("glossary_id", glossary);
         try {
             Map<?, ?> body = client().post()
                     .uri("https://api-free.deepl.com/v2/translate")
