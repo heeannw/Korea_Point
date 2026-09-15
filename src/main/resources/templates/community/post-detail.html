@@ -202,7 +202,8 @@
                                           th:attr="data-time=${#temporals.format(comment.createdAt, 'yyyy-MM-dd') + 'T' + #temporals.format(comment.createdAt, 'HH:mm:ss')}">Date</span>
                                 </div>
                                 <p class="text-[17px] text-[#5b6270] leading-relaxed"
-                                   th:text="${commentText[comment.id]}">Comment content</p>
+                                   th:text="${commentText[comment.id]}"
+                                   th:attr="data-raw=${comment.content}">Comment content</p>
                                 <div class="edit-form hidden mt-1">
                                     <textarea th:attr="data-comment-id=${comment.id}"
                                               class="w-full px-3.5 py-2.5 text-[15.5px] border border-[#e8eaed] rounded-md focus:outline-none focus:border-[#3b9eff] resize-none"
@@ -283,7 +284,8 @@
                                         </div>
                                         <p class="text-[15.5px] text-[#5b6270] leading-relaxed"
                                            th:if="${!reply.deleted}"
-                                           th:text="${commentText[reply.id]}">Reply content</p>
+                                           th:text="${commentText[reply.id]}"
+                                           th:attr="data-raw=${reply.content}">Reply content</p>
                                         <p class="text-[15.5px] text-[#8b919c] italic"
                                            th:if="${reply.deleted}" th:text="#{community.comment.deleted}">삭제된 댓글입니다.</p>
                                         <div th:if="${!reply.deleted}" class="edit-form hidden mt-1">
@@ -468,8 +470,10 @@
             return;
         }
 
+        // 클래스 이름 안의 점은 \. 로 적는다. 그냥 두면 브라우저가 'gap-3' 과 '5' 두 개로
+        // 읽고 선택자를 거부해(SyntaxError) 이 줄에서 멈춘다.
         // 클릭한 댓글 row 바로 아래로 폼 이동
-        const commentRow = btn.closest('.flex.items-start.gap-3.5');
+        const commentRow = btn.closest('.flex.items-start.gap-3\\.5');
         commentRow.insertAdjacentElement('afterend', form);
 
         form.dataset.replyToId = '';
@@ -531,7 +535,7 @@
         const form = topBlock.querySelector('.reply-form');
 
         // 클릭한 대댓글 row 바로 아래로 폼 이동
-        const replyRow = btn.closest('.flex.items-start.gap-3.5');
+        const replyRow = btn.closest('.flex.items-start.gap-3\\.5');
         replyRow.insertAdjacentElement('afterend', form);
 
         form.classList.remove('hidden');
@@ -559,11 +563,14 @@
     function editComment(btn) {
         document.querySelectorAll('.comment-menu').forEach(m => m.classList.add('hidden'));
         // ⋮ 버튼이 flex-1 밖 sibling 위치이므로 공통 부모(flex row)에서 flex-1 탐색
-        const row = btn.closest('.flex.items-start.gap-3.5');
+        const row = btn.closest('.flex.items-start.gap-3\\.5');
         const block = row.querySelector('.flex-1.min-w-0');
         const contentP = block.querySelector('p');
         const editForm = block.querySelector('.edit-form');
-        editForm.querySelector('textarea').value = contentP.textContent.trim();
+        // 화면에 보이는 글이 아니라 쓴 사람이 쓴 원문을 담는다. 일본어로 보다가 수정을
+        // 누르면 번역문이 칸에 들어오고, 그대로 저장하면 원문이 번역문으로 덮인다.
+        const raw = contentP.getAttribute('data-raw');
+        editForm.querySelector('textarea').value = (raw !== null ? raw : contentP.textContent).trim();
         contentP.classList.add('hidden');
         editForm.classList.remove('hidden');
         editForm.querySelector('textarea').focus();
