@@ -1043,6 +1043,19 @@ tbody tr:last-child td { border-bottom: none; }
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 
+/* 확인 창의 위험 버튼은 채워서 낸다. 목록에서는 줄마다 서니 테두리로 물러섰지만,
+   여기는 마지막으로 한 번 묻는 자리라 눈에 띄어야 한다. */
+.modal-actions .danger-button {
+    padding: 10px 18px;
+    background: var(--ad);
+    color: #ffffff;
+    border-color: transparent;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.modal-actions .danger-button:hover { background: #dc2626; }
+
 /* ── Log Snapshot ── */
 .log-snapshot { max-width: 300px; }
 

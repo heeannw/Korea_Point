@@ -823,6 +823,7 @@ function openOwnerApplicationModal(requestId, storeName, mode) {
     const isApprove = mode === "approve";
     openActionModal({
         title: isApprove ? "사업자 신청 승인" : "사업자 신청 반려",
+        danger: !isApprove,
         summary: `${storeName} 사업자 신청을 ${isApprove ? "승인" : "반려"}합니다.`,
         confirmText: isApprove ? "승인" : "반려",
         requireReasonCode: false,
@@ -869,6 +870,7 @@ function openUserStatusModal(userId, userName, currentStatus) {
     const nextStatus = currentStatus === "SUSPENDED" ? "ACTIVE" : "SUSPENDED";
     openActionModal({
         title: "계정 상태 변경",
+        danger: nextStatus === "SUSPENDED",
         summary: `${userName} 사용자를 ${labelForAccountStatus(nextStatus)} 상태로 변경합니다.`,
         confirmText: currentStatus === "SUSPENDED" ? "정지 해제" : "계정 정지",
         reasonOptions: toReasonOptions(nextStatus === "SUSPENDED"
@@ -972,6 +974,7 @@ function openPostActionModal(postId, mode, title) {
     const isRestore = mode === "restore";
     openActionModal({
         title: isRestore ? "게시글 복구" : "게시글 숨김",
+        danger: !isRestore,
         summary: `"${title}" 게시글을 ${isRestore ? "복구" : "숨김"}합니다.`,
         confirmText: isRestore ? "복구" : "숨김",
         reasonOptions: toReasonOptions(isRestore
@@ -1001,6 +1004,7 @@ function openPostActionModal(postId, mode, title) {
 function openPromoTakedownModal(postId, title, promoUntil, refundAmount) {
     openActionModal({
         title: "광고 노출 내리기",
+        danger: true,
         summary: `"${title}" 글을 광고 자리에서 내립니다. 글 자체는 목록에 그대로 남습니다.`
             + (promoUntil ? ` (원래 노출 만료: ${formatDate(promoUntil)})` : ""),
         confirmText: "내리기",
@@ -1030,6 +1034,7 @@ function openPromoTakedownModal(postId, title, promoUntil, refundAmount) {
 function openPostPurgeModal(postId, title) {
     openActionModal({
         title: "게시글 영구 삭제",
+        danger: true,
         summary: `"${title}" 게시글을 복구할 수 없도록 영구 삭제합니다.`,
         confirmText: "영구 삭제",
         reasonOptions: toReasonOptions(["PURGE_POLICY", "SPAM", "ABUSE", "POLICY", "OTHER"]),
@@ -1107,6 +1112,7 @@ function openCommentActionModal(commentId, mode) {
     const isRestore = mode === "restore";
     openActionModal({
         title: isRestore ? "댓글 복구" : "댓글 숨김",
+        danger: !isRestore,
         summary: `댓글 #${commentId}를 ${isRestore ? "복구" : "숨김"}합니다.`,
         confirmText: isRestore ? "복구" : "숨김",
         reasonOptions: toReasonOptions(isRestore
@@ -1127,6 +1133,7 @@ function openCommentActionModal(commentId, mode) {
 function openCommentPurgeModal(commentId) {
     openActionModal({
         title: "댓글 영구 삭제",
+        danger: true,
         summary: `댓글 #${commentId}를 복구할 수 없도록 영구 삭제합니다.`,
         confirmText: "영구 삭제",
         reasonOptions: toReasonOptions(["PURGE_POLICY", "SPAM", "ABUSE", "POLICY", "OTHER"]),
@@ -1252,6 +1259,7 @@ function openReportTargetModal(item) {
 
     openActionModal({
         title: `${what} ${isRestore ? "복구" : "숨김"}`,
+        danger: !isRestore,
         summary: `"${item.targetSummary}" ${what}을 ${isRestore ? "복구" : "숨김"}합니다.`,
         confirmText: isRestore ? "복구" : "숨김",
         reasonOptions: toReasonOptions(isRestore
@@ -1278,6 +1286,7 @@ function openReportAuthorModal(item) {
 
     openActionModal({
         title: "작성자 계정 상태 변경",
+        danger: nextStatus === "SUSPENDED",
         summary: `${item.targetAuthorName} 사용자를 ${labelForAccountStatus(nextStatus)} 상태로 변경합니다.`,
         confirmText: item.targetAuthorSuspended ? "정지 해제" : "계정 정지",
         reasonOptions: toReasonOptions(nextStatus === "SUSPENDED"
@@ -1376,7 +1385,12 @@ function openActionModal(config) {
     adminState.modal = config;
     document.getElementById("actionModalTitle").textContent = config.title;
     document.getElementById("actionModalSummary").textContent = config.summary;
-    document.getElementById("modalConfirmButton").textContent = config.confirmText || "실행";
+    /* 되돌리기 힘든 조치는 확인 버튼도 빨갛게 낸다. 목록에서 채움을 뺀 것은
+       "위험하다는 말은 확인 창이 한다"는 전제였는데, 정작 확인 창의 버튼이
+       파랬다. 숨김과 정지가 포인트 조정과 똑같이 생겨서는 안 된다. */
+    const confirmButton = document.getElementById("modalConfirmButton");
+    confirmButton.textContent = config.confirmText || "실행";
+    confirmButton.className = config.danger ? "danger-button" : "primary-button";
     const reasonCodeGroup = document.getElementById("modalReasonCodeGroup");
     const reasonDetailGroup = document.getElementById("modalReasonDetailGroup");
     const reasonDetail = document.getElementById("modalReasonDetail");
@@ -1385,7 +1399,7 @@ function openActionModal(config) {
     fillSelect("modalReasonCode", config.reasonOptions || REASON_OPTIONS, { firstLabel: "사유 코드를 선택해 주세요" });
     document.getElementById("modalReasonCode").value = "";
     document.getElementById("modalReasonDetailLabel").textContent = config.reasonDetailLabel || "상세 메모";
-    reasonDetail.placeholder = config.reasonDetailPlaceholder || "필요 시 조치 사유를 추가로 남겨 주세요. OTHER 선택 시 필수입니다.";
+    reasonDetail.placeholder = config.reasonDetailPlaceholder || "필요 시 조치 사유를 추가로 남겨 주세요. \"기타\"를 고르면 반드시 적어야 합니다.";
     reasonDetail.value = "";
     const extraFieldsEl = document.getElementById("modalExtraFields");
     if (extraFieldsEl) {
