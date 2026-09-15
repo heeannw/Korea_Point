@@ -38,6 +38,7 @@ const ACTION_TYPE_LABELS = {
     POST_HIDE: "게시글 숨김",
     POST_RESTORE: "게시글 복구",
     POST_PURGE: "게시글 영구 삭제",
+    PROMO_TAKEDOWN: "광고 내리기",
     COMMENT_HIDE: "댓글 숨김",
     COMMENT_RESTORE: "댓글 복구",
     COMMENT_PURGE: "댓글 영구 삭제",
