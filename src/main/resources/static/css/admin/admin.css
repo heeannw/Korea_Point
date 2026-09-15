@@ -748,18 +748,44 @@ tbody tr:last-child td { border-bottom: none; }
 
 .action-group .primary-button:hover { transform: none; }
 
-/* 행에 바로 놓인 위험 버튼은 채워서 낸다.
-   연한 빨강 바탕에 빨간 글씨는 상태 배지("숨김")와 똑같이 생겨서,
-   조치 열의 "숨김"이 눌러야 하는 버튼인지 그냥 표시인지 구분되지 않았다.
+/* 행에 바로 놓인 위험 버튼은 테두리로 낸다.
+   한때 꽉 채운 빨강이었는데, 목록 한 화면에 줄마다 빨간 버튼이 서니 멀쩡한 글들이
+   전부 문제 있는 것처럼 보였다. 상태 칸은 초록 "활성"인데 바로 옆이 빨강이라
+   표 전체가 경고처럼 읽혔다. 한 표 안에서 빨강이 두 가지 뜻(지금 문제 있는 상태 /
+   누르면 위험한 일이 생김)으로 쓰인 탓이다. 채움은 상태 쪽에 넘기고 동작은 테두리로 낸다.
+
+   그 전에는 연한 빨강 바탕이었는데 상태 배지("숨김")와 똑같이 생겨서 눌러야 하는
+   것인지 구분되지 않았다. 테두리가 있고 높이가 30px 이라 작은 알약 배지와는 구분된다.
+
+   위험하다는 경고는 누른 뒤 확인 창이 맡는다.
    ⋯ 안에 접힌 것들은 메뉴 항목이라 지금의 옅은 스타일이 맞아 그대로 둔다. */
 .action-group > .danger-button {
-    background: var(--ad);
-    color: #ffffff;
-    border-color: transparent;
+    background: var(--ap);
+    color: var(--ad);
+    border: 1px solid rgba(229,72,77,0.38);
     font-weight: 600;
 }
 
-.action-group > .danger-button:hover { background: #dc2626; }
+.action-group > .danger-button:hover {
+    background: var(--adb);
+    border-color: var(--ad);
+}
+
+/* 승인 옆의 반려처럼 주 동작과 짝으로 놓인 것은 더 물러선다.
+   둘 다 눈에 띄게 하면 어디를 눌러야 할지 눈이 정하지 못한다. 반려는 승인만큼
+   자주 쓰는 동작이 아니다. 마우스를 올리면 빨개져서 무슨 버튼인지 알 수 있다. */
+.action-group > .primary-button + .danger-button {
+    background: var(--ap);
+    color: var(--am);
+    border-color: var(--al);
+    font-weight: 500;
+}
+
+.action-group > .primary-button + .danger-button:hover {
+    background: var(--adb);
+    color: var(--ad);
+    border-color: rgba(229,72,77,0.38);
+}
 
 /* 주 동작 옆의 ⋯ 버튼과 그 안에 접힌 나머지 조치들 */
 .more-menu { position: relative; display: inline-flex; }
