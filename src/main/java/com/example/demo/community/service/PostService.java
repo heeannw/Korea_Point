@@ -216,6 +216,9 @@ public class PostService {
                     .contentTypeId(blankToNull(r.getContentTypeId()))
                     .title(blankToNull(r.getTitle()))
                     .kind(blankToNull(r.getKind()))
+                    .lat(r.getLat())
+                    .lng(r.getLng())
+                    .addr(blankToNull(r.getAddr()))
                     .sortOrder(order++)
                     .build());
         }
@@ -224,7 +227,7 @@ public class PostService {
     private List<PostDto.PlaceRef> loadPlaceRefs(Long postId) {
         return postPlaceRepository.findByPostIdOrderBySortOrder(postId).stream()
                 .map(pp -> new PostDto.PlaceRef(pp.getContentId(), pp.getContentTypeId(),
-                        pp.getTitle(), pp.getKind()))
+                        pp.getTitle(), pp.getKind(), pp.getLat(), pp.getLng(), pp.getAddr()))
                 .toList();
     }
 

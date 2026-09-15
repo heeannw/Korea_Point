@@ -55,6 +55,9 @@ public class PostDto {
         private String contentTypeId;
         private String title;
         private String kind; // tour / food / cafe
+        private Double lat;
+        private Double lng;
+        private String addr;
     }
 
     // 게시글 작성 요청 DTO
