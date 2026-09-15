@@ -801,7 +801,8 @@ function openOwnerPointModal(userId, userName, currentPoint) {
         title: "사업자 포인트 지급",
         summary: `${userName} 사업자의 포인트를 조정합니다. (현재: ${numberFormat(currentPoint)}P)`,
         confirmText: "포인트 조정",
-        reasonOptions: toReasonOptions(["POINT_ADJUSTMENT", "ROLE_POLICY", "POLICY", "OTHER"]),
+        // 권한 정책은 권한을 바꿀 때 쓰는 사유다. 포인트를 주는 자리에는 오지 않는다.
+        reasonOptions: toReasonOptions(["POINT_ADJUSTMENT", "POLICY", "OTHER"]),
         extraHtml: `
             <label>조정 값
                 <input type="number" id="modalPointDelta" placeholder="지급: +1000 / 차감: -500">
@@ -848,7 +849,11 @@ function openUserPointModal(userId, userName, currentPoint) {
         title: "포인트 조정",
         summary: `${userName} 사용자의 포인트를 조정합니다. (현재: ${numberFormat(currentPoint)}P)`,
         confirmText: "포인트 조정",
-        reasonOptions: toReasonOptions(["POINT_ADJUSTMENT", "SPAM", "ABUSE", "POLICY", "REPORT_POLICY", "OTHER"]),
+        // 사유는 두 갈래다. 글이 왜 나쁜지(스팸·욕설·주제 무관·중복)와 어떤 규정으로
+        // 처리했는지(정지 정책·신고 처리 정책 따위). 포인트는 글을 손대는 조치가
+        // 아니라서 앞엣것이 들어갈 자리가 아니다. 욕을 해서 깎았다면 "운영 정책 위반",
+        // 신고 처리 끝에 깎았다면 "신고 처리 정책"으로 남는다.
+        reasonOptions: toReasonOptions(["POINT_ADJUSTMENT", "POLICY", "REPORT_POLICY", "OTHER"]),
         extraHtml: `
             <label>조정 값
                 <input type="number" id="modalPointDelta" placeholder="지급: +100 / 차감: -500">
@@ -1008,7 +1013,9 @@ function openPromoTakedownModal(postId, title, promoUntil, refundAmount) {
         summary: `"${title}" 글을 광고 자리에서 내립니다. 글 자체는 목록에 그대로 남습니다.`
             + (promoUntil ? ` (원래 노출 만료: ${formatDate(promoUntil)})` : ""),
         confirmText: "내리기",
-        reasonOptions: toReasonOptions(["SPAM", "ABUSE", "OFF_TOPIC", "POLICY", "DUPLICATE", "OTHER"]),
+        // 게시글 숨김 목록을 그대로 쓰고 있었다. 광고를 내리는 이유로 "중복 게시물"과
+        // "주제와 무관"은 오지 않고, 정작 자주 쓸 "신고 처리 정책"이 빠져 있었다.
+        reasonOptions: toReasonOptions(["POLICY", "SPAM", "ABUSE", "REPORT_POLICY", "OTHER"]),
         extraHtml: `
             <label class="checkbox-row">
                 <input type="checkbox" id="modalPromoRefund">
