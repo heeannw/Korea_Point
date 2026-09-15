@@ -44,6 +44,14 @@ public class PostPlace {
     @Column(length = 10)
     private String kind;
 
+    /** 글쓰기/상세 화면의 첨부 장소 지도(카카오맵)에 핀을 찍기 위한 좌표. */
+    private Double lat;
+    private Double lng;
+
+    /** 네이버 블로그 장소 첨부처럼 지도 밑 목록에 주소를 같이 보여준다. */
+    @Column(length = 300)
+    private String addr;
+
     /** 글 안에서의 표시 순서. */
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;

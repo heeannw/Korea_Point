@@ -28,7 +28,7 @@ public class CommunityPlaceSearchController {
     private final TourismService tourismService;
 
     public record PlaceHit(String contentId, String contentTypeId, String title,
-                           String addr, String image, String kind) { }
+                           String addr, String image, String kind, Double lat, Double lng) { }
 
     @GetMapping("/place-search")
     public List<PlaceHit> search(@RequestParam("q") String q,
@@ -52,7 +52,7 @@ public class CommunityPlaceSearchController {
             String title = p.getTitle();
             if (title == null || !title.toLowerCase().contains(needle)) continue;
             if (p.getId() == null || !seen.add(p.getId())) continue;
-            out.add(new PlaceHit(p.getId(), p.getType(), title, p.getAddr(), p.getImage(), kind));
+            out.add(new PlaceHit(p.getId(), p.getType(), title, p.getAddr(), p.getImage(), kind, p.getLat(), p.getLng()));
             added++;
         }
     }

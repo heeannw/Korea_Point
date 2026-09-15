@@ -12,6 +12,8 @@
         }
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- 이 글에서 소개한 장소 지도 (관광 화면과 같은 카카오맵 키) -->
+    <script th:src="'//dapi.kakao.com/v2/maps/sdk.js?appkey=' + ${kakaoKey} + '&autoload=false'"></script>
     <style>
         /* 홈과 같은 글꼴을 쓴다. 지금까지 커뮤니티만 브라우저 기본 글꼴이라
            같은 사이트인데 한글 모양이 달랐다. */
@@ -26,17 +28,24 @@
         .post-content img { max-width: 100%; border-radius: 0.5rem; margin: 0.75rem 0; }
         .post-content a { color: #1a7de0; text-decoration: underline; }
         .post-content blockquote { border-left: 3px solid #e5e7eb; padding-left: 1rem; color: #6b7280; margin: 0.75rem 0; }
-        /* 본문에 삽입된 장소 카드 (글쓰기 에디터와 같은 마크업) */
-        .post-content .place-embed {
-            display: flex; align-items: center; gap: 10px;
-            margin: 14px 0; padding: 12px 14px;
-            border: 1px solid #d9e6f7; border-radius: 10px; background: #f5f9ff;
-            font-size: 15px; color: #16181d; text-decoration: none;
+        /* 본문에 박힌 "장소 첨부" 블록: 지도(접기 가능) + 목록. 글쓰기 에디터와 같은 마크업. */
+        .kakao-letter-pin { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #1a7de0; color: #fff; font-size: 12px; font-weight: 800; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); flex: none; }
+        .post-content .place-group-embed { margin: 14px 0; border: 1px solid #e5eaf1; border-radius: 12px; overflow: hidden; background: #fff; }
+        .post-content .place-group-embed .pg-mapwrap { position: relative; }
+        .post-content .place-group-embed .pg-map { width: 100%; height: 200px; background: #eef1f5; }
+        .post-content .place-group-embed .pg-mapwrap.collapsed .pg-map { display: none; }
+        .post-content .place-group-embed .pg-toggle {
+            position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%;
+            border: none; background: rgba(255,255,255,.92); box-shadow: 0 1px 4px rgba(0,0,0,.25);
+            cursor: pointer; font-size: 13px; color: #5b6270; display: flex; align-items: center; justify-content: center;
         }
-        a.place-embed:hover { background: #eaf2fe; }
-        .post-content .place-embed-badge { flex: none; padding: 2px 8px; border-radius: 999px; background: #1a7de0; color: #fff; font-size: 12px; font-weight: 700; }
-        .post-content .place-embed-title { font-weight: 600; }
-        .post-content .place-embed-hint { margin-left: auto; font-size: 12px; color: #8b919c; }
+        .post-content .place-group-embed .pg-list { display: flex; flex-direction: column; }
+        .post-content .place-group-embed .pg-row { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-top: 1px solid #f1f2f4; cursor: pointer; }
+        .post-content .place-group-embed .pg-row:first-child { border-top: none; }
+        .post-content .place-group-embed .pg-row:hover { background: #f8fafc; }
+        .post-content .place-group-embed .pg-body { min-width: 0; }
+        .post-content .place-group-embed .pg-title { font-size: 14.5px; font-weight: 600; color: #16181d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .post-content .place-group-embed .pg-addr { display: block; font-size: 12.5px; color: #8b919c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         /* Footer */
         :root { --primary-dark: #1a7de0; }
@@ -126,21 +135,6 @@
             <div class="post-content min-h-[168px] text-[18.5px] text-[#33383f] leading-[1.75]"
                  th:utext="${postText.content}">본문 내용</div>
 
-            <!-- 이 글에서 소개한 장소 -->
-            <div th:if="${post.places != null and !post.places.isEmpty()}"
-                 class="mt-9 pt-7 border-t border-[#e8eaed]">
-                <div class="text-[15px] text-[#8b919c] mb-3" style="font-weight:700;" th:text="#{community.detail.places}">📍 이 글에서 소개한 장소</div>
-                <div class="flex flex-col gap-2.5">
-                    <a th:each="pl : ${post.places}"
-                       th:href="@{${pl.kind == 'food' ? '/tour/food' : (pl.kind == 'cafe' ? '/tour/cafe' : '/tour/all')}(focus=${pl.contentId}, lang=${#locale.language})}"
-                       class="flex items-center gap-3 px-4 py-3 rounded-md border border-[#e8eaed] no-underline hover:bg-gray-50 transition-colors">
-                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[13px] text-[#5b6270]"
-                              th:text="${pl.kind == 'food'} ? #{community.place.food} : (${pl.kind == 'cafe'} ? #{community.place.cafe} : #{community.place.tour})">관광</span>
-                        <span class="truncate text-[16px] text-[#16181d]" style="font-weight:600;" th:text="${pl.title}">장소명</span>
-                        <span class="ml-auto text-[#8b919c]">&rsaquo;</span>
-                    </a>
-                </div>
-            </div>
 
             <div th:if="${currentUserId != null and currentUserId != post.userId}"
                  class="flex justify-end mt-7 pt-5 border-t border-[#f1f2f4]">
@@ -700,19 +694,51 @@
         _confirmCallback = null;
     }
 
-    // 본문에 박힌 장소 카드를 해당 관광/맛집/카페 화면으로 링크 연결
+    // 본문에 박힌 "장소 첨부" 블록: 저장 시 비워 둔 지도를 letterFor 순서대로 다시 그리고,
+    // 접기 버튼·장소 행 클릭은 위임 하나로 처리한다 (글쓰기 화면과 같은 방식).
+    function letterFor(i) { return String.fromCharCode(65 + i); }
+
     document.addEventListener('DOMContentLoaded', () => {
-        const lang = document.documentElement.lang || 'ko';
-        document.querySelectorAll('.post-content div.place-embed').forEach(el => {
-            const id = el.dataset.contentId;
-            if (!id) return;
-            const kind = el.dataset.kind;
-            const base = kind === 'food' ? '/tour/food' : (kind === 'cafe' ? '/tour/cafe' : '/tour/all');
-            const a = document.createElement('a');
-            a.href = base + '?focus=' + encodeURIComponent(id) + '&lang=' + encodeURIComponent(lang);
-            a.className = 'place-embed place-embed-link';
-            a.innerHTML = el.innerHTML;
-            el.replaceWith(a);
+        const root = document.querySelector('.post-content');
+        if (!root) return;
+
+        root.addEventListener('click', (e) => {
+            const toggle = e.target.closest('.pg-toggle');
+            if (toggle) {
+                const wrap = toggle.closest('.pg-mapwrap');
+                const collapsed = wrap.classList.toggle('collapsed');
+                toggle.textContent = collapsed ? '▸' : '▾';
+                return;
+            }
+            const row = e.target.closest('.pg-row');
+            if (row && row.dataset.href) window.open(row.dataset.href, '_blank');
+        });
+
+        const targets = root.querySelectorAll('.pg-map');
+        if (!targets.length || typeof kakao === 'undefined' || !kakao.maps) return;
+        kakao.maps.load(() => {
+            targets.forEach((el) => {
+                const outer = el.closest('.place-group-embed');
+                let places = [];
+                try { places = JSON.parse(outer?.dataset.places || '[]'); } catch (e) { places = []; }
+                const map = new kakao.maps.Map(el, {
+                    center: new kakao.maps.LatLng(35.1796, 129.0756), level: 9,
+                    draggable: false, zoomable: false
+                });
+                const bounds = new kakao.maps.LatLngBounds();
+                let any = false;
+                places.forEach((p, i) => {
+                    if (p.lat == null || p.lng == null) return;
+                    const pos = new kakao.maps.LatLng(p.lat, p.lng);
+                    const pin = document.createElement('div');
+                    pin.className = 'kakao-letter-pin';
+                    pin.textContent = letterFor(i);
+                    new kakao.maps.CustomOverlay({ map, position: pos, content: pin, yAnchor: 1.15 });
+                    bounds.extend(pos);
+                    any = true;
+                });
+                if (any) map.setBounds(bounds);
+            });
         });
     });
 
