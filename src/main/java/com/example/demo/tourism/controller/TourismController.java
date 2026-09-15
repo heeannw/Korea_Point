@@ -172,36 +172,6 @@ public class TourismController {
         return EXPLORE_VIEW;
     }
 
-    // ─────────────────────────────────────────────────────────
-    // Save to Itinerary → 근처 카페/음식점 페이지
-    // ─────────────────────────────────────────────────────────
-    @GetMapping("/tour/itinerary")
-    public String itinerary(
-            @RequestParam Double lat,
-            @RequestParam Double lon,
-            @RequestParam("lang") String lang,
-            @RequestParam(required = false) String title,
-            @RequestParam(defaultValue = "1.0") double radius,
-            Model model,
-            HttpSession session) {
-
-        List<TourPlaceDto> foodPlaces = tourismService.getNearbyFoodPlaces(lat, lon, radius, lang);
-
-        model.addAttribute("placeLat", lat);
-        model.addAttribute("placeLon", lon);
-        model.addAttribute("placeTitle", title);
-        model.addAttribute("foodPlaces", foodPlaces);
-        model.addAttribute("kakaoKey", kakaoKey);
-        model.addAttribute("radius", radius);
-
-        Double userlat = (Double) session.getAttribute("userlat");
-        Double userlon = (Double) session.getAttribute("userlon");
-        model.addAttribute("userlat", userlat);
-        model.addAttribute("userlon", userlon);
-
-        return "tourism/itinerary";
-    }
-
     @GetMapping("/tour/api/detail/{contentId}")
     @ResponseBody
     public Map<String, Object> tourDetail(
@@ -265,20 +235,4 @@ public class TourismController {
         model.addAttribute("centerLon", BUSAN_CENTER_LON);
     }
 
-    @RequestMapping("/tour/location")
-    public String locationOK() {
-        return "tourism/tourLocation";
-    }
-
-    @RequestMapping("tour/gotransport")
-    public String goTransport(@RequestParam("userlat") Double userlat,
-                              @RequestParam("userlon") Double userlon,
-                              @RequestParam("title") String title,
-                              @RequestParam("lat") Double placeLat,
-                              @RequestParam("lon") Double placeLon,
-                              @RequestParam(value = "lang", defaultValue = "KR") String lang) {
-        String encoded = java.net.URLEncoder.encode(title, java.nio.charset.StandardCharsets.UTF_8);
-        String base = "en".equalsIgnoreCase(lang) ? "/en/transport/search" : "/ko/transport/search";
-        return "redirect:" + base + "?end=" + encoded;
-    }
 }
