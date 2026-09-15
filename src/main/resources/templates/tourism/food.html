@@ -572,7 +572,11 @@
     document.getElementById('sortPopular').hidden = !availability.popular;
     document.getElementById('sortRating').hidden = !availability.rating;
     document.getElementById('sortReviews').hidden = !availability.reviews;
+    // 거리순은 "근처 맛집/카페"처럼 기준 장소가 있을 때만 의미가 있다. 현위치 기능이 없어져서
+    // 평소엔 기준점이 없어 눌러도 정렬이 안 먹힌다 — 그럴 땐 버튼 자체를 숨긴다.
+    document.getElementById('sortDist').hidden = !NEAR_TITLE;
     if (availability[activeSort] === false) activeSort = 'recommended';
+    if (activeSort === 'distance' && !NEAR_TITLE) activeSort = 'recommended';
   }
 
   function getFiltered() {
@@ -638,7 +642,7 @@
           <div class="card-cat" style="color:${cardColorOf(p)}">${cardEmojiOf(p)} ${escapeHtml(catLabel(p))}</div>
           <div class="card-name">${escapeHtml(p.title ?? '-')}</div>
           <div class="card-meta">
-            <span>📍 ${distStr(p.distance)}</span>
+            ${NEAR_TITLE ? `<span>📍 ${distStr(p.distance)}</span>` : ''}
             <span>${escapeHtml((p.addr ?? '').slice(0, 24))}</span>
           </div>
         </div>
@@ -739,6 +743,26 @@
    * 홈이나 관광 상세에서 특정 음식점을 눌러 넘어온 경우(?focus=contentId)
    * 그 장소의 상세 패널을 바로 연다. 필터에 걸려 목록에서 빠졌으면 전체로 되돌린다.
    */
+  // "근처 음식점/카페" 등으로 특정 장소를 기준으로 들어왔을 때 그 위치로 지도를 당겨 온다.
+  // 개별 장소 상세(?focus=)로 들어온 경우는 그쪽이 이미 자기 위치로 지도를 맞추니 건드리지 않는다.
+  const ORIGIN_PIN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">'
+    + '<path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 15 23 15 23s15-12.5 15-23C30 6.7 23.3 0 15 0z" fill="#ef4444" stroke="white" stroke-width="2"/>'
+    + '<circle cx="15" cy="15" r="6" fill="white"/></svg>';
+
+  function centerOnNearOrigin() {
+    if (!map || !NEAR_TITLE || userLat == null || userLon == null) return;
+    if (new URLSearchParams(location.search).get('focus')) return;
+    const pos = new kakao.maps.LatLng(userLat, userLon);
+    if (map.getLevel() > 5) map.setLevel(5, { anchor: pos });
+    map.panTo(pos);
+    new kakao.maps.Marker({
+      map: map, position: pos, title: NEAR_TITLE, zIndex: 10,
+      image: new kakao.maps.MarkerImage(
+        'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(ORIGIN_PIN_SVG),
+        new kakao.maps.Size(30, 38), { offset: new kakao.maps.Point(15, 38) })
+    });
+  }
+
   function focusInitialPlace() {
     const focusId = new URLSearchParams(location.search).get('focus');
     if (!focusId) return;
@@ -1127,6 +1151,7 @@
     kakao.maps.event.addListener(map, 'zoom_changed', refreshMarkerImages);
     updateMarkerVisibility();
     focusInitialPlace();
+    centerOnNearOrigin();
   }
 
   applyStaticLabels();
