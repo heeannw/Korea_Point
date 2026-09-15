@@ -13,6 +13,7 @@ import com.example.demo.user.util.SecurityUtil;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -39,6 +40,10 @@ public class CommunityController {
     private final CommunitySidebarService sidebarService;
     // 글·댓글 문구를 화면 언어에 맞게 고르는 곳. 규칙을 화면마다 두지 않는다.
     private final CommunityTextResolver textResolver;
+
+    /** 글에 붙인 장소들 지도(글쓰기 미리보기 · 상세 화면)에 쓴다. 관광 화면과 같은 키. */
+    @Value("${TOURISM_KAKAO_API_KEY}")
+    private String kakaoKey;
 
     @GetMapping("/post-list")
     public String getPosts(@RequestParam(required = false) Long categoryId,
@@ -108,6 +113,7 @@ public class CommunityController {
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         model.addAttribute("currentUserId", SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserId() : null);
         model.addAttribute("communitySuspended", isCommunitySuspended());
+        model.addAttribute("kakaoKey", kakaoKey);
         return "community/post-detail";
     }
 
@@ -128,6 +134,7 @@ public class CommunityController {
         model.addAttribute("placeContentId", placeContentId);
         model.addAttribute("placeContentTypeId", placeContentTypeId);
         model.addAttribute("placeTitle", placeTitle);
+        model.addAttribute("kakaoKey", kakaoKey);
         return "community/post-write";
     }
 
