@@ -14,3 +14,12 @@ MAIL_USERNAME=
 MAIL_APP_PASSWORD=
 RESERVATION_MAIL_USERNAME=
 RESERVATION_MAIL_APP_PASSWORD=
+
+# PortOne V1 / TossPayments test channel only (iamporttest_3)
+portone.enabled=false
+portone.test-channel-confirmed=false
+portone.user-code=
+portone.channel-key=
+# Set these only in your gitignored application-local.properties or use environment variables.
+# portone.api-key=
+# portone.api-secret=

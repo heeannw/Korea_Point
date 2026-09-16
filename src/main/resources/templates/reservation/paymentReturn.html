@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ko" th:lang="${lang}" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}"><meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title th:text="#{reservation.test.checking}">결제 결과 확인</title>
+    <link rel="stylesheet" th:href="@{/css/reservation/reservation.css}">
+    <link rel="stylesheet" th:href="@{/css/reservation/booking.css}">
+</head>
+<body class="booking-page"><main class="page panel" id="paymentReturn" th:data-reservation-id="${reservation.id}">
+    <h1 th:text="#{reservation.test.notice}">결제 결과 확인</h1>
+    <p id="paymentMessage" role="status" aria-live="polite" th:text="#{reservation.test.checking}"></p>
+    <button class="btn" id="retryVerification" type="button" th:text="#{reservation.test.retry}"></button>
+    <a class="btn secondary" th:href="@{/ko/reservation/requests/{id}(id=${reservation.id})}" th:text="#{reservation.request.open}"></a>
+</main>
+<script th:inline="javascript">
+window.paymentText = {checking: /*[[#{reservation.test.checking}]]*/ '', failed: /*[[#{reservation.test.failed}]]*/ '', retry: /*[[#{reservation.test.retry}]]*/ '', sdk: ''};
+</script>
+<script th:src="@{/js/reservation/portone-payment.js}"></script>
+</body></html>

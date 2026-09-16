@@ -154,6 +154,7 @@ public class ReservationController {
         model.addAttribute("payment", reservation.getPayment());
         model.addAttribute("paymentMethods", PaymentMethod.values());
         model.addAttribute("paymentRequest", new ReservationPaymentRequest());
+        model.addAttribute("portOneReady", reservationPaymentService.isReady());
         model.addAttribute("lang", reservationLanguage(reservation));
         applyReservationLocale(reservationLanguage(reservation));
         return "reservation/reservationPayment";
@@ -176,12 +177,22 @@ public class ReservationController {
             model.addAttribute("reservation", reservation);
             model.addAttribute("payment", reservation.getPayment());
             model.addAttribute("paymentMethods", PaymentMethod.values());
+            model.addAttribute("portOneReady", reservationPaymentService.isReady());
             model.addAttribute("lang", reservationLanguage(reservation));
             return "reservation/reservationPayment";
         }
 
-        reservationPaymentService.process(reservationId, SecurityUtil.getCurrentUserId(), request);
-        return "redirect:/ko/reservation/complete/" + reservationId;
+        var payment = reservationPaymentService.process(reservationId, SecurityUtil.getCurrentUserId(), request);
+        return "redirect:/ko/reservation/" + (payment.getStatus() == PaymentStatus.PAID ? "complete/" : "requests/") + reservationId;
+    }
+
+    @GetMapping("/ko/reservation/payment/{reservationId}/return")
+    public String paymentReturn(@PathVariable Long reservationId, Model model) {
+        var reservation = reservationService.findMine(reservationId, SecurityUtil.getCurrentUserId());
+        model.addAttribute("reservation", reservation);
+        model.addAttribute("lang", reservationLanguage(reservation));
+        applyReservationLocale(reservationLanguage(reservation));
+        return "reservation/paymentReturn";
     }
 
     @GetMapping("/ko/reservation/complete/{reservationId}")
@@ -190,11 +201,7 @@ public class ReservationController {
         if (!"CONFIRMED".equals(reservation.getApplicationStatus())) {
             return "redirect:/ko/reservation/requests/" + reservationId;
         }
-        TourApiPlaceDto place = tourApiReservationService.findDetail(
-                reservation.getContentId(), reservation.getContentTypeId(), reservationLanguage(reservation));
-
         addSessionModel(model);
-        model.addAttribute("place", place);
         model.addAttribute("reservation", reservation);
         model.addAttribute("reservationNo", reservation.getReservationNo());
         model.addAttribute("payment", reservation.getPayment());

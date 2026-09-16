@@ -30,7 +30,8 @@ class ReservationServiceTest {
 
     private final TourReservationRepository reservationRepository = mock(TourReservationRepository.class);
     private final ReservationPaymentRepository paymentRepository = mock(ReservationPaymentRepository.class);
-    private final ReservationService service = new ReservationService(reservationRepository, paymentRepository, mock(ReservationPlacePolicyService.class));
+    private final PortOneGateway gateway = mock(PortOneGateway.class);
+    private final ReservationService service = new ReservationService(reservationRepository, paymentRepository, mock(ReservationPlacePolicyService.class), gateway);
 
     @Test
     void createsPendingApplicationWithoutPayment() {
@@ -77,6 +78,23 @@ class ReservationServiceTest {
         form.setReservationTime("18:00");
         form.setPeopleCount(peopleCount);
         return form;
+    }
+
+    @Test
+    void providerCancellationFailureDoesNotMarkReservationRefunded() {
+        var reservation = TourReservation.builder().id(3L).userId(7L).status("예약 완료")
+                .reservationDate(LocalDate.now().plusDays(3)).reservationTime("10:00").build();
+        var payment = ReservationPayment.builder().amount(10000).merchantUid("KPTEST-order")
+                .impUid("imp_test").status(PaymentStatus.PAID).build();
+        reservation.setPayment(payment);
+        when(reservationRepository.findLockedById(3L)).thenReturn(Optional.of(reservation));
+        when(gateway.cancel("imp_test", "KPTEST-order", 10000))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_GATEWAY));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.cancel(3L, 7L))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(reservation.getStatus()).isEqualTo("예약 완료");
+        assertThat(payment.getRefundedAt()).isNull();
     }
 
     @Test

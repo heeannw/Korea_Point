@@ -52,6 +52,16 @@ class ReservationRequestViewTest {
                     assertThat(html.contains("/ko/reservation/payment/1")).isEqualTo(state.equals("APPROVED"));
                     assertThat(html).contains("&lt;script&gt;alert");
                 }
+                for (String state : new String[]{"PAYMENT_ENABLED", "PAYMENT_DISABLED", "RETURN", "COMPLETE"}) {
+                    String html = mvc.perform(get("/fixture/" + state + "/" + language).locale(Locale.forLanguageTag(language)))
+                            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+                    assertThat(html).doesNotContain("??", "apiSecret", "api-key");
+                    assertThat(html).doesNotContain("시연용 테스트", "테스트 결제", "Demo test payment", "Test card payment");
+                    if (state.equals("PAYMENT_DISABLED")) assertThat(html).contains("disabled=\"disabled\"").doesNotContain("https://cdn.iamport.kr");
+                    if (state.equals("PAYMENT_ENABLED")) assertThat(html).contains("https://cdn.iamport.kr/v1/iamport.js");
+                    if (state.equals("COMPLETE")) assertThat(html).contains("17,000", "Test place");
+                    if (state.equals("COMPLETE") && language.equals("ko")) assertThat(html).contains("결제가 완료되었습니다.");
+                }
             }
         } finally {
             context.close();
@@ -66,7 +76,7 @@ class ReservationRequestViewTest {
                     .placeTitle("Test place").reservationDate(LocalDate.now().plusDays(3))
                     .reservationTime("10:00").peopleCount(2).reviewNote("<script>alert(1)</script>").build();
             if (state.equals("CANCELED")) reservation.setStatus("예약 취소");
-            else if (state.equals("APPROVED") || state.equals("EXPIRED")) {
+            else if (state.equals("APPROVED") || state.equals("EXPIRED") || state.startsWith("PAYMENT") || state.equals("RETURN") || state.equals("COMPLETE")) {
                 reservation.setReviewStatus(ReservationReviewStatus.APPROVED);
                 reservation.setPaymentDeadline(LocalDateTime.now().plusHours(state.equals("EXPIRED") ? -1 : 24));
                 reservation.setPayment(ReservationPayment.builder().amount(17000).status(PaymentStatus.READY).build());
@@ -74,6 +84,20 @@ class ReservationRequestViewTest {
             model.addAttribute("reservation", reservation);
             model.addAttribute("lang", language);
             model.addAttribute("isLoggedIn", false);
+            if (state.equals("COMPLETE")) {
+                reservation.getPayment().setStatus(PaymentStatus.PAID);
+                reservation.setStatus("예약 완료");
+                model.addAttribute("payment", reservation.getPayment());
+                model.addAttribute("reservationNo", reservation.getReservationNo());
+                return "reservation/reservationComplete";
+            }
+            if (state.startsWith("PAYMENT") || state.equals("RETURN")) {
+                model.addAttribute("_csrf", new org.springframework.security.web.csrf.DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "test-token"));
+                model.addAttribute("payment", reservation.getPayment());
+                model.addAttribute("paymentRequest", new com.example.demo.reservation.dto.ReservationPaymentRequest());
+                model.addAttribute("portOneReady", state.equals("PAYMENT_ENABLED"));
+                return state.equals("RETURN") ? "reservation/paymentReturn" : "reservation/reservationPayment";
+            }
             return "reservation/reservationRequest";
         }
     }
