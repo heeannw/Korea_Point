@@ -69,7 +69,8 @@
     /* ── ✨ 나를 위한 추천 ── */
     .for-you{flex-shrink:0;padding:12px 16px 4px;border-bottom:8px solid var(--light)}
     .fy-head{font-size:13px;font-weight:800;color:var(--dark);margin-bottom:8px}
-    .fy-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:8px}
+    .fy-row-wrap{display:flex;align-items:center;gap:0}
+    .fy-row{flex:1;min-width:0;display:flex;gap:8px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;padding-bottom:8px}
     .fy-row::-webkit-scrollbar{display:none}
     .fy-card{flex:0 0 132px;border:1px solid var(--border);border-radius:12px;background:var(--white);padding:0 0 8px;text-align:left;cursor:pointer;overflow:hidden;transition:box-shadow .15s}
     .fy-card:hover{box-shadow:0 4px 14px rgba(59,158,255,.18)}
@@ -130,6 +131,7 @@
     .card-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray)}
     .stars-s{color:var(--gold);font-size:11px}
     .card-dist{font-size:11px;color:var(--gray);background:var(--light);padding:2px 8px;border-radius:50px;white-space:nowrap}
+    .scroll-sentinel{height:40px}
     .map-area{flex:1;position:relative;background:#e8f0fe;overflow:hidden}
     .map-controls{position:absolute;top:calc(var(--hdr-h) + 12px);right:16px;display:flex;flex-direction:column;gap:4px;z-index:30}
     .mc{width:36px;height:36px;background:#fff;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;box-shadow:var(--sh);transition:background .2s}
@@ -438,15 +440,20 @@
   }
 
   /** 목록에서 고른 항목은 인기가 아니어도 핀을 띄운다. 카드만 뜨고 핀이 없으면 위치를 알 수 없다. */
-  function selectedPlaceTitle() {
+  function selectedPlaceId() {
     const list = window._currentList || PLACES;
-    return (activePinId != null && list[activePinId]) ? list[activePinId].title : null;
+    return (activePinId != null && list[activePinId]) ? list[activePinId].id : null;
   }
   let activeCategory = 'All';
   // 인기 데이터가 있으면 첫 화면을 '인기 TOP'으로 연다(=🔥 인기 탭). 근처 조회로 오면 거리순.
   let activeSort = NEAR_TITLE ? 'distance' : (hasPopularityData() ? 'popular' : 'recommended');
   let activePopAge = 'all';   // 인기 탭 세대 필터: 'all' | '20' | '30' | '40' | '50' | '60'
   let activePinId = null;
+  // 목록이 최대 1500곳이 넘어가서 정렬·필터 바꿀 때마다 카드를 전부 다시 그리면 느리다.
+  // 처음엔 일부만 그리고 스크롤을 내리면 이어서 더 그린다. 필터가 바뀔 때만 처음으로 되돌린다.
+  const RENDER_BATCH = 30;
+  let renderLimit = RENDER_BATCH;
+  let lastRenderKey = '';
   let map;
   let markerMap = [];
   let selectedMarker = null;
@@ -600,6 +607,26 @@
    * 홈에서 인기 관광지를 눌러 넘어온 경우(?focus=contentId)
    * 지도 이동·핀 선택·미니 카드·상세 패널까지 한 번에 열어 준다.
    */
+  // "근처 관광지" 등으로 특정 장소를 기준으로 들어왔을 때 그 위치로 지도를 당겨 온다.
+  // 개별 장소 상세(?focus=)로 들어온 경우는 그쪽이 이미 자기 위치로 지도를 맞추니 건드리지 않는다.
+  const ORIGIN_PIN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">'
+    + '<path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 15 23 15 23s15-12.5 15-23C30 6.7 23.3 0 15 0z" fill="#ef4444" stroke="white" stroke-width="2"/>'
+    + '<circle cx="15" cy="15" r="6" fill="white"/></svg>';
+
+  function centerOnNearOrigin() {
+    if (!map || !NEAR_TITLE || userLat == null || userLon == null) return;
+    if (new URLSearchParams(location.search).get('focus')) return;
+    const pos = new kakao.maps.LatLng(userLat, userLon);
+    if (map.getLevel() > 5) map.setLevel(5, { anchor: pos });
+    map.panTo(pos);
+    new kakao.maps.Marker({
+      map: map, position: pos, title: NEAR_TITLE, zIndex: 10,
+      image: new kakao.maps.MarkerImage(
+        'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(ORIGIN_PIN_SVG),
+        new kakao.maps.Size(30, 38), { offset: new kakao.maps.Point(15, 38) })
+    });
+  }
+
   function focusInitialPlace() {
     const focusId = new URLSearchParams(location.search).get('focus');
     if (!focusId) return;
@@ -685,7 +712,7 @@
     return CATEGORY_COLOR[String(type)] ?? '#64748b';
   }
 
-  function highlightMarkerByTitle(title) {
+  function highlightMarkerById(id) {
     if (courseMarkers.length > 0) return; // 코스 모드에서는 일반 핀을 건드리지 않는다
     markerMap.forEach(item => {
       const color = CATEGORY_COLOR[String(item.type)] ?? '#64748b';
@@ -694,7 +721,9 @@
       item.marker.setZIndex(1);
     });
     syncClusteredMarkers();
-    const target = markerMap.find(item => item.title === title);
+    // 이름이 같은 장소가 여럿 있을 수 있어(예: "부산타워"가 관광지·쇼핑 두 분류로 따로 등록됨)
+    // 제목이 아니라 contentId로 정확히 찾는다.
+    const target = markerMap.find(item => item.id === id);
     if (target) {
       const color = CATEGORY_COLOR[String(target.type)] ?? '#64748b';
       const emoji = CATEGORY_EMOJI[String(target.type)] ?? '📍';
@@ -746,8 +775,10 @@
     if (isPopularOnlyView()) {
       ['sortRecommended', 'sortRating', 'sortReviews', 'sortPopular'].forEach(id =>
         document.getElementById(id).hidden = true);
-      document.getElementById('sortDistance').hidden = false;
-      if (activeSort !== 'distance') activeSort = 'popular';
+      // 거리순은 "근처 관광지"처럼 기준 장소가 있을 때만 의미가 있다. 현위치 기능이 없어져서
+      // 평소엔 기준점이 없어 눌러도 정렬이 안 먹힌다 — 그럴 땐 버튼 자체를 숨긴다.
+      document.getElementById('sortDistance').hidden = !NEAR_TITLE;
+      if (activeSort !== 'distance' || !NEAR_TITLE) activeSort = 'popular';
       document.querySelectorAll('.sort-btn').forEach(b =>
         b.classList.toggle('active', b.id === 'sortDistance' && activeSort === 'distance'));
       return;
@@ -756,7 +787,9 @@
     document.getElementById('sortPopular').hidden = true;
     document.getElementById('sortRating').hidden = false;   // 별점 데이터가 적어도 노출(추후 채워짐)
     document.getElementById('sortReviews').hidden = !availability.reviews;
-    if (activeSort === 'popular' || (activeSort === 'reviews' && !availability.reviews)) activeSort = 'recommended';
+    document.getElementById('sortDistance').hidden = !NEAR_TITLE;
+    if (activeSort === 'popular' || (activeSort === 'reviews' && !availability.reviews)
+        || (activeSort === 'distance' && !NEAR_TITLE)) activeSort = 'recommended';
     document.querySelectorAll('.sort-btn').forEach(button =>
       button.classList.toggle('active', button.id === {
         popular:'sortPopular', rating:'sortRating', reviews:'sortReviews',
@@ -866,13 +899,14 @@
     const rankByTitle = new Map(filtered.map((p, i) => [p.title, i + 1]));
 
     const popularOnly = isPopularOnlyView();
-    const chosen = selectedPlaceTitle();
+    const chosenId = selectedPlaceId();
 
     const clustered = [];
     markerMap.forEach(item => {
       const visible = visibleTitles.has(item.title);
       const popular = visible && popularTitles.has(item.title);
-      const chosenPin = visible && item.title === chosen;
+      // 활성 핀만은 이름이 같은 장소가 있어도 정확히 그 장소만 골라야 해서 id로 비교한다.
+      const chosenPin = visible && item.id === chosenId;
       const color = CATEGORY_COLOR[String(item.type)] ?? '#64748b';
 
       item.isPopular = popular;
@@ -900,18 +934,9 @@
     syncClusteredMarkers();
   }
 
-  function render() {
-    updateSortAvailability();
-    const list = getFiltered();
-    window._currentList = list;
-    document.getElementById('countDisplay').textContent = list.length;
-    document.getElementById('countLabel').hidden = isPopularOnlyView();
-    document.getElementById('popularLabel').hidden = !isPopularOnlyView();
-    if (activePinId != null && list[activePinId]) {
-      requestAnimationFrame(() => highlightMarkerByTitle(list[activePinId].title));
-    }
-    updateMarkerVisibility();
-    document.getElementById('placeList').innerHTML = list.map((p, i) => `
+  /** 카드 한 장의 마크업. 전체 다시 그리기·스크롤 이어 그리기 둘 다 이 함수를 쓴다. */
+  function cardHtml(p, i) {
+    return `
       <div class="place-card${activePinId == i ? ' active' : ''}" id="card-${i}" onclick="selectPlace(${i})">
         <button class="card-save${savedSet().has(String(p.id)) ? ' saved' : ''}" type="button"
                 data-id="${p.id ?? ''}" data-type="${p.type ?? ''}" onclick="cardSaveClick(event, this)"
@@ -926,11 +951,65 @@
             ${p.userReviewCount
               ? `<span><span class="stars-s">★</span>${p.userRating.toFixed(1)} (${p.userReviewCount})</span>`
               : `<span><span class="stars-s">★</span>${p.rating ?? '-'} (${p.user_ratings_total ? (p.user_ratings_total / 1000).toFixed(1) + 'k' : '-'})</span>`}
-            <span class="card-dist">📍 ${distStr(p.distance)}</span>
+            ${NEAR_TITLE ? `<span class="card-dist">📍 ${distStr(p.distance)}</span>` : ''}
           </div>
         </div>
       </div>
-    `).join('');
+    `;
+  }
+
+  let scrollObserver = null;
+
+  /** 목록 아래로 내리면 다음 배치를 이어 그린다. 이미 그려진 카드는 안 건드리고 새 카드만 덧붙인다
+   *  — render()를 다시 부르면 지금까지 그린 만큼을 매번 통째로 다시 그리게 돼서 비싸진다. */
+  function appendMorePlaces() {
+    const list = window._currentList || [];
+    const start = renderLimit;
+    const end = Math.min(start + RENDER_BATCH, list.length);
+    if (start >= end) return;
+    let html = '';
+    for (let i = start; i < end; i++) html += cardHtml(list[i], i);
+    const sentinel = document.getElementById('scrollSentinel');
+    if (sentinel) sentinel.insertAdjacentHTML('beforebegin', html); else document.getElementById('placeList').insertAdjacentHTML('beforeend', html);
+    renderLimit = end;
+    if (end >= list.length && sentinel) sentinel.remove();
+  }
+
+  function setupScrollSentinel(hasMore) {
+    if (scrollObserver) { scrollObserver.disconnect(); scrollObserver = null; }
+    if (!hasMore) return;
+    const sentinel = document.getElementById('scrollSentinel');
+    const root = document.querySelector('.place-list');
+    if (!sentinel || !root) return;
+    scrollObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) appendMorePlaces();
+    }, { root, rootMargin: '400px' });
+    scrollObserver.observe(sentinel);
+  }
+
+  function render() {
+    updateSortAvailability();
+    const list = getFiltered();
+    window._currentList = list;
+    document.getElementById('countDisplay').textContent = list.length;
+    document.getElementById('countLabel').hidden = isPopularOnlyView();
+    document.getElementById('popularLabel').hidden = !isPopularOnlyView();
+    if (activePinId != null && list[activePinId]) {
+      requestAnimationFrame(() => highlightMarkerById(list[activePinId].id));
+    }
+    updateMarkerVisibility();
+
+    // 필터 조건이 바뀐 경우에만 쌓아 온 범위를 처음으로 되돌린다.
+    // (카드 클릭·저장 하트처럼 목록 자체는 그대로인 render() 호출에서는 유지)
+    const filterKey = activeCategory + '|' + activeSort + '|' + activePopAge + '|' + document.getElementById('searchInput').value;
+    if (filterKey !== lastRenderKey) { renderLimit = RENDER_BATCH; lastRenderKey = filterKey; }
+    const visibleCount = Math.min(renderLimit, list.length);
+
+    let html = '';
+    for (let i = 0; i < visibleCount; i++) html += cardHtml(list[i], i);
+    if (list.length > visibleCount) html += '<div id="scrollSentinel" class="scroll-sentinel"></div>';
+    document.getElementById('placeList').innerHTML = html;
+    setupScrollSentinel(list.length > visibleCount);
   }
 
   function selectPlace(idx) {
@@ -938,17 +1017,22 @@
     const p = list[idx];
     if (!p) return;
     activePinId = Number(idx);
+    // 지도 핀은 목록에 그려둔 범위 밖(120개 넘는 곳)도 클릭할 수 있다 — 그 카드가
+    // 실제로 그려져 있어야 아래서 하이라이트·스크롤이 맞는 카드로 간다.
+    if (Number(idx) >= renderLimit) renderLimit = Number(idx) + 1;
     if (isCourse(p)) {
       enterCourseMode(p);
     } else {
       exitCourseMode();
-      highlightMarkerByTitle(p.title);
+      highlightMarkerById(p.id);
     }
     render();
     centerPlaceBesideTourDetail(p);
     setTimeout(() => {
       const card = document.getElementById('card-' + idx);
-      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // 목록 맨 아래쪽 카드처럼 거리가 아주 멀면 smooth 스크롤이 몇 초씩 걸리거나
+      // 도중에 끊겨 엉뚱한 위치에서 멈춘다 — 즉시 이동으로 확실하게 보여준다.
+      if (card) card.scrollIntoView({ behavior: 'auto', block: 'nearest' });
     }, 60);
     openDetail(p);
   }
@@ -1506,7 +1590,10 @@
     if (!recos.length) { await renderOnboarding(wrap); return; }
 
     wrap.hidden = false;
-    wrap.innerHTML = `<div class="fy-head">✨ ${escapeDetail(FY_TITLE)}</div><div class="fy-row">`
+    wrap.innerHTML = `<div class="fy-head">✨ ${escapeDetail(FY_TITLE)}</div>
+      <div class="fy-row-wrap">
+        <button class="scroll-btn left" id="fyScrollLeft" onclick="scrollForYou(-1)" disabled>‹</button>
+        <div class="fy-row" id="fyRow">`
       + recos.map(r => {
           const p = PLACES.find(x => String(x.id) === String(r.contentId));
           const img = (p && p.image) || r.image || '';
@@ -1516,7 +1603,9 @@
             <div class="fy-thumb" style="background-image:url('${escapeDetail(img)}')"></div>
             <div class="fy-name">${escapeDetail(name)}</div>
             <div class="fy-reason">${escapeDetail(reason)}</div></button>`;
-        }).join('') + `</div>`;
+        }).join('') + `</div>
+        <button class="scroll-btn right" id="fyScrollRight" onclick="scrollForYou(1)">›</button>
+      </div>`;
 
     wrap.querySelectorAll('.fy-card').forEach(btn => btn.onclick = () => {
       const p = PLACES.find(x => String(x.id) === btn.dataset.id);
@@ -1524,6 +1613,29 @@
       const i = (window._currentList || PLACES).indexOf(p);
       if (i >= 0) selectPlace(i); else openDetail(p);
     });
+
+    const fyRow = document.getElementById('fyRow');
+    if (fyRow) {
+      fyRow.addEventListener('scroll', updateFyScrollBtns);
+      updateFyScrollBtns();
+    }
+  }
+
+  // 마우스로는 가로 스크롤 드래그가 안 먹혀서(트랙패드·시프트+휠만 됨) 화살표 버튼을 둔다.
+  // 필터 칩 줄(scrollFilter)과 같은 방식.
+  function scrollForYou(dir) {
+    const row = document.getElementById('fyRow');
+    if (!row) return;
+    row.scrollLeft += dir * 150;
+    setTimeout(updateFyScrollBtns, 150);
+  }
+  function updateFyScrollBtns() {
+    const row = document.getElementById('fyRow');
+    const left = document.getElementById('fyScrollLeft');
+    const right = document.getElementById('fyScrollRight');
+    if (!row || !left || !right) return;
+    left.disabled = row.scrollLeft <= 0;
+    right.disabled = row.scrollLeft + row.clientWidth >= row.scrollWidth - 1;
   }
 
   async function renderOnboarding(wrap) {
@@ -1660,12 +1772,13 @@
         image: createMarkerImage(color, emoji),
         zIndex: 1
       });
-      markerMap.push({ title: p.title, type: p.type, marker: marker, rank: p.popularRank ?? null });
+      markerMap.push({ id: p.id, title: p.title, type: p.type, marker: marker, rank: p.popularRank ?? null });
       kakao.maps.event.addListener(marker, 'click', () => {
         const list = window._currentList || PLACES;
-        let listIdx = list.findIndex(x => x.title === p.title);
+        // 제목이 같은 장소가 여럿일 수 있어(예: "부산타워" 관광지·쇼핑 중복 등록) id로 찾는다.
+        let listIdx = list.findIndex(x => x.id === p.id);
         if (listIdx < 0) {
-          highlightMarkerByTitle(p.title);
+          highlightMarkerById(p.id);
           openDetail(p);
           return;
         }
@@ -1679,10 +1792,10 @@
     // 축척이 바뀌면 강조할 인기 개수(TOP 3 ↔ TOP 5)가 달라진다.
     kakao.maps.event.addListener(map, 'zoom_changed', () => {
       if (courseMarkers.length > 0) return;
-      const activeTitle = (activePinId != null)
-        ? ((window._currentList || PLACES)[activePinId] || {}).title : null;
-      if (activeTitle) {
-        highlightMarkerByTitle(activeTitle);   // 전체 리셋 후 활성 핀은 다시 강조
+      const activeId = (activePinId != null)
+        ? ((window._currentList || PLACES)[activePinId] || {}).id : null;
+      if (activeId) {
+        highlightMarkerById(activeId);   // 전체 리셋 후 활성 핀은 다시 강조
         return;
       }
       markerMap.forEach(item => {
@@ -1694,6 +1807,7 @@
     });
 
     focusInitialPlace();
+    centerOnNearOrigin();
   });
 </script>
 
