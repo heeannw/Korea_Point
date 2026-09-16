@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:lang="${lang}" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,7 +34,7 @@
       </div>
     </div>
 
-    <div class="congestion-banner">
+    <div class="congestion-banner" th:if="${showCongestion}">
 
       <!-- Group in one line -->
       <div class="congestion-top">
@@ -93,15 +93,102 @@
 <script th:inline="javascript">
   /*<![CDATA[*/
   const routeId = /*[[${route?.routeId}]]*/ null;
+  const currentLang = /*[[${lang}]]*/ 'en';
   /*]]>*/
 </script>
 
 <script th:inline="javascript">
   const congestionText = /*[[${congestionText}]]*/ 'normal';
+  const showCongestion = /*[[${showCongestion}]]*/ false;
 </script>
 
 
 <script>
+  const UI = {
+    en: {
+      back: '← Back to Search', departs: 'Departs', transfer: 'Transfers:', min: 'min',
+      congestion: '🚇 Congestion', normal: 'Normal', caution: 'Caution', crowded: 'Crowded', severe: 'Severe',
+      steps: '📋 Steps', arrivals: '🚇 Live Arrivals', busanArrivals: '🚌 Busan Arrivals',
+      loading: 'Loading...', noRoute: 'No route data', noInfo: 'No information',
+      loadFailed: 'Failed to load', dataLoadFailed: 'Failed to load data',
+      legend: 'Legend', subway: 'Subway', bus: 'Bus', walking: 'Walking',
+      depart: 'Depart', arrive: 'Arrive', arriveAt: 'Arrive at',
+      walkFrom: 'Walk from', walkTo: 'Walk to',
+      busanNote: 'Busan subway arrivals are timetable-based estimates. Busan bus arrivals show BIMS live stop-arrival data.',
+      next: 'Next', route: 'Route', live: 'Live', checking: 'Checking', toward: 'toward',
+      departureStation: 'Departure Station', destination: 'Destination', busStop: 'Bus Stop', destinationStop: 'Destination Stop',
+      stopNoData: 'No stop-arrival data', stopMatchFailed: 'Stop match failed', missingBimsKey: 'Missing BIMS key', bimsRequestFailed: 'BIMS request failed',
+      soon: 'Arriving soon', inMinutes: minutes => `Arrives in ${minutes} min`
+    },
+    ja: {
+      back: '← 検索に戻る', departs: '出発', transfer: '乗換:', min: '分',
+      congestion: '🚇 混雑度', normal: '通常', caution: '注意', crowded: '混雑', severe: '深刻',
+      steps: '📋 移動手順', arrivals: '🚇 リアルタイム到着情報', busanArrivals: '🚌 釜山到着情報',
+      loading: '読み込み中...', noRoute: '経路データがありません', noInfo: '情報なし',
+      loadFailed: '読み込みに失敗しました', dataLoadFailed: 'データの読み込みに失敗しました',
+      legend: '凡例', subway: '地下鉄', bus: 'バス', walking: '徒歩',
+      depart: '出発', arrive: '到着', arriveAt: '到着',
+      walkFrom: '徒歩', walkTo: '徒歩で',
+      busanNote: '釜山地下鉄は時刻表ベースの予測情報、釜山バスはBIMSのリアルタイム停留所到着情報で表示します。',
+      next: '次', route: '路線', live: 'リアルタイム', checking: '確認中', toward: '方面',
+      departureStation: '出発駅', destination: '目的地', busStop: 'バス停', destinationStop: '到着停留所',
+      stopNoData: '停留所到着情報なし', stopMatchFailed: '停留所の照合に失敗', missingBimsKey: 'BIMS認証キーなし', bimsRequestFailed: 'BIMSリクエスト失敗',
+      soon: 'まもなく到着', inMinutes: minutes => `${minutes}分後に到着`
+    },
+    zh: {
+      back: '← 返回搜索', departs: '出发', transfer: '换乘:', min: '分钟',
+      congestion: '🚇 拥挤度', normal: '正常', caution: '注意', crowded: '拥挤', severe: '严重',
+      steps: '📋 移动步骤', arrivals: '🚇 实时到达信息', busanArrivals: '🚌 釜山到达信息',
+      loading: '加载中...', noRoute: '没有路线数据', noInfo: '暂无信息',
+      loadFailed: '加载失败', dataLoadFailed: '数据加载失败',
+      legend: '图例', subway: '地铁', bus: '公交', walking: '步行',
+      depart: '出发', arrive: '到达', arriveAt: '到达',
+      walkFrom: '从这里步行', walkTo: '步行至',
+      busanNote: '釜山地铁显示基于时刻表的预计信息，釜山公交显示 BIMS 实时站点到达信息。',
+      next: '下一班', route: '线路', live: '实时', checking: '确认中', toward: '方向',
+      departureStation: '出发站', destination: '目的地', busStop: '公交站', destinationStop: '到达站',
+      stopNoData: '暂无站点到达信息', stopMatchFailed: '站点匹配失败', missingBimsKey: '缺少 BIMS 认证密钥', bimsRequestFailed: 'BIMS 请求失败',
+      soon: '即将到达', inMinutes: minutes => `${minutes}分钟后到达`
+    },
+    fr: {
+      back: '← Retour à la recherche', departs: 'Départ', transfer: 'Correspondances :', min: 'min',
+      congestion: '🚇 Affluence', normal: 'Normal', caution: 'Attention', crowded: 'Chargé', severe: 'Très chargé',
+      steps: '📋 Étapes', arrivals: '🚇 Arrivées en direct', busanArrivals: '🚌 Arrivées à Busan',
+      loading: 'Chargement...', noRoute: 'Aucune donnée d’itinéraire', noInfo: 'Aucune information',
+      loadFailed: 'Échec du chargement', dataLoadFailed: 'Impossible de charger les données',
+      legend: 'Légende', subway: 'Métro', bus: 'Bus', walking: 'Marche',
+      depart: 'Départ', arrive: 'Arrivée', arriveAt: 'Arrivée à',
+      walkFrom: 'Marcher depuis', walkTo: 'Marcher jusqu’à',
+      busanNote: 'Les arrivées du métro de Busan sont estimées à partir des horaires. Les bus de Busan affichent les données temps réel BIMS.',
+      next: 'Prochain', route: 'Ligne', live: 'Direct', checking: 'Vérification', toward: 'vers',
+      departureStation: 'Station de départ', destination: 'Destination', busStop: 'Arrêt de bus', destinationStop: 'Arrêt d’arrivée',
+      stopNoData: 'Aucune donnée d’arrivée', stopMatchFailed: 'Correspondance d’arrêt échouée', missingBimsKey: 'Clé BIMS manquante', bimsRequestFailed: 'Requête BIMS échouée',
+      soon: 'Arrive bientôt', inMinutes: minutes => `Arrive dans ${minutes} min`
+    }
+  };
+  const ui = UI[currentLang] || UI.en;
+  const t = key => ui[key] || UI.en[key] || key;
+
+  function applyStaticUi() {
+    const back = document.querySelector('.back-link');
+    if (back) back.textContent = t('back');
+    const congestionLabel = document.querySelector('.congestion-top .label');
+    if (congestionLabel) congestionLabel.textContent = t('congestion');
+    document.querySelectorAll('.congestion-legend span').forEach(item => {
+      item.textContent = t(item.dataset.level);
+    });
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    if (tabBtns[0]) tabBtns[0].textContent = t('steps');
+    if (tabBtns[1]) tabBtns[1].textContent = t('arrivals');
+    document.querySelectorAll('.no-data').forEach(item => item.textContent = t('loading'));
+    const legend = document.querySelector('.legend-title');
+    if (legend) legend.textContent = t('legend');
+    const legendItems = document.querySelectorAll('.map-legend .legend-item');
+    if (legendItems[0]) legendItems[0].lastChild.textContent = t('subway');
+    if (legendItems[1]) legendItems[1].lastChild.textContent = t('bus');
+    if (legendItems[2]) legendItems[2].lastChild.textContent = t('walking');
+  }
+  applyStaticUi();
 
   //map reset
   var map = new kakao.maps.Map(document.getElementById('map'), {
@@ -136,16 +223,132 @@
   function translateArrival(msg) {
     if (!msg) return "";
 
-    msg = msg.replace(/(\d+)분 후 도착/g, "Arriving in $1 min");
+    msg = msg.replace(/(\d+)분 후 도착/g, (_, minutes) => ui.inMinutes(minutes));
     // msg = msg.replace(/전역/g, "1 stop away");
     msg = msg.replace(/(\d+)번째 전역/g, "$1 stops away");
 
-    msg = msg.replace("곧 도착", "Arriving soon");
-    msg = msg.replace("도착", "Arrived");
-    msg = msg.replace("출발", "Departed");
-    msg = msg.replace("진입", "Approaching");
+    msg = msg.replace("곧 도착", t('soon'));
+    msg = msg.replace("도착", t('arrive'));
+    msg = msg.replace("출발", t('depart'));
+    msg = msg.replace("진입", t('soon'));
 
     return msg;
+  }
+
+  const translationCache = new Map();
+
+  const TRANSPORT_NAME_PARTS = {
+    en: {
+      '부산': 'Busan', '하단': 'Hadan', '괴정': 'Goejeong', '교정자유아파트': 'Gyojeong Jayu Apt',
+      '교정자유아파트교차로': 'Gyojeong Jayu Apt Intersection', '하단교차로': 'Hadan Intersection',
+      '도착지': 'Destination', '출발지': 'Origin'
+    },
+    ja: {
+      '부산': '釜山', '하단': '下端', '괴정': '槐亭', '교정자유아파트': '校庭自由アパート',
+      '교정자유아파트교차로': '校庭自由アパート交差点', '하단교차로': '下端交差点',
+      '도착지': '目的地', '출발지': '出発地'
+    },
+    zh: {
+      '부산': '釜山', '하단': '下端', '괴정': '槐亭', '교정자유아파트': '校庭自由公寓',
+      '교정자유아파트교차로': '校庭自由公寓路口', '하단교차로': '下端路口',
+      '도착지': '目的地', '출발지': '出发地'
+    },
+    fr: {
+      '부산': 'Busan', '하단': 'Hadan', '괴정': 'Goejeong', '교정자유아파트': 'Gyojeong Jayu Apt',
+      '교정자유아파트교차로': 'Carrefour Gyojeong Jayu Apt', '하단교차로': 'Carrefour Hadan',
+      '도착지': 'Destination', '출발지': 'Origine'
+    }
+  };
+
+  function localTransportFallback(text) {
+    let result = (text || '').trim();
+    if (!result || !/[가-힣]/.test(result)) return result;
+
+    const dict = TRANSPORT_NAME_PARTS[currentLang] || TRANSPORT_NAME_PARTS.en;
+    Object.entries(dict)
+            .sort((a, b) => b[0].length - a[0].length)
+            .forEach(([ko, translated]) => {
+              result = result.replaceAll(ko, translated);
+            });
+
+    if (currentLang === 'ja') {
+      result = result
+              .replace(/(\d+)호선/g, '$1号線')
+              .replace(/역/g, '駅')
+              .replace(/급행/g, '急行')
+              .replace(/일반/g, '一般')
+              .replace(/교차로/g, '交差点');
+    } else if (currentLang === 'zh') {
+      result = result
+              .replace(/(\d+)호선/g, '$1号线')
+              .replace(/역/g, '站')
+              .replace(/급행/g, '快线')
+              .replace(/일반/g, '普通')
+              .replace(/교차로/g, '路口');
+    } else if (currentLang === 'fr') {
+      result = result
+              .replace(/(\d+)호선/g, 'ligne $1')
+              .replace(/역/g, ' Station')
+              .replace(/급행/g, 'Express')
+              .replace(/일반/g, 'Local')
+              .replace(/교차로/g, 'Carrefour');
+    } else {
+      result = result
+              .replace(/(\d+)호선/g, 'Line $1')
+              .replace(/역/g, ' Station')
+              .replace(/급행/g, 'Express')
+              .replace(/일반/g, 'Local')
+              .replace(/교차로/g, 'Intersection');
+    }
+
+    return result.replace(/\s+/g, ' ').trim();
+  }
+
+  async function translateKoText(text) {
+    const source = (text || '').trim();
+    if (!source || !/[가-힣]/.test(source)) return source;
+    if (translationCache.has(source)) return translationCache.get(source);
+
+    const request = fetch('/api/transport/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: source, source: 'ko', target: currentLang })
+    })
+            .then(res => res.json())
+            .then(data => {
+              const translated = (data.translatedText || '').trim();
+              return translated && translated !== source ? translated : localTransportFallback(source);
+            })
+            .catch(() => localTransportFallback(source));
+
+    translationCache.set(source, request);
+    return request;
+  }
+
+  async function prepareDisplayLabels(routeData) {
+    routeData.displayStart = await translateKoText(routeData.start || '');
+    routeData.displayEnd = await translateKoText(routeData.end || '');
+
+    if (routeData.displayStart || routeData.displayEnd) {
+      const title = document.querySelector('.route-title');
+      if (title) title.textContent = `${routeData.displayStart || routeData.start || ''} → ${routeData.displayEnd || routeData.end || ''}`;
+    }
+    const sub = document.querySelector('.route-sub');
+    if (sub) sub.textContent = `${t('departs')} ${routeData.departTime || ''}`;
+    const chips = document.querySelectorAll('.stats-row .stat-chip span:last-child');
+    if (chips[0]) chips[0].textContent = `${routeData.totalTime || 0} ${t('min')}`;
+    if (chips[1]) chips[1].textContent = `${t('transfer')} ${routeData.transferCount || 0}`;
+
+    await Promise.all((routeData.steps || []).map(async step => {
+      const [from, to, line] = await Promise.all([
+        translateKoText(step.fromStation || ''),
+        translateKoText(step.toStation || ''),
+        translateKoText(step.line || '')
+      ]);
+      step.displayFromStation = from || step.fromStation || '';
+      step.displayToStation = to || step.toStation || '';
+      step.displayLine = line || step.line || '';
+    }));
   }
 
 
@@ -266,11 +469,13 @@
 
   //========== main ==========
   if (!routeId) {
-    document.getElementById('stepList').innerHTML = '<p class="no-data">No route data</p>';
+    document.getElementById('stepList').innerHTML = `<p class="no-data">${t('noRoute')}</p>`;
   } else {
     fetch('/api/transport/route/' + routeId)
             .then(res => res.json())
             .then(async routeData => {
+
+              await prepareDisplayLabels(routeData);
 
               const steps = routeData.steps;
               let allCoords = []; // coordinates (lat,lng)
@@ -290,6 +495,7 @@
               // Origin coordinates (server coordinates or Kakao search)
               let originPt = null;
               const startLabel = routeData.start || '';
+              const displayStartLabel = routeData.displayStart || startLabel;
 
               // Priority 1: Server coordinates
               if (routeData.startLat && routeData.startLng) {
@@ -308,6 +514,7 @@
               // Destination coordinates (Kakao search)
               let destPt = null;
               const endLabel = routeData.end || '';
+              const displayEndLabel = routeData.displayEnd || endLabel;
               if (endLabel) {
                 destPt = await kakaoSearch(endLabel);
               }
@@ -476,18 +683,20 @@
                 // ── Step List ──
                 const from = step.fromStation || '';
                 const to   = step.toStation   || '';
+                const displayFrom = step.displayFromStation || from;
+                const displayTo = step.displayToStation || to;
                 let stepLabel = '';
                 if (step.type === 'walk') {
-                  if (from && to && from !== to) stepLabel = `${from} → ${to}`;
-                  else if (from) stepLabel = `Walk from exit ${from}`;
-                  else if (to)   stepLabel = `Walk to ${to}`;
-                  else           stepLabel = `Walking`;
+                  if (from && to && from !== to) stepLabel = `${displayFrom} → ${displayTo}`;
+                  else if (from) stepLabel = `${t('walkFrom')} ${displayFrom}`;
+                  else if (to)   stepLabel = `${t('walkTo')} ${displayTo}`;
+                  else           stepLabel = t('walking');
                 } else {
-                  stepLabel = `${from} → ${to}`;
+                  stepLabel = `${displayFrom} → ${displayTo}`;
                 }
 
                 const lineLabel = step.line
-                        ? `<span class="step-badge" style="background:${color}22;color:${color}">${step.line}</span>`
+                        ? `<span class="step-badge" style="background:${color}22;color:${color}">${step.displayLine || step.line}</span>`
                         : '';
 
                 const isWalk = step.type === 'walk';
@@ -510,7 +719,7 @@
 
                         <div class="step-info">
                             <strong>${stepLabel}${lineLabel}</strong>
-                            <span>${step.duration} min</span>
+                            <span>${step.duration} ${t('min')}</span>
                         </div>
 
                     </div>`;
@@ -540,7 +749,7 @@
                         </div>
 
                         <div class="step-info">
-                            <strong>Arrive at ${lastTransportStep.toStation}</strong>
+                            <strong>${t('arriveAt')} ${lastTransportStep.displayToStation || lastTransportStep.toStation}</strong>
                         </div>
 
                     </div>`;
@@ -572,13 +781,13 @@
 
               // Origin marker
               if (originPt) {
-                drawMarker(new kakao.maps.LatLng(originPt.lat, originPt.lng), '#ef4444', `Depart · ${startLabel}`);
+                drawMarker(new kakao.maps.LatLng(originPt.lat, originPt.lng), '#ef4444', `${t('depart')} · ${displayStartLabel}`);
                 allCoords.unshift(originPt);
               }
 
               // Destination marker
               if (destPt) {
-                drawMarker(new kakao.maps.LatLng(destPt.lat, destPt.lng), '#3b9eff', 'Arrive');
+                drawMarker(new kakao.maps.LatLng(destPt.lat, destPt.lng), '#3b9eff', t('arrive'));
                 allCoords.push(destPt);
               }
 
@@ -691,21 +900,21 @@
               }
 
               function busanArrivalErrorText(error) {
-                if (error === 'missing-service-key') return 'Missing BIMS key';
-                if (error === 'stop-not-found') return 'Stop match failed';
-                if (error === 'request-failed') return 'BIMS request failed';
+                if (error === 'missing-service-key') return t('missingBimsKey');
+                if (error === 'stop-not-found') return t('stopMatchFailed');
+                if (error === 'request-failed') return t('bimsRequestFailed');
                 if (error) return `BIMS error: ${error}`;
-                return 'No stop-arrival data';
+                return t('stopNoData');
               }
 
               if (isBusanRoute) {
                 const arrivalTabBtn = document.getElementById('arrivalTabBtn');
                 if (arrivalTabBtn) {
-                  arrivalTabBtn.textContent = '🚌 Busan Arrivals';
+                  arrivalTabBtn.textContent = t('busanArrivals');
                 }
 
                 let elapsed = 0;
-                let html = '<p class="arrival-note">Busan subway arrivals are timetable-based estimates. Busan bus arrivals show BIMS live stop-arrival data.</p>';
+                let html = `<p class="arrival-note">${t('busanNote')}</p>`;
 
                 for (const step of steps) {
                   if (step.type === 'subway') {
@@ -716,16 +925,16 @@
                       const arriveAt = addMinutesToTime(routeData.departTime, elapsed + offset + (step.duration || 0));
                       return `
                           <div class="timetable-row">
-                              <span class="timetable-order">${index === 0 ? 'Next' : `#${index + 1}`}</span>
-                              <span><b>Departs</b>${departAt}</span>
-                              <span><b>Arrives</b>${arriveAt}</span>
+                              <span class="timetable-order">${index === 0 ? t('next') : `#${index + 1}`}</span>
+                              <span><b>${t('departs')}</b>${departAt}</span>
+                              <span><b>${t('arrive')}</b>${arriveAt}</span>
                           </div>`;
                     }).join('');
 
                     html += `
                       <div class="arrival-card timetable">
-                          <div class="arrival-station">${step.fromStation || 'Departure Station'}</div>
-                          <div class="arr-line">${step.line || 'Busan Subway'} · toward ${step.toStation || 'Destination'}</div>
+                          <div class="arrival-station">${step.displayFromStation || step.fromStation || t('departureStation')}</div>
+                          <div class="arr-line">${step.displayLine || step.line || `Busan ${t('subway')}`} · ${t('toward')} ${step.displayToStation || step.toStation || t('destination')}</div>
                           <div class="timetable-list">${timeRows}</div>
                       </div>`;
                   } else if (step.type === 'bus') {
@@ -733,23 +942,23 @@
                     const arrivals = busArrival.arrivals || [];
                     const noArrivalText = busanArrivalErrorText(busArrival.error);
                     const timeRows = arrivals.length
-                            ? arrivals.map((arrival, index) => `
+                            ? (await Promise.all(arrivals.map(async (arrival, index) => `
                                 <div class="timetable-row">
                                     <span class="timetable-order">${index === 0 ? '1st' : `#${index + 1}`}</span>
-                                    <span><b>Route</b>${arrival.line || step.line || 'Bus'}</span>
-                                    <span class="timetable-arrival"><b>Arrives</b>${arrival.message || 'Checking'}</span>
-                                </div>`).join('')
+                                    <span><b>${t('route')}</b>${step.displayLine || arrival.line || step.line || t('bus')}</span>
+                                    <span class="timetable-arrival"><b>${t('arrive')}</b>${await translateKoText(arrival.message || t('checking'))}</span>
+                                </div>`))).join('')
                             : `
                                 <div class="timetable-row">
-                                    <span class="timetable-order">Live</span>
-                                    <span><b>Route</b>${step.line || 'Bus'}</span>
-                                    <span class="timetable-arrival"><b>Arrives</b>${noArrivalText}</span>
+                                    <span class="timetable-order">${t('live')}</span>
+                                    <span><b>${t('route')}</b>${step.displayLine || step.line || t('bus')}</span>
+                                    <span class="timetable-arrival"><b>${t('arrive')}</b>${noArrivalText}</span>
                                 </div>`;
 
                     html += `
                       <div class="arrival-card timetable bus">
-                          <div class="arrival-station">${step.fromStation || 'Bus Stop'}</div>
-                          <div class="arr-line">${step.line || 'Bus'} · toward ${step.toStation || 'Destination Stop'}</div>
+                          <div class="arrival-station">${step.displayFromStation || step.fromStation || t('busStop')}</div>
+                          <div class="arr-line">${step.displayLine || step.line || t('bus')} · ${t('toward')} ${step.displayToStation || step.toStation || t('destinationStop')}</div>
                           <div class="timetable-list">${timeRows}</div>
                       </div>`;
                   }
@@ -772,14 +981,14 @@
               );
 
               // Process results
-              Promise.all(requests).then(results => {
+              Promise.all(requests).then(async results => {
 
                 let html = '';
 
-                results.forEach(result => {
+                const translatedCards = await Promise.all(results.map(async result => {
 
                   const list = result.list;
-                  if (!list.length) return;
+                  if (!list.length) return '';
 
                   // Direction keyword
                   let directionKeyword = '';
@@ -847,43 +1056,48 @@
                             .trim();
                   }
 
-                  html += finalList.map(item => {
+                  const stationTitle = await translateKoText(`${result.station}역`);
+
+                  return (await Promise.all(finalList.map(async item => {
 
                     const sec = parseInt(item.barvlDt);
                     let msg = '';
 
 
-                    if (sec <= 60 && sec > 0)        msg = '🚨 Arriving soon';
-                    else if (!isNaN(sec) && sec > 0) msg = `Arrives in ${Math.floor(sec / 60)} min`;
+                    if (sec <= 60 && sec > 0)        msg = `🚨 ${t('soon')}`;
+                    else if (!isNaN(sec) && sec > 0) msg = ui.inMinutes(Math.floor(sec / 60));
                     else {
                       let raw = (item.arvlMsg2 || '').replace(/\[/g, '').replace(/\]/g, '');
                       msg = translateArrival(raw);
                     }
 
                     const lineText = cleanLineName(item.trainLineNm);
+                    const displayLineText = await translateKoText(lineText);
 
                     return `
                       <div class="arrival-card timetable live">
-                          <div class="arrival-station">${result.station} Station</div>
-                          <div class="arr-line">${lineText || 'Seoul Subway'}</div>
+                          <div class="arrival-station">${stationTitle || `${result.station} Station`}</div>
+                          <div class="arr-line">${displayLineText || lineText || 'Seoul Subway'}</div>
                           <div class="timetable-list">
                               <div class="timetable-row">
-                                  <span class="timetable-order">Live</span>
-                                  <span class="timetable-route">${lineText || 'Subway'}</span>
+                                  <span class="timetable-order">${t('live')}</span>
+                                  <span class="timetable-route">${displayLineText || lineText || t('subway')}</span>
                                   <span class="timetable-arrival">${msg}</span>
                               </div>
                           </div>
                       </div>
                             `;
-                  }).join('');
-                });
+                  }))).join('');
+                }));
+
+                html = translatedCards.join('');
 
                 document.getElementById('arrivalList').innerHTML =
-                        html || '<p class="no-data">No information</p>';
+                        html || `<p class="no-data">${t('noInfo')}</p>`;
 
               }).catch(() => {
                 document.getElementById('arrivalList').innerHTML =
-                        '<p class="no-data">Failed to load</p>';
+                        `<p class="no-data">${t('loadFailed')}</p>`;
               });
               }
 
@@ -894,41 +1108,42 @@
               const hour = new Date().getHours();
               const day  = (new Date().getDay() === 0 || new Date().getDay() === 6) ? 0 : 1;
 
-              const fill = document.getElementById('congestionBarFill');
-              const msgBox = document.getElementById('congestionMsg');
-              const chip = document.querySelector('.congestion-chip');
-              const legendItems = document.querySelectorAll('.congestion-legend span');
+              if (showCongestion) {
+                const fill = document.getElementById('congestionBarFill');
+                const chip = document.querySelector('.congestion-chip');
+                const legendItems = document.querySelectorAll('.congestion-legend span');
 
-              let pct = 50;
-              let cls = '';
+                let pct = 50;
+                let cls = '';
 
-              if (congestionText === 'Normal') {
-                pct = 25;
-                cls = 'normal';
-              } else if (congestionText === 'Caution') {
-                pct = 50;
-                cls = 'caution';
-              } else if (congestionText === 'Crowded') {
-                pct = 75;
-                cls = 'crowded';
-              } else {
-                pct = 100;
-                cls = 'severe';
+                if (congestionText === 'Normal') {
+                  pct = 25;
+                  cls = 'normal';
+                } else if (congestionText === 'Caution') {
+                  pct = 50;
+                  cls = 'caution';
+                } else if (congestionText === 'Crowded') {
+                  pct = 75;
+                  cls = 'crowded';
+                } else {
+                  pct = 100;
+                  cls = 'severe';
+                }
+
+                if (fill && chip) {
+                  fill.style.width = pct + '%';
+                  fill.className = 'congestion-bar-fill ' + cls;
+                  chip.className = 'congestion-chip ' + cls;
+                  chip.textContent = t(cls);
+                  legendItems.forEach(item => item.classList.toggle('active', item.dataset.level === cls));
+                }
               }
-
-              // Fill bar
-              fill.style.width = pct + '%';
-              fill.className = 'congestion-bar-fill ' + cls;
-
-              // Text color
-              chip.className = 'congestion-chip ' + cls;
-              legendItems.forEach(item => item.classList.toggle('active', item.dataset.level === cls));
 
             })
             .catch(err => {
               console.error(err);
               document.getElementById('stepList').innerHTML =
-                      '<p class="error-box">Failed to load data</p>';
+                      `<p class="error-box">${t('dataLoadFailed')}</p>`;
             });
   }
 </script>

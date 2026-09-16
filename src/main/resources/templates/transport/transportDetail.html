@@ -33,7 +33,7 @@
             </div>
         </div>
 
-        <div class="congestion-banner">
+        <div class="congestion-banner" th:if="${showCongestion}">
 
             <!-- 한 줄 묶기 -->
             <div class="congestion-top">
@@ -97,6 +97,7 @@
 
 <script th:inline="javascript">
     const congestionText = /*[[${congestionText}]]*/ '보통';
+    const showCongestion = /*[[${showCongestion}]]*/ false;
 </script>
 
 <script>
@@ -869,35 +870,35 @@
                 const hour = new Date().getHours();
                 const day  = (new Date().getDay() === 0 || new Date().getDay() === 6) ? 0 : 1;
 
-                const fill = document.getElementById('congestionBarFill');
-                const msgBox = document.getElementById('congestionMsg');
-                const chip = document.querySelector('.congestion-chip');
-                const legendItems = document.querySelectorAll('.congestion-legend span');
+                if (showCongestion) {
+                    const fill = document.getElementById('congestionBarFill');
+                    const chip = document.querySelector('.congestion-chip');
+                    const legendItems = document.querySelectorAll('.congestion-legend span');
 
-                let pct = 50;
-                let cls = '';
+                    let pct = 50;
+                    let cls = '';
 
-                if (congestionText === '보통') {
-                    pct = 25;
-                    cls = 'normal';
-                } else if (congestionText === '주의') {
-                    pct = 50;
-                    cls = 'caution';
-                } else if (congestionText === '혼잡') {
-                    pct = 75;
-                    cls = 'crowded';
-                } else {
-                    pct = 100;
-                    cls = 'severe';
+                    if (congestionText === '보통') {
+                        pct = 25;
+                        cls = 'normal';
+                    } else if (congestionText === '주의') {
+                        pct = 50;
+                        cls = 'caution';
+                    } else if (congestionText === '혼잡') {
+                        pct = 75;
+                        cls = 'crowded';
+                    } else {
+                        pct = 100;
+                        cls = 'severe';
+                    }
+
+                    if (fill && chip) {
+                        fill.style.width = pct + '%';
+                        fill.className = 'congestion-bar-fill ' + cls;
+                        chip.className = 'congestion-chip ' + cls;
+                        legendItems.forEach(item => item.classList.toggle('active', item.dataset.level === cls));
+                    }
                 }
-
-                // 바 채우기
-                fill.style.width = pct + '%';
-                fill.className = 'congestion-bar-fill ' + cls;
-
-                // 텍스트 색상
-                chip.className = 'congestion-chip ' + cls;
-                legendItems.forEach(item => item.classList.toggle('active', item.dataset.level === cls));
 
             })
             .catch(err => {

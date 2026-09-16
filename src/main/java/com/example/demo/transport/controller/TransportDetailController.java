@@ -9,25 +9,45 @@ import com.example.demo.transport.service.TransportRouteService;
 import com.example.demo.user.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 @Controller
 public class TransportDetailController {
 
     @Value("${SEOUL_SUBWAY_API_KEY:}")
     private String seoulApiKey;
+
+    @Value("${translation.api.key:}")
+    private String translationApiKey;
+
+    private static final Set<String> TRANSPORT_TRANSLATION_LANGS = Set.of("EN", "JA", "ZH", "FR");
+
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
     private TransportRouteService transportRouteService;
@@ -42,23 +62,45 @@ public class TransportDetailController {
     private RouteRepository routeRepository;
 
     @GetMapping("/transport/detail")
-    public String transportDetailRedirect(@RequestParam(required = false) String routeId) {
-        return "redirect:/ko/transport/detail?routeId=" + (routeId != null ? routeId : "");
+    public String transportDetailRedirect(
+            @RequestParam(required = false) String routeId,
+            @RequestParam(required = false) String lang) {
+        String resolvedLang = normalizeLang(lang);
+        return "redirect:/" + resolvedLang + "/transport/detail?routeId=" + (routeId != null ? routeId : "");
     }
 
     @GetMapping("/ko/transport/detail")
-    public String transportDetailKo(@RequestParam(required = false) String routeId, Model model) {
-        return handleDetail(routeId, model, "transport/transportDetail", "ko");
+    public String transportDetailKo(
+            @RequestParam(required = false) String routeId,
+            @RequestParam(required = false) String lang,
+            Model model) {
+        String resolvedLang = normalizeLang(lang);
+        String viewName = "ko".equals(resolvedLang) ? "transport/transportDetail" : "transport/transportDetailTranslated";
+        return handleDetail(routeId, model, viewName, resolvedLang);
     }
 
     @GetMapping("/en/transport/detail")
-    public String transportDetailEn(@RequestParam(required = false) String routeId, Model model) {
-        return handleDetail(routeId, model, "transport/transportDetailEn", "en");
+    public String transportDetailEn(
+            @RequestParam(required = false) String routeId,
+            @RequestParam(required = false) String lang,
+            Model model) {
+        return handleDetail(routeId, model, "transport/transportDetailTranslated", normalizeLang(lang, "en"));
+    }
+
+    @GetMapping({"/ja/transport/detail", "/zh/transport/detail", "/fr/transport/detail"})
+    public String transportDetailTranslated(
+            @RequestParam(required = false) String routeId,
+            @RequestParam(required = false) String lang,
+            jakarta.servlet.http.HttpServletRequest request,
+            Model model) {
+        String pathLang = request.getRequestURI().split("/")[1];
+        return handleDetail(routeId, model, "transport/transportDetailTranslated", normalizeLang(lang, pathLang));
     }
 
     private String handleDetail(String routeId, Model model, String viewName, String lang) {
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
+        model.addAttribute("lang", lang);
 
         TransportRouteDto route = null;
         if (routeId != null && !routeId.isEmpty()) {
@@ -111,13 +153,22 @@ public class TransportDetailController {
             model.addAttribute("route", route);
         }
 
+        boolean showCongestion = route != null
+                && route.getSteps() != null
+                && route.getSteps().stream().anyMatch(step -> "subway".equals(step.getType()));
+        model.addAttribute("showCongestion", showCongestion);
+
+        if (!showCongestion) {
+            return viewName;
+        }
+
         if (line == 0) {
-            model.addAttribute("congestionText", "en".equals(lang) ? "Moderate" : "보통");
+            model.addAttribute("congestionText", "ko".equals(lang) ? "보통" : "Moderate");
             model.addAttribute(
                     "congestionMsg",
-                    "en".equals(lang)
-                            ? "No data available for this line"
-                            : "혼잡도 데이터가 부족한 노선입니다."
+                    "ko".equals(lang)
+                            ? "혼잡도 데이터가 부족한 노선입니다."
+                            : "No data available for this line"
             );
             return viewName;
         }
@@ -146,7 +197,7 @@ public class TransportDetailController {
         int congestion = congestionMlService.predict(city, hour, day, station, stationId, line);
 
         String congestionText;
-        if ("en".equals(lang)) {
+        if (!"ko".equals(lang)) {
             switch (congestion) {
                 case 0: congestionText = "Normal"; break;
                 case 1: congestionText = "Caution"; break;
@@ -166,7 +217,7 @@ public class TransportDetailController {
         model.addAttribute("congestionText", congestionText);
 
         String congestionMsg;
-        if ("en".equals(lang)) {
+        if (!"ko".equals(lang)) {
             switch (congestion) {
                 case 0:
                     congestionMsg = "Passenger volume is within the normal range.";
@@ -212,6 +263,49 @@ public class TransportDetailController {
     @GetMapping("/api/transport/route/{routeId}")
     public TransportRouteDto getRouteJson(@PathVariable String routeId) {
         return transportRouteService.getTransportRouteDetail(routeId);
+    }
+
+    @ResponseBody
+    @PostMapping("/api/transport/translate")
+    public ResponseEntity<?> translateTransportText(@RequestBody Map<String, String> body) {
+        String text = body.getOrDefault("text", "");
+        String target = normalizeDeepLLang(body.getOrDefault("target", "en"));
+
+        if (text.isBlank()) {
+            return ResponseEntity.ok(Map.of("translatedText", ""));
+        }
+        if ("KO".equals(target) || !TRANSPORT_TRANSLATION_LANGS.contains(target)) {
+            return ResponseEntity.ok(Map.of("translatedText", text));
+        }
+        if (translationApiKey == null || translationApiKey.isBlank()) {
+            return ResponseEntity.ok(Map.of("translatedText", text, "error", "DeepL API key is not configured"));
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "DeepL-Auth-Key " + translationApiKey);
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
+        requestBody.add("text", text);
+        requestBody.add("source_lang", "KO");
+        requestBody.add("target_lang", target);
+
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = restTemplate.postForObject(
+                    "https://api-free.deepl.com/v2/translate",
+                    new HttpEntity<>(requestBody, headers),
+                    Map.class
+            );
+            if (response == null || !(response.get("translations") instanceof List<?> translations)
+                    || translations.isEmpty() || !(translations.get(0) instanceof Map<?, ?> first)) {
+                return ResponseEntity.ok(Map.of("translatedText", text, "error", "DeepL response was empty"));
+            }
+            Object translated = first.get("text");
+            return ResponseEntity.ok(Map.of("translatedText", translated == null ? text : translated.toString()));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("translatedText", text, "error", e.getMessage()));
+        }
     }
 
     @ResponseBody
@@ -288,5 +382,28 @@ public class TransportDetailController {
         String user = SecurityUtil.getCurrentUserName();
         routeRepository.deleteByUserId(user);
         return "ok";
+    }
+
+    private String normalizeLang(String lang) {
+        return normalizeLang(lang, "ko");
+    }
+
+    private String normalizeLang(String lang, String fallback) {
+        String candidate = lang == null || lang.isBlank() ? fallback : lang;
+        return switch (candidate.toLowerCase(Locale.ROOT)) {
+            case "en", "ja", "zh", "fr" -> candidate.toLowerCase(Locale.ROOT);
+            default -> "ko";
+        };
+    }
+
+    private String normalizeDeepLLang(String lang) {
+        String candidate = lang == null ? "" : lang.trim().toUpperCase(Locale.ROOT);
+        if ("KO".equals(candidate) || "EN".equals(candidate) || "JA".equals(candidate) || "FR".equals(candidate)) {
+            return candidate;
+        }
+        if ("ZH".equals(candidate) || "ZH-CN".equals(candidate) || "ZH-HANS".equals(candidate)) {
+            return "ZH";
+        }
+        return "";
     }
 }
