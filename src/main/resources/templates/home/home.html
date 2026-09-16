@@ -552,9 +552,11 @@
             display: none;
         }
 
+        /* 한 칸을 늘려 채우면 아이콘이 그 안에서 가운데에 놓인다. 상자는 아래 섹션과
+           좌우가 맞는데 눈에 보이는 아이콘은 안쪽으로 밀려, 카테고리 줄만 들어가 보였다.
+           칸을 글자 너비만큼만 잡으면 첫 아이콘과 마지막 아이콘이 줄 양 끝에 선다. */
         .category-item {
-            flex: 1 0 auto;
-            min-width: 84px;
+            flex: 0 0 auto;
             padding: 6px 4px;
             display: flex;
             flex-direction: column;
