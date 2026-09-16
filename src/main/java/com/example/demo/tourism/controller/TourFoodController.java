@@ -1,5 +1,6 @@
 package com.example.demo.tourism.controller;
 
+import com.example.demo.config.CurrentLanguage;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.example.demo.tourism.service.TourismService;
 import com.example.demo.user.util.SecurityUtil;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 음식점과 카페를 한 화면에서 보여준다.
@@ -41,33 +41,31 @@ public class TourFoodController {
      * 세션에 쓰면 사용자의 실제 위치를 덮어써 관광 화면의 거리까지 틀어진다.
      */
     @GetMapping("/tour/food")
-    public String foodList(@RequestParam(value = "lang", defaultValue = "ko") String lang,
-                           @RequestParam(value = "lat", required = false) Double lat,
+    public String foodList(@RequestParam(value = "lat", required = false) Double lat,
                            @RequestParam(value = "lon", required = false) Double lon,
                            @RequestParam(value = "category", required = false) String category,
                            @RequestParam(value = "near", required = false) String near,
                            @RequestParam(value = "focus", required = false) String focus,
                            Model model, HttpSession session) {
-        return listPage(lang, lat, lon, category, near, focus, model, session, false);
+        return listPage(lat, lon, category, near, focus, model, session, false);
     }
 
     /** 카페·찻집은 성격이 달라 목록을 따로 뗀다. 화면은 음식점과 같은 템플릿을 쓴다. */
     @GetMapping("/tour/cafe")
-    public String cafeList(@RequestParam(value = "lang", defaultValue = "ko") String lang,
-                           @RequestParam(value = "lat", required = false) Double lat,
+    public String cafeList(@RequestParam(value = "lat", required = false) Double lat,
                            @RequestParam(value = "lon", required = false) Double lon,
                            @RequestParam(value = "category", required = false) String category,
                            @RequestParam(value = "near", required = false) String near,
                            @RequestParam(value = "focus", required = false) String focus,
                            Model model, HttpSession session) {
-        return listPage(lang, lat, lon, category, near, focus, model, session, true);
+        return listPage(lat, lon, category, near, focus, model, session, true);
     }
 
-    private String listPage(String lang, Double lat, Double lon, String category, String near, String focus,
+    private String listPage(Double lat, Double lon, String category, String near, String focus,
                             Model model, HttpSession session, boolean cafeOnly) {
         Double originLat = lat != null ? lat : sessionLat(session);
         Double originLon = lon != null ? lon : sessionLon(session);
-        String normLang = normalize(lang);
+        String normLang = CurrentLanguage.get();
 
         List<TourPlaceDto> places = cafeOnly
                 ? tourismService.cafeList(normLang)
@@ -95,17 +93,17 @@ public class TourFoodController {
 
     @GetMapping("/tour/food/search")
     public String foodSearch(@RequestParam(value = "keyword", required = false) String keyword,
-                             @RequestParam(value = "lang", defaultValue = "ko") String lang,
                              @RequestParam(value = "cafeOnly", defaultValue = "false") boolean cafeOnly,
                              Model model, HttpSession session) {
         Double userLat = sessionLat(session);
         Double userLon = sessionLon(session);
+        String lang = CurrentLanguage.get();
         List<TourPlaceDto> places =
-                tourismService.foodSearch(keyword, userLat, userLon, normalize(lang), cafeOnly);
+                tourismService.foodSearch(keyword, userLat, userLon, lang, cafeOnly);
         model.addAttribute("category", null);
         model.addAttribute("near", null);
         model.addAttribute("cafeOnly", cafeOnly);
-        return renderPage(model, places, normalize(lang), userLat, userLon, keyword);
+        return renderPage(model, places, lang, userLat, userLon, keyword);
     }
 
     /**
@@ -138,13 +136,9 @@ public class TourFoodController {
         return "tourism/food";
     }
 
-    /** 지원 언어. 그 밖의 값은 국문으로 되돌린다. TourApiProperties.baseUrlFor와 맞춰 둔다. */
-    private static final Set<String> SUPPORTED_LANGS = Set.of("ko", "en", "ja", "zh", "fr");
-
+    /** 화면이 아니라 스크립트가 부르는 API라 언어를 주소로 받는다. 모르는 값은 국문. */
     private String normalize(String lang) {
-        if (lang == null) return "ko";
-        String lower = lang.toLowerCase();
-        return SUPPORTED_LANGS.contains(lower) ? lower : "ko";
+        return CurrentLanguage.normalize(lang);
     }
 
     /** 관광 화면이 저장해 둔 사용자 위치를 읽기만 한다. 이 화면에서는 쓰지 않는다. */

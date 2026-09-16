@@ -3,6 +3,7 @@ package com.example.demo.user.controller;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.example.demo.config.CurrentLanguage;
 import com.example.demo.user.entity.User;
 import com.example.demo.user.service.EmailVerificationService;
 import com.example.demo.user.service.OwnerRequestService;
@@ -35,12 +36,7 @@ public class UserController {
                             @RequestParam(required = false, defaultValue = "false") boolean signup,
                             @RequestParam(required = false) String redirect,
                             HttpSession session, Model model) {
-        String selected = lang;
-        if (!isSupportedLanguage(selected)) {
-            Object saved = session.getAttribute("loginLanguage");
-            selected = saved instanceof String value && isSupportedLanguage(value)
-                    ? value : "ko";
-        }
+        String selected = selectedLanguage(lang);
         if (isSafeRedirectPath(redirect)) {
             session.setAttribute("loginRedirectUrl", redirect);
         }
@@ -55,7 +51,7 @@ public class UserController {
                                @RequestParam(required = false) String provider,
                                HttpSession session,
                                Model model) {
-        String selected = isSupportedLanguage(lang) ? lang : "ko";
+        String selected = selectedLanguage(lang);
         session.setAttribute("loginLanguage", selected);
         Object redirect = session.getAttribute("loginRedirectUrl");
         session.removeAttribute("loginRedirectUrl");
@@ -89,7 +85,6 @@ public class UserController {
     public String updateNationality(@RequestParam(required = false) String nationality,
                                     @RequestParam(required = false) String skip,
                                     @RequestParam(required = false) String redirect,
-                                    @RequestParam(defaultValue = "ko") String lang,
                                     RedirectAttributes redirectAttributes) {
         try {
             if ("true".equals(skip)) {
@@ -108,12 +103,11 @@ public class UserController {
         if (isSafeRedirectPath(redirect)) {
             return "redirect:" + redirect;
         }
-        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#nationality";
+        return "redirect:/ko/settings#nationality";
     }
 
     @PostMapping("/ko/settings/profile")
     public String updateProfile(@RequestParam String name,
-                                @RequestParam(defaultValue = "ko") String lang,
                                 RedirectAttributes redirectAttributes) {
         try {
             userService.updateProfile(SecurityUtil.getCurrentUserId(), name);
@@ -121,14 +115,13 @@ public class UserController {
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("settingsError", ex.getMessage());
         }
-        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang);
+        return "redirect:/ko/settings";
     }
 
     @PostMapping("/ko/settings/password")
     public String changePassword(@RequestParam String currentPassword,
                                  @RequestParam String newPassword,
                                  @RequestParam String passwordConfirm,
-                                 @RequestParam(defaultValue = "ko") String lang,
                                  RedirectAttributes redirectAttributes) {
         try {
             userService.changeLocalPassword(
@@ -141,12 +134,11 @@ public class UserController {
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("passwordError", ex.getMessage());
         }
-        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#password";
+        return "redirect:/ko/settings#password";
     }
 
     @PostMapping("/ko/settings/email-code")
     public String sendEmailCode(@RequestParam String newEmail,
-                                @RequestParam(defaultValue = "ko") String lang,
                                 HttpSession session,
                                 RedirectAttributes redirectAttributes) {
         try {
@@ -159,13 +151,12 @@ public class UserController {
         } catch (IllegalArgumentException | IllegalStateException ex) {
             redirectAttributes.addFlashAttribute("emailError", ex.getMessage());
         }
-        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#email";
+        return "redirect:/ko/settings#email";
     }
 
     @PostMapping("/ko/settings/email")
     public String updateEmail(@RequestParam String newEmail,
                               @RequestParam String verificationCode,
-                              @RequestParam(defaultValue = "ko") String lang,
                               HttpSession session,
                               RedirectAttributes redirectAttributes) {
         try {
@@ -175,13 +166,12 @@ public class UserController {
         } catch (IllegalArgumentException | IllegalStateException ex) {
             redirectAttributes.addFlashAttribute("emailError", ex.getMessage());
         }
-        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#email";
+        return "redirect:/ko/settings#email";
     }
 
     @PostMapping("/ko/settings/withdraw")
     public String withdrawAccount(@RequestParam(required = false) String currentPassword,
                                   @RequestParam(required = false) String confirmationText,
-                                  @RequestParam(defaultValue = "ko") String lang,
                                   HttpServletRequest request,
                                   HttpServletResponse response,
                                   RedirectAttributes redirectAttributes) {
@@ -189,11 +179,13 @@ public class UserController {
             userService.withdrawAccount(SecurityUtil.getCurrentUserId(), currentPassword, confirmationText);
             redirectAttributes.addFlashAttribute("withdrawMessage", "계정 탈퇴가 완료됐어요. 언제든 다시 가입할 수 있어요.");
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            // 로그아웃하면 세션이 비워져 언어도 함께 사라진다. 비우기 전에 읽어 두었다가 주소로 넘긴다.
+            String lang = CurrentLanguage.get();
             new SecurityContextLogoutHandler().logout(request, response, authentication);
-            return "redirect:/login?lang=" + normalizeLanguage(lang);
+            return "redirect:/login?lang=" + lang;
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("withdrawError", ex.getMessage());
-            return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#danger";
+            return "redirect:/ko/settings#danger";
         }
     }
 
@@ -215,7 +207,7 @@ public class UserController {
                          @RequestParam(required = false) String lang,
                          HttpSession session,
                          Model model) {
-        String selected = isSupportedLanguage(lang) ? lang : "ko";
+        String selected = selectedLanguage(lang);
         session.setAttribute("loginLanguage", selected);
         model.addAttribute("lang", selected);
         model.addAttribute("signupMode", true);
@@ -264,7 +256,7 @@ public class UserController {
                               @RequestParam(required = false) String lang,
                               HttpSession session,
                               Model model) {
-        String selected = isSupportedLanguage(lang) ? lang : "ko";
+        String selected = selectedLanguage(lang);
         session.setAttribute("loginLanguage", selected);
         model.addAttribute("lang", selected);
         model.addAttribute("activePanel", "findIdPanel");
@@ -286,7 +278,7 @@ public class UserController {
                                 @RequestParam(required = false) String lang,
                                 HttpSession session,
                                 Model model) {
-        String selected = isSupportedLanguage(lang) ? lang : "ko";
+        String selected = selectedLanguage(lang);
         session.setAttribute("loginLanguage", selected);
         model.addAttribute("lang", selected);
         model.addAttribute("activePanel", "resetPasswordPanel");
@@ -297,6 +289,14 @@ public class UserController {
             model.addAttribute("resetPasswordError", ex.getMessage());
         }
         return "user/login";
+    }
+
+    /**
+     * 로그인 화면의 언어. 주소로 온 값이 있으면 그것을, 없으면 지금 사이트 언어를 쓴다.
+     * 예전에는 없으면 한국어로 떨어져, 일본어로 보던 사람도 로그인 화면은 한국어로 봤다.
+     */
+    private String selectedLanguage(String lang) {
+        return isSupportedLanguage(lang) ? normalizeLanguage(lang) : CurrentLanguage.get();
     }
 
     private boolean isSupportedLanguage(String language) {

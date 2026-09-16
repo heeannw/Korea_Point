@@ -1,6 +1,7 @@
 package com.example.demo.home.controller;
 
 import com.example.demo.community.dto.PostDto;
+import com.example.demo.config.CurrentLanguage;
 import com.example.demo.home.service.HomeFestivalService;
 import com.example.demo.home.service.HomeFoodService;
 import com.example.demo.home.service.HomePlaceService;
@@ -65,11 +66,7 @@ public class HomeController {
     // void: 반환값 없음 (Model 객체에 직접 데이터를 추가하는 방식이라 반환 불필요)
     /** 세션 로케일 → 우리가 다루는 언어 코드. 모르는 언어는 국문으로 본다. */
     private String currentLang() {
-        String language = LocaleContextHolder.getLocale().getLanguage();
-        return switch (language) {
-            case "en", "ja", "zh", "fr" -> language;
-            default -> "ko";
-        };
+        return CurrentLanguage.get();
     }
 
     private void session(Model model) {

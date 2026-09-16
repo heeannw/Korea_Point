@@ -1,5 +1,6 @@
 package com.example.demo.trip.controller;
 
+import com.example.demo.config.CurrentLanguage;
 import com.example.demo.tourism.client.TourApiClient;
 import com.example.demo.trip.dto.PlaceDetailDto;
 import com.example.demo.trip.dto.TripRecommendRequest;
@@ -9,7 +10,6 @@ import com.example.demo.trip.service.TripRecommendService;
 import com.example.demo.user.util.SecurityUtil;               // ✅ 추가
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -41,11 +41,7 @@ public class TripController {
      * 구글 위젯 전용이던 "zh-CN" 매핑은 더 이상 필요 없다.
      */
     private String currentTripLang() {
-        String lang = LocaleContextHolder.getLocale().getLanguage();
-        return switch (lang) {
-            case "en", "ja", "zh", "fr" -> lang;
-            default -> "ko";
-        };
+        return CurrentLanguage.get();
     }
 
     // ── 여행 플래너 메인 (KO) ──

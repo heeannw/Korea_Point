@@ -1,5 +1,6 @@
 package com.example.demo.transport.controller;
 
+import com.example.demo.config.CurrentLanguage;
 import com.example.demo.transport.dto.TransportRouteDto;
 import com.example.demo.transport.entity.Route;
 import com.example.demo.transport.repository.RouteRepository;
@@ -45,7 +46,7 @@ public class TransportRouteController {
             @RequestParam(required = false) String end,
             @RequestParam(required = false) String endLat,
             @RequestParam(required = false) String endLng) {
-        StringBuilder sb = new StringBuilder("redirect:/ko/transport/search");
+        StringBuilder sb = new StringBuilder("redirect:" + searchPath());
         List<String> params = new ArrayList<>();
         try {
             if (start    != null && !start.isEmpty())    params.add("start="    + URLEncoder.encode(start,    StandardCharsets.UTF_8));
@@ -65,7 +66,9 @@ public class TransportRouteController {
             @RequestParam(required = false) String end,
             @RequestParam(required = false) String endLat,
             @RequestParam(required = false) String endLng,
+            HttpServletRequest request,
             Model model) {
+        if (!KO_PATH.equals(searchPath())) return redirectKeepingQuery(searchPath(), request);
         return handleSearch(start, end, model, "transport/transport");
     }
 
@@ -75,8 +78,31 @@ public class TransportRouteController {
             @RequestParam(required = false) String end,
             @RequestParam(required = false) String endLat,
             @RequestParam(required = false) String endLng,
+            HttpServletRequest request,
             Model model) {
+        if (!EN_PATH.equals(searchPath())) return redirectKeepingQuery(searchPath(), request);
         return handleSearch(start, end, model, "transport/transportEn");
+    }
+
+    private static final String KO_PATH = "/ko/transport/search";
+    private static final String EN_PATH = "/en/transport/search";
+
+    /**
+     * 검색 화면은 국문·영문 두 벌이다. 어느 쪽을 열지는 주소가 아니라 지금 언어로 정한다.
+     * 일본어·중국어·불어는 아직 전용 화면이 없어 국문 화면을 쓴다.
+     *
+     * <p>예전에는 주소가 곧 언어였다. 그래서 일본어로 보다가 교통에 들어오면 헤더가 한국어로
+     * 바뀌고, 헤더 링크가 ?lang=ko 로 만들어져 저장된 언어까지 한국어로 되돌렸다.
+     * 주소와 언어가 어긋나면 맞는 쪽으로 보낸다. 검색 기록은 주소(Referer)로 언어를 가르므로
+     * 둘이 늘 같아야 한다.
+     */
+    private static String searchPath() {
+        return CurrentLanguage.EN.equals(CurrentLanguage.get()) ? EN_PATH : KO_PATH;
+    }
+
+    private static String redirectKeepingQuery(String path, HttpServletRequest request) {
+        String query = request.getQueryString();
+        return "redirect:" + path + (query == null || query.isBlank() ? "" : "?" + query);
     }
 
     // 검색 기록 저장
@@ -102,11 +128,12 @@ public class TransportRouteController {
 
         String user = SecurityUtil.getCurrentUserName();
 
-        String lang = viewName.contains("En") ? "en" : "ko";
-        model.addAttribute("lang", lang);
+        // 헤더에는 지금 언어를, 검색 기록에는 이 화면의 언어(국문/영문)를 쓴다.
+        model.addAttribute("lang", CurrentLanguage.get());
+        String pageLang = viewName.contains("En") ? CurrentLanguage.EN : CurrentLanguage.KO;
 
         model.addAttribute("recentRoutes", SecurityUtil.isLoggedIn()
-                ? routeRepository.findTop10ByUserIdAndLanguageOrderBySearchedAtDesc(user, lang)
+                ? routeRepository.findTop10ByUserIdAndLanguageOrderBySearchedAtDesc(user, pageLang)
                 : java.util.List.of());
 
         try {

@@ -1,5 +1,6 @@
 package com.example.demo.transport.controller;
 
+import com.example.demo.config.CurrentLanguage;
 import com.example.demo.transport.dto.TransportRouteDto;
 import com.example.demo.transport.entity.Route;
 import com.example.demo.transport.repository.RouteRepository;
@@ -62,39 +63,25 @@ public class TransportDetailController {
     private RouteRepository routeRepository;
 
     @GetMapping("/transport/detail")
-    public String transportDetailRedirect(
-            @RequestParam(required = false) String routeId,
-            @RequestParam(required = false) String lang) {
-        String resolvedLang = normalizeLang(lang);
-        return "redirect:/" + resolvedLang + "/transport/detail?routeId=" + (routeId != null ? routeId : "");
+    public String transportDetailRedirect(@RequestParam(required = false) String routeId) {
+        return "redirect:/" + CurrentLanguage.get() + "/transport/detail?routeId=" + (routeId != null ? routeId : "");
     }
 
-    @GetMapping("/ko/transport/detail")
-    public String transportDetailKo(
-            @RequestParam(required = false) String routeId,
-            @RequestParam(required = false) String lang,
-            Model model) {
-        String resolvedLang = normalizeLang(lang);
-        String viewName = "ko".equals(resolvedLang) ? "transport/transportDetail" : "transport/transportDetailTranslated";
-        return handleDetail(routeId, model, viewName, resolvedLang);
-    }
-
-    @GetMapping("/en/transport/detail")
-    public String transportDetailEn(
-            @RequestParam(required = false) String routeId,
-            @RequestParam(required = false) String lang,
-            Model model) {
-        return handleDetail(routeId, model, "transport/transportDetailTranslated", normalizeLang(lang, "en"));
-    }
-
-    @GetMapping({"/ja/transport/detail", "/zh/transport/detail", "/fr/transport/detail"})
-    public String transportDetailTranslated(
-            @RequestParam(required = false) String routeId,
-            @RequestParam(required = false) String lang,
-            jakarta.servlet.http.HttpServletRequest request,
-            Model model) {
-        String pathLang = request.getRequestURI().split("/")[1];
-        return handleDetail(routeId, model, "transport/transportDetailTranslated", normalizeLang(lang, pathLang));
+    /**
+     * 상세 화면. 주소 앞의 언어가 무엇이든 화면은 지금 언어로 그린다.
+     *
+     * <p>예전에는 /ko 주소면 lang 이 없을 때 한국어로 떴다. 검색 화면의 경로 링크가
+     * /ko/transport/detail?routeId=… 로만 걸려 있어서, 일본어로 보던 사람도 한국어 상세를 보고
+     * 헤더가 저장된 언어를 한국어로 되돌렸다.
+     */
+    @GetMapping({"/ko/transport/detail", "/en/transport/detail",
+            "/ja/transport/detail", "/zh/transport/detail", "/fr/transport/detail"})
+    public String transportDetail(@RequestParam(required = false) String routeId, Model model) {
+        String lang = CurrentLanguage.get();
+        String viewName = CurrentLanguage.KO.equals(lang)
+                ? "transport/transportDetail"
+                : "transport/transportDetailTranslated";
+        return handleDetail(routeId, model, viewName, lang);
     }
 
     private String handleDetail(String routeId, Model model, String viewName, String lang) {
@@ -382,18 +369,6 @@ public class TransportDetailController {
         String user = SecurityUtil.getCurrentUserName();
         routeRepository.deleteByUserId(user);
         return "ok";
-    }
-
-    private String normalizeLang(String lang) {
-        return normalizeLang(lang, "ko");
-    }
-
-    private String normalizeLang(String lang, String fallback) {
-        String candidate = lang == null || lang.isBlank() ? fallback : lang;
-        return switch (candidate.toLowerCase(Locale.ROOT)) {
-            case "en", "ja", "zh", "fr" -> candidate.toLowerCase(Locale.ROOT);
-            default -> "ko";
-        };
     }
 
     private String normalizeDeepLLang(String lang) {

@@ -1436,7 +1436,8 @@
     document.getElementById('itineraryBtn2').onclick = function() {
       if (!(p.lat && p.lng)) { alert(I18N.noCoords); return; }
       const endTitle = encodeURIComponent(p.title ?? '');
-      location.href = `/${lang.toLowerCase()}/transport/search?end=${endTitle}`;
+      // 국문/영문 화면은 서버가 지금 언어로 골라 준다. 예전엔 /ja/transport/search 처럼 없는 주소로 가 404가 났다.
+      location.href = `/transport/search?end=${endTitle}`;
     };
 
     renderCourseSection(p);
