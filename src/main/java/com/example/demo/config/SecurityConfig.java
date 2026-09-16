@@ -117,9 +117,7 @@ public class SecurityConfig {
     }
 
     private String loginSuccessUrl(HttpServletRequest request) {
-        Object language = request.getSession().getAttribute("loginLanguage");
-        String selected = language instanceof String value ? value : currentLanguage(request);
-        String url = "/login/success?lang=" + selected;
+        String url = "/login/success?lang=" + currentLanguage(request);
         Object principal = org.springframework.security.core.context.SecurityContextHolder
                 .getContext()
                 .getAuthentication()
@@ -133,8 +131,6 @@ public class SecurityConfig {
     }
 
     private String loginFailureUrl(HttpServletRequest request) {
-        Object language = request.getSession().getAttribute("loginLanguage");
-        String selected = language instanceof String value ? value : currentLanguage(request);
-        return "/login?error=true&lang=" + selected;
+        return "/login?error=true&lang=" + currentLanguage(request);
     }
 }

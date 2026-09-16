@@ -32,27 +32,25 @@ public class UserController {
 
     // Spring Security OAuth2의 loginPage("/login")이 이 URL을 바라봄
     @GetMapping("/login")
-    public String loginPage(@RequestParam(required = false) String lang,
-                            @RequestParam(required = false, defaultValue = "false") boolean signup,
+    public String loginPage(@RequestParam(required = false, defaultValue = "false") boolean signup,
                             @RequestParam(required = false) String redirect,
                             HttpSession session, Model model) {
-        String selected = selectedLanguage(lang);
+        // 로그인 화면도 사이트 언어를 그대로 쓴다. ?lang= 으로 오면 이미 세션에 들어가 있다.
+        // 예전에는 주소에 lang 이 없으면 한국어로 떨어졌다.
+        String selected = CurrentLanguage.get();
         if (isSafeRedirectPath(redirect)) {
             session.setAttribute("loginRedirectUrl", redirect);
         }
-        session.setAttribute("loginLanguage", selected);
         model.addAttribute("lang", selected);
         model.addAttribute("signupMode", signup);
         return "user/login";
     }
 
     @GetMapping("/login/success")
-    public String loginSuccess(@RequestParam(required = false) String lang,
-                               @RequestParam(required = false) String provider,
+    public String loginSuccess(@RequestParam(required = false) String provider,
                                HttpSession session,
                                Model model) {
-        String selected = selectedLanguage(lang);
-        session.setAttribute("loginLanguage", selected);
+        String selected = CurrentLanguage.get();
         Object redirect = session.getAttribute("loginRedirectUrl");
         session.removeAttribute("loginRedirectUrl");
         String targetUrl = redirect instanceof String value && isSafeRedirectPath(value)
@@ -204,11 +202,8 @@ public class UserController {
                          @RequestParam(required = false) MultipartFile businessRegistrationFile,
                          @RequestParam(required = false) MultipartFile businessLicenseFile,
                          @RequestParam(required = false) MultipartFile menuFile,
-                         @RequestParam(required = false) String lang,
-                         HttpSession session,
                          Model model) {
-        String selected = selectedLanguage(lang);
-        session.setAttribute("loginLanguage", selected);
+        String selected = CurrentLanguage.get();
         model.addAttribute("lang", selected);
         model.addAttribute("signupMode", true);
         model.addAttribute("accountType", accountType);
@@ -253,11 +248,8 @@ public class UserController {
     @PostMapping("/find-login-id")
     public String findLoginId(@RequestParam String name,
                               @RequestParam String email,
-                              @RequestParam(required = false) String lang,
-                              HttpSession session,
                               Model model) {
-        String selected = selectedLanguage(lang);
-        session.setAttribute("loginLanguage", selected);
+        String selected = CurrentLanguage.get();
         model.addAttribute("lang", selected);
         model.addAttribute("activePanel", "findIdPanel");
         try {
@@ -275,11 +267,8 @@ public class UserController {
                                 @RequestParam String email,
                                 @RequestParam String newPassword,
                                 @RequestParam String passwordConfirm,
-                                @RequestParam(required = false) String lang,
-                                HttpSession session,
                                 Model model) {
-        String selected = selectedLanguage(lang);
-        session.setAttribute("loginLanguage", selected);
+        String selected = CurrentLanguage.get();
         model.addAttribute("lang", selected);
         model.addAttribute("activePanel", "resetPasswordPanel");
         try {
@@ -289,36 +278,6 @@ public class UserController {
             model.addAttribute("resetPasswordError", ex.getMessage());
         }
         return "user/login";
-    }
-
-    /**
-     * 로그인 화면의 언어. 주소로 온 값이 있으면 그것을, 없으면 지금 사이트 언어를 쓴다.
-     * 예전에는 없으면 한국어로 떨어져, 일본어로 보던 사람도 로그인 화면은 한국어로 봤다.
-     */
-    private String selectedLanguage(String lang) {
-        return isSupportedLanguage(lang) ? normalizeLanguage(lang) : CurrentLanguage.get();
-    }
-
-    private boolean isSupportedLanguage(String language) {
-        if (language == null || language.isBlank()) {
-            return false;
-        }
-        String normalized = normalizeLanguage(language);
-        return "ko".equals(normalized) || "en".equals(normalized)
-                || "ja".equals(normalized) || "zh".equals(normalized)
-                || "fr".equals(normalized);
-    }
-
-    private String normalizeLanguage(String language) {
-        if (language == null || language.isBlank()) {
-            return "ko";
-        }
-        String normalized = language.trim().toLowerCase().replace('_', '-');
-        if (normalized.startsWith("en")) return "en";
-        if (normalized.startsWith("ja") || normalized.startsWith("jp")) return "ja";
-        if (normalized.startsWith("zh")) return "zh";
-        if (normalized.startsWith("fr")) return "fr";
-        return "ko";
     }
 
     private boolean isSafeRedirectPath(String redirect) {

@@ -46,6 +46,25 @@ class ReservationPolicyControllerTest {
     }
 
     @Test
+    void staleLangInPostedFormDoesNotChangeLanguage() throws Exception {
+        // 다른 탭에서 일본어로 바꾼 뒤, 한국어일 때 열어 둔 폼을 보내도 일본어가 유지된다.
+        var place = com.example.demo.reservation.dto.TourApiPlaceDto.builder().title("Place").contentId("123").build();
+        when(tourApiReservationService.findDetail(eq("123"), any(), eq("ja"))).thenReturn(place);
+        when(reservationService.create(eq(7L), any())).thenThrow(new InvalidReservationTimeException());
+        try (var security = mockStatic(SecurityUtil.class)) {
+            security.when(SecurityUtil::getCurrentUserId).thenReturn(7L);
+            mvc().perform(post("/ko/reservation/complete").param("contentId", "123").param("placeTitle", "Place")
+                            .param("lang", "ko")
+                            .param("reservationDate", LocalDate.now().toString()).param("reservationTime", "00:00")
+                            .param("peopleCount", "2")
+                            .sessionAttr(SessionLocaleResolver.LOCALE_SESSION_ATTRIBUTE_NAME, Locale.JAPANESE))
+                    .andExpect(status().isOk())
+                    .andExpect(model().attribute("lang", "ja"))
+                    .andExpect(request().sessionAttribute(SessionLocaleResolver.LOCALE_SESSION_ATTRIBUTE_NAME, Locale.JAPANESE));
+        }
+    }
+
+    @Test
     void newFormDefaultsToAFutureVisit() throws Exception {
         var place = com.example.demo.reservation.dto.TourApiPlaceDto.builder().title("Place").contentId("123").build();
         when(tourApiReservationService.findDetail(eq("123"), any(), eq("ko"))).thenReturn(place);

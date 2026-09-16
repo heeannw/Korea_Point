@@ -24,6 +24,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public LocaleChangeInterceptor localeChangeInterceptor() {
         LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
         interceptor.setParamName("lang");  // ?lang=en 또는 ?lang=ko
+        // 언어는 언어 단추·링크(주소의 ?lang=)로만 바꾼다. 폼(POST)에 실린 lang 까지 보면
+        // 다른 탭에서 언어를 바꾼 뒤 예전에 열어 둔 폼을 보낼 때 언어가 도로 뒤집힌다.
+        interceptor.setHttpMethods("GET");
         return interceptor;
     }
 
