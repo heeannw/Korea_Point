@@ -2,6 +2,7 @@ package com.example.demo.tourism.ai;
 
 import com.example.demo.tourism.dto.PersonalRecoDto;
 import com.example.demo.tourism.dto.UserTasteProfile;
+import com.example.demo.tourism.service.RecoReasonText;
 import com.example.demo.trip.integration.ExternalApiClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
@@ -28,7 +29,9 @@ import java.util.stream.Collectors;
  * 여기서는 <b>선정된 5곳 + 규칙 근거만</b> Gemini 에 넘겨 설명 문장만 받는다.
  * 키가 없거나 실패하면 규칙 근거 태그를 그대로 조립해서 쓴다.</p>
  *
- * <p>캐시 키 = 취향 프로필 + 추천 contentId 목록. 프로필이 안 바뀌면 재호출하지 않는다.</p>
+ * <p>캐시 키 = 취향 프로필 + 추천 contentId 목록 + 화면 언어. 프로필이 안 바뀌면 재호출하지 않는다.</p>
+ *
+ * <p>문장은 화면 언어로 받는다. 예전에는 늘 한국어로 받아서 일본어 화면에도 국문 문장이 보였다.</p>
  */
 @Service
 public class GeminiRecoReasonService {
@@ -45,15 +48,22 @@ public class GeminiRecoReasonService {
 
     private final RestTemplate restTemplate = ExternalApiClient.create(3000, 60000);
     private final Map<String, List<String>> cache = new ConcurrentHashMap<>();
+    private final RecoReasonText reasonText;
 
-    public List<PersonalRecoDto> explain(UserTasteProfile profile, List<PersonalRecoDto> recos) {
+    public GeminiRecoReasonService(RecoReasonText reasonText) {
+        this.reasonText = reasonText;
+    }
+
+    /** @param lang 화면 언어(ko, en, ja, zh, fr). 근거 태그도 이미 이 언어로 만들어져 온다. */
+    public List<PersonalRecoDto> explain(UserTasteProfile profile, List<PersonalRecoDto> recos, String lang) {
         if (recos.isEmpty()) return recos;
+        String language = RecoReasonText.language(lang);
 
-        String key = cacheKey(profile, recos);
+        String key = language + ":" + cacheKey(profile, recos);
         List<String> lines = cache.get(key);
         if (lines == null) {
-            lines = isConfigured() ? tryGemini(profile, recos) : null;
-            if (lines == null || lines.size() != recos.size()) lines = fallback(recos);
+            lines = isConfigured() ? tryGemini(profile, recos, language) : null;
+            if (lines == null || lines.size() != recos.size()) lines = fallback(recos, language);
             if (cache.size() < 500) cache.put(key, lines);
         }
 
@@ -64,7 +74,7 @@ public class GeminiRecoReasonService {
         return out;
     }
 
-    private List<String> tryGemini(UserTasteProfile p, List<PersonalRecoDto> recos) {
+    private List<String> tryGemini(UserTasteProfile p, List<PersonalRecoDto> recos, String language) {
         String taste = "선호 카테고리: " + topKeys(p.typeWeight())
                 + " / 관심 지역: " + topKeys(p.areaWeight())
                 + " / 관심 유형: " + topKeys(p.detailWeight());
@@ -77,14 +87,15 @@ public class GeminiRecoReasonService {
         String prompt = """
                 다음은 규칙 추천 엔진이 사용자 취향에 맞춰 고른 부산 관광지 목록이다.
                 장소를 추가하거나 순서를 바꾸지 말고, 각 장소를 왜 추천했는지 사용자 취향과 엮어
-                한국어로 딱 한 문장씩 만들어라. 존댓말, 20자~45자. 장소명은 문장에 안 넣어도 된다.
+                %s 딱 한 문장씩 만들어라. %s 장소명은 문장에 안 넣어도 된다.
+                취향·근거가 다른 언어로 적혀 있어도 문장은 반드시 위 언어로만 쓴다.
                 출력은 "1. 문장" 형식으로 %d줄만.
 
                 [사용자 취향]
                 %s
 
                 [추천 목록]
-                %s""".formatted(recos.size(), taste, places);
+                %s""".formatted(outputLanguage(language), outputStyle(language), recos.size(), taste, places);
 
         try {
             return parseNumbered(callGemini(prompt), recos.size());
@@ -113,10 +124,26 @@ public class GeminiRecoReasonService {
         return root == null ? "" : root.at("/candidates/0/content/parts/0/text").asText("").trim();
     }
 
-    private static List<String> fallback(List<PersonalRecoDto> recos) {
+    private List<String> fallback(List<PersonalRecoDto> recos, String language) {
         return recos.stream()
-                .map(r -> String.join(" · ", r.reasons()) + " 기반 추천")
+                .map(r -> reasonText.basedOn(r.reasons(), language))
                 .collect(Collectors.toList());
+    }
+
+    private static String outputLanguage(String language) {
+        return switch (language) {
+            case "en" -> "영어(English)로";
+            case "ja" -> "일본어(日本語)로";
+            case "zh" -> "중국어 간체(简体中文)로";
+            case "fr" -> "프랑스어(Français)로";
+            default -> "한국어로";
+        };
+    }
+
+    private static String outputStyle(String language) {
+        return "ko".equals(language)
+                ? "존댓말, 20자~45자."
+                : "정중한 말투로, 카드 두 줄에 들어가게 짧게.";
     }
 
     private static List<String> parseNumbered(String text, int expected) {
