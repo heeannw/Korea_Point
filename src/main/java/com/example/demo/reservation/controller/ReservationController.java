@@ -12,6 +12,7 @@ import com.example.demo.reservation.service.TourApiReservationService;
 import com.example.demo.community.repository.CategoryRepository;
 import com.example.demo.community.repository.PostRepository;
 import com.example.demo.config.CurrentLanguage;
+import com.example.demo.config.LocalizedMessages;
 import com.example.demo.trip.dto.TripPlanDto;
 import com.example.demo.trip.service.TripPlanService;
 import com.example.demo.tourism.dto.SavedPlaceDto;
@@ -58,6 +59,7 @@ public class ReservationController {
     private final SavedPlaceService savedPlaceService;
     private final TourPlaceI18n tourPlaceI18n;
     private final PostRepository postRepository;
+    private final LocalizedMessages messages;
     private final CategoryRepository categoryRepository;
     private final com.example.demo.reservation.service.ReservationPlacePolicyService placePolicyService;
 
@@ -330,9 +332,9 @@ public class ReservationController {
                     businessLicenseFile,
                     menuFile
             );
-            redirectAttributes.addFlashAttribute("ownerRequestMessage", "사업자 전환 신청이 접수됐어요. 검토 후 권한이 변경됩니다.");
+            redirectAttributes.addFlashAttribute("ownerRequestMessage", messages.get("mypage.flash.ownerApplied"));
         } catch (IllegalArgumentException | IllegalStateException ex) {
-            redirectAttributes.addFlashAttribute("ownerRequestError", ex.getMessage());
+            redirectAttributes.addFlashAttribute("ownerRequestError", messages.of(ex));
         }
         return "redirect:/ko/mypage";
     }

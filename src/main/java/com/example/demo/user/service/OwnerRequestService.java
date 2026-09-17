@@ -1,5 +1,7 @@
 package com.example.demo.user.service;
 
+import com.example.demo.user.exception.UserInputException;
+import com.example.demo.user.exception.UserStateException;
 import com.example.demo.user.entity.OwnerRequest;
 import com.example.demo.user.entity.OwnerRequestStatus;
 import com.example.demo.user.entity.User;
@@ -101,14 +103,14 @@ public class OwnerRequestService {
                                                     MultipartFile businessRegistrationFile,
                                                     MultipartFile businessLicenseFile,
                                                     MultipartFile menuFile) {
-        String normalizedStoreName = requireText(storeName, "가게명을 입력해 주세요.");
+        String normalizedStoreName = requireText(storeName, "owner.error.storeNameRequired", "가게명을 입력해 주세요.");
         // 번호·대표자명·개업일자를 정리하고 국세청 진위확인까지 거친다. 틀리면 여기서 막힌다.
         // 통과한 값은 그대로 신청서에 남긴다. 관리자가 사업자등록증과 대조할 때 쓴다.
         BusinessNumberValidator.VerifiedBusiness verified =
                 businessNumberValidator.validateOwner(businessRegistrationNumber, startDate, ownerName);
-        requireFile(businessRegistrationFile, "사업자등록증을 등록해 주세요.");
-        requireFile(businessLicenseFile, "영업신고증을 등록해 주세요.");
-        requireFile(menuFile, "메뉴판 또는 메뉴 정보를 등록해 주세요.");
+        requireFile(businessRegistrationFile, "owner.error.registrationFileRequired", "사업자등록증을 등록해 주세요.");
+        requireFile(businessLicenseFile, "owner.error.licenseFileRequired", "영업신고증을 등록해 주세요.");
+        requireFile(menuFile, "owner.error.menuFileRequired", "메뉴판 또는 메뉴 정보를 등록해 주세요.");
 
         return new OwnerApplicationDraft(
                 normalizedStoreName,
@@ -124,13 +126,13 @@ public class OwnerRequestService {
     @Transactional
     public OwnerRequest apply(Long userId, OwnerApplicationDraft draft) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new UserInputException("account.error.userNotFound", "존재하지 않는 사용자입니다."));
 
         if ("OWNER".equals(user.getRole())) {
-            throw new IllegalStateException("이미 사업자 권한이 있는 계정입니다.");
+            throw new UserStateException("owner.error.alreadyOwner", "이미 사업자 권한이 있는 계정입니다.");
         }
         if (ownerRequestRepository.existsByUser_IdAndStatus(userId, OwnerRequestStatus.PENDING)) {
-            throw new IllegalStateException("이미 검토 중인 사업자 신청이 있습니다.");
+            throw new UserStateException("owner.error.alreadyPending", "이미 검토 중인 사업자 신청이 있습니다.");
         }
 
         return ownerRequestRepository.save(OwnerRequest.builder()
@@ -185,20 +187,20 @@ public class OwnerRequestService {
             file.transferTo(destination);
             return destination.toString().replace('\\', '/');
         } catch (IOException ex) {
-            throw new IllegalStateException("사업자 서류 저장에 실패했습니다.", ex);
+            throw new UserStateException("owner.error.saveFailed", "사업자 서류 저장에 실패했습니다.", ex);
         }
     }
 
-    private String requireText(String value, String message) {
+    private String requireText(String value, String code, String message) {
         if (!StringUtils.hasText(value)) {
-            throw new IllegalArgumentException(message);
+            throw new UserInputException(code, message);
         }
         return value.trim();
     }
 
-    private void requireFile(MultipartFile file, String message) {
+    private void requireFile(MultipartFile file, String code, String message) {
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException(message);
+            throw new UserInputException(code, message);
         }
     }
 

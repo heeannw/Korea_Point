@@ -42,17 +42,20 @@ public class TourismService {
     private final FoodPopularityProvider foodPopularityProvider;
     private final DeeplTranslator deepl;
     private final PlaceReviewRepository placeReviewRepository;
+    private final TourDetailValueTranslator detailValues;
     /** 상세 개요는 KorService2에서 국문만 온다. 요청 언어로 한 번 번역하면 재사용한다. key = contentId|lang */
     private final Map<String, String> overviewCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     public TourismService(TourApiClient tourApiClient, TourPopularityProvider popularityProvider,
                           FoodPopularityProvider foodPopularityProvider, DeeplTranslator deepl,
-                          PlaceReviewRepository placeReviewRepository) {
+                          PlaceReviewRepository placeReviewRepository,
+                          TourDetailValueTranslator detailValues) {
         this.tourApiClient = tourApiClient;
         this.popularityProvider = popularityProvider;
         this.foodPopularityProvider = foodPopularityProvider;
         this.deepl = deepl;
         this.placeReviewRepository = placeReviewRepository;
+        this.detailValues = detailValues;
     }
 
     /**
@@ -214,7 +217,16 @@ public class TourismService {
     public Map<String, Object> getDetail(String contentId, String contentTypeId, String lang) {
         Map<String, Object> detail = tourApiClient.findDetail(contentId, contentTypeId, lang);
         translateOverview(detail, contentId, lang);
+        translateDetailValues(detail, lang);
         return detail;
+    }
+
+    /** 이용시간·휴무일·요금·메뉴 같은 운영정보 값도 요청 언어로. 개요와 달리 짧은 값이 많아 따로 다룬다. */
+    @SuppressWarnings("unchecked")
+    private void translateDetailValues(Map<String, Object> detail, String lang) {
+        if (detail.get("details") instanceof Map<?, ?> values) {
+            detail.put("details", detailValues.translate((Map<String, String>) values, lang));
+        }
     }
 
     /** 비-국문 요청이면 개요를 DeepL로 번역해 끼운다. 실패·한도 초과 시 국문 원문 유지. */
@@ -223,11 +235,10 @@ public class TourismService {
         Object raw = detail.get("overview");
         if (!(raw instanceof String ko) || ko.isBlank()) return;
         String plain = ko.replaceAll("<[^>]+>", " ").trim();   // 화면에서 어차피 태그를 벗기므로 번역 전에 정리
-        String cached = overviewCache.computeIfAbsent(contentId + "|" + lang, k -> {
-            String t = deepl.translate(plain, lang);
-            return t != null ? t : ko;   // 실패해도 캐시(국문) — 같은 장소 재요청 시 DeepL 재호출 방지
-        });
-        detail.put("overview", cached);
+        // 성공한 번역만 기억한다. 실패(월 한도 초과 등)까지 국문으로 기억하면 한도가 풀려도
+        // 앱을 다시 켤 때까지 그 장소 소개가 국문으로 남았다.
+        String cached = overviewCache.computeIfAbsent(contentId + "|" + lang, k -> deepl.translate(plain, lang));
+        detail.put("overview", cached != null ? cached : ko);
     }
 
     /**
