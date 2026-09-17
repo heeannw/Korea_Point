@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Route Detail — KoreaPoint</title>
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <title th:text="#{transport.detail.pageTitle}">Route Detail — KoreaPoint</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Noto+Sans+KR:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d784d3e5b07bb6954d7053a939f92184"></script>
 
@@ -94,6 +96,8 @@
   /*<![CDATA[*/
   const routeId = /*[[${route?.routeId}]]*/ null;
   const currentLang = /*[[${lang}]]*/ 'en';
+  // 서버가 미리 옮겨 둔 이름(국문 → 화면 언어). 여기 있으면 번역 요청을 보내지 않는다.
+  const SERVER_NAMES = /*[[${names}]]*/ {};
   /*]]>*/
 </script>
 
@@ -307,11 +311,18 @@
   async function translateKoText(text) {
     const source = (text || '').trim();
     if (!source || !/[가-힣]/.test(source)) return source;
+    if (SERVER_NAMES && SERVER_NAMES[source]) return SERVER_NAMES[source];
     if (translationCache.has(source)) return translationCache.get(source);
+
+    // 보안 토큰이 없으면 서버가 403 으로 막는다(예전에는 늘 막혀 화면 규칙으로만 옮겼다).
+    const headers = { 'Content-Type': 'application/json' };
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+    if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
 
     const request = fetch('/api/transport/translate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ text: source, source: 'ko', target: currentLang })
     })
             .then(res => res.json())
