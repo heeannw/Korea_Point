@@ -1,5 +1,7 @@
 package com.example.demo.community.service;
 
+import com.example.demo.config.MessageArgumentException;
+import com.example.demo.config.MessageStateException;
 import com.example.demo.community.dto.ContentReportDto;
 import com.example.demo.community.entity.Comment;
 import com.example.demo.community.entity.ContentReport;
@@ -28,7 +30,7 @@ public class ContentReportService {
     public ContentReportDto.Response reportPost(Long reporterUserId, Long postId, ContentReportDto.CreateRequest request) {
         validateRequest(request);
         Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+                .orElseThrow(() -> new MessageArgumentException("community.error.postNotFound", "존재하지 않는 게시글입니다."));
         validateDuplicateReport(reporterUserId, ReportTargetType.POST, post.getId());
 
         ContentReport saved = contentReportRepository.save(ContentReport.builder()
@@ -46,9 +48,9 @@ public class ContentReportService {
     public ContentReportDto.Response reportComment(Long reporterUserId, Long commentId, ContentReportDto.CreateRequest request) {
         validateRequest(request);
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
+                .orElseThrow(() -> new MessageArgumentException("community.error.commentNotFound", "존재하지 않는 댓글입니다."));
         if (comment.getDeletedAt() != null) {
-            throw new IllegalStateException("삭제된 댓글은 신고할 수 없습니다.");
+            throw new MessageStateException("community.error.deletedCommentReport", "삭제된 댓글은 신고할 수 없습니다.");
         }
         validateDuplicateReport(reporterUserId, ReportTargetType.COMMENT, comment.getId());
 
@@ -65,10 +67,10 @@ public class ContentReportService {
 
     private void validateRequest(ContentReportDto.CreateRequest request) {
         if (request == null || request.getReasonCode() == null) {
-            throw new IllegalArgumentException("신고 사유를 선택해 주세요.");
+            throw new MessageArgumentException("community.alert.reportReasonRequired", "신고 사유를 선택해 주세요.");
         }
         if (request.getReasonCode() == ContentReportReason.OTHER && normalizeNullable(request.getReasonDetail()) == null) {
-            throw new IllegalArgumentException("기타 사유를 선택한 경우 상세 내용을 입력해 주세요.");
+            throw new MessageArgumentException("community.error.reportDetailRequired", "기타 사유를 선택한 경우 상세 내용을 입력해 주세요.");
         }
     }
 
@@ -80,7 +82,7 @@ public class ContentReportService {
                 List.of(ContentReportStatus.OPEN, ContentReportStatus.REVIEWING)
         );
         if (exists) {
-            throw new IllegalStateException("이미 접수된 신고가 있습니다. 검토 결과를 기다려 주세요.");
+            throw new MessageStateException("community.error.alreadyReported", "이미 접수된 신고가 있습니다. 검토 결과를 기다려 주세요.");
         }
     }
 

@@ -1,5 +1,7 @@
 package com.example.demo.community.service;
 
+import com.example.demo.config.MessageArgumentException;
+import com.example.demo.config.MessageStateException;
 import com.example.demo.community.config.CommunityProperties;
 import com.example.demo.community.dto.PostDto;
 import com.example.demo.community.dto.TrendingPeriod;
@@ -138,7 +140,7 @@ public class PostService {
     @Transactional
     public PostDto getPostDetail(Long postId, HttpSession session) {
         Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+                .orElseThrow(() -> new MessageArgumentException("community.error.postNotFound", "존재하지 않는 게시글입니다."));
 
         @SuppressWarnings("unchecked")
         Set<Long> viewed = (Set<Long>) session.getAttribute("viewedPosts");
@@ -161,11 +163,11 @@ public class PostService {
     @Transactional
     public Long createPost(PostDto.PostCreateRequest req, Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new MessageArgumentException("community.error.userNotFound", "존재하지 않는 사용자입니다."));
         validateCommunityAccess(user);
 
         Category category = categoryRepository.findById(req.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
+                .orElseThrow(() -> new MessageArgumentException("community.error.categoryNotFound", "존재하지 않는 카테고리입니다."));
 
         Post post = Post.builder()
                 .user(user)
@@ -181,11 +183,12 @@ public class PostService {
         boolean promo = communityProperties.getPromoCategoryId() == category.getId();
         if (promo) {
             if (!"OWNER".equals(user.getRole())) {
-                throw new IllegalStateException("홍보 글은 사업자 회원만 작성할 수 있습니다.");
+                throw new MessageStateException("community.error.promoOwnerOnly", "홍보 글은 사업자 회원만 작성할 수 있습니다.");
             }
             if (user.getPoint() < communityProperties.getPromoCost()) {
-                throw new IllegalStateException(
-                        "포인트가 부족합니다. (필요: " + communityProperties.getPromoCost() + "P, 보유: " + user.getPoint() + "P)");
+                throw new MessageStateException("community.error.pointShort",
+                        "포인트가 부족합니다. (필요: " + communityProperties.getPromoCost() + "P, 보유: " + user.getPoint() + "P)",
+                        String.valueOf(communityProperties.getPromoCost()), String.valueOf(user.getPoint()));
             }
             // 500P 로 사는 것은 '사이드바 7일 노출'이다. 기간이 지나면 레일에서만 내려온다.
             post.setPromoUntil(LocalDateTime.now().plusDays(communityProperties.getPromoExposureDays()));
@@ -251,9 +254,9 @@ public class PostService {
     @Transactional
     public void deletePost(Long postId, Long userId) {
         Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+                .orElseThrow(() -> new MessageArgumentException("community.error.postNotFound", "존재하지 않는 게시글입니다."));
         if (!post.getUser().getId().equals(userId)) {
-            throw new IllegalStateException("삭제 권한이 없습니다.");
+            throw new MessageStateException("community.error.noDeletePermission", "삭제 권한이 없습니다.");
         }
         post.setDeletedAt(LocalDateTime.now());
     }
@@ -343,7 +346,7 @@ public class PostService {
 
     private void validateCommunityAccess(User user) {
         if (user.getAccountStatus() == AccountStatus.SUSPENDED) {
-            throw new IllegalStateException("커뮤니티 기능이 정지된 계정입니다.");
+            throw new MessageStateException("community.error.suspended", "커뮤니티 기능이 정지된 계정입니다.");
         }
     }
 }

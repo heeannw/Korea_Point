@@ -244,7 +244,7 @@
             <div class="pm-empty" th:text="#{community.write.place.minChars}">두 글자 이상 입력하세요.</div>
         </div>
         <div class="pm-foot">
-            <button type="button" id="pmConfirm" class="pm-confirm" disabled>확인</button>
+            <button type="button" id="pmConfirm" class="pm-confirm" disabled th:text="#{community.write.place.confirm}">확인</button>
         </div>
     </div>
 </div>
@@ -288,7 +288,12 @@
         kindTour:      /*[[#{community.place.tour}]]*/ '관광',
         kindFood:      /*[[#{community.place.food}]]*/ '맛집',
         kindCafe:      /*[[#{community.place.cafe}]]*/ '카페',
-        kindDefault:   /*[[#{community.place.default}]]*/ '장소'
+        kindDefault:   /*[[#{community.place.default}]]*/ '장소',
+        pick:          /*[[#{community.write.place.pick}]]*/ '추가',
+        picked:        /*[[#{community.write.place.picked}]]*/ '✓ 추가',
+        mapToggle:     /*[[#{community.write.place.mapToggle}]]*/ '지도 접기/펴기',
+        imageFailed:   /*[[#{community.write.image.failed}]]*/ '이미지를 올리지 못했습니다.',
+        imageRetry:    /*[[#{community.write.image.retry}]]*/ '이미지를 올리지 못했습니다. 잠시 후 다시 시도해 주세요.'
     };
 </script>
 <script>
@@ -334,7 +339,7 @@
 
     function renderGroupHtml(places) {
         const mapHtml = '<div class="pg-mapwrap"><div class="pg-map"></div>'
-            + '<button type="button" class="pg-toggle" title="지도 접기/펴기">▾</button></div>';
+            + '<button type="button" class="pg-toggle" title="' + escText(CM.mapToggle) + '">▾</button></div>';
         const rows = places.map(function (p, i) {
             return '<div class="pg-row" data-href="' + escText(placeLink(p)) + '">'
                 + '<span class="kakao-letter-pin">' + letterFor(i) + '</span>'
@@ -423,13 +428,13 @@
                 const res = await fetch('/community/api/image', { method: 'POST', headers, body });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) {
-                    alert(data.message || '이미지를 올리지 못했습니다.');
+                    alert(data.message || CM.imageFailed);
                     return;
                 }
                 quill.insertEmbed(range.index, 'image', data.url, 'user');
                 quill.setSelection(range.index + 1, 0);
             } catch (err) {
-                alert('이미지를 올리지 못했습니다. 잠시 후 다시 시도해 주세요.');
+                alert(CM.imageRetry);
             }
         };
         input.click();
@@ -626,7 +631,7 @@
                     + '<span class="pm-result-title">' + escText(p.title) + '</span>'
                     + '<span class="pm-result-addr">' + escText(p.addr || '') + '</span>'
                     + '</span>'
-                    + '<span class="pm-add-badge">' + (added ? '✓ 추가' : '추가') + '</span>'
+                    + '<span class="pm-add-badge">' + escText(added ? CM.picked : CM.pick) + '</span>'
                     + '</button>';
             }).join('') : '<div class="pm-empty">' + escText(CM.placeEmpty) + '</div>';
         }

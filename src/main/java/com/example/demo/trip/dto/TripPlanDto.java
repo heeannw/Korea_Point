@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 
 public class TripPlanDto {
 
@@ -53,6 +54,8 @@ public class TripPlanDto {
         private String        styleDescription;
         private LocalDateTime createdAt;
         private List<DayDto>  days;
+        /** 화면에 보여 줄 장소 이름(국문 → 화면 언어). 국문 화면이면 비어 있다. */
+        private Map<String, String> displayText;
     }
 
     @Data

@@ -640,7 +640,7 @@
                         <div class="detail-slot">
                             <span class="detail-time">${escapeHtml(slot.time || '-')}</span>
                             <div>
-                                <strong>${escapeHtml(slot.placeName || msg.placeTbd)}</strong>
+                                <strong>${escapeHtml((plan.displayText || {})[slot.placeName] || slot.placeName || msg.placeTbd)}</strong>
                                 <p>${escapeHtml(slot.address || slot.reason || '')}</p>
                             </div>
                         </div>

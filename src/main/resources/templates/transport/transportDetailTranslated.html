@@ -122,7 +122,8 @@
       next: 'Next', route: 'Route', live: 'Live', checking: 'Checking', toward: 'toward',
       departureStation: 'Departure Station', destination: 'Destination', busStop: 'Bus Stop', destinationStop: 'Destination Stop',
       stopNoData: 'No stop-arrival data', stopMatchFailed: 'Stop match failed', missingBimsKey: 'Missing BIMS key', bimsRequestFailed: 'BIMS request failed',
-      soon: 'Arriving soon', inMinutes: minutes => `Arrives in ${minutes} min`
+      soon: 'Arriving soon', inMinutes: minutes => `Arrives in ${minutes} min`,
+      stopsAway: n => `${n} stop(s) away`, arrivalChecking: 'Checking arrival info'
     },
     ja: {
       back: '← 検索に戻る', departs: '出発', transfer: '乗換:', min: '分',
@@ -137,7 +138,8 @@
       next: '次', route: '路線', live: 'リアルタイム', checking: '確認中', toward: '方面',
       departureStation: '出発駅', destination: '目的地', busStop: 'バス停', destinationStop: '到着停留所',
       stopNoData: '停留所到着情報なし', stopMatchFailed: '停留所の照合に失敗', missingBimsKey: 'BIMS認証キーなし', bimsRequestFailed: 'BIMSリクエスト失敗',
-      soon: 'まもなく到着', inMinutes: minutes => `${minutes}分後に到着`
+      soon: 'まもなく到着', inMinutes: minutes => `${minutes}分後に到着`,
+      stopsAway: n => `${n}つ前の停留所`, arrivalChecking: '到着情報を確認中'
     },
     zh: {
       back: '← 返回搜索', departs: '出发', transfer: '换乘:', min: '分钟',
@@ -152,7 +154,8 @@
       next: '下一班', route: '线路', live: '实时', checking: '确认中', toward: '方向',
       departureStation: '出发站', destination: '目的地', busStop: '公交站', destinationStop: '到达站',
       stopNoData: '暂无站点到达信息', stopMatchFailed: '站点匹配失败', missingBimsKey: '缺少 BIMS 认证密钥', bimsRequestFailed: 'BIMS 请求失败',
-      soon: '即将到达', inMinutes: minutes => `${minutes}分钟后到达`
+      soon: '即将到达', inMinutes: minutes => `${minutes}分钟后到达`,
+      stopsAway: n => `还有${n}站`, arrivalChecking: '正在确认到站信息'
     },
     fr: {
       back: '← Retour à la recherche', departs: 'Départ', transfer: 'Correspondances :', min: 'min',
@@ -167,7 +170,8 @@
       next: 'Prochain', route: 'Ligne', live: 'Direct', checking: 'Vérification', toward: 'vers',
       departureStation: 'Station de départ', destination: 'Destination', busStop: 'Arrêt de bus', destinationStop: 'Arrêt d’arrivée',
       stopNoData: 'Aucune donnée d’arrivée', stopMatchFailed: 'Correspondance d’arrêt échouée', missingBimsKey: 'Clé BIMS manquante', bimsRequestFailed: 'Requête BIMS échouée',
-      soon: 'Arrive bientôt', inMinutes: minutes => `Arrive dans ${minutes} min`
+      soon: 'Arrive bientôt', inMinutes: minutes => `Arrive dans ${minutes} min`,
+      stopsAway: n => `À ${n} arrêt(s)`, arrivalChecking: 'Vérification des arrivées'
     }
   };
   const ui = UI[currentLang] || UI.en;
@@ -227,6 +231,9 @@
   function translateArrival(msg) {
     if (!msg) return "";
 
+    // 부산 버스(BusanBusArrivalService)가 보내는 문구. 아래의 일반 "도착" 치환보다 먼저 바꾼다.
+    msg = msg.replace(/도착정보 확인 중/g, t('arrivalChecking'));
+    msg = msg.replace(/(\d+)개 정류장 전/g, (_, n) => (ui.stopsAway || UI.en.stopsAway)(n));
     msg = msg.replace(/(\d+)분 후 도착/g, (_, minutes) => ui.inMinutes(minutes));
     // msg = msg.replace(/전역/g, "1 stop away");
     msg = msg.replace(/(\d+)번째 전역/g, "$1 stops away");
@@ -957,7 +964,7 @@
                                 <div class="timetable-row">
                                     <span class="timetable-order">${index === 0 ? '1st' : `#${index + 1}`}</span>
                                     <span><b>${t('route')}</b>${step.displayLine || arrival.line || step.line || t('bus')}</span>
-                                    <span class="timetable-arrival"><b>${t('arrive')}</b>${await translateKoText(arrival.message || t('checking'))}</span>
+                                    <span class="timetable-arrival"><b>${t('arrive')}</b>${await translateKoText(translateArrival(arrival.message || '') || t('checking'))}</span>
                                 </div>`))).join('')
                             : `
                                 <div class="timetable-row">
