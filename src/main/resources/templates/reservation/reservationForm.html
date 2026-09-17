@@ -14,7 +14,7 @@
 <div th:replace="~{fragments/app-header :: header(${lang == 'zh-CN' ? 'zh' : lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <main class="page">
-    <ol class="booking-steps" aria-label="Reservation progress"><li class="active" aria-current="step"><span>1</span><span th:text="#{reservation.request.apply}"></span></li><li><span>2</span><span th:text="#{reservation.request.review}"></span></li><li><span>3</span><span th:text="#{reservation.ui.step.payment}"></span></li><li><span>4</span><span th:text="#{reservation.ui.step.complete}"></span></li></ol>
+    <ol class="booking-steps" th:aria-label="#{reservation.ui.stepsLabel}" aria-label="Reservation progress"><li class="active" aria-current="step"><span>1</span><span th:text="#{reservation.request.apply}"></span></li><li><span>2</span><span th:text="#{reservation.request.review}"></span></li><li><span>3</span><span th:text="#{reservation.ui.step.payment}"></span></li><li><span>4</span><span th:text="#{reservation.ui.step.complete}"></span></li></ol>
     <section class="page-head">
         <div>
             <p class="eyebrow" th:text="#{reservation.form.eyebrow}">예약</p>

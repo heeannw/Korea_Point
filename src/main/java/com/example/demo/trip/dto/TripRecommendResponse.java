@@ -3,6 +3,7 @@ package com.example.demo.trip.dto;
 import lombok.Data;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class TripRecommendResponse {
@@ -18,6 +19,13 @@ public class TripRecommendResponse {
     private HealthRiskSummary healthRisk;
     /** 여행 기간과 겹치는 부산 축제 — 일정에 실제로 들어갔는지와 무관하게 항상 안내용으로 보여준다. */
     private List<FestivalDto> festivals;
+    /**
+     * 화면에 보여 줄 이름·주소(국문 → 화면 언어). 국문 화면이면 비어 있다.
+     * 장소 이름 자체는 바꾸지 않는다 — 화면이 이름으로 대체 후보를 찾고 재조정 요청에 돌려보낸다.
+     */
+    private Map<String, String> displayText;
+    /** displayText 의 언어. 화면 언어와 다르면 화면이 다시 받아 간다. */
+    private String displayLang;
 
     @Data
     public static class HealthRiskSummary {
@@ -49,6 +57,9 @@ public class TripRecommendResponse {
         private int    reviewCount;
         private String contentId;
         private String contentTypeId;
+        /** 화면 언어로 옮긴 이름·주소("근처 맛집" 처럼 목록만 따로 받을 때). 없으면 null. */
+        private String displayName;
+        private String displayAddress;
     }
 
     @Data

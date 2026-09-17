@@ -1,9 +1,11 @@
 package com.example.demo.transport.controller;
 
 import com.example.demo.config.CurrentLanguage;
+import com.example.demo.config.LocalizedMessages;
 import com.example.demo.transport.dto.TransportRouteDto;
 import com.example.demo.transport.entity.Route;
 import com.example.demo.transport.repository.RouteRepository;
+import com.example.demo.transport.service.TransportNameTranslator;
 import com.example.demo.transport.service.TransportRouteService;
 import com.example.demo.user.util.SecurityUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,7 +17,10 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Controller
 public class TransportRouteController {
@@ -25,6 +30,12 @@ public class TransportRouteController {
 
     @Autowired
     private RouteRepository routeRepository;
+
+    @Autowired
+    private TransportNameTranslator nameTranslator;
+
+    @Autowired
+    private LocalizedMessages messages;
 
     @ResponseBody
     @GetMapping(value = "/api/kakao/search", produces = "application/json")
@@ -132,6 +143,9 @@ public class TransportRouteController {
         model.addAttribute("lang", CurrentLanguage.get());
         String pageLang = viewName.contains("En") ? CurrentLanguage.EN : CurrentLanguage.KO;
 
+        // 역·노선 이름(국문) → 화면 언어. 국문 화면이면 비어 있고, 화면은 표에 없으면 국문을 쓴다.
+        model.addAttribute("names", Map.of());
+
         model.addAttribute("recentRoutes", SecurityUtil.isLoggedIn()
                 ? routeRepository.findTop10ByUserIdAndLanguageOrderBySearchedAtDesc(user, pageLang)
                 : java.util.List.of());
@@ -164,13 +178,29 @@ public class TransportRouteController {
             System.out.println("====================");
 
             model.addAttribute("routes", routes);
+            model.addAttribute("names", nameTranslator.translateAll(stepNames(routes), CurrentLanguage.get()));
             model.addAttribute("end", end);
 
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "경로 조회 실패: " + e.getMessage());
+            model.addAttribute("error", messages.get("transport.search.error", e.getMessage()));
         }
 
         return viewName;
+    }
+
+    /** 경로 카드에 보이는 역·정류장·노선 이름. */
+    private static Set<String> stepNames(List<TransportRouteDto> routes) {
+        Set<String> names = new LinkedHashSet<>();
+        for (TransportRouteDto route : routes) {
+            if (route.getSteps() == null) continue;
+            route.getSteps().forEach(step -> {
+                names.add(step.getFromStation());
+                names.add(step.getToStation());
+                names.add(step.getLine());
+            });
+        }
+        names.remove(null);
+        return names;
     }
 }

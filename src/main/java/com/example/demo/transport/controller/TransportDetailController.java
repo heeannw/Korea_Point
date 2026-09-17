@@ -1,22 +1,19 @@
 package com.example.demo.transport.controller;
 
 import com.example.demo.config.CurrentLanguage;
+import com.example.demo.config.LocalizedMessages;
 import com.example.demo.transport.dto.TransportRouteDto;
 import com.example.demo.transport.entity.Route;
 import com.example.demo.transport.repository.RouteRepository;
 import com.example.demo.transport.service.BusanBusArrivalService;
 import com.example.demo.transport.service.CongestionMlService;
+import com.example.demo.transport.service.TransportNameTranslator;
 import com.example.demo.transport.service.TransportRouteService;
 import com.example.demo.user.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,17 +22,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 @Controller
 public class TransportDetailController {
@@ -43,15 +36,14 @@ public class TransportDetailController {
     @Value("${SEOUL_SUBWAY_API_KEY:}")
     private String seoulApiKey;
 
-    @Value("${translation.api.key:}")
-    private String translationApiKey;
-
-    private static final Set<String> TRANSPORT_TRANSLATION_LANGS = Set.of("EN", "JA", "ZH", "FR");
-
-    private final RestTemplate restTemplate = new RestTemplate();
-
     @Autowired
     private TransportRouteService transportRouteService;
+
+    @Autowired
+    private TransportNameTranslator nameTranslator;
+
+    @Autowired
+    private LocalizedMessages messages;
 
     @Autowired
     private CongestionMlService congestionMlService;
@@ -93,6 +85,8 @@ public class TransportDetailController {
         if (routeId != null && !routeId.isEmpty()) {
             route = transportRouteService.getTransportRouteDetail(routeId);
         }
+        // 경로의 역·정류장·노선 이름을 미리 옮겨 화면에 넘긴다(외국어 화면이 먼저 이 표를 본다).
+        model.addAttribute("names", route == null ? Map.of() : nameTranslator.translateAll(routeNames(route), lang));
 
         int hour = java.time.LocalTime.now().getHour();
         int day = (java.time.LocalDate.now().getDayOfWeek().getValue() >= 6) ? 0 : 1;
@@ -205,23 +199,10 @@ public class TransportDetailController {
 
         String congestionMsg;
         if (!"ko".equals(lang)) {
-            switch (congestion) {
-                case 0:
-                    congestionMsg = "Passenger volume is within the normal range.";
-                    break;
-                case 1:
-                    congestionMsg = "Passenger volume is increasing. Please stay alert.";
-                    break;
-                case 2:
-                    congestionMsg = "This is a crowded time. Consider another route.";
-                    break;
-                case 3:
-                    congestionMsg = "Severe congestion is expected. Consider delaying or changing routes.";
-                    break;
-                default:
-                    congestionMsg = "Congestion data is currently unavailable.";
-                    break;
-            }
+            // 칩 글자(congestionText)는 화면 스크립트가 막대 길이를 정하는 데 쓰므로 영문 그대로 둔다.
+            // 안내문만 화면 언어로. 예전에는 일·중·불도 영문이었다.
+            congestionMsg = messages.get("transport.congestion.msg."
+                    + (congestion >= 0 && congestion <= 3 ? String.valueOf(congestion) : "none"));
         } else {
             switch (congestion) {
                 case 0:
@@ -246,53 +227,42 @@ public class TransportDetailController {
         return viewName;
     }
 
+    /** 상세 화면에 보이는 이름들: 출발·도착, 각 구간의 역·정류장·노선. */
+    private static java.util.Set<String> routeNames(TransportRouteDto route) {
+        java.util.Set<String> names = new java.util.LinkedHashSet<>();
+        names.add(route.getStart());
+        names.add(route.getEnd());
+        if (route.getSteps() != null) {
+            route.getSteps().forEach(step -> {
+                names.add(step.getFromStation());
+                names.add(step.getToStation());
+                names.add(step.getLine());
+            });
+        }
+        names.remove(null);
+        return names;
+    }
+
     @ResponseBody
     @GetMapping("/api/transport/route/{routeId}")
     public TransportRouteDto getRouteJson(@PathVariable String routeId) {
         return transportRouteService.getTransportRouteDetail(routeId);
     }
 
+    /**
+     * 상세 화면이 역·정류장·노선 이름을 하나씩 옮겨 달라고 부른다.
+     * 역 이름 사전과 기억을 먼저 보고, 없을 때만 번역기를 부른다(TransportNameTranslator).
+     * 못 옮기면 받은 글자를 그대로 돌려주고, 화면이 자체 규칙으로 옮긴다.
+     */
     @ResponseBody
     @PostMapping("/api/transport/translate")
     public ResponseEntity<?> translateTransportText(@RequestBody Map<String, String> body) {
         String text = body.getOrDefault("text", "");
-        String target = normalizeDeepLLang(body.getOrDefault("target", "en"));
-
         if (text.isBlank()) {
             return ResponseEntity.ok(Map.of("translatedText", ""));
         }
-        if ("KO".equals(target) || !TRANSPORT_TRANSLATION_LANGS.contains(target)) {
-            return ResponseEntity.ok(Map.of("translatedText", text));
-        }
-        if (translationApiKey == null || translationApiKey.isBlank()) {
-            return ResponseEntity.ok(Map.of("translatedText", text, "error", "DeepL API key is not configured"));
-        }
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "DeepL-Auth-Key " + translationApiKey);
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
-        requestBody.add("text", text);
-        requestBody.add("source_lang", "KO");
-        requestBody.add("target_lang", target);
-
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> response = restTemplate.postForObject(
-                    "https://api-free.deepl.com/v2/translate",
-                    new HttpEntity<>(requestBody, headers),
-                    Map.class
-            );
-            if (response == null || !(response.get("translations") instanceof List<?> translations)
-                    || translations.isEmpty() || !(translations.get(0) instanceof Map<?, ?> first)) {
-                return ResponseEntity.ok(Map.of("translatedText", text, "error", "DeepL response was empty"));
-            }
-            Object translated = first.get("text");
-            return ResponseEntity.ok(Map.of("translatedText", translated == null ? text : translated.toString()));
-        } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("translatedText", text, "error", e.getMessage()));
-        }
+        String target = body.getOrDefault("target", "en");
+        return ResponseEntity.ok(Map.of("translatedText", nameTranslator.translate(text, target)));
     }
 
     @ResponseBody
@@ -369,16 +339,5 @@ public class TransportDetailController {
         String user = SecurityUtil.getCurrentUserName();
         routeRepository.deleteByUserId(user);
         return "ok";
-    }
-
-    private String normalizeDeepLLang(String lang) {
-        String candidate = lang == null ? "" : lang.trim().toUpperCase(Locale.ROOT);
-        if ("KO".equals(candidate) || "EN".equals(candidate) || "JA".equals(candidate) || "FR".equals(candidate)) {
-            return candidate;
-        }
-        if ("ZH".equals(candidate) || "ZH-CN".equals(candidate) || "ZH-HANS".equals(candidate)) {
-            return "ZH";
-        }
-        return "";
     }
 }

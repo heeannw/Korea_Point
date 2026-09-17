@@ -1,5 +1,8 @@
 package com.example.demo.user.service;
 
+import com.example.demo.config.LocalizedMessages;
+import com.example.demo.user.exception.UserInputException;
+import com.example.demo.user.exception.UserStateException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.HttpSession;
@@ -24,6 +27,7 @@ public class EmailVerificationService {
     private static final long EXPIRES_IN_SECONDS = 300;
 
     private final JavaMailSender mailSender;
+    private final LocalizedMessages messages;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Value("${spring.mail.username:}")
@@ -31,7 +35,7 @@ public class EmailVerificationService {
 
     public void sendEmailChangeCode(HttpSession session, String targetEmail) {
         if (!StringUtils.hasText(senderEmail)) {
-            throw new IllegalStateException("메일 발송 계정이 설정되지 않았어요.");
+            throw new UserStateException("account.error.mailNotConfigured", "메일 발송 계정이 설정되지 않았어요.");
         }
 
         String normalizedEmail = normalizeEmail(targetEmail);
@@ -61,10 +65,10 @@ public class EmailVerificationService {
 
         if (!(expiresAt instanceof Instant expiration) || Instant.now().isAfter(expiration)) {
             clearEmailChangeCode(session);
-            throw new IllegalArgumentException("인증번호가 만료됐어요. 다시 발급해 주세요.");
+            throw new UserInputException("account.error.codeExpired", "인증번호가 만료됐어요. 다시 발급해 주세요.");
         }
         if (!Objects.equals(savedEmail, normalizedEmail) || !Objects.equals(savedCode, code)) {
-            throw new IllegalArgumentException("인증번호가 일치하지 않습니다.");
+            throw new UserInputException("account.error.codeMismatch", "인증번호가 일치하지 않습니다.");
         }
 
         clearEmailChangeCode(session);
@@ -77,26 +81,20 @@ public class EmailVerificationService {
             MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
             helper.setFrom(senderEmail);
             helper.setTo(targetEmail);
-            helper.setSubject("[KoreaPoint] 이메일 인증번호");
-            helper.setText("""
-                    KoreaPoint 이메일 변경 인증번호입니다.
-
-                    인증번호: %s
-
-                    인증번호는 5분 동안만 사용할 수 있어요.
-                    메일이 보이지 않으면 스팸함도 확인해 주세요.
-                    """.formatted(code), false);
+            // 설정 화면에서 요청하는 순간 보내므로, 그때 보고 있던 언어로 쓴다.
+            helper.setSubject(messages.get("account.mail.subject"));
+            helper.setText(messages.get("account.mail.body", code), false);
             mailSender.send(message);
         } catch (MessagingException ex) {
-            throw new IllegalStateException("인증 메일을 만들지 못했어요.", ex);
+            throw new UserStateException("account.error.mailBuildFailed", "인증 메일을 만들지 못했어요.", ex);
         } catch (RuntimeException ex) {
-            throw new IllegalStateException("인증 메일 발송에 실패했어요. 메일 설정을 확인해 주세요.", ex);
+            throw new UserStateException("account.error.mailSendFailed", "인증 메일 발송에 실패했어요. 메일 설정을 확인해 주세요.", ex);
         }
     }
 
     private String normalizeEmail(String email) {
         if (!StringUtils.hasText(email)) {
-            throw new IllegalArgumentException("이메일을 입력해 주세요.");
+            throw new UserInputException("account.error.emailRequired", "이메일을 입력해 주세요.");
         }
         return email.trim().toLowerCase();
     }

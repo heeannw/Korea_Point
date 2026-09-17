@@ -1,5 +1,7 @@
 package com.example.demo.community.service;
 
+import com.example.demo.config.MessageArgumentException;
+import com.example.demo.config.MessageStateException;
 import com.example.demo.community.dto.CommentDto;
 import com.example.demo.community.entity.Comment;
 import com.example.demo.community.entity.CommunityTranslationTarget;
@@ -43,15 +45,15 @@ public class CommentService {
     @Transactional
     public Long addComment(Long postId, Long userId, CommentDto.CommentCreateRequest req) {
         Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+                .orElseThrow(() -> new MessageArgumentException("community.error.postNotFound", "존재하지 않는 게시글입니다."));
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new MessageArgumentException("community.error.userNotFound", "존재하지 않는 사용자입니다."));
         validateCommunityAccess(user);
 
         Comment parent = null;
         if (req.getParentId() != null) {
             parent = commentRepository.findById(req.getParentId())
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
+                    .orElseThrow(() -> new MessageArgumentException("community.error.commentNotFound", "존재하지 않는 댓글입니다."));
         }
 
         Comment comment = Comment.builder()
@@ -71,9 +73,9 @@ public class CommentService {
     @Transactional
     public void updateComment(Long commentId, Long userId, String content) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
+                .orElseThrow(() -> new MessageArgumentException("community.error.commentNotFound", "존재하지 않는 댓글입니다."));
         if (!comment.getUser().getId().equals(userId)) {
-            throw new IllegalStateException("수정 권한이 없습니다.");
+            throw new MessageStateException("community.error.noEditPermission", "수정 권한이 없습니다.");
         }
         validateCommunityAccess(comment.getUser());
         comment.setContent(content);
@@ -87,9 +89,9 @@ public class CommentService {
     @Transactional
     public void deleteComment(Long commentId, Long userId) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
+                .orElseThrow(() -> new MessageArgumentException("community.error.commentNotFound", "존재하지 않는 댓글입니다."));
         if (!comment.getUser().getId().equals(userId)) {
-            throw new IllegalStateException("삭제 권한이 없습니다.");
+            throw new MessageStateException("community.error.noDeletePermission", "삭제 권한이 없습니다.");
         }
         validateCommunityAccess(comment.getUser());
 
@@ -235,7 +237,7 @@ public class CommentService {
 
     private void validateCommunityAccess(User user) {
         if (user.getAccountStatus() == AccountStatus.SUSPENDED) {
-            throw new IllegalStateException("커뮤니티 기능이 정지된 계정입니다.");
+            throw new MessageStateException("community.error.suspended", "커뮤니티 기능이 정지된 계정입니다.");
         }
     }
 }

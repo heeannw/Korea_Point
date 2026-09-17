@@ -7,6 +7,8 @@ import com.example.demo.user.util.SecurityUtil;                // ✅ 추가
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +27,14 @@ public class TourismController {
 
     @Autowired
     TourismService tourismService;
+
+    @Autowired
+    MessageSource messageSource;
+
+    /** 현위치 표시 이름. 예전엔 영어가 아니면 모두 "내위치" 였다. */
+    private String myLocationLabel() {
+        return messageSource.getMessage("tour.myLocation", null, "My Location", LocaleContextHolder.getLocale());
+    }
 
     @Value("${TOURISM_KAKAO_API_KEY}")
     private String kakaoKey;
@@ -50,7 +60,7 @@ public class TourismController {
                 ? tourismService.allDistence(lat, lon, displayList)
                 : displayList;
 
-        String spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
+        String spotname = myLocationLabel();
 
         // 지도 중심은 항상 부산이다. 현위치는 거리 계산에만 쓴다.
         model.addAttribute("centerLat", BUSAN_CENTER_LAT);
@@ -83,7 +93,7 @@ public class TourismController {
 
         String lang = CurrentLanguage.get();
         if (spotname == null || spotname.isBlank()) {
-            spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
+            spotname = myLocationLabel();
         }
 
         Double userlat = (Double) session.getAttribute("userlat");
@@ -144,7 +154,7 @@ public class TourismController {
         List<TourPlaceDto> nearbyList = tourismService.allList(lang);
         tourismService.allDistence(lat, lon, nearbyList);
 
-        String spotname = "en".equalsIgnoreCase(lang) ? "My Location" : "내위치";
+        String spotname = myLocationLabel();
 
         model.addAttribute("spotname", spotname);
         model.addAttribute("lang", lang);

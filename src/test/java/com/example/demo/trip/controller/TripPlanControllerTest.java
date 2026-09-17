@@ -1,10 +1,13 @@
 package com.example.demo.trip.controller;
 
+import com.example.demo.config.LocalizedMessages;
 import com.example.demo.trip.dto.TripPlanDto;
+import com.example.demo.trip.service.TripDisplayText;
 import com.example.demo.trip.service.TripPlanService;
 import com.example.demo.user.util.SecurityUtil;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.springframework.context.support.StaticMessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -19,7 +22,8 @@ import static org.mockito.Mockito.when;
 class TripPlanControllerTest {
 
     private final TripPlanService tripPlanService = mock(TripPlanService.class);
-    private final TripPlanController controller = new TripPlanController(tripPlanService);
+    private final TripPlanController controller = new TripPlanController(
+            tripPlanService, mock(TripDisplayText.class), new LocalizedMessages(new StaticMessageSource()));
 
     @Test
     void saveUsesAuthenticatedDatabaseUserId() {

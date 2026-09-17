@@ -1,5 +1,6 @@
 package com.example.demo.community.controller;
 
+import com.example.demo.config.LocalizedMessages;
 import com.example.demo.community.dto.CommentDto;
 import com.example.demo.community.service.CommentService;
 import com.example.demo.user.util.SecurityUtil;
@@ -28,6 +29,7 @@ import java.util.Map;
 public class CommentController {
 
     private final CommentService commentService;
+    private final LocalizedMessages messages;
 
     @PostMapping("/{postId}")
     public ResponseEntity<Map<String, Long>> addComment(@PathVariable Long postId,
@@ -42,14 +44,14 @@ public class CommentController {
                                                              @Valid @RequestBody CommentDto.CommentUpdateRequest req) {
         Long userId = SecurityUtil.getCurrentUserId();
         commentService.updateComment(commentId, userId, req.getContent());
-        return ResponseEntity.ok(Map.of("message", "댓글을 수정했습니다."));
+        return ResponseEntity.ok(Map.of("message", messages.get("community.result.commentUpdated")));
     }
 
     @DeleteMapping("/{commentId}")
     public ResponseEntity<Map<String, String>> deleteComment(@PathVariable Long commentId) {
         Long userId = SecurityUtil.getCurrentUserId();
         commentService.deleteComment(commentId, userId);
-        return ResponseEntity.ok(Map.of("message", "댓글을 삭제했습니다."));
+        return ResponseEntity.ok(Map.of("message", messages.get("community.result.commentDeleted")));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -59,22 +61,23 @@ public class CommentController {
             errors.put(fieldError.getField(), fieldError.getDefaultMessage());
         }
         return ResponseEntity.badRequest().body(Map.of(
-                "message", "입력값을 확인해 주세요.",
+                "message", messages.get("community.error.invalidInput"),
                 "errors", errors
         ));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleUnreadable(HttpMessageNotReadableException exception) {
-        String message = "입력값을 확인해 주세요.";
+        String message = messages.get("community.error.invalidInput");
         if (exception.getCause() instanceof InvalidFormatException) {
-            message = "지원하지 않는 요청 형식입니다.";
+            message = messages.get("community.error.unsupportedFormat");
         }
         return ResponseEntity.badRequest().body(Map.of("message", message));
     }
 
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     public ResponseEntity<Map<String, Object>> handleBadRequest(RuntimeException exception) {
-        return ResponseEntity.badRequest().body(Map.of("message", exception.getMessage()));
+        // 서비스 오류는 문구 키를 갖고 있어 화면 언어로 바꿔 보낸다(LocalizedMessages).
+        return ResponseEntity.badRequest().body(Map.of("message", messages.of(exception)));
     }
 }

@@ -1,4 +1,6 @@
 package com.example.demo.chatbot.service;
+import com.example.demo.config.CurrentLanguage;
+import com.example.demo.config.LocalizedMessages;
 
 import com.example.demo.chatbot.client.GeminiChatClient;
 import com.example.demo.chatbot.client.GeminiEmbeddingClient;
@@ -24,8 +26,6 @@ import java.util.Optional;
 public class ChatbotQueryService {
 
     private static final Logger log = LoggerFactory.getLogger(ChatbotQueryService.class);
-    private static final String NO_MATCH_ANSWER =
-            "관련된 부산 이야기를 찾지 못했어요. 다른 질문으로 다시 물어봐 주세요.";
     /** 문서 하나당 프롬프트에 넣는 최대 글자 수. 프롬프트가 커질수록 Gemini 응답이 느려져서 짧게 자른다.
      *  번역 모드에서는 "이야기 전체 보기"에 이 길이만큼만 번역돼 나오니, 원문이 짧은 설화 특성상
      *  대부분 다 담기게 넉넉히 잡았다(900 → 1600). */
@@ -44,11 +44,14 @@ public class ChatbotQueryService {
     private final GeminiChatClient chatClient;
     private final VectorDocumentRepository vectorDocumentRepository;
     private final Map<String, SourceTextResolver> resolversByType;
+    private final LocalizedMessages messages;
 
     public ChatbotQueryService(GeminiEmbeddingClient embeddingClient,
                                GeminiChatClient chatClient,
                                VectorDocumentRepository vectorDocumentRepository,
-                               List<SourceTextResolver> resolvers) {
+                               List<SourceTextResolver> resolvers,
+                               LocalizedMessages messages) {
+        this.messages = messages;
         this.embeddingClient = embeddingClient;
         this.chatClient = chatClient;
         this.vectorDocumentRepository = vectorDocumentRepository;
@@ -81,7 +84,8 @@ public class ChatbotQueryService {
         }
 
         if (resolved.isEmpty() && !hasImage) {
-            return new ChatAskResponse(NO_MATCH_ANSWER, List.of());
+            // 화면 언어로. 예전에는 늘 국문(NO_MATCH_ANSWER)이었다.
+            return new ChatAskResponse(messages.get("chatbot.answer.noMatch"), List.of());
         }
 
         // 참고 자료(제목+본문 전체)는 원문(한국어)이라, 답변만 질문 언어로 나오면 "참고한 이야기"
@@ -162,6 +166,20 @@ public class ChatbotQueryService {
         }
     }
 
+    /**
+     * 사진만 보냈을 때 답할 언어. 질문 글이 없어 언어를 알 수 없으니 화면 언어를 따른다.
+     * 예전에는 늘 한국어로 답하게 해서, 일본어 화면에서도 한국어 답이 왔다.
+     */
+    private static String screenLanguageName() {
+        return switch (CurrentLanguage.get()) {
+            case "en" -> "영어(English)";
+            case "ja" -> "일본어(日本語)";
+            case "zh" -> "중국어 간체(简体中文)";
+            case "fr" -> "프랑스어(Français)";
+            default -> "한국어";
+        };
+    }
+
     private String buildPrompt(String question, List<SourceTextResolver.ResolvedSource> sources,
                                 boolean needsTranslation, boolean hasImage) {
         StringBuilder sb = new StringBuilder();
@@ -173,7 +191,7 @@ public class ChatbotQueryService {
               .append("사진 내용을 보고 자연스럽게 답하세요 — 부산의 장소·음식·설화와 관련 있어 보이면 그 내용을 곁들이고, ")
               .append("아니면 사진에 대해 편하게 설명해도 됩니다. 지어내지 말고, 확실하지 않으면 확실하지 않다고 답하세요. ")
               .append(question.isEmpty()
-                      ? "질문 텍스트는 따로 없으니 한국어로 답하세요. "
+                      ? "질문 텍스트는 따로 없으니 " + screenLanguageName() + "로 답하세요. "
                       : "답변 언어는 반드시 사용자 질문에 쓰인 언어와 같게 하세요. ")
               .append("이 답변은 채팅창에 렌더링되니, 필요할 때만 **굵게**나 \"- 항목\" 목록을 섞어 쓰고 ")
               .append("#, ---, 코드블록 같은 다른 마크다운 문법은 쓰지 말고 3~5문장으로 간결하게 답하세요.\n\n");

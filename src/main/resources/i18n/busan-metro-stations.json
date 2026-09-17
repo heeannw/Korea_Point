@@ -1,0 +1,659 @@
+{
+  "_note": [
+    "부산 도시철도(1~4호선) 역 이름의 외국어 표기. 교통 화면의 역 이름을 옮길 때 번역기보다 먼저 본다.",
+    "번역기에 '서면' 한 낱말만 보내면 일본어·중국어에서 書面/书面(서류)으로 옮겼다(2026-09-17 확인).",
+    "영문: 공공데이터포털 '부산교통공사_도시철도 역명정보_20251031' (data.go.kr/data/3077187).",
+    "일문·중문: 같은 기관 '도시철도역사정보_20210226'(data.go.kr/data/15043686)의 한자 표기를 일본 신자체·중국 간체로 바꿈.",
+    "원자료에서 글자가 빠진 동매(東梅)·장산(萇山)은 손으로 채움. 벡스코·센텀시티는 한자 대신 로마자.",
+    "불문: 영문과 같고, 뜻이 있는 이름(부산역, 시청, 대학 등)만 손으로 옮김.",
+    "키는 역명정보의 역명('부산역' 말고는 '역' 없이)."
+  ],
+  "다대포해수욕장": {
+    "en": "Dadaepo Beach",
+    "ja": "多大浦海水浴場",
+    "zh": "多大浦海水浴场",
+    "fr": "Plage de Dadaepo"
+  },
+  "다대포항": {
+    "en": "Dadaepo Harbor",
+    "ja": "多大浦港",
+    "zh": "多大浦港",
+    "fr": "Port de Dadaepo"
+  },
+  "낫개": {
+    "en": "Natgae",
+    "ja": "羅浦",
+    "zh": "罗浦",
+    "fr": "Natgae"
+  },
+  "신장림": {
+    "en": "Sinjangnim",
+    "ja": "新長林",
+    "zh": "新长林",
+    "fr": "Sinjangnim"
+  },
+  "장림": {
+    "en": "Jangnim",
+    "ja": "長林",
+    "zh": "长林",
+    "fr": "Jangnim"
+  },
+  "동매": {
+    "en": "Dongmae",
+    "ja": "東梅",
+    "zh": "东梅",
+    "fr": "Dongmae"
+  },
+  "신평": {
+    "en": "Sinpyeong",
+    "ja": "新平",
+    "zh": "新平",
+    "fr": "Sinpyeong"
+  },
+  "하단": {
+    "en": "Hadan",
+    "ja": "下端",
+    "zh": "下端",
+    "fr": "Hadan"
+  },
+  "당리": {
+    "en": "Dangni",
+    "ja": "堂里",
+    "zh": "堂里",
+    "fr": "Dangni"
+  },
+  "사하": {
+    "en": "Saha",
+    "ja": "沙下",
+    "zh": "沙下",
+    "fr": "Saha"
+  },
+  "괴정": {
+    "en": "Goejeong",
+    "ja": "槐亭",
+    "zh": "槐亭",
+    "fr": "Goejeong"
+  },
+  "대티": {
+    "en": "Daeti",
+    "ja": "大峙",
+    "zh": "大峙",
+    "fr": "Daeti"
+  },
+  "서대신": {
+    "en": "Seodaesin",
+    "ja": "西大新",
+    "zh": "西大新",
+    "fr": "Seodaesin"
+  },
+  "동대신": {
+    "en": "Dongdaesin",
+    "ja": "東大新",
+    "zh": "东大新",
+    "fr": "Dongdaesin"
+  },
+  "토성": {
+    "en": "Toseong",
+    "ja": "土城",
+    "zh": "土城",
+    "fr": "Toseong"
+  },
+  "자갈치": {
+    "en": "Jagalchi",
+    "ja": "札其",
+    "zh": "札其",
+    "fr": "Jagalchi"
+  },
+  "남포": {
+    "en": "Nampo",
+    "ja": "南浦",
+    "zh": "南浦",
+    "fr": "Nampo"
+  },
+  "중앙": {
+    "en": "Jungang",
+    "ja": "中央",
+    "zh": "中央",
+    "fr": "Jungang"
+  },
+  "부산역": {
+    "en": "Busan Station",
+    "ja": "釜山駅",
+    "zh": "釜山站",
+    "fr": "Gare de Busan"
+  },
+  "초량": {
+    "en": "Choryang",
+    "ja": "草梁",
+    "zh": "草梁",
+    "fr": "Choryang"
+  },
+  "부산진": {
+    "en": "Busanjin",
+    "ja": "釜山鎮",
+    "zh": "釜山镇",
+    "fr": "Busanjin"
+  },
+  "좌천": {
+    "en": "Jwacheon",
+    "ja": "佐川",
+    "zh": "佐川",
+    "fr": "Jwacheon"
+  },
+  "범일": {
+    "en": "Beomil",
+    "ja": "凡一",
+    "zh": "凡一",
+    "fr": "Beomil"
+  },
+  "범내골": {
+    "en": "Beomnaegol",
+    "ja": "凡内谷",
+    "zh": "凡内谷",
+    "fr": "Beomnaegol"
+  },
+  "서면": {
+    "en": "Seomyeon",
+    "ja": "西面",
+    "zh": "西面",
+    "fr": "Seomyeon"
+  },
+  "부전": {
+    "en": "Bujeon",
+    "ja": "釜田",
+    "zh": "釜田",
+    "fr": "Bujeon"
+  },
+  "양정": {
+    "en": "Yangjeong",
+    "ja": "楊亭",
+    "zh": "杨亭",
+    "fr": "Yangjeong"
+  },
+  "시청": {
+    "en": "City Hall",
+    "ja": "市庁",
+    "zh": "市厅",
+    "fr": "Hôtel de ville"
+  },
+  "연산": {
+    "en": "Yeonsan",
+    "ja": "蓮山",
+    "zh": "莲山",
+    "fr": "Yeonsan"
+  },
+  "교대": {
+    "en": "Busan Nat'l Univ. of Edu.",
+    "ja": "釜山教育大学校",
+    "zh": "釜山教育大学",
+    "fr": "Univ. nationale d'éducation de Busan"
+  },
+  "동래": {
+    "en": "Dongnae",
+    "ja": "東莱",
+    "zh": "东莱",
+    "fr": "Dongnae"
+  },
+  "명륜": {
+    "en": "Myeongnyun",
+    "ja": "明倫",
+    "zh": "明伦",
+    "fr": "Myeongnyun"
+  },
+  "온천장": {
+    "en": "Oncheonjang",
+    "ja": "温泉場",
+    "zh": "温泉场",
+    "fr": "Oncheonjang"
+  },
+  "부산대": {
+    "en": "Pusan Nat'l Univ.",
+    "ja": "釜山大学校",
+    "zh": "釜山大学",
+    "fr": "Univ. nationale de Pusan"
+  },
+  "장전": {
+    "en": "Jangjeon",
+    "ja": "長箭",
+    "zh": "长箭",
+    "fr": "Jangjeon"
+  },
+  "구서": {
+    "en": "Guseo",
+    "ja": "久瑞",
+    "zh": "久瑞",
+    "fr": "Guseo"
+  },
+  "두실": {
+    "en": "Dusil",
+    "ja": "斗実",
+    "zh": "斗实",
+    "fr": "Dusil"
+  },
+  "남산": {
+    "en": "Namsan",
+    "ja": "南山",
+    "zh": "南山",
+    "fr": "Namsan"
+  },
+  "범어사": {
+    "en": "Beomeosa",
+    "ja": "梵魚寺",
+    "zh": "梵鱼寺",
+    "fr": "Beomeosa"
+  },
+  "노포": {
+    "en": "Nopo",
+    "ja": "老圃",
+    "zh": "老圃",
+    "fr": "Nopo"
+  },
+  "장산": {
+    "en": "Jangsan",
+    "ja": "萇山",
+    "zh": "苌山",
+    "fr": "Jangsan"
+  },
+  "중동": {
+    "en": "Jung-dong",
+    "ja": "中洞",
+    "zh": "中洞",
+    "fr": "Jung-dong"
+  },
+  "해운대": {
+    "en": "Haeundae",
+    "ja": "海雲台",
+    "zh": "海云台",
+    "fr": "Haeundae"
+  },
+  "동백": {
+    "en": "Dongbaek",
+    "ja": "冬柏",
+    "zh": "冬柏",
+    "fr": "Dongbaek"
+  },
+  "벡스코": {
+    "en": "BEXCO (Busan Museum of Art)",
+    "ja": "BEXCO",
+    "zh": "BEXCO",
+    "fr": "BEXCO (Musée d'art de Busan)"
+  },
+  "센텀시티": {
+    "en": "Centum City",
+    "ja": "Centum City",
+    "zh": "Centum City",
+    "fr": "Centum City"
+  },
+  "민락": {
+    "en": "Millak",
+    "ja": "民楽",
+    "zh": "民乐",
+    "fr": "Millak"
+  },
+  "수영": {
+    "en": "Suyeong",
+    "ja": "水営",
+    "zh": "水营",
+    "fr": "Suyeong"
+  },
+  "광안": {
+    "en": "Gwangan",
+    "ja": "広安",
+    "zh": "广安",
+    "fr": "Gwangan"
+  },
+  "금련산": {
+    "en": "Geumnyeonsan",
+    "ja": "金蓮山",
+    "zh": "金莲山",
+    "fr": "Geumnyeonsan"
+  },
+  "남천": {
+    "en": "Namcheon",
+    "ja": "南川",
+    "zh": "南川",
+    "fr": "Namcheon"
+  },
+  "경성대·부경대": {
+    "en": "Kyungsung Univ.·Pukyong Nat'l Univ.",
+    "ja": "慶星大釜慶大",
+    "zh": "庆星大釜庆大",
+    "fr": "Univ. Kyungsung · Univ. nationale Pukyong"
+  },
+  "대연": {
+    "en": "Daeyeon",
+    "ja": "大淵",
+    "zh": "大渊",
+    "fr": "Daeyeon"
+  },
+  "못골": {
+    "en": "Motgol",
+    "ja": "池谷",
+    "zh": "池谷",
+    "fr": "Motgol"
+  },
+  "지게골": {
+    "en": "Jigegol",
+    "ja": "支架谷",
+    "zh": "支架谷",
+    "fr": "Jigegol"
+  },
+  "문현": {
+    "en": "Munhyeon",
+    "ja": "門峴",
+    "zh": "门岘",
+    "fr": "Munhyeon"
+  },
+  "국제금융센터·부산은행": {
+    "en": "Busan Int'l Finance Center·Busan Bank",
+    "ja": "釜山国際金融中心·釜山銀行",
+    "zh": "釜山国际金融中心·釜山银行",
+    "fr": "Centre financier international de Busan · Busan Bank"
+  },
+  "전포": {
+    "en": "Jeonpo",
+    "ja": "田浦",
+    "zh": "田浦",
+    "fr": "Jeonpo"
+  },
+  "부암": {
+    "en": "Buam",
+    "ja": "釜岩",
+    "zh": "釜岩",
+    "fr": "Buam"
+  },
+  "가야": {
+    "en": "Gaya",
+    "ja": "伽倻",
+    "zh": "伽倻",
+    "fr": "Gaya"
+  },
+  "동의대": {
+    "en": "Dongeui Univ.",
+    "ja": "東義大",
+    "zh": "东义大",
+    "fr": "Univ. Dongeui"
+  },
+  "개금": {
+    "en": "Gaegeum",
+    "ja": "開琴",
+    "zh": "开琴",
+    "fr": "Gaegeum"
+  },
+  "냉정": {
+    "en": "Naengjeong",
+    "ja": "冷井",
+    "zh": "冷井",
+    "fr": "Naengjeong"
+  },
+  "주례": {
+    "en": "Jurye",
+    "ja": "周礼",
+    "zh": "周礼",
+    "fr": "Jurye"
+  },
+  "감전": {
+    "en": "Gamjeon",
+    "ja": "甘田",
+    "zh": "甘田",
+    "fr": "Gamjeon"
+  },
+  "사상": {
+    "en": "Sasang",
+    "ja": "沙上",
+    "zh": "沙上",
+    "fr": "Sasang"
+  },
+  "덕포": {
+    "en": "Deokpo",
+    "ja": "徳浦",
+    "zh": "德浦",
+    "fr": "Deokpo"
+  },
+  "모덕": {
+    "en": "Modeok",
+    "ja": "毛徳",
+    "zh": "毛德",
+    "fr": "Modeok"
+  },
+  "모라": {
+    "en": "Mora",
+    "ja": "毛羅",
+    "zh": "毛罗",
+    "fr": "Mora"
+  },
+  "구남": {
+    "en": "Gunam",
+    "ja": "亀南",
+    "zh": "龟南",
+    "fr": "Gunam"
+  },
+  "구명": {
+    "en": "Gumyeong",
+    "ja": "亀明",
+    "zh": "龟明",
+    "fr": "Gumyeong"
+  },
+  "덕천": {
+    "en": "Deokcheon",
+    "ja": "徳川",
+    "zh": "德川",
+    "fr": "Deokcheon"
+  },
+  "수정": {
+    "en": "Sujeong",
+    "ja": "水亭",
+    "zh": "水亭",
+    "fr": "Sujeong"
+  },
+  "화명": {
+    "en": "Hwamyeong",
+    "ja": "華明",
+    "zh": "华明",
+    "fr": "Hwamyeong"
+  },
+  "율리": {
+    "en": "Yulli",
+    "ja": "栗里",
+    "zh": "栗里",
+    "fr": "Yulli"
+  },
+  "동원": {
+    "en": "Dongwon",
+    "ja": "東院",
+    "zh": "东院",
+    "fr": "Dongwon"
+  },
+  "금곡": {
+    "en": "Geumgok",
+    "ja": "金谷",
+    "zh": "金谷",
+    "fr": "Geumgok"
+  },
+  "호포": {
+    "en": "Hopo",
+    "ja": "湖浦",
+    "zh": "湖浦",
+    "fr": "Hopo"
+  },
+  "증산": {
+    "en": "Jeungsan",
+    "ja": "甑山",
+    "zh": "甑山",
+    "fr": "Jeungsan"
+  },
+  "부산대양산캠퍼스": {
+    "en": "Pusan Nat'l Univ. Yangsan Campus",
+    "ja": "釜山大学校梁山キャンパス",
+    "zh": "釜山大学梁山校区",
+    "fr": "Univ. nationale de Pusan, campus de Yangsan"
+  },
+  "남양산": {
+    "en": "Namyangsan",
+    "ja": "南梁山",
+    "zh": "南梁山",
+    "fr": "Namyangsan"
+  },
+  "양산": {
+    "en": "Yangsan",
+    "ja": "梁山",
+    "zh": "梁山",
+    "fr": "Yangsan"
+  },
+  "망미": {
+    "en": "Mangmi",
+    "ja": "望美",
+    "zh": "望美",
+    "fr": "Mangmi"
+  },
+  "배산": {
+    "en": "Baesan",
+    "ja": "盃山",
+    "zh": "杯山",
+    "fr": "Baesan"
+  },
+  "물만골": {
+    "en": "Mulmangol",
+    "ja": "水満谷",
+    "zh": "水满谷",
+    "fr": "Mulmangol"
+  },
+  "거제": {
+    "en": "Geoje",
+    "ja": "巨堤",
+    "zh": "巨堤",
+    "fr": "Geoje"
+  },
+  "종합운동장": {
+    "en": "Sports Complex",
+    "ja": "綜合運動場",
+    "zh": "综合运动场",
+    "fr": "Complexe sportif"
+  },
+  "사직": {
+    "en": "Sajik",
+    "ja": "社稷",
+    "zh": "社稷",
+    "fr": "Sajik"
+  },
+  "미남": {
+    "en": "Minam",
+    "ja": "美南",
+    "zh": "美南",
+    "fr": "Minam"
+  },
+  "만덕": {
+    "en": "Mandeok",
+    "ja": "万徳",
+    "zh": "万德",
+    "fr": "Mandeok"
+  },
+  "남산정": {
+    "en": "Namsanjeong",
+    "ja": "南山亭",
+    "zh": "南山亭",
+    "fr": "Namsanjeong"
+  },
+  "숙등": {
+    "en": "Sukdeung",
+    "ja": "淑嶝",
+    "zh": "淑嶝",
+    "fr": "Sukdeung"
+  },
+  "구포": {
+    "en": "Gupo",
+    "ja": "亀浦",
+    "zh": "龟浦",
+    "fr": "Gupo"
+  },
+  "강서구청": {
+    "en": "Gangseo-gu Office",
+    "ja": "江西区庁",
+    "zh": "江西区厅",
+    "fr": "Bureau de Gangseo-gu"
+  },
+  "체육공원": {
+    "en": "Sports Park",
+    "ja": "体育公園",
+    "zh": "体育公园",
+    "fr": "Parc des sports"
+  },
+  "대저": {
+    "en": "Daejeo",
+    "ja": "大渚",
+    "zh": "大渚",
+    "fr": "Daejeo"
+  },
+  "수안": {
+    "en": "Suan",
+    "ja": "寿安",
+    "zh": "寿安",
+    "fr": "Suan"
+  },
+  "낙민": {
+    "en": "Nangmin",
+    "ja": "楽民",
+    "zh": "乐民",
+    "fr": "Nangmin"
+  },
+  "충렬사": {
+    "en": "Chungnyeolsa",
+    "ja": "忠烈祠",
+    "zh": "忠烈祠",
+    "fr": "Chungnyeolsa"
+  },
+  "명장": {
+    "en": "Myeongjang",
+    "ja": "鳴蔵",
+    "zh": "鸣藏",
+    "fr": "Myeongjang"
+  },
+  "서동": {
+    "en": "Seo-dong",
+    "ja": "書洞",
+    "zh": "书洞",
+    "fr": "Seo-dong"
+  },
+  "금사": {
+    "en": "Geumsa",
+    "ja": "錦糸",
+    "zh": "锦丝",
+    "fr": "Geumsa"
+  },
+  "반여농산물시장": {
+    "en": "Banyeo Agricultural Market",
+    "ja": "盤如農産物市場",
+    "zh": "盘如农产物市场",
+    "fr": "Marché agricole de Banyeo"
+  },
+  "석대": {
+    "en": "Seokdae",
+    "ja": "石坮",
+    "zh": "石坮",
+    "fr": "Seokdae"
+  },
+  "영산대": {
+    "en": "Youngsan Univ.",
+    "ja": "霊山大",
+    "zh": "灵山大",
+    "fr": "Univ. Youngsan"
+  },
+  "윗반송": {
+    "en": "Witbansong",
+    "ja": "上盤松",
+    "zh": "上盘松",
+    "fr": "Witbansong"
+  },
+  "고촌": {
+    "en": "Gochon",
+    "ja": "古村",
+    "zh": "古村",
+    "fr": "Gochon"
+  },
+  "안평": {
+    "en": "Anpyeong",
+    "ja": "安平",
+    "zh": "安平",
+    "fr": "Anpyeong"
+  }
+}
