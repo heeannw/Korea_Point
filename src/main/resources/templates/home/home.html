@@ -1712,7 +1712,7 @@
                 <span class="post-tag" th:classappend="'cat-' + ${post.categoryId % 6}"
                       th:text="${postCatLabel[post.categoryId] ?: post.categoryName}">카테고리</span>
                 <div class="post-main">
-                    <span class="post-title" th:text="${lang == 'en' ? (post.titleEn != null ? post.titleEn : post.title) : (post.titleKo != null ? post.titleKo : post.title)}">샘플 게시글 제목</span>
+                    <span class="post-title" th:text="${postText[post.postId]?.title ?: post.title}">샘플 게시글 제목</span>
                     <span th:if="${post.commentCount > 0}" class="post-cmt"
                           th:text="'[' + ${post.commentCount} + ']'">[0]</span>
                     

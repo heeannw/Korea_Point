@@ -1,0 +1,32 @@
+{
+  "_note": [
+    "커뮤니티 글에 붙은 장소 꼬리표(post.place_title)를 화면 언어로 바꾸는 표.",
+    "홍보 글은 꼬리표 자리에 가게 이름이 아니라 구·군 이름을 넣어 둔다(docs/rebuild-promo-posts.sql).",
+    "이때 장소 번호는 가게 번호라, 번호로 번역하면 구 이름 대신 가게 이름이 나온다. 그래서 이 표를 먼저 본다.",
+    "구·군 표기는 관광 화면 주소 번역(tourdata/tourism/tour_i18n_*.json)에서 가장 많이 쓰는 표기에 맞췄다.",
+    "번호 없이 이름만 붙은 예전 글의 꼬리표도 여기 둔다. 이름은 i18n/place-names.json 과 맞췄다."
+  ],
+  "중구":       { "en": "Jung-gu",      "ja": "中区",     "zh": "中区",     "fr": "Jung-gu" },
+  "서구":       { "en": "Seo-gu",       "ja": "西区",     "zh": "西区",     "fr": "Seo-gu" },
+  "동구":       { "en": "Dong-gu",      "ja": "東区",     "zh": "东区",     "fr": "Dong-gu" },
+  "영도구":     { "en": "Yeongdo-gu",   "ja": "影島区",   "zh": "影岛区",   "fr": "Yeongdo-gu" },
+  "부산진구":   { "en": "Busanjin-gu",  "ja": "釜山鎮区", "zh": "釜山镇区", "fr": "Busanjin-gu" },
+  "동래구":     { "en": "Dongnae-gu",   "ja": "東莱区",   "zh": "东莱区",   "fr": "Dongnae-gu" },
+  "남구":       { "en": "Nam-gu",       "ja": "南区",     "zh": "南区",     "fr": "Nam-gu" },
+  "북구":       { "en": "Buk-gu",       "ja": "北区",     "zh": "北区",     "fr": "Buk-gu" },
+  "해운대구":   { "en": "Haeundae-gu",  "ja": "海雲台区", "zh": "海云台区", "fr": "Haeundae-gu" },
+  "사하구":     { "en": "Saha-gu",      "ja": "沙下区",   "zh": "沙下区",   "fr": "Saha-gu" },
+  "금정구":     { "en": "Geumjeong-gu", "ja": "金井区",   "zh": "金井区",   "fr": "Geumjeong-gu" },
+  "강서구":     { "en": "Gangseo-gu",   "ja": "江西区",   "zh": "江西区",   "fr": "Gangseo-gu" },
+  "연제구":     { "en": "Yeonje-gu",    "ja": "蓮堤区",   "zh": "莲堤区",   "fr": "Yeonje-gu" },
+  "수영구":     { "en": "Suyeong-gu",   "ja": "水営区",   "zh": "水营区",   "fr": "Suyeong-gu" },
+  "사상구":     { "en": "Sasang-gu",    "ja": "沙上区",   "zh": "沙上区",   "fr": "Sasang-gu" },
+  "기장군":     { "en": "Gijang-gun",   "ja": "機張郡",   "zh": "机张郡",   "fr": "Gijang-gun" },
+
+  "서면":           { "en": "Seomyeon",                 "ja": "西面",           "zh": "西面",           "fr": "Seomyeon" },
+  "태종대":         { "en": "Taejongdae",               "ja": "太宗台",         "zh": "太宗台",         "fr": "Taejongdae" },
+  "감천문화마을":   { "en": "Gamcheon Culture Village", "ja": "甘川文化村",     "zh": "甘川文化村",     "fr": "Village culturel de Gamcheon" },
+  "광안리해수욕장": { "en": "Gwangalli Beach",          "ja": "広安里海水浴場", "zh": "广安里海水浴场", "fr": "Plage de Gwangalli" },
+  "송정해수욕장":   { "en": "Songjeong Beach",          "ja": "松亭海水浴場",   "zh": "松亭海水浴场",   "fr": "Plage de Songjeong" },
+  "자갈치시장":     { "en": "Jagalchi Market",          "ja": "チャガルチ市場", "zh": "札嘎其市场",     "fr": "Marché de Jagalchi" }
+}
