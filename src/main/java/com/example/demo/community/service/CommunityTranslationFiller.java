@@ -249,7 +249,8 @@ public class CommunityTranslationFiller {
             if (body == null || !(body.get("translations") instanceof List<?> list)) return null;
             List<String> out = new ArrayList<>(list.size());
             for (Object o : list) {
-                out.add(o instanceof Map<?, ?> m && m.get("text") != null ? m.get("text").toString() : null);
+                out.add(o instanceof Map<?, ?> m && m.get("text") != null
+                        ? placeNames.tidy(lang, m.get("text").toString()) : null);
             }
             return out;
         } catch (Exception e) {

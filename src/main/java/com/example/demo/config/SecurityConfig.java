@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.servlet.LocaleResolver;
 
 @Configuration
 @EnableWebSecurity
@@ -19,6 +20,10 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final LocaleResolver localeResolver;
+
+    /** 로그아웃 직전의 언어를 잠시 담아 두는 요청 속성 이름. */
+    private static final String LOGOUT_LANGUAGE = SecurityConfig.class.getName() + ".logoutLanguage";
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -72,7 +77,17 @@ public class SecurityConfig {
                 .permitAll()
             )
             .logout(logout -> logout
-                .logoutSuccessUrl("/")
+                // 로그아웃은 세션을 비운다. 언어도 세션에 들어 있어서 그대로 두면 한국어로 돌아간다.
+                // 비우기 전에 읽어 두었다가 돌아갈 주소에 실어 보낸다.
+                // (여기서 더한 처리는 세션을 비우는 기본 처리보다 먼저 돈다)
+                .addLogoutHandler((request, response, authentication) ->
+                        request.setAttribute(LOGOUT_LANGUAGE, currentLanguage(request)))
+                .logoutSuccessHandler((request, response, authentication) -> {
+                    Object saved = request.getAttribute(LOGOUT_LANGUAGE);
+                    String lang = saved instanceof String value ? value : CurrentLanguage.KO;
+                    String home = CurrentLanguage.EN.equals(lang) ? "/en" : "/ko";
+                    response.sendRedirect(home + "?lang=" + lang);
+                })
             )
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint((request, response, authException) -> {
@@ -93,10 +108,16 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * 이 요청의 언어. 보안 필터는 스프링 MVC 보다 앞에서 돌아 LocaleContextHolder 가 아직
+     * 세션 언어를 모른다. 세션에서 직접 읽는다.
+     */
+    private String currentLanguage(HttpServletRequest request) {
+        return CurrentLanguage.of(localeResolver.resolveLocale(request));
+    }
+
     private String loginSuccessUrl(HttpServletRequest request) {
-        Object language = request.getSession().getAttribute("loginLanguage");
-        String selected = language instanceof String value ? value : "ko";
-        String url = "/login/success?lang=" + selected;
+        String url = "/login/success?lang=" + currentLanguage(request);
         Object principal = org.springframework.security.core.context.SecurityContextHolder
                 .getContext()
                 .getAuthentication()
@@ -110,8 +131,6 @@ public class SecurityConfig {
     }
 
     private String loginFailureUrl(HttpServletRequest request) {
-        Object language = request.getSession().getAttribute("loginLanguage");
-        String selected = language instanceof String value ? value : "ko";
-        return "/login?error=true&lang=" + selected;
+        return "/login?error=true&lang=" + currentLanguage(request);
     }
 }

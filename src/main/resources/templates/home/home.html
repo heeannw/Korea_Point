@@ -1520,7 +1520,7 @@
             </span>
             <span th:text="#{home.cat.community}">커뮤니티</span>
         </a>
-        <a class="category-item" th:href="@{'/' + ${langPath} + '/trip'}" href="/ko/trip">
+        <a class="category-item" th:href="@{'/' + ${langPath} + '/trip'(lang=${lang})}" href="/ko/trip">
             <span class="category-icon ic-trip">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M8.9 3.2 3.4 5.1a1.1 1.1 0 0 0-.7 1v13.1a1.1 1.1 0 0 0 1.5 1l4.7-1.7V3.2z" fill="currentColor"/>
@@ -1530,7 +1530,7 @@
             </span>
             <span th:text="#{home.cat.trip}">나만의 여행</span>
         </a>
-        <a class="category-item" th:href="@{/ko/reservation}" href="/ko/reservation">
+        <a class="category-item" th:href="@{/ko/reservation(lang=${lang})}" href="/ko/reservation">
             <span class="category-icon ic-reservation">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <rect x="6.3" y="1.8" width="2.5" height="5" rx="1.25" fill="currentColor"/>
@@ -1712,7 +1712,7 @@
                 <span class="post-tag" th:classappend="'cat-' + ${post.categoryId % 6}"
                       th:text="${postCatLabel[post.categoryId] ?: post.categoryName}">카테고리</span>
                 <div class="post-main">
-                    <span class="post-title" th:text="${lang == 'en' ? (post.titleEn != null ? post.titleEn : post.title) : (post.titleKo != null ? post.titleKo : post.title)}">샘플 게시글 제목</span>
+                    <span class="post-title" th:text="${postText[post.postId]?.title ?: post.title}">샘플 게시글 제목</span>
                     <span th:if="${post.commentCount > 0}" class="post-cmt"
                           th:text="'[' + ${post.commentCount} + ']'">[0]</span>
                     
@@ -1762,9 +1762,9 @@
 
         <div class="footer-links" style="display:none;">
             <a th:href="@{'/' + ${langPath}}" href="/ko" th:text="#{home.nav.home}">홈</a>
-            <a th:href="@{/tour/all}" href="/tour/all" th:text="#{home.cat.tour}">관광</a>
+            <a th:href="@{/tour/all(lang=${lang})}" href="/tour/all" th:text="#{home.cat.tour}">관광</a>
             <a th:href="@{${lang == 'en'} ? '/en/transport/search' : '/transport/search'}" href="/transport/search" th:text="#{home.cat.transport}">교통</a>
-            <a th:href="@{/community/post-list}" href="/community/post-list" th:text="#{home.cat.community}">커뮤니티</a>
+            <a th:href="@{/community/post-list(lang=${lang})}" href="/community/post-list" th:text="#{home.cat.community}">커뮤니티</a>
         </div>
 
         <!-- 연도는 서버가 넣는다. 손으로 적어 두면 해가 바뀔 때마다 지난 연도가 남는다. -->

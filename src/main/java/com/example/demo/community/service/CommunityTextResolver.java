@@ -36,8 +36,10 @@ import java.util.Map;
 public class CommunityTextResolver {
 
     private final CommunityTranslationRepository translationRepository;
+    private final PlaceLabelTranslator placeLabels;
 
-    public record Text(String title, String content) { }
+    /** place — 글에 붙은 장소 꼬리표. 꼬리표가 없는 글은 null. */
+    public record Text(String title, String content, String place) { }
 
     /** 글 하나만 필요한 경우(상세 화면). */
     public Text forPost(PostDto post, String lang) {
@@ -56,7 +58,8 @@ public class CommunityTextResolver {
             CommunityTranslation t = rows.get(p.getPostId());
             result.put(p.getPostId(), new Text(
                     pick(lang, t == null ? null : t.getTitle(), p.getTitleEn(), p.getTitleKo(), p.getTitle()),
-                    pick(lang, t == null ? null : t.getContent(), p.getContentEn(), p.getContentKo(), p.getContent())));
+                    pick(lang, t == null ? null : t.getContent(), p.getContentEn(), p.getContentKo(), p.getContent()),
+                    placeLabels.translate(lang, p.getPlaceTitle(), p.getPlaceContentId())));
         }
         return result;
     }
