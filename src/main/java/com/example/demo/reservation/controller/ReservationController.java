@@ -147,6 +147,7 @@ public class ReservationController {
         model.addAttribute("payment", reservation.getPayment());
         model.addAttribute("paymentMethods", PaymentMethod.values());
         model.addAttribute("paymentRequest", new ReservationPaymentRequest());
+        model.addAttribute("placeTitle", placeTitle(reservation));
         model.addAttribute("lang", currentLang());
         return "reservation/reservationPayment";
     }
@@ -166,6 +167,7 @@ public class ReservationController {
             model.addAttribute("reservation", reservation);
             model.addAttribute("payment", reservation.getPayment());
             model.addAttribute("paymentMethods", PaymentMethod.values());
+            model.addAttribute("placeTitle", placeTitle(reservation));
             model.addAttribute("lang", currentLang());
             return "reservation/reservationPayment";
         }
@@ -201,6 +203,7 @@ public class ReservationController {
         addSessionModel(model);
         model.addAttribute("lang", currentLang());
         model.addAttribute("reservation", reservation);
+        model.addAttribute("placeTitle", placeTitle(reservation));
         return "reservation/reservationRequest";
     }
 
@@ -268,7 +271,7 @@ public class ReservationController {
         model.addAttribute("promoPostCount", promoPostCount);
         model.addAttribute("promoCategoryId", promoCategoryId);
         model.addAttribute("reservations", reservations);
-        model.addAttribute("reservationTitleById", localizedReservationTitles(reservations, lang));
+        model.addAttribute("reservationTitleById", localizedReservationTitles(reservations));
         model.addAttribute("activeReservations", activeReservations);
         model.addAttribute("hasReservation", !reservations.isEmpty());
         model.addAttribute("hasActiveReservation", !activeReservations.isEmpty());
@@ -285,13 +288,26 @@ public class ReservationController {
         return "mypage/mypage";
     }
 
-    private Map<Long, String> localizedReservationTitles(List<TourReservation> reservations, String lang) {
+    private Map<Long, String> localizedReservationTitles(List<TourReservation> reservations) {
         Map<Long, String> titles = new LinkedHashMap<>();
         for (TourReservation reservation : reservations) {
-            titles.put(reservation.getId(), tourPlaceI18n.translateTitle(
-                    lang, reservation.getContentId(), reservation.getPlaceTitle()));
+            titles.put(reservation.getId(), placeTitle(reservation));
         }
         return titles;
+    }
+
+    /**
+     * 예약한 장소 이름을 지금 언어로.
+     *
+     * <p>장소 번역표는 중국어를 "zh" 로 찾는다. 예전에는 예약 쪽 표기인 "zh-CN" 을 그대로 넘겨
+     * 중국어로만 이름이 국문으로 남았고, 없는 언어 "zh-CN" 이 번역 대기열에 올라갔다.
+     *
+     * <p>찾기만 하고 번역을 맡기지는 않는다. 저장된 이름은 예약할 때의 화면 언어로 들어가
+     * 국문이 아닐 수 있어서, 그걸 국문 원문으로 넘기면 엉뚱한 번역이 굳는다.
+     */
+    private String placeTitle(TourReservation reservation) {
+        String found = tourPlaceI18n.findTitle(CurrentLanguage.get(), reservation.getContentId());
+        return found != null ? found : reservation.getPlaceTitle();
     }
 
     @PostMapping("/ko/mypage/owner-application")

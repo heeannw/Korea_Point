@@ -44,7 +44,7 @@
     <div class="booking-browse-layout">
         <aside class="booking-filters">
             <h2 th:text="#{reservation.ui.category}">어떤 여행을 찾으세요?</h2>
-            <div class="category-buttons" role="group" aria-label="카테고리 선택">
+            <div class="category-buttons" role="group" th:aria-label="#{reservation.list.categoryLabel}" aria-label="카테고리 선택">
                 <button type="button" class="category-btn" data-content-type="" data-label-key="all">전체</button>
                 <button type="button" class="category-btn" data-content-type="tourist_spot" data-label-key="tourist">관광지</button>
                 <button type="button" class="category-btn" data-content-type="culture" data-label-key="culture">문화시설</button>

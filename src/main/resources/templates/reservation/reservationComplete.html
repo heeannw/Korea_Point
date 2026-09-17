@@ -13,7 +13,7 @@
 <div th:replace="~{fragments/app-header :: header(${lang == 'zh-CN' ? 'zh' : lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 
 <main class="page">
-    <ol class="booking-steps" aria-label="Reservation progress"><li><span>1</span><span th:text="#{reservation.request.apply}"></span></li><li><span>2</span><span th:text="#{reservation.request.review}"></span></li><li><span>3</span><span th:text="#{reservation.ui.step.payment}"></span></li><li class="active" aria-current="step"><span>4</span><span th:text="#{reservation.ui.step.complete}"></span></li></ol>
+    <ol class="booking-steps" th:aria-label="#{reservation.ui.stepsLabel}" aria-label="Reservation progress"><li><span>1</span><span th:text="#{reservation.request.apply}"></span></li><li><span>2</span><span th:text="#{reservation.request.review}"></span></li><li><span>3</span><span th:text="#{reservation.ui.step.payment}"></span></li><li class="active" aria-current="step"><span>4</span><span th:text="#{reservation.ui.step.complete}"></span></li></ol>
     <div class="booking-success-mark" aria-hidden="true">✓</div>
     <section class="page-head">
         <div>
@@ -26,58 +26,58 @@
     <section class="panel">
         <dl class="summary-list">
             <div class="summary-row">
-                <dt>예약번호</dt>
+                <dt th:text="#{reservation.summary.reservationNo}">예약번호</dt>
                 <dd th:text="${reservationNo}">KP-00000000-0000</dd>
             </div>
             <div class="summary-row">
-                <dt>관광지</dt>
+                <dt th:text="#{reservation.summary.place}">관광지</dt>
                 <dd th:text="${place != null ? place.title : reservation.placeTitle}">관광지명</dd>
             </div>
             <div class="summary-row">
-                <dt>방문일</dt>
+                <dt th:text="#{reservation.summary.visitDate}">방문일</dt>
                 <dd th:text="${reservation.reservationDate}">2026-07-26</dd>
             </div>
             <div class="summary-row">
-                <dt>시간</dt>
+                <dt th:text="#{reservation.payment.time}">시간</dt>
                 <dd th:text="${reservation.reservationTime}">10:00</dd>
             </div>
             <div class="summary-row">
-                <dt>인원</dt>
-                <dd th:text="|${reservation.peopleCount}명|">1명</dd>
+                <dt th:text="#{reservation.payment.people}">인원</dt>
+                <dd th:text="#{reservation.summary.peopleCount(${reservation.peopleCount})}">1명</dd>
             </div>
             <div class="summary-row">
-                <dt>상태</dt>
-                <dd th:text="${reservation.status}">예약 완료</dd>
+                <dt th:text="#{reservation.summary.status}">상태</dt>
+                <dd th:text="${#messages.msg('reservation.request.state.' + reservation.applicationStatus)}">예약 확정</dd>
             </div>
             <div class="summary-row" th:if="${payment != null}">
-                <dt>예약금</dt>
-                <dd th:text="|${#numbers.formatInteger(payment.amount, 3, 'COMMA')}원|">10,000원</dd>
+                <dt th:text="#{mypage.reservation.deposit}">예약금</dt>
+                <dd th:text="#{reservation.form.won(${#numbers.formatInteger(payment.amount, 3, 'COMMA')})}">10,000원</dd>
             </div>
             <div class="summary-row" th:if="${payment != null}">
-                <dt>결제 상태</dt>
-                <dd th:text="${payment.status.label}">예약금 결제 완료</dd>
+                <dt th:text="#{reservation.summary.paymentStatus}">결제 상태</dt>
+                <dd th:text="${#messages.msg('mypage.status.payment' + #strings.capitalize(#strings.toLowerCase(payment.status.name())))}">예약금 결제 완료</dd>
             </div>
             <div class="summary-row" th:if="${payment != null and payment.method != null}">
-                <dt>결제수단</dt>
-                <dd th:text="${payment.method.label}">신용·체크카드</dd>
+                <dt th:text="#{reservation.summary.paymentMethod}">결제수단</dt>
+                <dd th:text="${#messages.msg('reservation.paymentMethod.' + payment.method.name())}">신용·체크카드</dd>
             </div>
             <div class="summary-row" th:if="${payment != null and payment.approvalNo != null}">
-                <dt>승인번호</dt>
+                <dt th:text="#{reservation.summary.approvalNo}">승인번호</dt>
                 <dd th:text="${payment.approvalNo}">KPAY-000000</dd>
             </div>
             <div class="summary-row" th:if="${reservation.memo != null && !reservation.memo.isBlank()}">
-                <dt>메모</dt>
+                <dt th:text="#{reservation.form.memo}">메모</dt>
                 <dd th:text="${reservation.memo}">메모</dd>
             </div>
         </dl>
 
-        <div class="notice payment-policy" th:if="${payment != null}">
+        <div class="notice payment-policy" th:if="${payment != null}" th:text="#{reservation.complete.policy}">
             방문 시 예약금은 현장 이용금액에서 차감됩니다. 방문 24시간 전까지 취소하면 전액 환불됩니다.
         </div>
 
         <div class="card-actions">
-            <a class="btn" th:href="@{/ko/reservation}">다른 관광지 예약</a>
-            <a class="btn secondary" th:href="@{/ko/mypage}">마이페이지 보기</a>
+            <a class="btn" th:href="@{/ko/reservation}" th:text="#{reservation.complete.again}">다른 관광지 예약</a>
+            <a class="btn secondary" th:href="@{/ko/mypage}" th:text="#{reservation.complete.myPage}">마이페이지 보기</a>
         </div>
     </section>
 </main>
