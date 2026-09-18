@@ -12,6 +12,7 @@ import com.example.demo.trip.service.TripRecommendService;
 import com.example.demo.user.util.SecurityUtil;               // ✅ 추가
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,6 +31,11 @@ public class TripController {
     private final TourApiClient tourApiClient;
     private final TourismService tourismService;
     private final TripDisplayText displayText;
+
+    // 트립/교통에서 하드코딩해 쓰던 카카오 JS SDK 키가 배포 도메인에 등록되어 있지 않아
+    // "kakao is not defined" 오류가 났다. 투어리즘 도메인 등록이 확인된 키를 그대로 재사용한다.
+    @Value("${TOURISM_KAKAO_API_KEY}")
+    private String kakaoKey;
 
     // ── 공통 세션 세팅 (SecurityUtil로 교체) ──
     private void session(Model model, HttpSession session) {
@@ -67,6 +73,7 @@ public class TripController {
     public String tripResultKo(Model model, HttpSession session) {
         session(model, session);
         model.addAttribute("lang", currentTripLang());
+        model.addAttribute("kakaoKey", kakaoKey);
         return "trip/tripResult";
     }
 
@@ -80,6 +87,7 @@ public class TripController {
     public String tripPlansKo(Model model, HttpSession session) {
         session(model, session);
         model.addAttribute("lang", currentTripLang());
+        model.addAttribute("kakaoKey", kakaoKey);
         return "trip/tripPlanList";
     }
 
