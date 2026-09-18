@@ -18,6 +18,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,6 +67,10 @@ public class TourApiReservationService {
             return List.of();
         }
 
+        if (keyword != null && !keyword.isBlank()) {
+            return searchPlaces(keyword, contentTypeId, lang, pageNo, numOfRows);
+        }
+
         UriComponentsBuilder builder = commonBuilder(baseUrl + listPath)
                 .queryParam("pageNo", Math.max(pageNo, 1))
                 .queryParam("numOfRows", Math.max(numOfRows, 1))
@@ -82,14 +87,30 @@ public class TourApiReservationService {
         List<TourApiPlaceDto> koreanPlaces = parseItems(root, TourApiLang.KO);
         List<TourApiPlaceDto> places = isKorean(lang)
                 ? koreanPlaces : localizePlaces(koreanPlaces, contentTypeId, lang, pageNo, numOfRows);
-        if (keyword == null || keyword.isBlank()) {
-            return places;
-        }
+        return places;
+    }
 
-        String normalized = keyword.trim().toLowerCase();
-        return places.stream()
-                .filter(place -> contains(place.getTitle(), normalized) || contains(place.getAddress(), normalized))
-                .toList();
+    private List<TourApiPlaceDto> searchPlaces(String keyword, String contentTypeId, String lang,
+                                              int pageNo, int numOfRows) {
+        String normalized = keyword.trim().toLowerCase(Locale.ROOT);
+        int pageSize = Math.max(numOfRows, 1);
+        long skip = (long) (Math.max(pageNo, 1) - 1) * pageSize;
+        int batchSize = 100;
+        List<TourApiPlaceDto> matches = new ArrayList<>();
+        // Filter before pagination: a nonmatching source page must not end the search.
+        for (int sourcePage = 1; ; sourcePage++) {
+            List<TourApiPlaceDto> batch = findPlaces(null, contentTypeId, lang, sourcePage, batchSize);
+            for (TourApiPlaceDto place : batch) {
+                if (!contains(place.getTitle(), normalized) && !contains(place.getAddress(), normalized)) continue;
+                if (skip > 0) {
+                    skip--;
+                } else {
+                    matches.add(place);
+                    if (matches.size() == pageSize) return matches;
+                }
+            }
+            if (batch.size() < batchSize) return matches;
+        }
     }
 
     public TourApiPlaceDto findDetail(String contentId, String contentTypeId, String lang) {
@@ -452,7 +473,7 @@ public class TourApiReservationService {
     }
 
     private boolean contains(String source, String keyword) {
-        return source != null && source.toLowerCase().contains(keyword);
+        return source != null && source.toLowerCase(Locale.ROOT).contains(keyword);
     }
 }
 
