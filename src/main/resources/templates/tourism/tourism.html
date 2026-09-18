@@ -271,7 +271,13 @@
         </nav>
         <section class="tab-panel" id="tab-info">
           <div class="dp-info-row" id="dpInfoRow"></div>
-          <div class="section-card"><div class="section-title" th:text="#{tour.detail.about}">About</div><div class="dp-desc" id="dpDesc"></div></div>
+          <div class="dp-desc-block" id="dpDescBlock">
+            <div class="section-title" th:text="#{tour.detail.about}">About</div>
+            <div class="dp-desc" id="dpDesc"></div>
+            <button type="button" class="dp-desc-toggle" id="dpDescToggle" onclick="toggleDpDesc()" hidden>
+              <span id="dpDescToggleLabel"></span><span class="dp-desc-caret">▾</span>
+            </button>
+          </div>
           <div class="dp-course" id="dpCourse" hidden></div>
           <div class="dp-related" id="dpRelated" hidden></div>
         </section>
@@ -342,6 +348,8 @@
     detail: {
       loading:      /*[[#{tour.detail.loading}]]*/ 'Loading Korea Tourism Organization details...',
       noOverview:   /*[[#{tour.detail.noOverview}]]*/ 'No description is currently available.',
+      showMore:     /*[[#{tour.detail.showMore}]]*/ 'Show more',
+      showLess:     /*[[#{tour.detail.showLess}]]*/ 'Show less',
       tel:          /*[[#{tour.detail.tel}]]*/ 'Tel',
       usageInfo:    /*[[#{tour.detail.usageInfo}]]*/ 'Visitor info',
       loadFail:     /*[[#{tour.detail.loadFail}]]*/ 'Unable to load details. Please try again later.',
@@ -1144,10 +1152,36 @@
       // 운영정보(영업시간·휴무일 등)를 별도 제목 없이 주소 바로 밑에 이어 붙인다.
       if (rows) document.getElementById('dpInfoRow').insertAdjacentHTML('beforeend', rows);
       setDetailImages(detail.images?.length ? detail.images : [detail.image || p.image]);
+      setupDpDescToggle();
     } catch (error) {
       desc.textContent = I18N.detail.loadFail;
       console.error('TourAPI detail error', error);
     }
+  }
+
+  // 장소 소개가 길면 접어 두고 '더보기'로 펼친다. 짧으면 버튼 자체를 숨긴다.
+  const DP_DESC_COLLAPSE_PX = 96;
+  function setupDpDescToggle() {
+    const desc = document.getElementById('dpDesc');
+    const toggle = document.getElementById('dpDescToggle');
+    if (!desc || !toggle) return;
+    desc.classList.remove('collapsed');
+    const isLong = desc.scrollHeight > DP_DESC_COLLAPSE_PX + 4;
+    toggle.hidden = !isLong;
+    toggle.classList.remove('open');
+    if (isLong) {
+      desc.classList.add('collapsed');
+      document.getElementById('dpDescToggleLabel').textContent = I18N.detail.showMore;
+    }
+  }
+
+  function toggleDpDesc() {
+    const desc = document.getElementById('dpDesc');
+    const toggle = document.getElementById('dpDescToggle');
+    const collapsed = desc.classList.toggle('collapsed');
+    toggle.classList.toggle('open', !collapsed);
+    document.getElementById('dpDescToggleLabel').textContent =
+      collapsed ? I18N.detail.showMore : I18N.detail.showLess;
   }
 
   function showDetailTab(name) {
@@ -1405,6 +1439,8 @@
                    p.userReviewCount || Number(p.user_ratings_total || 0));
     document.getElementById('dpInfoRow').innerHTML = '';   // 주소는 이름 밑에 있으므로 정보 탭엔 운영정보만
     document.getElementById('dpDesc').textContent = I18N.detail.preparing;
+    document.getElementById('dpDesc').classList.remove('collapsed');
+    document.getElementById('dpDescToggle').hidden = true;
     renderReviews(p);
     loadCommunityPosts(p);
     loadRelated(p);
