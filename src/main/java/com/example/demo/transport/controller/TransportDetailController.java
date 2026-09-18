@@ -36,6 +36,12 @@ public class TransportDetailController {
     @Value("${SEOUL_SUBWAY_API_KEY:}")
     private String seoulApiKey;
 
+    // 지도 표시용 카카오 JS 키 — 예전엔 화면에 값을 그냥 박아뒀는데, 배포 도메인이 그 키에
+    // 등록이 안 돼 있어서 "kakao is not defined"가 났다. 관광 페이지가 쓰는 키(도메인 등록 이미
+    // 돼 있음)를 그대로 재사용한다.
+    @Value("${TOURISM_KAKAO_API_KEY}")
+    private String kakaoKey;
+
     @Autowired
     private TransportRouteService transportRouteService;
 
@@ -80,6 +86,7 @@ public class TransportDetailController {
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
         model.addAttribute("lang", lang);
+        model.addAttribute("kakaoKey", kakaoKey);
 
         TransportRouteDto route = null;
         if (routeId != null && !routeId.isEmpty()) {
