@@ -31,6 +31,16 @@ class PortOneSecurityTest {
     }
 
     @Test
+    void webhookAcceptsNewAndPreviouslyTruncatedOrderIds() throws Exception {
+        for (String merchant : new String[]{"KPTEST-355e468f6a7d46159cf1679dfc453415", "KPTEST-355e468f-6a7d-4615-9cf1-679dfc453"}) {
+            mvc.perform(post("/api/portone/webhook").contentType("application/json")
+                    .content("{\"merchant_uid\":\"" + merchant + "\",\"imp_uid\":\"imp_test\"}"))
+                    .andExpect(status().isOk());
+            verify(payments).webhook(merchant, "imp_test");
+        }
+    }
+
+    @Test
     void webhookAloneAcceptsAnonymousPostWithoutCsrf() throws Exception {
         String merchant = "KPTEST-12345678-1234-1234-1234-123456789abc";
         mvc.perform(post("/api/portone/webhook").contentType("application/json")

@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @RequestMapping("/admin")
 public class AdminPageController {
+    @org.springframework.beans.factory.annotation.Value("${TOURISM_KAKAO_API_KEY:}")
+    private String kakaoKey;
 
     @GetMapping
     public String dashboard(Model model) {
@@ -63,6 +65,7 @@ public class AdminPageController {
     private String adminPage(Model model, String activePage, String pageTitle) {
         model.addAttribute("activePage", activePage);
         model.addAttribute("pageTitle", pageTitle);
+        model.addAttribute("kakaoKey", kakaoKey);
         // 사용자 목록에서 자기 자신에게 정지 버튼을 내지 않으려고 쓴다.
         model.addAttribute("currentUserId", SecurityUtil.getCurrentUserId());
         return "admin/index";

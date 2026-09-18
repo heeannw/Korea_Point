@@ -34,18 +34,20 @@ public class PortOneGateway {
         if (impUid == null || !impUid.matches("imp_[a-zA-Z0-9_-]{1,100}")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결제 식별자가 올바르지 않습니다.");
         }
-        return request(HttpMethod.GET, "/payments/" + impUid, null, token());
+        return request(HttpMethod.GET, "/payments/" + impUid + "?include_sandbox=true", null, token());
     }
 
     public void validate(JsonNode remote, String impUid, String merchantUid, int amount) {
         if (!impUid.equals(remote.path("imp_uid").asText())
-                || !merchantUid.equals(remote.path("merchant_uid").asText())
+                || !(merchantUid.equals(remote.path("merchant_uid").asText())
+                    || PortOneOrderId.providerId(merchantUid).equals(remote.path("merchant_uid").asText()))
                 || !remote.path("amount").isNumber()
                 || remote.path("amount").decimalValue().compareTo(java.math.BigDecimal.valueOf(amount)) != 0
                 || !"KRW".equals(remote.path("currency").asText())
                 || !"tosspayments".equals(remote.path("pg_provider").asText())
                 || !PortOneSettings.TEST_MID.equals(remote.path("pg_id").asText())
-                || !"card".equals(remote.path("pay_method").asText())) {
+                || !("card".equals(remote.path("pay_method").asText())
+                    || "point".equals(remote.path("pay_method").asText()))) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "예약 금액 또는 테스트 결제 정보가 일치하지 않습니다.");
         }
     }

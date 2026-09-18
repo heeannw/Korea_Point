@@ -60,30 +60,7 @@
                         if (!response.ok) throw Error('장소 정보를 불러오지 못했습니다.');
                         const place = await response.json();
                         detail.replaceChildren();
-                        const address = document.createElement('p');
-                        address.textContent = place.address || '등록된 주소가 없습니다.';
-                        detail.append(address);
-                        const lat = Number(place.mapY), lng = Number(place.mapX);
-                        if (place.mapY && place.mapX && Number.isFinite(lat) && Number.isFinite(lng)
-                                && Math.abs(lat) < 90 && Math.abs(lng) < 180 && (lat !== 0 || lng !== 0)) {
-                            const map = document.createElement('iframe');
-                            const params = new URLSearchParams({bbox: [lng-.005,lat-.003,lng+.005,lat+.003].join(','),
-                                layer: 'mapnik', marker: `${lat},${lng}`});
-                            map.src = 'https://www.openstreetmap.org/export/embed.html?' + params;
-                            map.title = `${place.title || item.placeTitle} 위치 지도`;
-                            map.loading = 'lazy';
-                            map.style.cssText = 'width:100%;height:320px;border:0;border-radius:12px;display:block';
-                            detail.append(map);
-                            const link = document.createElement('a');
-                            link.href = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`;
-                            link.target = '_blank'; link.rel = 'noopener noreferrer';
-                            link.textContent = '큰 지도에서 보기';
-                            detail.append(link);
-                        } else {
-                            const unavailable = document.createElement('p');
-                            unavailable.textContent = '위치 좌표가 없어 지도를 표시할 수 없습니다.';
-                            detail.append(unavailable);
-                        }
+                        window.renderAdminPlaceMap(detail, place);
                         const information = document.createElement('p');
                         information.style.whiteSpace = 'pre-line';
                         information.textContent = [place.overview,...Object.entries(place.operatingInformation || {}).map(([k,v])=>`${k}: ${v}`)].filter(Boolean).join('\n');

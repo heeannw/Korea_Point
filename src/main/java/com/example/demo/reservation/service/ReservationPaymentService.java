@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import java.time.*;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -34,9 +33,9 @@ public class ReservationPaymentService {
         if (!reservation.isPayable()) throw new PlaceBookingUnavailableException();
         placePolicyService.requireApplicationAllowed(reservation.getContentId());
         var payment = reservation.getPayment();
-        if (payment.getMerchantUid() == null) payment.setMerchantUid("KPTEST-" + UUID.randomUUID());
+        if (payment.getMerchantUid() == null) payment.setMerchantUid(PortOneOrderId.create());
         return Map.of("userCode", settings.getUserCode(), "channelKey", settings.getChannelKey(),
-                "merchantUid", payment.getMerchantUid(), "amount", payment.getAmount(), "currency", "KRW",
+                "merchantUid", PortOneOrderId.providerId(payment.getMerchantUid()), "amount", payment.getAmount(), "currency", "KRW",
                 "name", reservation.getPlaceTitle());
     }
 
@@ -46,7 +45,7 @@ public class ReservationPaymentService {
         var reservation = reservationService.findMineForUpdate(reservationId, userId);
         var payment = reservation.getPayment();
         if (payment == null || payment.getMerchantUid() == null
-                || !payment.getMerchantUid().equals(request.getMerchantUid())
+                || !PortOneOrderId.providerId(payment.getMerchantUid()).equals(PortOneOrderId.providerId(request.getMerchantUid()))
                 || request.getImpUid() == null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "서버에서 준비한 결제만 확인할 수 있습니다.");
         }
@@ -88,7 +87,11 @@ public class ReservationPaymentService {
             return payment;
         }
         payment.setImpUid(request.getImpUid());
-        payment.setMethod(PaymentMethod.CARD);
+        payment.setMethod(switch (remote.path("emb_pg_provider").asText()) {
+            case "kakaopay" -> PaymentMethod.KAKAO_PAY;
+            case "naverpay" -> PaymentMethod.NAVER_PAY;
+            default -> "point".equals(remote.path("pay_method").asText()) ? PaymentMethod.POINT : PaymentMethod.CARD;
+        });
         payment.setStatus(PaymentStatus.PAID);
         payment.setPaidAt(paidTime);
         payment.setApprovalNo(remote.path("apply_num").asText("").substring(0, Math.min(50, remote.path("apply_num").asText("").length())));

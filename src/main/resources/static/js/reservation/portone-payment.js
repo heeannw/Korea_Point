@@ -38,6 +38,12 @@
                     m_redirect_url: `${window.location.origin}/ko/reservation/payment/${encodeURIComponent(id)}/return`
                 }, async response => {
                     try {
+                        // A canceled checkout can still return an imp_uid for the failed attempt.
+                        // Only an actual/unknown payment result needs server verification retry.
+                        if (response.success === false || response.error_code) {
+                            pending = null;
+                            throw new Error(text.failed);
+                        }
                         if (!response.imp_uid) throw new Error(text.failed);
                         pending = {imp_uid: response.imp_uid, merchant_uid: order.merchantUid};
                         await verify(pending.imp_uid, pending.merchant_uid);

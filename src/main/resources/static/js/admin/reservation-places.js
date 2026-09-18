@@ -74,7 +74,11 @@
                         const response = await fetch('/api/tourapi/places/' + encodeURIComponent(place.contentId) + '?lang=ko');
                         if (!response.ok) throw Error('장소 정보를 불러오지 못했습니다.');
                         const detail = await response.json();
-                        details.textContent = [detail.overview, ...Object.entries(detail.operatingInformation || {}).map(([key,value]) => key + ': ' + value)].filter(Boolean).join('\n');
+                        details.replaceChildren();
+                        window.renderAdminPlaceMap(details, detail);
+                        const information = document.createElement('p');
+                        information.textContent = [detail.overview, ...Object.entries(detail.operatingInformation || {}).map(([key,value]) => key + ': ' + value)].filter(Boolean).join('\n');
+                        details.append(information);
                     } catch(error) {details.textContent = error.message;} finally {button.disabled = false;}
                 });
                 list.append(form);

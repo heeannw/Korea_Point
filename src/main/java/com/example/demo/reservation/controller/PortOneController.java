@@ -33,7 +33,7 @@ public class PortOneController {
     public ResponseEntity<Void> webhook(@RequestBody JsonNode body) {
         String merchant = body.path("merchant_uid").asText("");
         String imp = body.path("imp_uid").asText("");
-        if (!merchant.matches("KPTEST-[a-f0-9-]{36}") || !imp.matches("imp_[a-zA-Z0-9_-]{1,100}")) {
+        if (!merchant.matches("KPTEST-(?:[a-f0-9]{32}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{9}(?:[a-f0-9]{3})?)") || !imp.matches("imp_[a-zA-Z0-9_-]{1,100}")) {
             return ResponseEntity.badRequest().build();
         }
         payments.webhook(merchant, imp);

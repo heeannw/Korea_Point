@@ -9,6 +9,6 @@ public interface ReservationPaymentRepository extends JpaRepository<ReservationP
         Long getReservationId();
         Long getUserId();
     }
-    @org.springframework.data.jpa.repository.Query("select p.reservation.id as reservationId, p.reservation.userId as userId from ReservationPayment p where p.merchantUid = :merchantUid")
+    @org.springframework.data.jpa.repository.Query("select p.reservation.id as reservationId, p.reservation.userId as userId from ReservationPayment p where p.merchantUid = :merchantUid or (length(p.merchantUid) = 43 and length(:merchantUid) = 40 and substring(p.merchantUid, 1, 40) = :merchantUid)")
     java.util.Optional<Route> findRouteByMerchantUid(@org.springframework.data.repository.query.Param("merchantUid") String merchantUid);
 }

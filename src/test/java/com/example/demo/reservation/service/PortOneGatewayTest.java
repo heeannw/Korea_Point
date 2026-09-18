@@ -14,6 +14,26 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class PortOneGatewayTest {
     @Test
+    void legacyTruncatedOrderIsAcceptedButDifferentOrderIsRejected() {
+        String legacy = "KPTEST-355e468f-6a7d-4615-9cf1-679dfc453415";
+        var remote = payment().put("merchant_uid", legacy.substring(0, 40));
+        gateway.validate(remote, "imp_test", legacy, 10000);
+        remote.put("merchant_uid", legacy.substring(0, 39));
+        assertThatThrownBy(() -> gateway.validate(remote, "imp_test", legacy, 10000))
+                .isInstanceOf(ResponseStatusException.class);
+        remote.put("merchant_uid", "KPTEST-455e468f-6a7d-4615-9cf1-679dfc453");
+        assertThatThrownBy(() -> gateway.validate(remote, "imp_test", legacy, 10000))
+                .isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
+    void newOrderIdsFitProviderLimitWithoutLosingUuidEntropy() {
+        String first = PortOneOrderId.create();
+        assertThat(first).hasSize(39).matches("KPTEST-[a-f0-9]{32}");
+        assertThat(PortOneOrderId.providerId(first)).isEqualTo(first);
+        assertThat(PortOneOrderId.create()).isNotEqualTo(first);
+    }
+    @Test
     void springCreatesGatewayUsingProductionConstructor() {
         try (var context = new AnnotationConfigApplicationContext(PortOneSettings.class, PortOneGateway.class)) {
             assertThat(context.getBean(PortOneGateway.class)).isNotNull();
@@ -32,13 +52,25 @@ class PortOneGatewayTest {
     }
 
     @Test
+    void tossPointPaymentIsAcceptedOnlyForMatchingTestOrder() {
+        var point = payment().put("pay_method", "point");
+        gateway.validate(point, "imp_test", "KPTEST-order", 10000);
+        point.put("pg_id", "live-mid");
+        assertThatThrownBy(() -> gateway.validate(point, "imp_test", "KPTEST-order", 10000))
+                .isInstanceOf(ResponseStatusException.class);
+        point.put("pg_id", "iamporttest_3").put("amount", 9999);
+        assertThatThrownBy(() -> gateway.validate(point, "imp_test", "KPTEST-order", 10000))
+                .isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
     void lookupUsesV1TokenAndAuthenticatedApi() {
         configure();
         var server = MockRestServiceServer.bindTo(http).build();
         server.expect(requestTo("https://api.iamport.kr/users/getToken")).andExpect(method(HttpMethod.POST))
                 .andExpect(content().json("{\"imp_key\":\"key\",\"imp_secret\":\"secret\"}"))
                 .andRespond(withSuccess("{\"code\":0,\"response\":{\"access_token\":\"token\"}}", MediaType.APPLICATION_JSON));
-        server.expect(requestTo("https://api.iamport.kr/payments/imp_test")).andExpect(header("Authorization", "token"))
+        server.expect(requestTo("https://api.iamport.kr/payments/imp_test?include_sandbox=true")).andExpect(header("Authorization", "token"))
                 .andRespond(withSuccess("{\"code\":0,\"response\":" + payment() + "}", MediaType.APPLICATION_JSON));
         gateway.validate(gateway.lookup("imp_test"), "imp_test", "KPTEST-order", 10000);
         server.verify();
@@ -79,14 +111,14 @@ class PortOneGatewayTest {
         var paid = payment().put("status", "paid").put("cancel_amount", 0);
         var canceled = payment().put("status", "cancelled").put("cancel_amount", 10000);
         tokenResponse(server);
-        server.expect(requestTo("https://api.iamport.kr/payments/imp_test"))
+        server.expect(requestTo("https://api.iamport.kr/payments/imp_test?include_sandbox=true"))
                 .andRespond(withSuccess("{\"code\":0,\"response\":" + paid + "}", MediaType.APPLICATION_JSON));
         tokenResponse(server);
         server.expect(requestTo("https://api.iamport.kr/payments/cancel")).andExpect(method(HttpMethod.POST))
                 .andExpect(content().json("{\"imp_uid\":\"imp_test\",\"amount\":10000,\"checksum\":10000}", false))
                 .andRespond(withSuccess("{\"code\":0,\"response\":" + canceled + "}", MediaType.APPLICATION_JSON));
         tokenResponse(server);
-        server.expect(requestTo("https://api.iamport.kr/payments/imp_test"))
+        server.expect(requestTo("https://api.iamport.kr/payments/imp_test?include_sandbox=true"))
                 .andRespond(withSuccess("{\"code\":0,\"response\":" + canceled + "}", MediaType.APPLICATION_JSON));
         assertThat(gateway.cancel("imp_test", "KPTEST-order", 10000).path("status").asText()).isEqualTo("cancelled");
         server.verify();

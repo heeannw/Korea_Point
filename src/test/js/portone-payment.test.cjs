@@ -70,8 +70,33 @@ test('missing SDK cannot prepare or confirm a payment', async () => {
     assert.equal(state.nodes.paymentMessage.textContent, 'SDK missing');
 });
 
+test('canceling with a payment id restores Pay and opens checkout on the next click', async () => {
+    const state = setup();
+    await state.submit({preventDefault() {}});
+    await state.callback({success: false, imp_uid: 'imp_canceled', error_msg: 'User canceled'});
+    assert.equal(state.calls.length, 1);
+    assert.equal(state.nodes.payButton.textContent, 'Pay');
+    assert.equal(state.nodes.payButton.disabled, false);
+    assert.equal(state.redirect, undefined);
+    await state.submit({preventDefault() {}});
+    assert.equal(state.opened, 2);
+    assert.equal(state.calls[1].url.endsWith('/prepare'), true);
+    await state.callback({success: true, imp_uid: 'imp_retried'});
+    assert.equal(state.redirect, '/ko/reservation/complete/9');
+});
+
 test('disabled checkout does not issue requests', async () => {
     const state = setup(); state.nodes.payButton.disabled = true;
     await state.submit({preventDefault() {}});
     assert.equal(state.calls.length, 0);
+});
+
+test('new Toss SDK cancellation without success flag allows checkout again', async () => {
+    const state = setup();
+    await state.submit({preventDefault() {}});
+    await state.callback({imp_uid: 'imp_canceled', error_code: 'USER_CANCEL'});
+    assert.equal(state.calls.length, 1);
+    assert.equal(state.nodes.payButton.textContent, 'Pay');
+    await state.submit({preventDefault() {}});
+    assert.equal(state.opened, 2);
 });

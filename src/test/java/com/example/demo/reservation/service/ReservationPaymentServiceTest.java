@@ -23,6 +23,62 @@ class ReservationPaymentServiceTest {
     private final ReservationPaymentService service = new ReservationPaymentService(reservations, events, policies, gateway, settings, repository);
 
     @Test
+    void paidPointPaymentConfirmsAndReturnsCompletionRoute() {
+        var reservation = ready();
+        var remote = remote("paid").put("pay_method", "point")
+                .put("imp_uid", "imp_test").put("merchant_uid", "KPTEST-order")
+                .put("amount", 10000).put("currency", "KRW")
+                .put("pg_provider", "tosspayments").put("pg_id", "iamporttest_3");
+        when(gateway.lookup("imp_test")).thenReturn(remote);
+        doAnswer(invocation -> {
+            new PortOneGateway(new PortOneSettings()).validate(remote, "imp_test", "KPTEST-order", 10000);
+            return null;
+        }).when(gateway).validate(any(), anyString(), anyString(), anyInt());
+        try (var security = mockStatic(com.example.demo.user.util.SecurityUtil.class)) {
+            security.when(com.example.demo.user.util.SecurityUtil::getCurrentUserId).thenReturn(7L);
+            var response = new com.example.demo.reservation.controller.PortOneController(service).verify(1L, request());
+            assertThat(response).containsEntry("status", "PAID").containsEntry("nextUrl", "/ko/reservation/complete/1");
+        }
+        assertThat(reservation.getPayment().getMethod()).isEqualTo(PaymentMethod.POINT);
+        assertThat(reservation.getApplicationStatus()).isEqualTo("CONFIRMED");
+    }
+
+    @Test
+    void kakaoPayPointPaymentKeepsProviderMethod() {
+        var reservation = ready();
+        when(gateway.lookup("imp_test")).thenReturn(remote("paid").put("pay_method", "point").put("emb_pg_provider", "kakaopay"));
+        service.process(1L, 7L, request());
+        assertThat(reservation.getPayment().getStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(reservation.getPayment().getMethod()).isEqualTo(PaymentMethod.KAKAO_PAY);
+    }
+
+    @Test
+    void legacyPaymentCanBeVerifiedUsingTruncatedCallbackOrder() {
+        var reservation = ready();
+        String legacy = "KPTEST-355e468f-6a7d-4615-9cf1-679dfc453415";
+        reservation.getPayment().setMerchantUid(legacy);
+        var request = request();
+        request.setMerchantUid(legacy.substring(0, 40));
+        when(gateway.lookup("imp_test")).thenReturn(remote("paid"));
+        service.process(1L, 7L, request);
+        assertThat(reservation.getPayment().getStatus()).isEqualTo(PaymentStatus.PAID);
+        verify(gateway).validate(any(), eq("imp_test"), eq(legacy), eq(10000));
+    }
+
+    @Test
+    void preparationReturnsProviderSafeNewAndLegacyOrderIds() {
+        when(settings.getUserCode()).thenReturn("imp_demo");
+        when(settings.getChannelKey()).thenReturn("channel-demo");
+        var reservation = ready();
+        reservation.getPayment().setMerchantUid(null);
+        assertThat((String) service.prepare(1L, 7L).get("merchantUid")).hasSize(39);
+        String legacy = "KPTEST-355e468f-6a7d-4615-9cf1-679dfc453415";
+        reservation.getPayment().setMerchantUid(legacy);
+        assertThat(service.prepare(1L, 7L).get("merchantUid")).isEqualTo(legacy.substring(0, 40));
+        assertThat(reservation.getPayment().getMerchantUid()).isEqualTo(legacy);
+    }
+
+    @Test
     void authenticatedProviderResultConfirmsOnceEvenWhenRetried() {
         var reservation = ready();
         when(gateway.lookup("imp_test")).thenReturn(remote("paid"));
