@@ -25,6 +25,7 @@ public class ReservationService {
     private final TourReservationRepository tourReservationRepository;
     private final ReservationPaymentRepository reservationPaymentRepository;
     private final ReservationPlacePolicyService placePolicyService;
+    private final PortOneGateway portOneGateway;
 
     @Transactional
     public TourReservation create(Long userId, ReservationFormDto form) {
@@ -61,6 +62,10 @@ public class ReservationService {
     public TourReservation update(Long id, Long userId, ReservationFormDto form) {
         TourReservation reservation = findMineForUpdate(id, userId);
         if (!reservation.isApplicationEditable()) throw new PlaceBookingUnavailableException();
+        if (reservation.getPayment() != null && reservation.getPayment().getMerchantUid() != null) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
+                    "결제를 시작한 신청은 수정할 수 없습니다. 취소 후 다시 신청해 주세요.");
+        }
         placePolicyService.requireApplicationAllowed(reservation.getContentId());
         requireFutureVisit(form.getReservationDate(), form.getReservationTime());
         reservation.setReservationDate(form.getReservationDate());
@@ -81,10 +86,12 @@ public class ReservationService {
     public TourReservation cancel(Long id, Long userId) {
         TourReservation reservation = findMineForUpdate(id, userId);
         if ("예약 취소".equals(reservation.getStatus())) return reservation;
-        reservation.setStatus("예약 취소");
         ReservationPayment payment = reservation.getPayment();
         if (payment != null && payment.getStatus() == PaymentStatus.PAID) {
             if (isBeforeFreeCancellationDeadline(reservation)) {
+                if (payment.getImpUid() != null) {
+                    portOneGateway.cancel(payment.getImpUid(), payment.getMerchantUid(), payment.getAmount());
+                }
                 payment.setStatus(PaymentStatus.REFUNDED);
                 payment.setRefundedAt(LocalDateTime.now());
             } else {
@@ -93,6 +100,7 @@ public class ReservationService {
         } else if (payment != null) {
             payment.setStatus(PaymentStatus.CANCELED);
         }
+        reservation.setStatus("예약 취소");
         return reservation;
     }
 

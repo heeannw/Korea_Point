@@ -50,6 +50,12 @@ public class ReservationPayment {
     @Column(length = 50)
     private String approvalNo;
 
+    @Column(unique = true, length = 64)
+    private String merchantUid;
+
+    @Column(unique = true, length = 120)
+    private String impUid;
+
     private LocalDateTime paidAt;
 
     private LocalDateTime refundedAt;

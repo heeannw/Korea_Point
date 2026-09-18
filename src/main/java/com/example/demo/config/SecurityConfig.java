@@ -102,6 +102,7 @@ public class SecurityConfig {
             )
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/api/comments/**", "/api/reports/**",
+                        "/api/portone/webhook",
                         "/api/trip/recommend", "/api/trip/reoptimize")
             );
 

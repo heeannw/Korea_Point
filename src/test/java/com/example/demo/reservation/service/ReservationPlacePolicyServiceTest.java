@@ -40,7 +40,7 @@ class ReservationPlacePolicyServiceTest {
     void allowedPlaceCreatesApplicationWithoutPaymentButFreePlaceIsBlocked() {
         var reservations = mock(TourReservationRepository.class);
         var payments = mock(ReservationPaymentRepository.class);
-        var service = new ReservationService(reservations, payments, policyService);
+        var service = new ReservationService(reservations, payments, policyService, mock(PortOneGateway.class));
         var form = new ReservationFormDto(); form.setContentId("123"); form.setPeopleCount(2);
         form.setReservationDate(java.time.LocalDate.now().plusDays(3)); form.setReservationTime("10:00");
         // Spoofed category cannot override the policy bound to the content ID.
@@ -56,10 +56,10 @@ class ReservationPlacePolicyServiceTest {
     }
 
     @Test
-    void existingPendingPaymentIsBlockedAfterPolicyChangesButPaidRetryIsPreserved() {
+    void preparationIsBlockedAfterPolicyChanges() {
         var reservations = mock(ReservationService.class);
         var events = mock(ApplicationEventPublisher.class);
-        var service = new ReservationPaymentService(reservations, events, policyService);
+        var service = new ReservationPaymentService(reservations, events, policyService, mock(PortOneGateway.class), mock(PortOneSettings.class), mock(ReservationPaymentRepository.class));
         var reservation = TourReservation.builder().contentId("123")
                 .reviewStatus(ReservationReviewStatus.APPROVED)
                 .paymentDeadline(java.time.LocalDateTime.now().plusHours(24)).build();
@@ -67,13 +67,11 @@ class ReservationPlacePolicyServiceTest {
         reservation.setPayment(payment);
         when(reservations.findMineForUpdate(1L, 7L)).thenReturn(reservation);
         when(repository.findForBooking("123")).thenReturn(Optional.of(policy(PlaceFeeStatus.FREE, false)));
-        assertThatThrownBy(() -> service.process(1L, 7L, new ReservationPaymentRequest()))
+        assertThatThrownBy(() -> service.prepare(1L, 7L))
                 .isInstanceOf(PlaceBookingUnavailableException.class);
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.READY);
         assertThat(payment.getPaidAt()).isNull();
         verifyNoInteractions(events);
-        payment.setStatus(PaymentStatus.PAID);
-        assertThat(service.process(1L, 7L, new ReservationPaymentRequest())).isSameAs(payment);
     }
 
     @Test
@@ -82,7 +80,7 @@ class ReservationPlacePolicyServiceTest {
         var payments = mock(ReservationPaymentRepository.class);
         var reservation = TourReservation.builder().contentId("123").userId(7L).build();
         when(reservations.findLockedById(1L)).thenReturn(Optional.of(reservation));
-        new ReservationService(reservations, payments, policyService).cancel(1L, 7L);
+        new ReservationService(reservations, payments, policyService, mock(PortOneGateway.class)).cancel(1L, 7L);
         assertThat(reservation.getStatus()).isEqualTo("예약 취소");
         verifyNoInteractions(repository);
     }

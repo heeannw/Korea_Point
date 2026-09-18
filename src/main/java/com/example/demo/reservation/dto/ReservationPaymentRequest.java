@@ -11,4 +11,10 @@ public class ReservationPaymentRequest {
 
     @NotNull(message = "결제수단을 선택해 주세요.")
     private PaymentMethod paymentMethod;
+
+    @jakarta.validation.constraints.NotBlank
+    private String impUid;
+
+    @jakarta.validation.constraints.NotBlank
+    private String merchantUid;
 }

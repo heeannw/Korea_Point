@@ -92,7 +92,8 @@ public class TourReservation {
     }
 
     public boolean isApplicationEditable() {
-        return "PENDING".equals(getApplicationStatus()) || "APPROVED".equals(getApplicationStatus());
+        return (payment == null || payment.getMerchantUid() == null)
+                && ("PENDING".equals(getApplicationStatus()) || "APPROVED".equals(getApplicationStatus()));
     }
 
     @OneToOne(mappedBy = "reservation")
