@@ -65,6 +65,14 @@ public class TourApiClient {
     /** 페이지를 무한정 따라가지 않도록 둔 안전장치. */
     private static final int MAX_PAGES = 20;
 
+    /** 연관 관광지(TarRlteTarService1)는 KorService2와 인증키만 같고 호스트가 다르다. */
+    private static final String TAR_RLTE_BASE_URL = "https://apis.data.go.kr/B551011/TarRlteTarService1";
+    /** areaCd+signguCd 단위로만 조회되는 API라 부산 16개 구를 순회해야 한다. */
+    private static final String[] BUSAN_SIGNGU_CODES = {
+            "26110", "26140", "26170", "26200", "26230", "26260", "26290", "26320",
+            "26350", "26380", "26410", "26440", "26470", "26500", "26530", "26710"
+    };
+
     /**
      * 목록·상세 조회는 항상 KorService2(국문)에서 받는다.
      * 국문 외 서비스(Eng/Jpn/Chs/Fre)는 부산 데이터가 국문의 1/6~1/20 수준이라
@@ -204,6 +212,77 @@ public class TourApiClient {
                 .queryParam("numOfRows", properties.getDefaultRows())
                 .queryParam("pageNo", 1);
         return withResolvedCoordinates(dropEndedFestivals(requestAllPages(uri, lang), lang));
+    }
+
+    /** TarRlteTarService1 원본 한 줄. 응답 이름이 TourAPI contentId와 다른 체계라 매칭은 호출부(RelatedAttractionData)가 한다. */
+    public record RelatedRow(String baseName, String relatedName, int rank) { }
+
+    /**
+     * 연관 관광지(다른 여행자들의 실제 방문 동선)를 부산 16개 구 전체에서 조회한다.
+     * 구 하나가 실패해도 나머지는 계속 조회한다.
+     */
+    public List<RelatedRow> findRelatedRows() {
+        requireServiceKey();
+        String baseYm = resolveAvailableBaseYm();
+        List<RelatedRow> rows = new ArrayList<>();
+        for (String signgu : BUSAN_SIGNGU_CODES) {
+            try {
+                JsonNode items = requestRoot(tarRlteUri(signgu, baseYm, 1000))
+                        .path("response").path("body").path("items").path("item");
+                addRelatedRows(rows, items);
+            } catch (Exception e) {
+                log.warn("연관 관광지 조회 실패 [signgu={}]: {}", signgu, e.getMessage());
+            }
+        }
+        return rows;
+    }
+
+    /**
+     * baseYm(관광데이터랩 집계월)은 한두 달 지연되어 올라온다 — 이번 달을 그대로 넣으면 늘 0건이다.
+     * 최근 달부터 거슬러 올라가며 데이터가 실제로 있는 첫 달을 찾는다.
+     */
+    private String resolveAvailableBaseYm() {
+        for (int back = 1; back <= 4; back++) {
+            String ym = LocalDate.now().minusMonths(back).format(DateTimeFormatter.ofPattern("yyyyMM"));
+            try {
+                int total = requestRoot(tarRlteUri(BUSAN_SIGNGU_CODES[0], ym, 1))
+                        .path("response").path("body").path("totalCount").asInt(0);
+                if (total > 0) return ym;
+            } catch (Exception ignored) { /* 다음 달로 계속 */ }
+        }
+        return LocalDate.now().minusMonths(1).format(DateTimeFormatter.ofPattern("yyyyMM"));
+    }
+
+    private UriComponentsBuilder tarRlteUri(String signgu, String baseYm, int numOfRows) {
+        return UriComponentsBuilder.fromUriString(TAR_RLTE_BASE_URL + "/areaBasedList1")
+                .queryParam("serviceKey", properties.getServiceKey())
+                .queryParam("MobileOS", properties.getMobileOs())
+                .queryParam("MobileApp", properties.getMobileApp())
+                .queryParam("_type", "json")
+                .queryParam("numOfRows", numOfRows)
+                .queryParam("pageNo", 1)
+                .queryParam("areaCd", properties.getBusanLegalDongCode())
+                .queryParam("signguCd", signgu)
+                .queryParam("baseYm", baseYm);
+    }
+
+    private void addRelatedRows(List<RelatedRow> rows, JsonNode items) {
+        if (items.isArray()) {
+            for (JsonNode item : items) addRelatedRow(rows, item);
+        } else if (items.isObject()) {
+            addRelatedRow(rows, items);
+        }
+    }
+
+    /** '관광지' 대분류만 남긴다(음식·숙박 등은 연관 관광지 섹션에서 제외). */
+    private void addRelatedRow(List<RelatedRow> rows, JsonNode item) {
+        if (!"관광지".equals(text(item, "rlteCtgryLclsNm"))) return;
+        String base = text(item, "tAtsNm");
+        String related = text(item, "rlteTatsNm");
+        if (base == null || related == null) return;
+        int rank;
+        try { rank = Integer.parseInt(text(item, "rlteRank")); } catch (Exception e) { rank = 999; }
+        rows.add(new RelatedRow(base, related, rank));
     }
 
     /** 좌표 주변 장소를 조회한다. radiusKm는 TourAPI 제한에 맞춰 최대 20km로 제한한다. */
