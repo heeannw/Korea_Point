@@ -110,6 +110,21 @@ public class TourPlaceI18n {
         return (e != null && e.title() != null && !e.title().isBlank()) ? e.title() : koreanTitle;
     }
 
+    /**
+     * 번역된 이름을 찾기만 한다. 없으면 null 이고, 보충 대상으로 적어 두지도 않는다.
+     *
+     * <p>넘겨받은 국문 이름이 그 장소의 이름인지 확신할 수 없을 때 쓴다. 커뮤니티 홍보 글은
+     * 가게 번호에 구 이름을 붙여 두는데, 그걸 {@link #translateTitle} 로 넘기면 구 이름이
+     * 그 가게의 번역으로 저장된다.
+     */
+    public String findTitle(String lang, String contentId) {
+        Entry e = lookup(lang, contentId);
+        if (e != null && e.title() != null && !e.title().isBlank()) return e.title();
+        if (lang == null || contentId == null) return null;
+        TourPlaceTranslationFiller.Text filled = filler.find(lang, contentId);
+        return (filled != null && filled.title() != null && !filled.title().isBlank()) ? filled.title() : null;
+    }
+
     /** 주소만 필요한 경우(홈 카드 등). 번역이 없으면 국문을 돌려준다. */
     public String translateAddress(String lang, String contentId, String koreanAddress) {
         Entry e = resolve(lang, contentId, null, koreanAddress);

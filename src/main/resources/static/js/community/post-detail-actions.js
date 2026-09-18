@@ -1,11 +1,14 @@
 window.__reportTarget = null;
 
+// 안내 문구는 post-detail.html 의 CD(문구 파일에서 받은 화면 언어 문구)를 쓴다.
+// 여기에 한국어를 적으면 다른 언어로 열었을 때 그 부분만 한국어로 뜬다.
+
 async function requestJson(url, options = {}) {
     const response = await fetch(url, options);
     const contentType = response.headers.get("content-type") || "";
     const payload = contentType.includes("application/json") ? await response.json() : null;
     if (!response.ok) {
-        throw new Error(payload?.message || "요청을 처리하지 못했습니다.");
+        throw new Error(payload?.message || CD.requestFailed);
     }
     return payload;
 }
@@ -43,11 +46,11 @@ function resetReportModalState() {
 async function submitReport() {
     const reason = document.querySelector('input[name="reportReason"]:checked')?.value;
     if (!reason) {
-        showAlert("신고 사유를 선택해 주세요.");
+        showAlert(CD.reportReasonRequired);
         return;
     }
     if (!window.__reportTarget?.id) {
-        showAlert("신고 대상을 다시 선택해 주세요.");
+        showAlert(CD.reportTargetMissing);
         return;
     }
 
@@ -62,7 +65,7 @@ async function submitReport() {
             body: JSON.stringify({ reasonCode: reason })
         });
         closeReportModal();
-        showAlert("신고가 접수되었습니다.\n검토 후 조치하겠습니다.");
+        showAlert(CD.reportDone);
     } catch (error) {
         showAlert(error.message);
     }
@@ -77,7 +80,7 @@ async function submitTopComment(button) {
     const input = document.getElementById("commentInput");
     const content = input.value.trim();
     if (!content) {
-        showAlert("댓글 내용을 입력해 주세요.");
+        showAlert(CD.commentRequired);
         return;
     }
 
@@ -100,7 +103,7 @@ async function submitComment(button) {
     const input = form.querySelector("input");
     const content = input.value.trim();
     if (!content) {
-        showAlert("댓글 내용을 입력해 주세요.");
+        showAlert(CD.commentRequired);
         return;
     }
 
@@ -126,7 +129,7 @@ async function saveEdit(button) {
     const commentId = textarea.getAttribute("data-comment-id");
     const content = textarea.value.trim();
     if (!content) {
-        showAlert("댓글 내용을 입력해 주세요.");
+        showAlert(CD.commentRequired);
         return;
     }
 
@@ -144,7 +147,7 @@ async function saveEdit(button) {
 
 function deleteComment(button) {
     const commentId = button.getAttribute("data-comment-id");
-    showConfirm("댓글을 삭제하시겠습니까?", async () => {
+    showConfirm(CD.deleteCommentConfirm, async () => {
         try {
             await requestJson(`/api/comments/${commentId}`, { method: "DELETE" });
             location.reload();

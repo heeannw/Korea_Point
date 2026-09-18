@@ -1,8 +1,11 @@
 package com.example.demo.transport.controller;
 
+import com.example.demo.config.CurrentLanguage;
+import com.example.demo.config.LocalizedMessages;
 import com.example.demo.transport.dto.TransportRouteDto;
 import com.example.demo.transport.entity.Route;
 import com.example.demo.transport.repository.RouteRepository;
+import com.example.demo.transport.service.TransportNameTranslator;
 import com.example.demo.transport.service.TransportRouteService;
 import com.example.demo.user.util.SecurityUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,7 +17,10 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Controller
 public class TransportRouteController {
@@ -24,6 +30,12 @@ public class TransportRouteController {
 
     @Autowired
     private RouteRepository routeRepository;
+
+    @Autowired
+    private TransportNameTranslator nameTranslator;
+
+    @Autowired
+    private LocalizedMessages messages;
 
     @ResponseBody
     @GetMapping(value = "/api/kakao/search", produces = "application/json")
@@ -45,7 +57,7 @@ public class TransportRouteController {
             @RequestParam(required = false) String end,
             @RequestParam(required = false) String endLat,
             @RequestParam(required = false) String endLng) {
-        StringBuilder sb = new StringBuilder("redirect:/ko/transport/search");
+        StringBuilder sb = new StringBuilder("redirect:" + searchPath());
         List<String> params = new ArrayList<>();
         try {
             if (start    != null && !start.isEmpty())    params.add("start="    + URLEncoder.encode(start,    StandardCharsets.UTF_8));
@@ -65,7 +77,9 @@ public class TransportRouteController {
             @RequestParam(required = false) String end,
             @RequestParam(required = false) String endLat,
             @RequestParam(required = false) String endLng,
+            HttpServletRequest request,
             Model model) {
+        if (!KO_PATH.equals(searchPath())) return redirectKeepingQuery(searchPath(), request);
         return handleSearch(start, end, model, "transport/transport");
     }
 
@@ -75,8 +89,31 @@ public class TransportRouteController {
             @RequestParam(required = false) String end,
             @RequestParam(required = false) String endLat,
             @RequestParam(required = false) String endLng,
+            HttpServletRequest request,
             Model model) {
+        if (!EN_PATH.equals(searchPath())) return redirectKeepingQuery(searchPath(), request);
         return handleSearch(start, end, model, "transport/transportEn");
+    }
+
+    private static final String KO_PATH = "/ko/transport/search";
+    private static final String EN_PATH = "/en/transport/search";
+
+    /**
+     * 검색 화면은 국문·영문 두 벌이다. 어느 쪽을 열지는 주소가 아니라 지금 언어로 정한다.
+     * 일본어·중국어·불어는 아직 전용 화면이 없어 국문 화면을 쓴다.
+     *
+     * <p>예전에는 주소가 곧 언어였다. 그래서 일본어로 보다가 교통에 들어오면 헤더가 한국어로
+     * 바뀌고, 헤더 링크가 ?lang=ko 로 만들어져 저장된 언어까지 한국어로 되돌렸다.
+     * 주소와 언어가 어긋나면 맞는 쪽으로 보낸다. 검색 기록은 주소(Referer)로 언어를 가르므로
+     * 둘이 늘 같아야 한다.
+     */
+    private static String searchPath() {
+        return CurrentLanguage.EN.equals(CurrentLanguage.get()) ? EN_PATH : KO_PATH;
+    }
+
+    private static String redirectKeepingQuery(String path, HttpServletRequest request) {
+        String query = request.getQueryString();
+        return "redirect:" + path + (query == null || query.isBlank() ? "" : "?" + query);
     }
 
     // 검색 기록 저장
@@ -102,11 +139,15 @@ public class TransportRouteController {
 
         String user = SecurityUtil.getCurrentUserName();
 
-        String lang = viewName.contains("En") ? "en" : "ko";
-        model.addAttribute("lang", lang);
+        // 헤더에는 지금 언어를, 검색 기록에는 이 화면의 언어(국문/영문)를 쓴다.
+        model.addAttribute("lang", CurrentLanguage.get());
+        String pageLang = viewName.contains("En") ? CurrentLanguage.EN : CurrentLanguage.KO;
+
+        // 역·노선 이름(국문) → 화면 언어. 국문 화면이면 비어 있고, 화면은 표에 없으면 국문을 쓴다.
+        model.addAttribute("names", Map.of());
 
         model.addAttribute("recentRoutes", SecurityUtil.isLoggedIn()
-                ? routeRepository.findTop10ByUserIdAndLanguageOrderBySearchedAtDesc(user, lang)
+                ? routeRepository.findTop10ByUserIdAndLanguageOrderBySearchedAtDesc(user, pageLang)
                 : java.util.List.of());
 
         try {
@@ -137,13 +178,29 @@ public class TransportRouteController {
             System.out.println("====================");
 
             model.addAttribute("routes", routes);
+            model.addAttribute("names", nameTranslator.translateAll(stepNames(routes), CurrentLanguage.get()));
             model.addAttribute("end", end);
 
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "경로 조회 실패: " + e.getMessage());
+            model.addAttribute("error", messages.get("transport.search.error", e.getMessage()));
         }
 
         return viewName;
+    }
+
+    /** 경로 카드에 보이는 역·정류장·노선 이름. */
+    private static Set<String> stepNames(List<TransportRouteDto> routes) {
+        Set<String> names = new LinkedHashSet<>();
+        for (TransportRouteDto route : routes) {
+            if (route.getSteps() == null) continue;
+            route.getSteps().forEach(step -> {
+                names.add(step.getFromStation());
+                names.add(step.getToStation());
+                names.add(step.getLine());
+            });
+        }
+        names.remove(null);
+        return names;
     }
 }

@@ -1,0 +1,28 @@
+{
+  "_note": [
+    "관광·맛집 상세의 운영정보 값(이용시간·휴무일·주차 등) 가운데 짧고 자주 나오는 값의 번역.",
+    "번역기에 한 낱말만 보내면 앞뒤를 몰라 '가능' 이 Possible, '불가능' 이 Impossible 로 나왔다.",
+    "'설날·추석 당일' 은 불어로 베트남 설(Tet)이 됐다. 여기 있는 값은 번역기에 보내지 않는다.",
+    "키는 앞뒤 공백을 지우고 가운데 공백을 하나로 줄인 국문 값이다."
+  ],
+  "가능":           { "en": "Available",                "ja": "可能",             "zh": "可以",           "fr": "Disponible" },
+  "불가":           { "en": "Not available",            "ja": "不可",             "zh": "不可以",         "fr": "Non disponible" },
+  "불가능":         { "en": "Not available",            "ja": "不可",             "zh": "不可以",         "fr": "Non disponible" },
+  "있음":           { "en": "Available",                "ja": "あり",             "zh": "有",             "fr": "Disponible" },
+  "없음":           { "en": "None",                     "ja": "なし",             "zh": "无",             "fr": "Aucun" },
+  "무료":           { "en": "Free",                     "ja": "無料",             "zh": "免费",           "fr": "Gratuit" },
+  "유료":           { "en": "Paid",                     "ja": "有料",             "zh": "收费",           "fr": "Payant" },
+  "연중무휴":       { "en": "Open all year",            "ja": "年中無休",         "zh": "全年无休",       "fr": "Ouvert toute l'année" },
+  "상시 개방":      { "en": "Always open",              "ja": "常時開放",         "zh": "全天开放",       "fr": "Ouvert en permanence" },
+  "상시개방":       { "en": "Always open",              "ja": "常時開放",         "zh": "全天开放",       "fr": "Ouvert en permanence" },
+  "24시간":         { "en": "Open 24 hours",            "ja": "24時間営業",       "zh": "24小时营业",     "fr": "Ouvert 24 h/24" },
+  "예약 가능":      { "en": "Reservations accepted",    "ja": "予約可",           "zh": "可预约",         "fr": "Réservation possible" },
+  "예약가능":       { "en": "Reservations accepted",    "ja": "予約可",           "zh": "可预约",         "fr": "Réservation possible" },
+  "예약 불가":      { "en": "No reservations",          "ja": "予約不可",         "zh": "不可预约",       "fr": "Sans réservation" },
+  "예약불가":       { "en": "No reservations",          "ja": "予約不可",         "zh": "不可预约",       "fr": "Sans réservation" },
+  "법정공휴일":     { "en": "Public holidays",          "ja": "法定祝日",         "zh": "法定节假日",     "fr": "Jours fériés" },
+  "명절 당일":      { "en": "Korean holidays (Seollal and Chuseok)", "ja": "旧正月・秋夕当日", "zh": "春节、中秋节当天", "fr": "Jours de Seollal et de Chuseok" },
+  "설·추석 당일":   { "en": "Seollal and Chuseok (Korean New Year and Harvest Festival)", "ja": "旧正月・秋夕当日", "zh": "春节、中秋节当天", "fr": "Jours de Seollal et de Chuseok (Nouvel An et fête des récoltes)" },
+  "설날·추석 당일": { "en": "Seollal and Chuseok (Korean New Year and Harvest Festival)", "ja": "旧正月・秋夕当日", "zh": "春节、中秋节当天", "fr": "Jours de Seollal et de Chuseok (Nouvel An et fête des récoltes)" },
+  "설·추석 연휴":   { "en": "Seollal and Chuseok holidays", "ja": "旧正月・秋夕の連休", "zh": "春节、中秋节假期", "fr": "Congés de Seollal et de Chuseok" }
+}

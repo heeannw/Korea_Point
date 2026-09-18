@@ -1,8 +1,11 @@
 package com.example.demo.user.controller;
 
+import com.example.demo.user.exception.UserInputException;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.example.demo.config.CurrentLanguage;
+import com.example.demo.config.LocalizedMessages;
 import com.example.demo.user.entity.User;
 import com.example.demo.user.service.EmailVerificationService;
 import com.example.demo.user.service.OwnerRequestService;
@@ -14,6 +17,7 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,35 +32,29 @@ public class UserController {
     private final UserService userService;
     private final OwnerRequestService ownerRequestService;
     private final EmailVerificationService emailVerificationService;
+    private final LocalizedMessages messages;
 
     // Spring Security OAuth2의 loginPage("/login")이 이 URL을 바라봄
     @GetMapping("/login")
-    public String loginPage(@RequestParam(required = false) String lang,
-                            @RequestParam(required = false, defaultValue = "false") boolean signup,
+    public String loginPage(@RequestParam(required = false, defaultValue = "false") boolean signup,
                             @RequestParam(required = false) String redirect,
                             HttpSession session, Model model) {
-        String selected = lang;
-        if (!isSupportedLanguage(selected)) {
-            Object saved = session.getAttribute("loginLanguage");
-            selected = saved instanceof String value && isSupportedLanguage(value)
-                    ? value : "ko";
-        }
+        // 로그인 화면도 사이트 언어를 그대로 쓴다. ?lang= 으로 오면 이미 세션에 들어가 있다.
+        // 예전에는 주소에 lang 이 없으면 한국어로 떨어졌다.
+        String selected = CurrentLanguage.get();
         if (isSafeRedirectPath(redirect)) {
             session.setAttribute("loginRedirectUrl", redirect);
         }
-        session.setAttribute("loginLanguage", selected);
         model.addAttribute("lang", selected);
         model.addAttribute("signupMode", signup);
         return "user/login";
     }
 
     @GetMapping("/login/success")
-    public String loginSuccess(@RequestParam(required = false) String lang,
-                               @RequestParam(required = false) String provider,
+    public String loginSuccess(@RequestParam(required = false) String provider,
                                HttpSession session,
                                Model model) {
-        String selected = isSupportedLanguage(lang) ? lang : "ko";
-        session.setAttribute("loginLanguage", selected);
+        String selected = CurrentLanguage.get();
         Object redirect = session.getAttribute("loginRedirectUrl");
         session.removeAttribute("loginRedirectUrl");
         String targetUrl = redirect instanceof String value && isSafeRedirectPath(value)
@@ -89,7 +87,6 @@ public class UserController {
     public String updateNationality(@RequestParam(required = false) String nationality,
                                     @RequestParam(required = false) String skip,
                                     @RequestParam(required = false) String redirect,
-                                    @RequestParam(defaultValue = "ko") String lang,
                                     RedirectAttributes redirectAttributes) {
         try {
             if ("true".equals(skip)) {
@@ -98,37 +95,35 @@ public class UserController {
                 userService.updateNationality(SecurityUtil.getCurrentUserId(), nationality);
             }
             if (!isSafeRedirectPath(redirect)) {
-                redirectAttributes.addFlashAttribute("settingsMessage", "국적 설정이 저장됐어요.");
+                redirectAttributes.addFlashAttribute("settingsMessage", messages.get("settings.flash.nationalitySaved"));
             }
         } catch (IllegalArgumentException ex) {
             if (!isSafeRedirectPath(redirect)) {
-                redirectAttributes.addFlashAttribute("settingsError", ex.getMessage());
+                redirectAttributes.addFlashAttribute("settingsError", messages.of(ex));
             }
         }
         if (isSafeRedirectPath(redirect)) {
             return "redirect:" + redirect;
         }
-        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#nationality";
+        return "redirect:/ko/settings#nationality";
     }
 
     @PostMapping("/ko/settings/profile")
     public String updateProfile(@RequestParam String name,
-                                @RequestParam(defaultValue = "ko") String lang,
                                 RedirectAttributes redirectAttributes) {
         try {
             userService.updateProfile(SecurityUtil.getCurrentUserId(), name);
-            redirectAttributes.addFlashAttribute("settingsMessage", "프로필 정보가 저장됐어요.");
+            redirectAttributes.addFlashAttribute("settingsMessage", messages.get("settings.flash.profileSaved"));
         } catch (IllegalArgumentException ex) {
-            redirectAttributes.addFlashAttribute("settingsError", ex.getMessage());
+            redirectAttributes.addFlashAttribute("settingsError", messages.of(ex));
         }
-        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang);
+        return "redirect:/ko/settings";
     }
 
     @PostMapping("/ko/settings/password")
     public String changePassword(@RequestParam String currentPassword,
                                  @RequestParam String newPassword,
                                  @RequestParam String passwordConfirm,
-                                 @RequestParam(defaultValue = "ko") String lang,
                                  RedirectAttributes redirectAttributes) {
         try {
             userService.changeLocalPassword(
@@ -137,63 +132,64 @@ public class UserController {
                     newPassword,
                     passwordConfirm
             );
-            redirectAttributes.addFlashAttribute("passwordMessage", "비밀번호가 변경됐어요.");
+            redirectAttributes.addFlashAttribute("passwordMessage", messages.get("settings.flash.passwordChanged"));
         } catch (IllegalArgumentException ex) {
-            redirectAttributes.addFlashAttribute("passwordError", ex.getMessage());
+            redirectAttributes.addFlashAttribute("passwordError", messages.of(ex));
         }
-        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#password";
+        return "redirect:/ko/settings#password";
     }
 
     @PostMapping("/ko/settings/email-code")
     public String sendEmailCode(@RequestParam String newEmail,
-                                @RequestParam(defaultValue = "ko") String lang,
                                 HttpSession session,
                                 RedirectAttributes redirectAttributes) {
         try {
             User user = userService.findById(SecurityUtil.getCurrentUserId());
             if (!"local".equals(user.getProvider())) {
-                throw new IllegalArgumentException("소셜 로그인 계정은 이메일을 직접 변경할 수 없습니다.");
+                throw new UserInputException("account.error.socialEmailReadonly", "소셜 로그인 계정은 이메일을 직접 변경할 수 없습니다.");
             }
             emailVerificationService.sendEmailChangeCode(session, newEmail);
-            redirectAttributes.addFlashAttribute("emailMessage", "인증번호를 메일로 보냈어요. 5분 안에 입력해 주세요. 메일이 안 보이면 스팸함도 확인해 주세요.");
+            redirectAttributes.addFlashAttribute("emailMessage", messages.get("settings.flash.emailCodeSent"));
         } catch (IllegalArgumentException | IllegalStateException ex) {
-            redirectAttributes.addFlashAttribute("emailError", ex.getMessage());
+            redirectAttributes.addFlashAttribute("emailError", messages.of(ex));
         }
-        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#email";
+        return "redirect:/ko/settings#email";
     }
 
     @PostMapping("/ko/settings/email")
     public String updateEmail(@RequestParam String newEmail,
                               @RequestParam String verificationCode,
-                              @RequestParam(defaultValue = "ko") String lang,
                               HttpSession session,
                               RedirectAttributes redirectAttributes) {
         try {
             String verifiedEmail = emailVerificationService.verifyEmailChangeCode(session, newEmail, verificationCode);
             userService.updateLocalEmail(SecurityUtil.getCurrentUserId(), verifiedEmail);
-            redirectAttributes.addFlashAttribute("emailMessage", "이메일이 변경됐어요.");
+            redirectAttributes.addFlashAttribute("emailMessage", messages.get("settings.flash.emailChanged"));
         } catch (IllegalArgumentException | IllegalStateException ex) {
-            redirectAttributes.addFlashAttribute("emailError", ex.getMessage());
+            redirectAttributes.addFlashAttribute("emailError", messages.of(ex));
         }
-        return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#email";
+        return "redirect:/ko/settings#email";
     }
 
     @PostMapping("/ko/settings/withdraw")
     public String withdrawAccount(@RequestParam(required = false) String currentPassword,
                                   @RequestParam(required = false) String confirmationText,
-                                  @RequestParam(defaultValue = "ko") String lang,
                                   HttpServletRequest request,
                                   HttpServletResponse response,
                                   RedirectAttributes redirectAttributes) {
         try {
-            userService.withdrawAccount(SecurityUtil.getCurrentUserId(), currentPassword, confirmationText);
-            redirectAttributes.addFlashAttribute("withdrawMessage", "계정 탈퇴가 완료됐어요. 언제든 다시 가입할 수 있어요.");
+            userService.withdrawAccount(SecurityUtil.getCurrentUserId(), currentPassword, confirmationText,
+                    messages.get("settings.withdraw.confirmTextPlaceholder"));
+            // 문구도 로그아웃 전에 만든다. 로그아웃하면 세션의 언어가 사라진다.
+            redirectAttributes.addFlashAttribute("withdrawMessage", messages.get("settings.flash.withdrawn"));
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            // 로그아웃하면 세션이 비워져 언어도 함께 사라진다. 비우기 전에 읽어 두었다가 주소로 넘긴다.
+            String lang = CurrentLanguage.get();
             new SecurityContextLogoutHandler().logout(request, response, authentication);
-            return "redirect:/login?lang=" + normalizeLanguage(lang);
+            return "redirect:/login?lang=" + lang;
         } catch (IllegalArgumentException ex) {
-            redirectAttributes.addFlashAttribute("withdrawError", ex.getMessage());
-            return "redirect:/ko/settings?lang=" + normalizeLanguage(lang) + "#danger";
+            redirectAttributes.addFlashAttribute("withdrawError", messages.of(ex));
+            return "redirect:/ko/settings#danger";
         }
     }
 
@@ -212,18 +208,15 @@ public class UserController {
                          @RequestParam(required = false) MultipartFile businessRegistrationFile,
                          @RequestParam(required = false) MultipartFile businessLicenseFile,
                          @RequestParam(required = false) MultipartFile menuFile,
-                         @RequestParam(required = false) String lang,
-                         HttpSession session,
                          Model model) {
-        String selected = isSupportedLanguage(lang) ? lang : "ko";
-        session.setAttribute("loginLanguage", selected);
+        String selected = CurrentLanguage.get();
         model.addAttribute("lang", selected);
         model.addAttribute("signupMode", true);
         model.addAttribute("accountType", accountType);
 
         try {
             if (!password.equals(passwordConfirm)) {
-                throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+                throw new UserInputException("account.error.passwordMismatch", "비밀번호가 일치하지 않습니다.");
             }
             OwnerRequestService.OwnerApplicationDraft ownerDraft = null;
             if ("owner".equals(accountType)) {
@@ -247,13 +240,14 @@ public class UserController {
                 ownerRequestService.apply(user.getId(), ownerDraft);
             }
             return "redirect:/login?registered=true&lang=" + selected;
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            // 이 메서드는 가입과 사업자 신청을 한 트랜잭션으로 묶는다. 안쪽 서비스에서 오류가 나면
+            // 트랜잭션이 되돌리기로 표시되는데, 여기서 오류를 잡고 화면을 그리면 끝에서 커밋하려다
+            // UnexpectedRollbackException 으로 500 이 났다(이미 있는 아이디로 가입할 때 등).
+            // 되돌린다고 여기서 직접 표시하면 조용히 되돌리고 안내 화면이 나간다.
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             restoreSignupForm(model, loginId, name, email, storeName, ownerName, startDate, businessRegistrationNumber);
-            model.addAttribute("signupError", signupErrorMessage(accountType, ex.getMessage()));
-            return "user/login";
-        } catch (IllegalStateException ex) {
-            restoreSignupForm(model, loginId, name, email, storeName, ownerName, startDate, businessRegistrationNumber);
-            model.addAttribute("signupError", signupErrorMessage(accountType, ex.getMessage()));
+            model.addAttribute("signupError", signupErrorMessage(accountType, messages.of(ex)));
             return "user/login";
         }
     }
@@ -261,19 +255,16 @@ public class UserController {
     @PostMapping("/find-login-id")
     public String findLoginId(@RequestParam String name,
                               @RequestParam String email,
-                              @RequestParam(required = false) String lang,
-                              HttpSession session,
                               Model model) {
-        String selected = isSupportedLanguage(lang) ? lang : "ko";
-        session.setAttribute("loginLanguage", selected);
+        String selected = CurrentLanguage.get();
         model.addAttribute("lang", selected);
         model.addAttribute("activePanel", "findIdPanel");
         try {
             String loginId = userService.findLocalLoginId(name, email)
-                    .orElseThrow(() -> new IllegalArgumentException("일치하는 아이디를 찾을 수 없습니다."));
-            model.addAttribute("findIdResult", "회원님의 아이디는 " + loginId + " 입니다.");
+                    .orElseThrow(() -> new UserInputException("account.error.loginIdNotFound", "일치하는 아이디를 찾을 수 없습니다."));
+            model.addAttribute("findIdResult", messages.get("login.result.findId", loginId));
         } catch (IllegalArgumentException ex) {
-            model.addAttribute("findIdError", ex.getMessage());
+            model.addAttribute("findIdError", messages.of(ex));
         }
         return "user/login";
     }
@@ -283,42 +274,17 @@ public class UserController {
                                 @RequestParam String email,
                                 @RequestParam String newPassword,
                                 @RequestParam String passwordConfirm,
-                                @RequestParam(required = false) String lang,
-                                HttpSession session,
                                 Model model) {
-        String selected = isSupportedLanguage(lang) ? lang : "ko";
-        session.setAttribute("loginLanguage", selected);
+        String selected = CurrentLanguage.get();
         model.addAttribute("lang", selected);
         model.addAttribute("activePanel", "resetPasswordPanel");
         try {
             userService.resetLocalPassword(loginId, email, newPassword, passwordConfirm);
-            model.addAttribute("resetPasswordResult", "비밀번호가 변경됐어요. 새 비밀번호로 로그인해 주세요.");
+            model.addAttribute("resetPasswordResult", messages.get("login.result.passwordReset"));
         } catch (IllegalArgumentException ex) {
-            model.addAttribute("resetPasswordError", ex.getMessage());
+            model.addAttribute("resetPasswordError", messages.of(ex));
         }
         return "user/login";
-    }
-
-    private boolean isSupportedLanguage(String language) {
-        if (language == null || language.isBlank()) {
-            return false;
-        }
-        String normalized = normalizeLanguage(language);
-        return "ko".equals(normalized) || "en".equals(normalized)
-                || "ja".equals(normalized) || "zh".equals(normalized)
-                || "fr".equals(normalized);
-    }
-
-    private String normalizeLanguage(String language) {
-        if (language == null || language.isBlank()) {
-            return "ko";
-        }
-        String normalized = language.trim().toLowerCase().replace('_', '-');
-        if (normalized.startsWith("en")) return "en";
-        if (normalized.startsWith("ja") || normalized.startsWith("jp")) return "ja";
-        if (normalized.startsWith("zh")) return "zh";
-        if (normalized.startsWith("fr")) return "fr";
-        return "ko";
     }
 
     private boolean isSafeRedirectPath(String redirect) {
@@ -347,7 +313,7 @@ public class UserController {
 
     private String signupErrorMessage(String accountType, String message) {
         if ("owner".equals(accountType)) {
-            return "회원가입이 완료되지 않았습니다. " + message;
+            return messages.get("login.error.signupIncomplete", message);
         }
         return message;
     }

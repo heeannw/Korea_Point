@@ -18,6 +18,8 @@ import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * 부산 지명을 번역기가 늘 같은 이름으로 옮기게 한다.
@@ -111,6 +113,33 @@ public class PlaceNameGlossary {
             if (text.contains(ko)) return true;
         }
         return false;
+    }
+
+    /** 일본어 지명 바로 뒤에 붙은 중국어식 "的". 만들어 두고 다시 쓴다. */
+    private volatile Pattern jaPossessive;
+
+    /**
+     * 번역기가 돌려준 문장을 다듬는다. 지금은 일본어 하나다.
+     *
+     * <p>용어집으로 지명을 한자로 바꾸면 번역기가 그 뒤에 중국어 조사 「的」를 붙이는 일이 있다.
+     * 「釜山的3泊4日のコース」「荒嶺山的夜景」 처럼 일본어로는 틀린 문장이 된다. 지명 바로 뒤의
+     * 「的」만 「の」로 바꾼다. 「基本的」「印象的」 같은 낱말은 지명이 아니라 건드리지 않고,
+     * 「釜山的な」처럼 형용사로 쓴 경우도 그대로 둔다.
+     */
+    public String tidy(String lang, String text) {
+        if (text == null || !"ja".equals(lang) || names.isEmpty()) return text;
+        Pattern p = jaPossessive;
+        if (p == null) {
+            String alt = names.values().stream()
+                    .map(m -> m.get("ja"))
+                    .filter(v -> v != null && !v.isBlank())
+                    .sorted((a, b) -> b.length() - a.length())   // 긴 이름부터
+                    .map(Pattern::quote)
+                    .collect(Collectors.joining("|"));
+            p = Pattern.compile("(" + alt + ")的(?![なにで])");
+            jaPossessive = p;
+        }
+        return p.matcher(text).replaceAll("$1の");
     }
 
     /** 이 언어의 용어집 내용. 한 줄에 "국문\t그 언어 표기". */

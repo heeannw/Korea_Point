@@ -552,9 +552,11 @@
             display: none;
         }
 
+        /* 한 칸을 늘려 채우면 아이콘이 그 안에서 가운데에 놓인다. 상자는 아래 섹션과
+           좌우가 맞는데 눈에 보이는 아이콘은 안쪽으로 밀려, 카테고리 줄만 들어가 보였다.
+           칸을 글자 너비만큼만 잡으면 첫 아이콘과 마지막 아이콘이 줄 양 끝에 선다. */
         .category-item {
-            flex: 1 0 auto;
-            min-width: 84px;
+            flex: 0 0 auto;
             padding: 6px 4px;
             display: flex;
             flex-direction: column;
@@ -1266,93 +1268,26 @@
             color: #8c96a8;
         }
 
-        .footer-policy-links {
+        /* 사업자 정보를 가운뎃점으로 이어 흘려 쓴다. 화면이 좁으면 알아서 접힌다. */
+        .footer-biz {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px 0;
-            margin-bottom: 14px;
         }
 
-        .footer-policy-links a {
-            position: relative;
-            padding: 0 12px;
-            color: #778397;
-            text-decoration: underline;
-            text-underline-offset: 2px;
-            font-size: 12px;
-            line-height: 1.5;
-            transition: color 0.2s ease;
+        .footer-biz > * { color: inherit; }
+
+        /* 구분점을 글 흐름에 그대로 두면 앞뒤 여백이 같아진다. 자리를 잡아 붙이면
+           한쪽만 벌어져 줄이 고르지 않게 보인다. */
+        .footer-biz > *::after {
+            content: "·";
+            margin: 0 8px;
+            color: #c3cbd8;
         }
 
-        .footer-policy-links a:first-child {
-            padding-left: 0;
-        }
+        .footer-biz > *:last-child::after { content: none; }
 
-        .footer-policy-links a::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            right: 0;
-            width: 1px;
-            height: 11px;
-            background: #d9e0ea;
-            transform: translateY(-50%);
-        }
-
-        .footer-policy-links a:last-child::after {
-            display: none;
-        }
-
-        .footer-policy-links a:hover {
-            color: var(--primary-dark);
-        }
-
-        .footer-social {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 16px;
-        }
-
-        .footer-social-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 30px;
-            height: 30px;
-            border-radius: 999px;
-            border: 1px solid #d7deea;
-            color: #8a96aa;
-            background: #ffffff;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-
-        .footer-social-link svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        .footer-social-link.blog-link {
-            width: auto;
-            height: auto;
-            border: none;
-            border-radius: 0;
-            padding: 0 2px;
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 0.01em;
-        }
-
-        .footer-social-link:hover {
-            color: var(--primary-dark);
-            border-color: #bcd5f6;
-            background: #f7fbff;
-        }
-
-        .footer-social-link.blog-link:hover {
-            background: transparent;
-        }
+        .footer-biz a { text-decoration: underline; }
+        .footer-biz a:hover { color: var(--primary-dark); }
 
         .footer-copy {
             font-size: 11px;
@@ -1585,7 +1520,7 @@
             </span>
             <span th:text="#{home.cat.community}">커뮤니티</span>
         </a>
-        <a class="category-item" th:href="@{'/' + ${langPath} + '/trip'}" href="/ko/trip">
+        <a class="category-item" th:href="@{'/' + ${langPath} + '/trip'(lang=${lang})}" href="/ko/trip">
             <span class="category-icon ic-trip">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M8.9 3.2 3.4 5.1a1.1 1.1 0 0 0-.7 1v13.1a1.1 1.1 0 0 0 1.5 1l4.7-1.7V3.2z" fill="currentColor"/>
@@ -1595,7 +1530,7 @@
             </span>
             <span th:text="#{home.cat.trip}">나만의 여행</span>
         </a>
-        <a class="category-item" th:href="@{/ko/reservation}" href="/ko/reservation">
+        <a class="category-item" th:href="@{/ko/reservation(lang=${lang})}" href="/ko/reservation">
             <span class="category-icon ic-reservation">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <rect x="6.3" y="1.8" width="2.5" height="5" rx="1.25" fill="currentColor"/>
@@ -1777,7 +1712,7 @@
                 <span class="post-tag" th:classappend="'cat-' + ${post.categoryId % 6}"
                       th:text="${postCatLabel[post.categoryId] ?: post.categoryName}">카테고리</span>
                 <div class="post-main">
-                    <span class="post-title" th:text="${lang == 'en' ? (post.titleEn != null ? post.titleEn : post.title) : (post.titleKo != null ? post.titleKo : post.title)}">샘플 게시글 제목</span>
+                    <span class="post-title" th:text="${postText[post.postId]?.title ?: post.title}">샘플 게시글 제목</span>
                     <span th:if="${post.commentCount > 0}" class="post-cmt"
                           th:text="'[' + ${post.commentCount} + ']'">[0]</span>
                     
@@ -1804,56 +1739,32 @@
                  우리는 공모전 출품작이라 등록 대상이 아니어서, 없는 번호를 지어내는
                  대신 '해당 없음'과 그 사유를 함께 적는다. -->
             <p th:text="#{home.footer.platform}">KoreaPoint 여행 가이드 플랫폼</p>
-            <p th:text="#{home.footer.bizName}">상호명 KoreaPoint · 대표자 이예린</p>
-            <p th:text="#{home.footer.address}">소재지 서울특별시 성동구 살곶이길 200</p>
-            <p th:text="#{home.footer.contact}">이메일 koreapoint.official@gmail.com</p>
-            <p th:text="#{home.footer.bizNumber}">사업자등록번호 해당 없음 · 통신판매업 신고번호 해당 없음</p>
+            <!-- 한 항목에 한 줄씩 쓰면 이메일 주소가 플랫폼 이름만큼 무게를 갖는다.
+                 국내 사이트가 하는 대로 가운뎃점으로 이어 흘려 쓰고, 화면이 좁으면 알아서 접히게 둔다. -->
+            <p class="footer-biz">
+                <span th:text="#{home.footer.bizName}">상호명 KoreaPoint · 대표자 이예린</span>
+                <span th:text="#{home.footer.address}">소재지 서울특별시 성동구 살곶이길 200</span>
+                <span th:text="#{home.footer.bizNumber}">사업자등록번호 해당 없음 · 통신판매업 신고번호 해당 없음</span>
+                <a href="mailto:koreapoint.official@gmail.com"
+                   th:text="#{home.footer.contact}">이메일 koreapoint.official@gmail.com</a>
+            </p>
             <p class="footer-nonprofit" th:text="#{home.footer.nonprofit}">본 사이트는 시연용 서비스입니다.</p>
             <p class="footer-credit" th:text="#{home.footer.credit}">관광 정보·사진 제공: 한국관광공사 (공공누리 제1유형·제3유형)</p>
         </div>
 
-        <div class="footer-policy-links" th:aria-label="#{home.footer.policyLinks}">
-            <a href="#" onclick="return false;" th:text="#{home.footer.about}">회사소개</a>
-            <a href="#" onclick="return false;" th:text="#{home.footer.ads}">광고제휴문의</a>
-            <a href="#" onclick="return false;" th:text="#{home.footer.careers}">인재채용</a>
-            <a href="#" onclick="return false;" th:text="#{home.footer.privacy}">개인정보처리방침</a>
-            <a href="#" onclick="return false;" th:text="#{home.footer.youth}">청소년보호정책</a>
-            <a href="#" onclick="return false;" th:text="#{home.footer.terms}">서비스 이용약관</a>
-            <a href="#" onclick="return false;" th:text="#{home.footer.location}">위치정보 이용약관</a>
-            <a href="#" onclick="return false;" th:text="#{home.footer.ticket}">NOL 티켓 이용약관</a>
-            <a href="#" onclick="return false;" th:text="#{home.footer.bizInfo}">사업자 정보확인</a>
-            <a href="#" onclick="return false;" th:text="#{home.footer.efinance}">전자금융거래 이용약관</a>
-            <a href="#" onclick="return false;" th:text="#{home.footer.efinanceNote}">전자금융거래 이용자 유의사항</a>
-            <a href="#" onclick="return false;" th:text="#{home.footer.dispute}">분쟁해결기준</a>
-        </div>
+        <!-- 정책 링크 열두 개가 모두 href="#" 이라 눌러도 아무 일이 없었다. 심사위원이
+             개인정보처리방침 하나쯤은 눌러 본다. 만들어 둔 화면이 없으니 링크를 두는 대신 뺀다.
+             "NOL 티켓 이용약관" 은 남의 회사(야놀자) 브랜드였고, 전자금융거래 약관은 바로 위에서
+             "재화·용역을 판매하지 않는다" 고 적어 둔 것과 앞뒤가 맞지 않았다.
+             약관 화면을 만들면 그때 실제 주소로 되살린다. -->
 
-        <div class="footer-social" th:aria-label="#{home.footer.social}">
-            <a class="footer-social-link" href="#" onclick="return false;" th:aria-label="#{home.footer.instagram}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect>
-                    <circle cx="12" cy="12" r="4.2"></circle>
-                    <circle cx="17.3" cy="6.7" r="1"></circle>
-                </svg>
-            </a>
-            <a class="footer-social-link" href="#" onclick="return false;" th:aria-label="#{home.footer.youtube}">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M21.2 7.2a2.8 2.8 0 0 0-2-2C17.4 4.7 12 4.7 12 4.7s-5.4 0-7.2.5a2.8 2.8 0 0 0-2 2C2.3 9 2.3 12 2.3 12s0 3 .5 4.8a2.8 2.8 0 0 0 2 2c1.8.5 7.2.5 7.2.5s5.4 0 7.2-.5a2.8 2.8 0 0 0 2-2c.5-1.8.5-4.8.5-4.8s0-3-.5-4.8Z"></path>
-                    <path d="m10.2 15.5 4.8-3.5-4.8-3.5v7Z" fill="#ffffff"></path>
-                </svg>
-            </a>
-            <a class="footer-social-link" href="#" onclick="return false;" th:aria-label="#{home.footer.facebook}">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M13.4 20.5v-7h2.4l.4-2.8h-2.8V8.9c0-.8.2-1.4 1.4-1.4h1.5V5a18 18 0 0 0-2.2-.1c-2.2 0-3.8 1.4-3.8 3.9v1.9H7.9v2.8h2.4v7h3.1Z"></path>
-                </svg>
-            </a>
-            <a class="footer-social-link blog-link" href="#" onclick="return false;" th:aria-label="#{home.footer.blog}">blog</a>
-        </div>
+        <!-- 인스타·유튜브·페이스북·블로그도 전부 href="#" 이었다. 계정이 생기면 되살린다. -->
 
         <div class="footer-links" style="display:none;">
             <a th:href="@{'/' + ${langPath}}" href="/ko" th:text="#{home.nav.home}">홈</a>
-            <a th:href="@{/tour/all}" href="/tour/all" th:text="#{home.cat.tour}">관광</a>
+            <a th:href="@{/tour/all(lang=${lang})}" href="/tour/all" th:text="#{home.cat.tour}">관광</a>
             <a th:href="@{${lang == 'en'} ? '/en/transport/search' : '/transport/search'}" href="/transport/search" th:text="#{home.cat.transport}">교통</a>
-            <a th:href="@{/community/post-list}" href="/community/post-list" th:text="#{home.cat.community}">커뮤니티</a>
+            <a th:href="@{/community/post-list(lang=${lang})}" href="/community/post-list" th:text="#{home.cat.community}">커뮤니티</a>
         </div>
 
         <!-- 연도는 서버가 넣는다. 손으로 적어 두면 해가 바뀔 때마다 지난 연도가 남는다. -->

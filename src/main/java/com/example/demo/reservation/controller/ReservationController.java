@@ -11,6 +11,8 @@ import com.example.demo.reservation.service.ReservationPaymentService;
 import com.example.demo.reservation.service.TourApiReservationService;
 import com.example.demo.community.repository.CategoryRepository;
 import com.example.demo.community.repository.PostRepository;
+import com.example.demo.config.CurrentLanguage;
+import com.example.demo.config.LocalizedMessages;
 import com.example.demo.trip.dto.TripPlanDto;
 import com.example.demo.trip.service.TripPlanService;
 import com.example.demo.tourism.dto.SavedPlaceDto;
@@ -24,7 +26,6 @@ import com.example.demo.user.util.SecurityUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -44,7 +45,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Locale;
 
 @Controller
 @RequiredArgsConstructor
@@ -59,15 +59,14 @@ public class ReservationController {
     private final SavedPlaceService savedPlaceService;
     private final TourPlaceI18n tourPlaceI18n;
     private final PostRepository postRepository;
+    private final LocalizedMessages messages;
     private final CategoryRepository categoryRepository;
     private final com.example.demo.reservation.service.ReservationPlacePolicyService placePolicyService;
 
     @GetMapping("/ko/reservation")
     public String reservationHome(Model model,
-                                  @RequestParam(required = false) String keyword,
-                                  @RequestParam(defaultValue = "ko") String lang) {
-        lang = normalizeReservationLang(lang);
-        applyReservationLocale(lang);
+                                  @RequestParam(required = false) String keyword) {
+        String lang = currentLang();
         addSessionModel(model);
         model.addAttribute("keyword", keyword == null ? "" : keyword);
         model.addAttribute("lang", lang);
@@ -80,10 +79,8 @@ public class ReservationController {
     public String reservationForm(@RequestParam String contentId,
                                   @RequestParam(required = false) String contentTypeId,
                                   @RequestParam(required = false) String placeTitle,
-                                  @RequestParam(defaultValue = "ko") String lang,
                                   Model model) {
-        lang = normalizeReservationLang(lang);
-        applyReservationLocale(lang);
+        String lang = currentLang();
         placePolicyService.requireApplicationAllowed(contentId);
         TourApiPlaceDto place = tourApiReservationService.findDetail(contentId, contentTypeId, lang);
         if (place == null) throw new com.example.demo.reservation.service.PlaceBookingUnavailableException();
@@ -107,8 +104,8 @@ public class ReservationController {
     public String reservationComplete(@Valid @ModelAttribute("reservationForm") ReservationFormDto form,
                                       BindingResult bindingResult,
                                       Model model) {
-        form.setLang(normalizeReservationLang(form.getLang()));
-        applyReservationLocale(form.getLang());
+        // 폼에 실려 온 값이 아니라 지금 보고 있는 언어로 받는다. 작성 도중 언어를 바꿨을 수 있다.
+        form.setLang(currentLang());
         placePolicyService.requireApplicationAllowed(form.getContentId());
         TourApiPlaceDto place = tourApiReservationService.findDetail(
                 form.getContentId(), form.getContentTypeId(), form.getLang());
@@ -116,7 +113,6 @@ public class ReservationController {
         form.setPlaceTitle(place.getTitle());
         form.setContentTypeId(place.getContentTypeId());
         if (bindingResult.hasErrors()) {
-            applyReservationLocale(form.getLang());
             addSessionModel(model);
             model.addAttribute("place", place);
             model.addAttribute("today", LocalDate.now());
@@ -146,7 +142,6 @@ public class ReservationController {
         if (reservation.getPayment().getStatus() == PaymentStatus.PAID) {
             return "redirect:/ko/reservation/complete/" + reservationId;
         }
-        applyReservationLocale(reservationLanguage(reservation));
         if (!reservation.isPayable()) return "redirect:/ko/reservation/requests/" + reservationId;
         placePolicyService.requireApplicationAllowed(reservation.getContentId());
         addSessionModel(model);
@@ -155,8 +150,8 @@ public class ReservationController {
         model.addAttribute("paymentMethods", PaymentMethod.values());
         model.addAttribute("paymentRequest", new ReservationPaymentRequest());
         model.addAttribute("portOneReady", reservationPaymentService.isReady());
-        model.addAttribute("lang", reservationLanguage(reservation));
-        applyReservationLocale(reservationLanguage(reservation));
+        model.addAttribute("placeTitle", placeTitle(reservation));
+        model.addAttribute("lang", currentLang());
         return "reservation/reservationPayment";
     }
 
@@ -166,19 +161,18 @@ public class ReservationController {
                                             BindingResult bindingResult,
                                             Model model) {
         TourReservation reservation = reservationService.findMine(reservationId, SecurityUtil.getCurrentUserId());
-        applyReservationLocale(reservationLanguage(reservation));
         if (reservation.getPayment() == null || reservation.getPayment().getStatus() != PaymentStatus.PAID) {
             if (!reservation.isPayable()) throw new com.example.demo.reservation.service.PlaceBookingUnavailableException();
             placePolicyService.requireApplicationAllowed(reservation.getContentId());
         }
         if (bindingResult.hasErrors()) {
-            applyReservationLocale(reservationLanguage(reservation));
             addSessionModel(model);
             model.addAttribute("reservation", reservation);
             model.addAttribute("payment", reservation.getPayment());
             model.addAttribute("paymentMethods", PaymentMethod.values());
             model.addAttribute("portOneReady", reservationPaymentService.isReady());
-            model.addAttribute("lang", reservationLanguage(reservation));
+            model.addAttribute("placeTitle", placeTitle(reservation));
+            model.addAttribute("lang", currentLang());
             return "reservation/reservationPayment";
         }
 
@@ -190,8 +184,7 @@ public class ReservationController {
     public String paymentReturn(@PathVariable Long reservationId, Model model) {
         var reservation = reservationService.findMine(reservationId, SecurityUtil.getCurrentUserId());
         model.addAttribute("reservation", reservation);
-        model.addAttribute("lang", reservationLanguage(reservation));
-        applyReservationLocale(reservationLanguage(reservation));
+        model.addAttribute("lang", currentLang());
         return "reservation/paymentReturn";
     }
 
@@ -204,9 +197,9 @@ public class ReservationController {
         addSessionModel(model);
         model.addAttribute("reservation", reservation);
         model.addAttribute("reservationNo", reservation.getReservationNo());
+        model.addAttribute("placeTitle", placeTitle(reservation));
         model.addAttribute("payment", reservation.getPayment());
-        model.addAttribute("lang", reservationLanguage(reservation));
-        applyReservationLocale(reservationLanguage(reservation));
+        model.addAttribute("lang", currentLang());
         return "reservation/reservationComplete";
     }
 
@@ -216,10 +209,10 @@ public class ReservationController {
         if ("CONFIRMED".equals(reservation.getApplicationStatus())) {
             return "redirect:/ko/reservation/complete/" + reservationId;
         }
-        applyReservationLocale(reservationLanguage(reservation));
         addSessionModel(model);
-        model.addAttribute("lang", reservationLanguage(reservation));
+        model.addAttribute("lang", currentLang());
         model.addAttribute("reservation", reservation);
+        model.addAttribute("placeTitle", placeTitle(reservation));
         return "reservation/reservationRequest";
     }
 
@@ -253,7 +246,7 @@ public class ReservationController {
         User user = userService.findById(userId);
         Optional<OwnerRequest> latestOwnerRequest = ownerRequestService.findLatestByUserId(userId);
         List<TourReservation> reservations = reservationService.findMyReservations(userId);
-        String lang = normalizeReservationLang(LocaleContextHolder.getLocale().getLanguage());
+        String lang = currentLang();
         List<TourReservation> activeReservations = reservations.stream()
                 .filter(reservation -> !"예약 취소".equals(reservation.getStatus()))
                 .toList();
@@ -287,7 +280,7 @@ public class ReservationController {
         model.addAttribute("promoPostCount", promoPostCount);
         model.addAttribute("promoCategoryId", promoCategoryId);
         model.addAttribute("reservations", reservations);
-        model.addAttribute("reservationTitleById", localizedReservationTitles(reservations, lang));
+        model.addAttribute("reservationTitleById", localizedReservationTitles(reservations));
         model.addAttribute("activeReservations", activeReservations);
         model.addAttribute("hasReservation", !reservations.isEmpty());
         model.addAttribute("hasActiveReservation", !activeReservations.isEmpty());
@@ -298,19 +291,32 @@ public class ReservationController {
             model.addAttribute("place", tourApiReservationService.findDetail(
                     latestReservation.getContentId(),
                     latestReservation.getContentTypeId(),
-                    reservationLanguage(latestReservation)
+                    lang
             ));
         }
         return "mypage/mypage";
     }
 
-    private Map<Long, String> localizedReservationTitles(List<TourReservation> reservations, String lang) {
+    private Map<Long, String> localizedReservationTitles(List<TourReservation> reservations) {
         Map<Long, String> titles = new LinkedHashMap<>();
         for (TourReservation reservation : reservations) {
-            titles.put(reservation.getId(), tourPlaceI18n.translateTitle(
-                    lang, reservation.getContentId(), reservation.getPlaceTitle()));
+            titles.put(reservation.getId(), placeTitle(reservation));
         }
         return titles;
+    }
+
+    /**
+     * 예약한 장소 이름을 지금 언어로.
+     *
+     * <p>장소 번역표는 중국어를 "zh" 로 찾는다. 예전에는 예약 쪽 표기인 "zh-CN" 을 그대로 넘겨
+     * 중국어로만 이름이 국문으로 남았고, 없는 언어 "zh-CN" 이 번역 대기열에 올라갔다.
+     *
+     * <p>찾기만 하고 번역을 맡기지는 않는다. 저장된 이름은 예약할 때의 화면 언어로 들어가
+     * 국문이 아닐 수 있어서, 그걸 국문 원문으로 넘기면 엉뚱한 번역이 굳는다.
+     */
+    private String placeTitle(TourReservation reservation) {
+        String found = tourPlaceI18n.findTitle(CurrentLanguage.get(), reservation.getContentId());
+        return found != null ? found : reservation.getPlaceTitle();
     }
 
     @PostMapping("/ko/mypage/owner-application")
@@ -321,7 +327,6 @@ public class ReservationController {
                              @RequestParam MultipartFile businessRegistrationFile,
                              @RequestParam MultipartFile businessLicenseFile,
                              @RequestParam MultipartFile menuFile,
-                             @RequestParam(defaultValue = "ko") String lang,
                              RedirectAttributes redirectAttributes) {
         try {
             ownerRequestService.apply(
@@ -334,11 +339,11 @@ public class ReservationController {
                     businessLicenseFile,
                     menuFile
             );
-            redirectAttributes.addFlashAttribute("ownerRequestMessage", "사업자 전환 신청이 접수됐어요. 검토 후 권한이 변경됩니다.");
+            redirectAttributes.addFlashAttribute("ownerRequestMessage", messages.get("mypage.flash.ownerApplied"));
         } catch (IllegalArgumentException | IllegalStateException ex) {
-            redirectAttributes.addFlashAttribute("ownerRequestError", ex.getMessage());
+            redirectAttributes.addFlashAttribute("ownerRequestError", messages.of(ex));
         }
-        return "redirect:/ko/mypage?lang=" + normalizeReservationLang(lang);
+        return "redirect:/ko/mypage";
     }
 
     @GetMapping("/api/tourapi/places")
@@ -380,7 +385,7 @@ public class ReservationController {
                     Map.of("code", "PLACE_NOT_BOOKABLE"));
         } else {
             view = new org.springframework.web.servlet.ModelAndView("reservation/reservationUnavailable");
-            view.addObject("lang", normalizeReservationLang(LocaleContextHolder.getLocale().getLanguage()));
+            view.addObject("lang", currentLang());
         }
         view.setStatus(org.springframework.http.HttpStatus.CONFLICT);
         return view;
@@ -407,7 +412,7 @@ public class ReservationController {
             model.addAttribute("place", tourApiReservationService.findDetail(
                     latestReservation.getContentId(),
                     latestReservation.getContentTypeId(),
-                    reservationLanguage(latestReservation)
+                    currentLang()
             ));
         }
     }
@@ -422,8 +427,15 @@ public class ReservationController {
         return "선택한 관광지";
     }
 
-    private String reservationLanguage(TourReservation reservation) {
-        return normalizeReservationLang(reservation.getLanguage());
+    /**
+     * 지금 보고 있는 언어를 예약 쪽 표기(중국어는 zh-CN)로.
+     *
+     * <p>예약 화면들은 예전에 주소의 lang 이나 예약을 넣을 때의 언어로 화면을 그렸다. 그러면
+     * 한국어로 넣은 예약을 일본어로 들여다볼 때 화면이 한국어로 뜨고, 그 화면 헤더가
+     * 저장된 언어까지 한국어로 되돌렸다. 화면은 언제나 지금 언어로 그린다.
+     */
+    private String currentLang() {
+        return normalizeReservationLang(CurrentLanguage.get());
     }
 
     private String normalizeReservationLang(String lang) {
@@ -438,15 +450,4 @@ public class ReservationController {
         return "ko";
     }
 
-    private void applyReservationLocale(String lang) {
-        String normalized = normalizeReservationLang(lang);
-        Locale locale = switch (normalized) {
-            case "en" -> Locale.ENGLISH;
-            case "ja" -> Locale.JAPANESE;
-            case "zh-CN" -> Locale.SIMPLIFIED_CHINESE;
-            case "fr" -> Locale.FRENCH;
-            default -> Locale.KOREAN;
-        };
-        LocaleContextHolder.setLocale(locale);
-    }
 }

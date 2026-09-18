@@ -1,6 +1,8 @@
 package com.example.demo.community.controller;
 
+import com.example.demo.config.LocalizedMessages;
 import com.example.demo.community.service.CommunityTextResolver;
+import com.example.demo.config.CurrentLanguage;
 import com.example.demo.community.dto.PostDto;
 import com.example.demo.community.dto.CommunityListView;
 import com.example.demo.community.dto.TrendingPeriod;
@@ -14,7 +16,6 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
@@ -33,6 +34,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class CommunityController {
 
     private final CommunityService communityService;
+    private final LocalizedMessages messages;
     private final PostService postService;
     private final CommentService commentService;
     private final UserService userService;
@@ -90,7 +92,7 @@ public class CommunityController {
         model.addAttribute("promoPosts", promoPosts);
 
         // 목록 본문·인기 글·홍보 레일이 같은 글을 서로 다르게 부르지 않도록 한 번에 고른다.
-        String lang = LocaleContextHolder.getLocale().getLanguage();
+        String lang = CurrentLanguage.get();
         var shown = new java.util.ArrayList<com.example.demo.community.dto.PostDto>();
         shown.addAll(data.getPosts().getContent());
         if (data.getTrendingPosts() != null) shown.addAll(data.getTrendingPosts());
@@ -104,7 +106,7 @@ public class CommunityController {
     public String getPostDetail(@PathVariable Long id, Model model, HttpSession session) {
         var post = postService.getPostDetail(id, session);
         var comments = commentService.getCommentsByPost(id);
-        String lang = LocaleContextHolder.getLocale().getLanguage();
+        String lang = CurrentLanguage.get();
         model.addAttribute("post", post);
         model.addAttribute("comments", comments);
         model.addAttribute("postText", textResolver.forPost(post, lang));
@@ -123,7 +125,7 @@ public class CommunityController {
                             @RequestParam(required = false) String placeTitle,
                             Model model, RedirectAttributes redirectAttributes) {
         if (isCommunitySuspended()) {
-            redirectAttributes.addFlashAttribute("communityError", "커뮤니티 기능이 정지된 계정입니다.");
+            redirectAttributes.addFlashAttribute("communityError", messages.get("community.error.suspended"));
             return "redirect:/community/post-list";
         }
 
@@ -146,7 +148,7 @@ public class CommunityController {
             Long postId = postService.createPost(req, userId);
             return "redirect:/community/post/" + postId;
         } catch (IllegalStateException | IllegalArgumentException exception) {
-            redirectAttributes.addFlashAttribute("pointError", exception.getMessage());
+            redirectAttributes.addFlashAttribute("pointError", messages.of(exception));
             return "redirect:/community/post/write";
         }
     }

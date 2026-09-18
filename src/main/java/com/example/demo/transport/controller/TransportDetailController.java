@@ -1,19 +1,25 @@
 package com.example.demo.transport.controller;
 
+import com.example.demo.config.CurrentLanguage;
+import com.example.demo.config.LocalizedMessages;
 import com.example.demo.transport.dto.TransportRouteDto;
 import com.example.demo.transport.entity.Route;
 import com.example.demo.transport.repository.RouteRepository;
 import com.example.demo.transport.service.BusanBusArrivalService;
 import com.example.demo.transport.service.CongestionMlService;
+import com.example.demo.transport.service.TransportNameTranslator;
 import com.example.demo.transport.service.TransportRouteService;
 import com.example.demo.user.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -22,6 +28,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Map;
 
 @Controller
 public class TransportDetailController {
@@ -31,6 +38,12 @@ public class TransportDetailController {
 
     @Autowired
     private TransportRouteService transportRouteService;
+
+    @Autowired
+    private TransportNameTranslator nameTranslator;
+
+    @Autowired
+    private LocalizedMessages messages;
 
     @Autowired
     private CongestionMlService congestionMlService;
@@ -43,27 +56,37 @@ public class TransportDetailController {
 
     @GetMapping("/transport/detail")
     public String transportDetailRedirect(@RequestParam(required = false) String routeId) {
-        return "redirect:/ko/transport/detail?routeId=" + (routeId != null ? routeId : "");
+        return "redirect:/" + CurrentLanguage.get() + "/transport/detail?routeId=" + (routeId != null ? routeId : "");
     }
 
-    @GetMapping("/ko/transport/detail")
-    public String transportDetailKo(@RequestParam(required = false) String routeId, Model model) {
-        return handleDetail(routeId, model, "transport/transportDetail", "ko");
-    }
-
-    @GetMapping("/en/transport/detail")
-    public String transportDetailEn(@RequestParam(required = false) String routeId, Model model) {
-        return handleDetail(routeId, model, "transport/transportDetailEn", "en");
+    /**
+     * 상세 화면. 주소 앞의 언어가 무엇이든 화면은 지금 언어로 그린다.
+     *
+     * <p>예전에는 /ko 주소면 lang 이 없을 때 한국어로 떴다. 검색 화면의 경로 링크가
+     * /ko/transport/detail?routeId=… 로만 걸려 있어서, 일본어로 보던 사람도 한국어 상세를 보고
+     * 헤더가 저장된 언어를 한국어로 되돌렸다.
+     */
+    @GetMapping({"/ko/transport/detail", "/en/transport/detail",
+            "/ja/transport/detail", "/zh/transport/detail", "/fr/transport/detail"})
+    public String transportDetail(@RequestParam(required = false) String routeId, Model model) {
+        String lang = CurrentLanguage.get();
+        String viewName = CurrentLanguage.KO.equals(lang)
+                ? "transport/transportDetail"
+                : "transport/transportDetailTranslated";
+        return handleDetail(routeId, model, viewName, lang);
     }
 
     private String handleDetail(String routeId, Model model, String viewName, String lang) {
         model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
         model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
+        model.addAttribute("lang", lang);
 
         TransportRouteDto route = null;
         if (routeId != null && !routeId.isEmpty()) {
             route = transportRouteService.getTransportRouteDetail(routeId);
         }
+        // 경로의 역·정류장·노선 이름을 미리 옮겨 화면에 넘긴다(외국어 화면이 먼저 이 표를 본다).
+        model.addAttribute("names", route == null ? Map.of() : nameTranslator.translateAll(routeNames(route), lang));
 
         int hour = java.time.LocalTime.now().getHour();
         int day = (java.time.LocalDate.now().getDayOfWeek().getValue() >= 6) ? 0 : 1;
@@ -111,13 +134,22 @@ public class TransportDetailController {
             model.addAttribute("route", route);
         }
 
+        boolean showCongestion = route != null
+                && route.getSteps() != null
+                && route.getSteps().stream().anyMatch(step -> "subway".equals(step.getType()));
+        model.addAttribute("showCongestion", showCongestion);
+
+        if (!showCongestion) {
+            return viewName;
+        }
+
         if (line == 0) {
-            model.addAttribute("congestionText", "en".equals(lang) ? "Moderate" : "보통");
+            model.addAttribute("congestionText", "ko".equals(lang) ? "보통" : "Moderate");
             model.addAttribute(
                     "congestionMsg",
-                    "en".equals(lang)
-                            ? "No data available for this line"
-                            : "혼잡도 데이터가 부족한 노선입니다."
+                    "ko".equals(lang)
+                            ? "혼잡도 데이터가 부족한 노선입니다."
+                            : "No data available for this line"
             );
             return viewName;
         }
@@ -146,7 +178,7 @@ public class TransportDetailController {
         int congestion = congestionMlService.predict(city, hour, day, station, stationId, line);
 
         String congestionText;
-        if ("en".equals(lang)) {
+        if (!"ko".equals(lang)) {
             switch (congestion) {
                 case 0: congestionText = "Normal"; break;
                 case 1: congestionText = "Caution"; break;
@@ -166,24 +198,11 @@ public class TransportDetailController {
         model.addAttribute("congestionText", congestionText);
 
         String congestionMsg;
-        if ("en".equals(lang)) {
-            switch (congestion) {
-                case 0:
-                    congestionMsg = "Passenger volume is within the normal range.";
-                    break;
-                case 1:
-                    congestionMsg = "Passenger volume is increasing. Please stay alert.";
-                    break;
-                case 2:
-                    congestionMsg = "This is a crowded time. Consider another route.";
-                    break;
-                case 3:
-                    congestionMsg = "Severe congestion is expected. Consider delaying or changing routes.";
-                    break;
-                default:
-                    congestionMsg = "Congestion data is currently unavailable.";
-                    break;
-            }
+        if (!"ko".equals(lang)) {
+            // 칩 글자(congestionText)는 화면 스크립트가 막대 길이를 정하는 데 쓰므로 영문 그대로 둔다.
+            // 안내문만 화면 언어로. 예전에는 일·중·불도 영문이었다.
+            congestionMsg = messages.get("transport.congestion.msg."
+                    + (congestion >= 0 && congestion <= 3 ? String.valueOf(congestion) : "none"));
         } else {
             switch (congestion) {
                 case 0:
@@ -208,10 +227,42 @@ public class TransportDetailController {
         return viewName;
     }
 
+    /** 상세 화면에 보이는 이름들: 출발·도착, 각 구간의 역·정류장·노선. */
+    private static java.util.Set<String> routeNames(TransportRouteDto route) {
+        java.util.Set<String> names = new java.util.LinkedHashSet<>();
+        names.add(route.getStart());
+        names.add(route.getEnd());
+        if (route.getSteps() != null) {
+            route.getSteps().forEach(step -> {
+                names.add(step.getFromStation());
+                names.add(step.getToStation());
+                names.add(step.getLine());
+            });
+        }
+        names.remove(null);
+        return names;
+    }
+
     @ResponseBody
     @GetMapping("/api/transport/route/{routeId}")
     public TransportRouteDto getRouteJson(@PathVariable String routeId) {
         return transportRouteService.getTransportRouteDetail(routeId);
+    }
+
+    /**
+     * 상세 화면이 역·정류장·노선 이름을 하나씩 옮겨 달라고 부른다.
+     * 역 이름 사전과 기억을 먼저 보고, 없을 때만 번역기를 부른다(TransportNameTranslator).
+     * 못 옮기면 받은 글자를 그대로 돌려주고, 화면이 자체 규칙으로 옮긴다.
+     */
+    @ResponseBody
+    @PostMapping("/api/transport/translate")
+    public ResponseEntity<?> translateTransportText(@RequestBody Map<String, String> body) {
+        String text = body.getOrDefault("text", "");
+        if (text.isBlank()) {
+            return ResponseEntity.ok(Map.of("translatedText", ""));
+        }
+        String target = body.getOrDefault("target", "en");
+        return ResponseEntity.ok(Map.of("translatedText", nameTranslator.translate(text, target)));
     }
 
     @ResponseBody

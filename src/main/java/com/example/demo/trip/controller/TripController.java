@@ -1,15 +1,17 @@
 package com.example.demo.trip.controller;
 
+import com.example.demo.config.CurrentLanguage;
 import com.example.demo.tourism.client.TourApiClient;
 import com.example.demo.trip.dto.PlaceDetailDto;
 import com.example.demo.trip.dto.TripRecommendRequest;
 import com.example.demo.trip.dto.TripRecommendResponse;
 import com.example.demo.trip.dto.TripReoptimizeRequest;
+import com.example.demo.tourism.service.TourismService;
+import com.example.demo.trip.service.TripDisplayText;
 import com.example.demo.trip.service.TripRecommendService;
 import com.example.demo.user.util.SecurityUtil;               // ✅ 추가
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,6 +28,8 @@ public class TripController {
 
     private final TripRecommendService tripRecommendService;
     private final TourApiClient tourApiClient;
+    private final TourismService tourismService;
+    private final TripDisplayText displayText;
 
     // ── 공통 세션 세팅 (SecurityUtil로 교체) ──
     private void session(Model model, HttpSession session) {
@@ -41,11 +45,7 @@ public class TripController {
      * 구글 위젯 전용이던 "zh-CN" 매핑은 더 이상 필요 없다.
      */
     private String currentTripLang() {
-        String lang = LocaleContextHolder.getLocale().getLanguage();
-        return switch (lang) {
-            case "en", "ja", "zh", "fr" -> lang;
-            default -> "ko";
-        };
+        return CurrentLanguage.get();
     }
 
     // ── 여행 플래너 메인 (KO) ──
@@ -100,13 +100,26 @@ public class TripController {
     @ResponseBody
     public ResponseEntity<TripRecommendResponse> recommend(
             @RequestBody TripRecommendRequest req) {
-        return ResponseEntity.ok(tripRecommendService.recommend(req));
+        return ResponseEntity.ok(displayText.apply(tripRecommendService.recommend(req)));
+    }
+
+    /**
+     * 브라우저에 저장된 일정을 다른 언어로 다시 열었을 때, 그 언어의 이름표만 새로 받는다.
+     * 일정 내용(장소 선정)은 다시 계산하지 않는다.
+     */
+    @PostMapping("/api/trip/display-text")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> displayTextFor(@RequestBody TripRecommendResponse saved) {
+        TripRecommendResponse applied = displayText.apply(saved);
+        return ResponseEntity.ok(Map.of(
+                "displayLang", CurrentLanguage.get(),
+                "displayText", applied == null || applied.getDisplayText() == null ? Map.of() : applied.getDisplayText()));
     }
 
     @PostMapping("/api/trip/reoptimize")
     @ResponseBody
     public ResponseEntity<TripRecommendResponse> reoptimize(@RequestBody TripReoptimizeRequest request) {
-        return ResponseEntity.ok(tripRecommendService.reoptimize(request));
+        return ResponseEntity.ok(displayText.apply(tripRecommendService.reoptimize(request)));
     }
 
     // ── REST: 장소 상세 (GET /api/trip/place/{id}) ──
@@ -129,7 +142,9 @@ public class TripController {
                                                                  @RequestParam(required = false) String contentTypeId) {
         if (contentId == null || contentId.isBlank()) return ResponseEntity.ok(Map.of());
         try {
-            return ResponseEntity.ok(tourApiClient.findDetail(contentId, contentTypeId, "ko"));
+            // 관광 상세와 같은 경로로 받는다. 화면 언어로 이름·소개·운영정보 값이 옮겨져 온다
+            // (예전에는 늘 국문으로 받아 일본어 화면에도 국문 소개가 보였다).
+            return ResponseEntity.ok(tourismService.getDetail(contentId, contentTypeId, CurrentLanguage.get()));
         } catch (Exception e) {
             log.warn("여행일정 상세정보 조회 실패 (contentId={}): {}", contentId, e.getMessage());
             return ResponseEntity.ok(Map.of());
@@ -142,6 +157,6 @@ public class TripController {
     public ResponseEntity<List<TripRecommendResponse.RecommendedPlace>> placeNearby(
             @RequestParam double lat, @RequestParam double lng,
             @RequestParam String category, @RequestParam(defaultValue = "6") int limit) {
-        return ResponseEntity.ok(tripRecommendService.findNearby(lat, lng, category, Math.min(limit, 10)));
+        return ResponseEntity.ok(displayText.apply(tripRecommendService.findNearby(lat, lng, category, Math.min(limit, 10))));
     }
 }

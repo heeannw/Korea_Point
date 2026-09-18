@@ -1,6 +1,8 @@
 package com.example.demo.home.controller;
 
 import com.example.demo.community.dto.PostDto;
+import com.example.demo.community.service.CommunityTextResolver;
+import com.example.demo.config.CurrentLanguage;
 import com.example.demo.home.service.HomeFestivalService;
 import com.example.demo.home.service.HomeFoodService;
 import com.example.demo.home.service.HomePlaceService;
@@ -27,6 +29,7 @@ public class HomeController {
     private final HomePlaceService homePlaceService;
     private final HomeFoodService homeFoodService;
     private final MessageSource messageSource;
+    private final CommunityTextResolver textResolver;
 
 
     // @GetMapping: 브라우저에서 GET 방식으로 "/" 또는 "/en" 에 접속했을 때 이 메서드 실행
@@ -65,11 +68,7 @@ public class HomeController {
     // void: 반환값 없음 (Model 객체에 직접 데이터를 추가하는 방식이라 반환 불필요)
     /** 세션 로케일 → 우리가 다루는 언어 코드. 모르는 언어는 국문으로 본다. */
     private String currentLang() {
-        String language = LocaleContextHolder.getLocale().getLanguage();
-        return switch (language) {
-            case "en", "ja", "zh", "fr" -> language;
-            default -> "ko";
-        };
+        return CurrentLanguage.get();
     }
 
     private void session(Model model) {
@@ -129,6 +128,9 @@ public class HomeController {
         List<PostDto> trendingPosts = homeService.getTrendingPosts();
         model.addAttribute("trendingPosts", trendingPosts);
         model.addAttribute("postCatLabel", postCatLabels(trendingPosts));
+        // 글 제목은 커뮤니티 화면과 같은 규칙으로 고른다. 예전엔 영어가 아니면 국문 제목을 써서
+        // 일본어·중국어·불어 홈에서만 번역된 제목이 안 보였다.
+        model.addAttribute("postText", textResolver.forPosts(trendingPosts, lang));
 
         // ── 지금 부산에서 열리는 축제 ────────────────────────────────────────
         // 관광공사 데이터 중 유일하게 기간이 있는 자료라, 접속 시점에 따라 화면이 바뀐다.

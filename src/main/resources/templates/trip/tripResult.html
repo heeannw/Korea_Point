@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${lang}" lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -351,7 +351,7 @@
         modal.dataset.planId = planId;
         const slots = (tripResult.schedule || []).flatMap(day => (day.slots || []).map(slot => ({...slot, day: day.day})));
         document.getElementById('reservationPlace').innerHTML = slots.map(slot =>
-            `<option value="${slot.placeName.replace(/"/g, '&quot;')}" data-time="${slot.time || '12:00'}" data-day="${slot.day}">Day ${slot.day} · ${slot.placeName}</option>`
+            `<option value="${slot.placeName.replace(/"/g, '&quot;')}" data-time="${slot.time || '12:00'}" data-day="${slot.day}">Day ${slot.day} · ${tx(slot.placeName)}</option>`
         ).join('');
         const today = new Date().toISOString().slice(0, 10);
         const dateInput = document.getElementById('reservationDate');
@@ -409,6 +409,29 @@
     };
 
     let tripResult = null, tripRequest = null, currentDay = 1;
+    // 화면 언어로 옮긴 이름·주소(서버의 displayText). 이름 자체는 찾기·재조정에 그대로 쓰고, 보여 줄 때만 바꾼다.
+    const DISPLAY_TEXT = {};
+    const tx = s => (s && DISPLAY_TEXT[s]) || s;
+    const rememberDisplay = r => {
+        if (r && r.displayLang === CURRENT_LANG) Object.assign(DISPLAY_TEXT, r.displayText || {});
+    };
+    /** 다른 언어로 만든 일정을 이 언어로 열었으면 이 언어의 이름표를 다시 받는다. */
+    async function ensureDisplayText() {
+        if (CURRENT_LANG === 'ko' || !tripResult || tripResult.displayLang === CURRENT_LANG) return;
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = document.querySelector('meta[name="_csrf"]')?.content;
+            const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+            if (token && header) headers[header] = token;
+            const response = await fetch('/api/trip/display-text', { method: 'POST', headers, body: JSON.stringify(tripResult) });
+            if (!response.ok) return;
+            const data = await response.json();
+            tripResult.displayLang = data.displayLang;
+            tripResult.displayText = data.displayText;
+            sessionStorage.setItem('tripResult', JSON.stringify(tripResult));
+            rememberDisplay(tripResult);
+        } catch (e) { /* 이름표가 없으면 국문 이름을 보여 준다 */ }
+    }
     let reservedPlaces = new Set();
     // myLoc은 지도 자체에서는 더 이상 자동으로 안 받아온다 — "교통 검색" 버튼 눌렀을 때만
     // (dpTransBtn 핸들러에서) 그때 필요해서 요청한다. 지도 진입하자마자 위치 권한 팝업 뜨는 게
@@ -495,7 +518,7 @@
                     position: new kakao.maps.LatLng(item.lat, item.lng), yAnchor: 1.1, zIndex: 3,
                     content: `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer" onclick="focusSlot(${idx})">
                         <div style="width:34px;height:34px;border-radius:50%;background:${cfg.color};border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 3px 10px rgba(0,0,0,.22);">${cfg.icon}</div>
-                        <div style="margin-top:4px;background:${cfg.color};color:#fff;padding:3px 10px;border-radius:50px;font-size:10px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.18);font-family:'DM Sans',sans-serif;">${item.slot.placeName}</div>
+                        <div style="margin-top:4px;background:${cfg.color};color:#fff;padding:3px 10px;border-radius:50px;font-size:10px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.18);font-family:'DM Sans',sans-serif;">${tx(item.slot.placeName)}</div>
                     </div>`
                 });
                 ov.setMap(map); activeOverlays.push(ov);
@@ -531,7 +554,7 @@
                     position: new kakao.maps.LatLng(item.lat, item.lng), yAnchor: 1.1, zIndex: 3,
                     content: `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer" onclick="focusSlot(${idx})">
                         <div style="width:34px;height:34px;border-radius:50%;background:${cfg.color};border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 3px 10px rgba(0,0,0,.22);">${cfg.icon}</div>
-                        <div style="margin-top:4px;background:${cfg.color};color:#fff;padding:3px 10px;border-radius:50px;font-size:10px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.18);font-family:'DM Sans',sans-serif;">${item.slot.placeName}</div>
+                        <div style="margin-top:4px;background:${cfg.color};color:#fff;padding:3px 10px;border-radius:50px;font-size:10px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.18);font-family:'DM Sans',sans-serif;">${tx(item.slot.placeName)}</div>
                     </div>`
                 });
                 ov.setMap(map); activeOverlays.push(ov);
@@ -622,7 +645,7 @@
           </div>
           <div class="slot-info">
             <div class="slot-time">${slot.time} · ${cfg.label}${slot.durationMinutes ? ` · ${slot.durationMinutes}${I18N.minuteUnit}` : ''}</div>
-            <div class="slot-name">${slot.placeName}</div>
+            <div class="slot-name">${tx(slot.placeName)}</div>
             ${(reservedPlaces.has(slot.placeName) || slot.locked) ? `<div class="slot-lock"><span>🔒 ${slot.lockReason || I18N.reservedPlaceFallback}</span></div>` : ''}
             <div class="slot-reason">${slot.reason || ''}</div>
             <div class="slot-score">score ${(slot.score||0).toFixed(4)}</div>
@@ -631,7 +654,7 @@
                  <div class="alt-list" id="al${idx}">
                  ${slot.alternatives.map((a, ai) => `
                    <div class="alt-item" onclick="selectAlt(event,${idx},${ai})">
-                     ${a.placeName}
+                     ${tx(a.placeName)}
                      <span style="color:var(--blue);font-weight:700"> ${a.score.toFixed(4)}</span>
                      ${a.distanceKm ? `<span style="color:var(--gray)"> · ${a.distanceKm}km</span>` : ''}
                    </div>`).join('')}
@@ -649,16 +672,16 @@
             : `🌦️ Day ${dayData.day} · ${I18N.noForecast}`;
         const warning = document.getElementById('warningLine');
         warning.hidden = !tripResult.weatherWarning;
-        warning.textContent = tripResult.weatherWarning ? `⚠️ ${tripResult.weatherWarning}` : '';
+        warning.textContent = tripResult.weatherWarning ? `⚠️ ${tx(tripResult.weatherWarning)}` : '';
         renderFestivalLine();
         const air = document.getElementById('airLine');
         air.hidden = !tripResult.airQuality;
         air.textContent = tripResult.airQuality
-            ? `😷 ${I18N.busanAirQuality} ${tripResult.airQuality.grade} · PM10 ${tripResult.airQuality.pm10} · PM2.5 ${tripResult.airQuality.pm25}` : '';
+            ? `😷 ${I18N.busanAirQuality} ${tx(tripResult.airQuality.grade)} · PM10 ${tripResult.airQuality.pm10} · PM2.5 ${tripResult.airQuality.pm25}` : '';
         const health = document.getElementById('healthLine');
         health.hidden = !tripResult.healthRisk;
         health.textContent = tripResult.healthRisk
-            ? `☀️ ${I18N.uvLevel} ${tripResult.healthRisk.uvLevel}${tripResult.healthRisk.uvIndex != null ? `(${tripResult.healthRisk.uvIndex})` : ''}${tripResult.healthRisk.heatRisk ? ` · ${I18N.heatRisk} ${tripResult.healthRisk.heatRisk}` : ''}${tripResult.healthRisk.coldRisk ? ` · ${I18N.coldRisk} ${tripResult.healthRisk.coldRisk}` : ''}` : '';
+            ? `☀️ ${I18N.uvLevel} ${tx(tripResult.healthRisk.uvLevel)}${tripResult.healthRisk.uvIndex != null ? `(${tripResult.healthRisk.uvIndex})` : ''}${tripResult.healthRisk.heatRisk ? ` · ${I18N.heatRisk} ${tx(tripResult.healthRisk.heatRisk)}` : ''}${tripResult.healthRisk.coldRisk ? ` · ${I18N.coldRisk} ${tx(tripResult.healthRisk.coldRisk)}` : ''}` : '';
         document.getElementById('aiLine').textContent = tripResult.aiSummary ? `✨ ${tripResult.aiSummary}` : '';
         box.hidden = false;
     }
@@ -722,6 +745,7 @@
                 body:JSON.stringify({request:tripRequest, current:tripResult, reservedPlaceNames:[...reservedPlaces]})});
             if (!response.ok) throw new Error(I18N.reoptimizeFailed);
             tripResult = await response.json();
+            rememberDisplay(tripResult);
             sessionStorage.setItem('tripResult', JSON.stringify(tripResult));
             buildDaySelector(tripResult.schedule); await drawDay(currentDay);
         } catch (e) { alert(e.message); }
@@ -862,11 +886,11 @@
         showDetailTab('info');
         setDetailImages([slot.imageUrl]);
 
-        document.getElementById('dpTitle').textContent = slot.placeName;
-        document.getElementById('dpName').textContent  = slot.placeName;
+        document.getElementById('dpTitle').textContent = tx(slot.placeName);
+        document.getElementById('dpName').textContent  = tx(slot.placeName);
 
         const addrEl = document.getElementById('dpAddr');
-        addrEl.textContent = slot.address || I18N.busanFallback;
+        addrEl.textContent = tx(slot.address) || I18N.busanFallback;
         document.getElementById('dpSub').style.display = 'flex';
 
         const badges = document.getElementById('dpBadges');
@@ -919,7 +943,7 @@
         document.getElementById('dpNearCafeBtn').onclick = () => loadNearbyPlaces(lat, lng, 'cafe', `☕ ${I18N.nearCafe}`);
         document.getElementById('dpShareBtn').onclick = async () => {
             try {
-                if (navigator.share) await navigator.share({ title: slot.placeName, url: location.href });
+                if (navigator.share) await navigator.share({ title: tx(slot.placeName), url: location.href });
                 else { await navigator.clipboard.writeText(location.href); showToast(I18N.linkCopied); }
             } catch (e) { /* 공유 취소는 무시 */ }
         };
@@ -1021,6 +1045,10 @@
             const response = await fetch(`/api/trip/place/nearby?${params.toString()}`);
             if (myRequestId !== nearRequestId) return;
             const list = response.ok ? await response.json() : [];
+            list.forEach(p => {
+                if (p.displayName) DISPLAY_TEXT[p.name] = p.displayName;
+                if (p.displayAddress && p.address) DISPLAY_TEXT[p.address] = p.displayAddress;
+            });
             listEl.innerHTML = list.length
                 ? list.map(p => `<div class="rec-card" onclick='openDetail(${JSON.stringify({
                     placeName: p.name, category: p.category, lat: p.lat, lng: p.lng, address: p.address,
@@ -1028,7 +1056,7 @@
                     reason: '', reviews: [], durationMinutes: 0, alternatives: [],
                     contentId: p.contentId, contentTypeId: p.contentTypeId
                 }).replace(/'/g, "&apos;")}, ${p.lat}, ${p.lng})'>
-                    <div class="rec-info"><div class="rec-name">${p.name}</div>${p.address ? `<div class="rec-reason">${p.address}</div>` : ''}</div>
+                    <div class="rec-info"><div class="rec-name">${tx(p.name)}</div>${p.address ? `<div class="rec-reason">${tx(p.address)}</div>` : ''}</div>
                   </div>`).join('')
                 : `<div class="empty-msg">${I18N.nearbyNotFound}</div>`;
         } catch (e) {
@@ -1047,7 +1075,7 @@
           <div class="rec-card" onclick="openRecDetail('${containerId}', ${i})">
             <div class="rec-rank">${i+1}</div>
             <div class="rec-info">
-              <div class="rec-name">${p.name}</div>
+              <div class="rec-name">${tx(p.name)}</div>
               <div class="rec-reason">${p.reason||''}</div>
               <div class="rec-score">score ${p.score?.toFixed(4)||'-'}</div>
             </div>
@@ -1095,6 +1123,8 @@
             return;
         }
         tripResult  = JSON.parse(raw);
+        rememberDisplay(tripResult);
+        await ensureDisplayText();
         tripRequest = JSON.parse(sessionStorage.getItem('tripRequest') || '{}');
         // 예약 정보 조회(loadReservedPlaces)가 느리면 지도를 그리기 전까지 화면이 텅 비어
         // 보이던 문제 — 초기화 시작하자마자 로딩 스피너부터 띄운다.

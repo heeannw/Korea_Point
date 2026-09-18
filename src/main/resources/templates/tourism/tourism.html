@@ -1436,7 +1436,8 @@
     document.getElementById('itineraryBtn2').onclick = function() {
       if (!(p.lat && p.lng)) { alert(I18N.noCoords); return; }
       const endTitle = encodeURIComponent(p.title ?? '');
-      location.href = `/${lang.toLowerCase()}/transport/search?end=${endTitle}`;
+      // 국문/영문 화면은 서버가 지금 언어로 골라 준다. 예전엔 /ja/transport/search 처럼 없는 주소로 가 404가 났다.
+      location.href = `/transport/search?end=${endTitle}`;
     };
 
     renderCourseSection(p);
@@ -1556,6 +1557,14 @@
   const FY_TITLE   = /*[[#{tour.forYou.title}]]*/ 'For you';
   const FY_ONBOARD = /*[[#{tour.forYou.onboard}]]*/ 'Pick 2–3 things you like';
   const FY_GO      = /*[[#{tour.forYou.go}]]*/ 'Get recommendations';
+  // 처음 온 사람이 고르는 선호 카테고리 버튼. 예전에는 국문으로 박혀 있었다.
+  const FY_CATS    = {
+    attraction: /*[[#{tour.forYou.cat.attraction}]]*/ '📍 관광지',
+    culture:    /*[[#{tour.forYou.cat.culture}]]*/ '🏛️ 문화시설',
+    leisure:    /*[[#{tour.forYou.cat.leisure}]]*/ '🏄 레저·액티비티',
+    shopping:   /*[[#{tour.forYou.cat.shopping}]]*/ '🛍️ 쇼핑',
+    festival:   /*[[#{tour.forYou.cat.festival}]]*/ '🎉 축제·행사'
+  };
   const REL_TITLE  = /*[[#{tour.detail.related}]]*/ 'People also visit';
 
   function areaOfAddr(addr) {
@@ -1644,13 +1653,12 @@
       if (r.ok && ((await r.json()).categories || []).length) { wrap.hidden = true; return; }
     } catch (e) { wrap.hidden = true; return; }
 
-    const labels = { attraction: '📍 관광지', culture: '🏛️ 문화시설',
-                     leisure: '🏄 레저·액티비티', shopping: '🛍️ 쇼핑', festival: '🎉 축제·행사' };
+    const labels = FY_CATS;
     wrap.hidden = false;
     wrap.innerHTML = `<div class="fy-head">✨ ${escapeDetail(FY_TITLE)}</div>
       <div class="fy-onboard"><span>${escapeDetail(FY_ONBOARD)}</span>
         <div class="fy-onboard-btns">`
-      + PREF_SLUGS.map(s => `<button type="button" class="fy-pref" data-s="${s}">${labels[s]}</button>`).join('')
+      + PREF_SLUGS.map(s => `<button type="button" class="fy-pref" data-s="${s}">${escapeDetail(labels[s])}</button>`).join('')
       + `</div><button type="button" class="fy-pref-go" disabled>${escapeDetail(FY_GO)}</button></div>`;
 
     const chosen = new Set();

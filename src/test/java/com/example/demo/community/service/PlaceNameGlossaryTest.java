@@ -58,6 +58,25 @@ class PlaceNameGlossaryTest {
     }
 
     @Test
+    void 일본어_지명_뒤의_중국어_조사를_고친다() {
+        assertThat(glossary.tidy("ja", "釜山的3泊4日のコースをご覧ください"))
+                .isEqualTo("釜山の3泊4日のコースをご覧ください");
+        assertThat(glossary.tidy("ja", "荒嶺山的夜景を見に行ってきました"))
+                .isEqualTo("荒嶺山の夜景を見に行ってきました");
+    }
+
+    @Test
+    void 지명이_아닌_的_와_형용사는_그대로_둔다() {
+        assertThat(glossary.tidy("ja", "基本的な挨拶と印象的な景色")).isEqualTo("基本的な挨拶と印象的な景色");
+        assertThat(glossary.tidy("ja", "釜山的な雰囲気")).isEqualTo("釜山的な雰囲気");
+    }
+
+    @Test
+    void 중국어는_건드리지_않는다() {
+        assertThat(glossary.tidy("zh", "釜山的夜景")).isEqualTo("釜山的夜景");
+    }
+
+    @Test
     void 없는_언어를_물으면_빈_값이다() {
         assertThat(glossary.entriesFor("de")).isEmpty();
     }

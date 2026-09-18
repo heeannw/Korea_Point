@@ -1,5 +1,6 @@
 package com.example.demo.trip.service;
 
+import com.example.demo.config.MessageArgumentException;
 import com.example.demo.trip.dto.TripPlanDto;
 import com.example.demo.trip.dto.TripRecommendRequest;
 import com.example.demo.trip.dto.TripRecommendResponse;
@@ -144,10 +145,10 @@ public class TripPlanService {
     public boolean updateTitle(String userId, Long planId, String title) {
         String normalizedTitle = title == null ? "" : title.trim();
         if (normalizedTitle.isBlank()) {
-            throw new IllegalArgumentException("일정 제목을 입력해 주세요.");
+            throw new MessageArgumentException("trip.api.titleRequired", "일정 제목을 입력해 주세요.");
         }
         if (normalizedTitle.length() > 200) {
-            throw new IllegalArgumentException("일정 제목은 200자 이하로 입력해 주세요.");
+            throw new MessageArgumentException("trip.api.titleTooLong", "일정 제목은 200자 이하로 입력해 주세요.");
         }
         return tripPlanRepository.findByIdAndUserId(planId, userId)
                 .map(plan -> {
@@ -160,7 +161,7 @@ public class TripPlanService {
     @Transactional
     public Long copy(String userId, Long planId) {
         TripPlan source = tripPlanRepository.findWithDaysAndSlots(planId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("계획을 찾을 수 없습니다."));
+                .orElseThrow(() -> new MessageArgumentException("trip.api.notFound", "계획을 찾을 수 없습니다."));
         TripPlan copied = TripPlan.builder()
                 .userId(userId)
                 .title(source.getTitle() + " 복사본")

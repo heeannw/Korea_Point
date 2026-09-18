@@ -100,18 +100,15 @@
         .footer-logo span { color: var(--dark); }
         .footer-tagline { margin-top: 6px; font-size: 12px; color: #7f8ca2; font-weight: 400; }
         .footer-info { margin-bottom: 14px; font-size: 12px; line-height: 1.8; color: #8c96a8; }
-        .footer-policy-links { display: flex; flex-wrap: wrap; gap: 8px 0; margin-bottom: 14px; }
-        .footer-policy-links a { position: relative; padding: 0 12px; color: #778397; text-decoration: underline; text-underline-offset: 2px; font-size: 12px; line-height: 1.5; transition: color 0.2s ease; }
-        .footer-policy-links a:first-child { padding-left: 0; }
-        .footer-policy-links a::after { content: ""; position: absolute; top: 50%; right: 0; width: 1px; height: 11px; background: #d9e0ea; transform: translateY(-50%); }
-        .footer-policy-links a:last-child::after { display: none; }
-        .footer-policy-links a:hover { color: var(--primary-dark); }
-        .footer-social { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-        .footer-social-link { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 999px; border: 1px solid #d7deea; color: #8a96aa; background: #ffffff; text-decoration: none; transition: all 0.2s ease; }
-        .footer-social-link svg { width: 16px; height: 16px; }
-        .footer-social-link.blog-link { width: auto; height: auto; border: none; border-radius: 0; padding: 0 2px; font-size: 14px; font-weight: 700; letter-spacing: 0.01em; }
-        .footer-social-link:hover { color: var(--primary-dark); border-color: #bcd5f6; background: #f7fbff; }
-        .footer-social-link.blog-link:hover { background: transparent; }
+        .footer-nonprofit { margin-top: 6px; color: #98a2b3; }
+        .footer-credit { margin-top: 6px; }
+        /* 사업자 정보를 가운뎃점으로 이어 흘려 쓴다. 화면이 좁으면 알아서 접힌다(홈과 같음). */
+        .footer-biz { display: flex; flex-wrap: wrap; }
+        .footer-biz > * { color: inherit; }
+        .footer-biz > *::after { content: "·"; margin: 0 8px; color: #c3cbd8; }
+        .footer-biz > *:last-child::after { content: none; }
+        .footer-biz a { text-decoration: underline; }
+        .footer-biz a:hover { color: var(--primary-dark); }
         .footer-copy { font-size: 11px; letter-spacing: 0.04em; color: #a0aabc; }
     </style>
 </head>
@@ -247,61 +244,36 @@
             <div class="pm-empty" th:text="#{community.write.place.minChars}">두 글자 이상 입력하세요.</div>
         </div>
         <div class="pm-foot">
-            <button type="button" id="pmConfirm" class="pm-confirm" disabled>확인</button>
+            <button type="button" id="pmConfirm" class="pm-confirm" disabled th:text="#{community.write.place.confirm}">확인</button>
         </div>
     </div>
 </div>
 
+<!-- 홈과 같은 푸터. 예전엔 영어로 박혀 있었고 눌러도 아무 일 없는 정책·소셜 링크가 있었다.
+     문구는 홈과 같은 home.footer.* 를 쓴다. -->
 <footer>
     <div class="footer-inner">
         <div class="footer-top">
             <div>
                 <div class="footer-logo">Korea<span>Point</span></div>
-                <div class="footer-tagline">Your gateway to discovering Korea</div>
+                <div class="footer-tagline" th:text="#{home.footer.tagline}">부산 여행을 만나는 가장 쉬운 방법</div>
             </div>
         </div>
         <div class="footer-info">
-            <p>KoreaPoint Travel Guide Platform · Representative: Lee Yerin</p>
-            <p>200 Salgoji-gil, Seongdong-gu, Seoul · Email: koreapoint.official@gmail.com</p>
-            <p>Business Registration Number: N/A · Mail-Order Business Number: N/A
-               &mdash; a non-commercial demo for the 2026 Korea Tourism Data Competition</p>
+            <p th:text="#{home.footer.platform}">KoreaPoint 여행 가이드 플랫폼</p>
+            <p class="footer-biz">
+                <span th:text="#{home.footer.bizName}">상호명 KoreaPoint · 대표자 이예린</span>
+                <span th:text="#{home.footer.address}">소재지 서울특별시 성동구 살곶이길 200</span>
+                <span th:text="#{home.footer.bizNumber}">사업자등록번호 해당 없음 · 통신판매업 신고번호 해당 없음</span>
+                <a href="mailto:koreapoint.official@gmail.com"
+                   th:text="#{home.footer.contact}">이메일 koreapoint.official@gmail.com</a>
+            </p>
+            <p class="footer-nonprofit" th:text="#{home.footer.nonprofit}">본 사이트는 시연용 서비스입니다.</p>
+            <p class="footer-credit" th:text="#{home.footer.credit}">관광 정보·사진 제공: 한국관광공사</p>
         </div>
-        <div class="footer-policy-links" aria-label="Footer policies">
-            <a href="#" onclick="return false;">About Us</a>
-            <a href="#" onclick="return false;">Partnerships</a>
-            <a href="#" onclick="return false;">Careers</a>
-            <a href="#" onclick="return false;">Privacy Policy</a>
-            <a href="#" onclick="return false;">Youth Protection Policy</a>
-            <a href="#" onclick="return false;">Terms of Service</a>
-            <a href="#" onclick="return false;">Location Terms</a>
-            <a href="#" onclick="return false;">Ticket Terms</a>
-            <a href="#" onclick="return false;">Business Info</a>
-            <a href="#" onclick="return false;">E-Finance Terms</a>
-            <a href="#" onclick="return false;">User Notice</a>
-            <a href="#" onclick="return false;">Dispute Resolution</a>
-        </div>
-        <div class="footer-social" aria-label="Social channels">
-            <a class="footer-social-link" href="#" onclick="return false;" aria-label="Instagram">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect>
-                    <circle cx="12" cy="12" r="4.2"></circle>
-                    <circle cx="17.3" cy="6.7" r="1"></circle>
-                </svg>
-            </a>
-            <a class="footer-social-link" href="#" onclick="return false;" aria-label="YouTube">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M21.2 7.2a2.8 2.8 0 0 0-2-2C17.4 4.7 12 4.7 12 4.7s-5.4 0-7.2.5a2.8 2.8 0 0 0-2 2C2.3 9 2.3 12 2.3 12s0 3 .5 4.8a2.8 2.8 0 0 0 2 2c1.8.5 7.2.5 7.2.5s5.4 0 7.2-.5a2.8 2.8 0 0 0 2-2c.5-1.8.5-4.8.5-4.8s0-3-.5-4.8Z"></path>
-                    <path d="m10.2 15.5 4.8-3.5-4.8-3.5v7Z" fill="#ffffff"></path>
-                </svg>
-            </a>
-            <a class="footer-social-link" href="#" onclick="return false;" aria-label="Facebook">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M13.4 20.5v-7h2.4l.4-2.8h-2.8V8.9c0-.8.2-1.4 1.4-1.4h1.5V5a18 18 0 0 0-2.2-.1c-2.2 0-3.8 1.4-3.8 3.9v1.9H7.9v2.8h2.4v7h3.1Z"></path>
-                </svg>
-            </a>
-            <a class="footer-social-link blog-link" href="#" onclick="return false;" aria-label="Blog">blog</a>
-        </div>
-        <div class="footer-copy">Copyright 2025 KoreaPoint. All rights reserved.</div>
+        <!-- 연도는 서버가 넣는다. 손으로 적어 두면 해가 바뀔 때마다 지난 연도가 남는다. -->
+        <div class="footer-copy"
+             th:text="|Copyright ${#temporals.year(#temporals.createNow())} KoreaPoint. All rights reserved.|">Copyright 2026 KoreaPoint. All rights reserved.</div>
     </div>
 </footer>
 
@@ -312,10 +284,16 @@
         placeMinChars: /*[[#{community.write.place.minChars}]]*/ '두 글자 이상 입력하세요.',
         placeEmpty:    /*[[#{community.write.place.empty}]]*/ '검색 결과가 없습니다.',
         placeFailed:   /*[[#{community.write.place.failed}]]*/ '검색에 실패했습니다.',
+        placeAdd:      /*[[#{community.write.place.add}]]*/ '장소 추가',
         kindTour:      /*[[#{community.place.tour}]]*/ '관광',
         kindFood:      /*[[#{community.place.food}]]*/ '맛집',
         kindCafe:      /*[[#{community.place.cafe}]]*/ '카페',
-        kindDefault:   /*[[#{community.place.default}]]*/ '장소'
+        kindDefault:   /*[[#{community.place.default}]]*/ '장소',
+        pick:          /*[[#{community.write.place.pick}]]*/ '추가',
+        picked:        /*[[#{community.write.place.picked}]]*/ '✓ 추가',
+        mapToggle:     /*[[#{community.write.place.mapToggle}]]*/ '지도 접기/펴기',
+        imageFailed:   /*[[#{community.write.image.failed}]]*/ '이미지를 올리지 못했습니다.',
+        imageRetry:    /*[[#{community.write.image.retry}]]*/ '이미지를 올리지 못했습니다. 잠시 후 다시 시도해 주세요.'
     };
 </script>
 <script>
@@ -361,7 +339,7 @@
 
     function renderGroupHtml(places) {
         const mapHtml = '<div class="pg-mapwrap"><div class="pg-map"></div>'
-            + '<button type="button" class="pg-toggle" title="지도 접기/펴기">▾</button></div>';
+            + '<button type="button" class="pg-toggle" title="' + escText(CM.mapToggle) + '">▾</button></div>';
         const rows = places.map(function (p, i) {
             return '<div class="pg-row" data-href="' + escText(placeLink(p)) + '">'
                 + '<span class="kakao-letter-pin">' + letterFor(i) + '</span>'
@@ -450,13 +428,13 @@
                 const res = await fetch('/community/api/image', { method: 'POST', headers, body });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) {
-                    alert(data.message || '이미지를 올리지 못했습니다.');
+                    alert(data.message || CM.imageFailed);
                     return;
                 }
                 quill.insertEmbed(range.index, 'image', data.url, 'user');
                 quill.setSelection(range.index + 1, 0);
             } catch (err) {
-                alert('이미지를 올리지 못했습니다. 잠시 후 다시 시도해 주세요.');
+                alert(CM.imageRetry);
             }
         };
         input.click();
@@ -601,7 +579,7 @@
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'ql-place';
-        btn.title = '장소 추가';
+        btn.title = CM.placeAdd;
         btn.textContent = '📍';
         grp.appendChild(btn);
         quill.getModule('toolbar').container.appendChild(grp);
@@ -653,7 +631,7 @@
                     + '<span class="pm-result-title">' + escText(p.title) + '</span>'
                     + '<span class="pm-result-addr">' + escText(p.addr || '') + '</span>'
                     + '</span>'
-                    + '<span class="pm-add-badge">' + (added ? '✓ 추가' : '추가') + '</span>'
+                    + '<span class="pm-add-badge">' + escText(added ? CM.picked : CM.pick) + '</span>'
                     + '</button>';
             }).join('') : '<div class="pm-empty">' + escText(CM.placeEmpty) + '</div>';
         }

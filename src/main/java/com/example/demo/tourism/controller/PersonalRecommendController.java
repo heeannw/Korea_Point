@@ -51,7 +51,7 @@ public class PersonalRecommendController {
         Long userId = SecurityUtil.getCurrentUserId();
         UserTasteProfile profile = recommendService.buildProfile(userId);
         List<PersonalRecoDto> recos = recommendService.recommend(userId, lang);
-        return reasonService.explain(profile, recos);
+        return reasonService.explain(profile, recos, lang);
     }
 
     @PostMapping("/activity")

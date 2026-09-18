@@ -1,5 +1,7 @@
 package com.example.demo.community.service;
 
+import com.example.demo.config.MessageArgumentException;
+import com.example.demo.config.MessageStateException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -46,10 +48,10 @@ public class PostImageStorage {
      */
     public String store(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("이미지가 비어 있습니다.");
+            throw new MessageArgumentException("community.error.imageEmpty", "이미지가 비어 있습니다.");
         }
         if (file.getSize() > MAX_BYTES) {
-            throw new IllegalArgumentException("이미지는 5MB 까지 올릴 수 있습니다.");
+            throw new MessageArgumentException("community.error.imageTooLarge", "이미지는 5MB 까지 올릴 수 있습니다.");
         }
 
         byte[] head = readHead(file);
@@ -57,7 +59,7 @@ public class PostImageStorage {
         if (kind == null) {
             // 확장자나 Content-Type 은 보내는 쪽이 마음대로 정한다. 실제 내용으로 판단한다.
             // 이렇게 해야 svg·html 을 .png 로 이름만 바꿔 올려서 XSS 를 심는 걸 막을 수 있다.
-            throw new IllegalArgumentException("JPG, PNG, GIF, WEBP 이미지만 올릴 수 있습니다.");
+            throw new MessageArgumentException("community.error.imageType", "JPG, PNG, GIF, WEBP 이미지만 올릴 수 있습니다.");
         }
 
         // 파일명은 우리가 만든다. 올린 쪽 이름을 쓰면 경로 조작과 확장자 위조가 열린다.
@@ -70,7 +72,7 @@ public class PostImageStorage {
             file.transferTo(destination);
         } catch (IOException ex) {
             log.error("본문 이미지 저장 실패: {}", destination, ex);
-            throw new IllegalStateException("이미지 저장에 실패했습니다.", ex);
+            throw new MessageStateException("community.error.imageSaveFailed", "이미지 저장에 실패했습니다.", ex);
         }
 
         return PUBLIC_PREFIX + YearMonth.now() + "/" + name;
@@ -80,7 +82,7 @@ public class PostImageStorage {
         try (var in = file.getInputStream()) {
             return in.readNBytes(12);
         } catch (IOException ex) {
-            throw new IllegalStateException("이미지를 읽지 못했습니다.", ex);
+            throw new MessageStateException("community.error.imageReadFailed", "이미지를 읽지 못했습니다.", ex);
         }
     }
 

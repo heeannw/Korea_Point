@@ -1,5 +1,6 @@
 package com.example.demo.community.controller;
 
+import com.example.demo.config.LocalizedMessages;
 import com.example.demo.community.service.PostImageStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import java.util.Map;
 public class PostImageApiController {
 
     private final PostImageStorage storage;
+    private final LocalizedMessages messages;
 
     @PostMapping("/image")
     public ResponseEntity<Map<String, String>> upload(@RequestParam("file") MultipartFile file) {
@@ -29,7 +31,7 @@ public class PostImageApiController {
             return ResponseEntity.ok(Map.of("url", storage.store(file)));
         } catch (IllegalArgumentException ex) {
             // 올린 쪽이 고칠 수 있는 문제(형식·용량)는 그대로 알려 준다.
-            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", messages.of(ex)));
         }
     }
 }

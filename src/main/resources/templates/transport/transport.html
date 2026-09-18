@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" th:lang="${lang}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    <title>교통 경로 검색 — KoreaPoint</title>
+    <title th:text="#{transport.search.pageTitle}">교통 경로 검색 — KoreaPoint</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Noto+Sans+KR:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/transport/t_common/variable.css}">
     <link rel="stylesheet" th:href="@{/css/transport/t_common/reset.css}">
@@ -44,9 +44,9 @@
         }
     </style>
     <link rel="stylesheet" th:href="@{/css/common/header-menu.css}">
-    <!-- trip-translate.js(구글 번역 위젯)는 여기서 안 씀 — 교통검색은 이미 ko/en 화면이 각각
-         실제로 있어서 필요 없고, 공용 헤더(app-header)의 언어 드롭다운이랑 겹쳐서 중복 셀렉트
-         박스가 하나 더 생기는 문제가 있었다. -->
+    <!-- trip-translate.js(구글 번역 위젯)는 여기서 안 씀 — 공용 헤더(app-header)의 언어 드롭다운이랑
+         겹쳐서 중복 셀렉트 박스가 하나 더 생기는 문제가 있었다.
+         이 화면은 국문·일문·중문·불문을 문구 파일(transport.search.*)로 그린다. 영문은 transportEn.html. -->
 </head>
 <body>
 
@@ -54,8 +54,8 @@
 
 
 <div class="hero">
-    <h1>🚇 교통 경로 검색</h1>
-    <p>출발지와 도착지를 입력하세요</p>
+    <h1 th:text="#{transport.search.heading}">🚇 교통 경로 검색</h1>
+    <p th:text="#{transport.search.subtitle}">출발지와 도착지를 입력하세요</p>
 
     <div class="search-card">
         <!-- 폼 액션 /ko로 수정 -->
@@ -65,27 +65,27 @@
                     <div class="input-icon">🚩</div>
                     <div class="input-wrap">
                         <input type="text" name="start" id="startInput"
-                               placeholder="출발지 입력 (예: 부산역)"
+                               placeholder="출발지 입력 (예: 부산역)" th:placeholder="#{transport.search.startPlaceholder}"
                                th:value="${start}" autocomplete="off">
                         <div class="autocomplete-list" id="startAcList"></div>
                     </div>
                 </div>
                 <div class="route-divider">
                     <div class="route-divider-line"></div>
-                    <button type="button" class="swap-btn" onclick="swapLocations()" title="출발/도착 교체">⇅</button>
+                    <button type="button" class="swap-btn" onclick="swapLocations()" title="출발/도착 교체" th:title="#{transport.search.swap}">⇅</button>
                     <div class="route-divider-line"></div>
                 </div>
                 <div class="input-row">
                     <div class="input-icon">🏁</div>
                     <div class="input-wrap">
                         <input type="text" name="end" id="endInput"
-                               placeholder="도착지 입력 (예: 해운대역)"
+                               placeholder="도착지 입력 (예: 해운대역)" th:placeholder="#{transport.search.endPlaceholder}"
                                th:value="${end}" autocomplete="off" required>
                         <div class="autocomplete-list" id="endAcList"></div>
                     </div>
                 </div>
             </div>
-            <button type="submit" class="search-btn">경로 검색 →</button>
+            <button type="submit" class="search-btn" th:text="#{transport.search.submit}">경로 검색 →</button>
         </form>
     </div>
 </div>
@@ -97,38 +97,39 @@
     </div>
 
     <div th:if="${routes != null}">
-        <a class="re-search" th:href="@{/ko/transport/search}">← 다시 검색하기</a>
+        <a class="re-search" th:href="@{/ko/transport/search}" th:text="#{transport.search.again}">← 다시 검색하기</a>
 
         <div class="result-header" th:if="${!#lists.isEmpty(routes)}">
             <b th:text="${start}"></b> → <b th:text="${end}"></b> ·
-            출발 <span th:text="${routes[0].departTime}"></span> 기준
+            <span th:text="#{transport.search.departAt(${routes[0].departTime})}">출발 기준</span>
         </div>
 
         <div class="mode-tabs">
-            <button type="button" class="mode-tab active" onclick="switchMode('bus', this)">🚌 버스</button>
-            <button type="button" class="mode-tab" onclick="switchMode('subway', this)">🚇 지하철</button>
-            <button type="button" class="mode-tab" onclick="switchMode('walk', this)">🚶 도보</button>
-            <button type="button" class="mode-tab" onclick="switchMode('taxi', this)">🚕 택시</button>
+            <button type="button" class="mode-tab active" onclick="switchMode('bus', this)" th:text="#{transport.search.tab.bus}">🚌 버스</button>
+            <button type="button" class="mode-tab" onclick="switchMode('subway', this)" th:text="#{transport.search.tab.subway}">🚇 지하철</button>
+            <button type="button" class="mode-tab" onclick="switchMode('walk', this)" th:text="#{transport.search.tab.walk}">🚶 도보</button>
+            <button type="button" class="mode-tab" onclick="switchMode('taxi', this)" th:text="#{transport.search.tab.taxi}">🚕 택시</button>
         </div>
 
         <div class="mode-panel active" id="mode-bus" th:with="modeRoutes=${routes.?[type=='bus']}">
             <div th:each="route, routeStat : ${modeRoutes}">
                 <div class="route-card" th:data-route-id="${route.routeId}" th:data-route-type="${route.type}" onclick="goDetail(this)">
-                    <div class="route-mode-label"><span th:text="${routeStat.count}"></span>번째로 빠른 버스 경로</div>
+                    <div class="route-mode-label" th:text="#{transport.search.rank.bus(${routeStat.count})}">빠른 버스 경로</div>
                     <div class="route-time" th:data-minutes="${route.totalTime}"></div>
-                    <div class="route-info">
-                        환승 <span th:text="${route.transferCount}"></span>회 ·
-                        도보 <span th:text="${#numbers.formatDecimal(route.walkTime, 1, 1)}"></span>분
+                    <div class="route-info" th:data-transfers="${route.transferCount}"
+                         th:text="#{transport.search.routeInfo(${route.transferCount}, ${#numbers.formatDecimal(route.walkTime, 1, 1)})}">
+                        환승 · 도보
                     </div>
                     <div class="route-stations">
                         <span th:each="step, stat : ${route.steps}"
                               th:if="${step.type == 'subway' or step.type == 'bus'}">
                             <span th:if="${!stat.first}"> → </span>
-                            <span th:text="${step.fromStation}"></span>
-                            <span th:text="'(' + ${step.line} + ')'"></span>
+                            <span th:text="${names.getOrDefault(step.fromStation, step.fromStation)}"></span>
+                            <span th:text="'(' + ${names.getOrDefault(step.line, step.line)} + ')'"></span>
                         </span>
                         <span th:if="${!#lists.isEmpty(route.steps)}">
-                            → <span th:text="${route.steps[route.steps.size()-1].toStation}"></span>
+                            → <span th:with="last=${route.steps[route.steps.size()-1].toStation}"
+                                    th:text="${names.getOrDefault(last, last)}"></span>
                         </span>
                     </div>
                     <div class="step-pills">
@@ -136,35 +137,36 @@
                               th:if="${step.type == 'subway' or step.type == 'bus'}">
                             <span th:if="${!stat.first}" class="pill-arrow">›</span>
                             <span class="pill" th:style="'background:' + ${step.color}"
-                                  th:text="${step.line}"></span>
+                                  th:text="${names.getOrDefault(step.line, step.line)}"></span>
                         </span>
                     </div>
                 </div>
             </div>
             <div class="empty-state small" th:if="${#lists.isEmpty(modeRoutes)}">
                 <div class="icon">🚌</div>
-                <p>버스로 가는 경로를 찾지 못했어요</p>
+                <p th:text="#{transport.search.empty.bus}">버스로 가는 경로를 찾지 못했어요</p>
             </div>
         </div>
 
         <div class="mode-panel" id="mode-subway" th:with="modeRoutes=${routes.?[type=='subway']}">
             <div th:each="route, routeStat : ${modeRoutes}">
                 <div class="route-card" th:data-route-id="${route.routeId}" th:data-route-type="${route.type}" onclick="goDetail(this)">
-                    <div class="route-mode-label"><span th:text="${routeStat.count}"></span>번째로 빠른 지하철 경로</div>
+                    <div class="route-mode-label" th:text="#{transport.search.rank.subway(${routeStat.count})}">빠른 지하철 경로</div>
                     <div class="route-time" th:data-minutes="${route.totalTime}"></div>
-                    <div class="route-info">
-                        환승 <span th:text="${route.transferCount}"></span>회 ·
-                        도보 <span th:text="${#numbers.formatDecimal(route.walkTime, 1, 1)}"></span>분
+                    <div class="route-info" th:data-transfers="${route.transferCount}"
+                         th:text="#{transport.search.routeInfo(${route.transferCount}, ${#numbers.formatDecimal(route.walkTime, 1, 1)})}">
+                        환승 · 도보
                     </div>
                     <div class="route-stations">
                         <span th:each="step, stat : ${route.steps}"
                               th:if="${step.type == 'subway' or step.type == 'bus'}">
                             <span th:if="${!stat.first}"> → </span>
-                            <span th:text="${step.fromStation}"></span>
-                            <span th:text="'(' + ${step.line} + ')'"></span>
+                            <span th:text="${names.getOrDefault(step.fromStation, step.fromStation)}"></span>
+                            <span th:text="'(' + ${names.getOrDefault(step.line, step.line)} + ')'"></span>
                         </span>
                         <span th:if="${!#lists.isEmpty(route.steps)}">
-                            → <span th:text="${route.steps[route.steps.size()-1].toStation}"></span>
+                            → <span th:with="last=${route.steps[route.steps.size()-1].toStation}"
+                                    th:text="${names.getOrDefault(last, last)}"></span>
                         </span>
                     </div>
                     <div class="step-pills">
@@ -172,48 +174,48 @@
                               th:if="${step.type == 'subway' or step.type == 'bus'}">
                             <span th:if="${!stat.first}" class="pill-arrow">›</span>
                             <span class="pill" th:style="'background:' + ${step.color}"
-                                  th:text="${step.line}"></span>
+                                  th:text="${names.getOrDefault(step.line, step.line)}"></span>
                         </span>
                     </div>
                 </div>
             </div>
             <div class="empty-state small" th:if="${#lists.isEmpty(modeRoutes)}">
                 <div class="icon">🚇</div>
-                <p>지하철로 가는 경로를 찾지 못했어요</p>
+                <p th:text="#{transport.search.empty.subway}">지하철로 가는 경로를 찾지 못했어요</p>
             </div>
         </div>
 
         <div class="mode-panel" id="mode-walk" th:with="modeRoutes=${routes.?[type=='walk']}">
             <div th:each="route : ${modeRoutes}">
                 <div class="route-card walk-card" th:data-route-id="${route.routeId}" th:data-route-type="${route.type}" onclick="goDetail(this)">
-                    <div class="route-mode-label">🚶 도보로만 이동</div>
+                    <div class="route-mode-label" th:text="#{transport.search.walkOnly}">🚶 도보로만 이동</div>
                     <div class="route-time" th:data-minutes="${route.totalTime}"></div>
-                    <div class="route-info route-note">환승이나 대중교통 없이 쭉 걸어가는 경로예요</div>
+                    <div class="route-info route-note" data-transfers="0" th:text="#{transport.search.walkNote}">환승이나 대중교통 없이 쭉 걸어가는 경로예요</div>
                 </div>
             </div>
             <div class="empty-state small" th:if="${#lists.isEmpty(modeRoutes)}">
                 <div class="icon">🚶</div>
-                <p>도보 경로를 찾지 못했어요</p>
+                <p th:text="#{transport.search.empty.walk}">도보 경로를 찾지 못했어요</p>
             </div>
         </div>
 
         <div class="mode-panel" id="mode-taxi" th:with="modeRoutes=${routes.?[type=='taxi']}">
             <div th:each="route : ${modeRoutes}">
                 <div class="route-card taxi-card">
-                    <div class="route-mode-label">🚕 예상 택시 요금</div>
+                    <div class="route-mode-label" th:text="#{transport.search.taxi.title}">🚕 예상 택시 요금</div>
                     <div class="route-time" th:data-minutes="${route.totalTime}"></div>
                     <div class="route-info">
-                        💰 약 <b th:text="${#numbers.formatInteger(route.fareWon, 0, 'COMMA')}"></b>원
-                        <span class="route-note">(실제 호출·정확한 요금은 카카오맵에서 확인해주세요)</span>
+                        <span th:utext="#{transport.search.taxi.fare(${#numbers.formatInteger(route.fareWon, 0, 'COMMA')})}">💰 약 원</span>
+                        <span class="route-note" th:text="#{transport.search.taxi.note}">(실제 호출·정확한 요금은 카카오맵에서 확인해주세요)</span>
                     </div>
                     <a class="kakao-map-btn"
                        th:href="'http://m.map.kakao.com/scheme/route?sp=' + ${route.startLat} + ',' + ${route.startLng} + '&ep=' + ${route.endLat} + ',' + ${route.endLng} + '&by=car'"
-                       target="_blank" rel="noopener">🗺️ 카카오맵에서 길찾기</a>
+                       target="_blank" rel="noopener" th:text="#{transport.search.taxi.map}">🗺️ 카카오맵에서 길찾기</a>
                 </div>
             </div>
             <div class="empty-state small" th:if="${#lists.isEmpty(modeRoutes)}">
                 <div class="icon">🚕</div>
-                <p>택시 요금 정보를 가져오지 못했어요</p>
+                <p th:text="#{transport.search.empty.taxi}">택시 요금 정보를 가져오지 못했어요</p>
             </div>
         </div>
     </div>
@@ -221,9 +223,10 @@
     <div th:if="${routes == null and error == null}">
         <div th:if="${recentRoutes != null and !#lists.isEmpty(recentRoutes)}">
             <div style="display:flex; align-items:center; justify-content:space-between; margin: 24px 0 12px;">
-                <div class="section-title">🕐 최근 검색</div>
+                <div class="section-title" th:text="#{transport.search.recent}">🕐 최근 검색</div>
                 <button onclick="clearAllHistory()"
-                        style="font-size:12px; color:var(--gray); background:none; border:none; cursor:pointer; font-family:'DM Sans',sans-serif;">
+                        style="font-size:12px; color:var(--gray); background:none; border:none; cursor:pointer; font-family:'DM Sans',sans-serif;"
+                        th:text="#{transport.search.clearAll}">
                     전체 삭제
                 </button>
             </div>
@@ -236,11 +239,11 @@
                 <div class="recent-info">
                     <div class="recent-route" th:text="${r.startPlace} + ' → ' + ${r.endPlace}"></div>
                     <div class="recent-meta"
-                         th:text="${r.routeType == 'bus'} ? '🚌 버스' :
-                                   (${r.routeType == 'subway'} ? '🚇 지하철' :
-                                   (${r.routeType == 'walk'} ? '🚶 도보' :
-                                   (${r.routeType == 'fast'} ? '⚡ 빠른 경로' :
-                                   (${r.routeType == 'comfort'} ? '😊 편한 경로' : '⭐ 추천 경로'))))">
+                         th:text="${r.routeType == 'bus'} ? #{transport.search.tab.bus} :
+                                   (${r.routeType == 'subway'} ? #{transport.search.tab.subway} :
+                                   (${r.routeType == 'walk'} ? #{transport.search.tab.walk} :
+                                   (${r.routeType == 'fast'} ? #{transport.search.type.fast} :
+                                   (${r.routeType == 'comfort'} ? #{transport.search.type.comfort} : #{transport.search.type.recommend}))))">
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -252,23 +255,32 @@
         </div>
         <div class="empty-state" th:if="${recentRoutes == null or #lists.isEmpty(recentRoutes)}">
             <div class="icon">🗺️</div>
-            <h3>경로를 검색해보세요</h3>
-            <p>출발지와 도착지를 입력하고 검색 버튼을 누르세요</p>
+            <h3 th:text="#{transport.search.emptyTitle}">경로를 검색해보세요</h3>
+            <p th:text="#{transport.search.emptyDesc}">출발지와 도착지를 입력하고 검색 버튼을 누르세요</p>
         </div>
     </div>
 
 </div>
 
+<script th:inline="javascript">
+    // 소요 시간 문구. {h}, {m} 자리를 채운다.
+    const TIME_TEXT = {
+        hm: /*[[#{transport.search.time.hm('{h}', '{m}')}]]*/ '{h}시간 {m}분',
+        h:  /*[[#{transport.search.time.h('{h}')}]]*/ '{h}시간',
+        m:  /*[[#{transport.search.time.m('{m}')}]]*/ '{m}분'
+    };
+</script>
 <script>
     let acTimer = null;
 
     function formatMinutes(min) {
+        const fill = (tpl, h, m) => tpl.replace('{h}', h).replace('{m}', m);
         if (min >= 60) {
             const h = Math.floor(min / 60);
             const m = min % 60;
-            return m > 0 ? `<span>${h}시간 ${m}분</span>` : `<span>${h}시간</span>`;
+            return `<span>${fill(m > 0 ? TIME_TEXT.hm : TIME_TEXT.h, h, m)}</span>`;
         }
-        return `<span>${min}분</span>`;
+        return `<span>${fill(TIME_TEXT.m, 0, min)}</span>`;
     }
 
     function applyTimeFormat() {
@@ -406,11 +418,10 @@
         const routeType = el.getAttribute('data-route-type') || 'recommend';
         const minutes  = parseInt(el.querySelector('.route-time').getAttribute('data-minutes'));
         const infoEl = el.querySelector('.route-info');
-        const infoText = infoEl ? infoEl.textContent.trim() : '';
 
-        // 환승 횟수 파싱 (예: "환승 2회 · 도보 3.5분") — 도보 탭 카드는 환승 표시가 없어 0회.
-        const transferMatch = infoText.match(/(\d+)회/);
-        const transferCount = transferMatch ? parseInt(transferMatch[1]) : 0;
+        // 환승 횟수 — 카드에 data-transfers 로 실어뒀다(문구가 언어마다 달라 글자로는 못 뽑는다).
+        // 도보 탭 카드는 0회.
+        const transferCount = infoEl ? (parseInt(infoEl.dataset.transfers) || 0) : 0;
 
         const startEl = document.getElementById('startInput');
         const endEl   = document.getElementById('endInput');

@@ -122,11 +122,12 @@
                         <span th:each="step, stat : ${route.steps}"
                               th:if="${step.type == 'subway' or step.type == 'bus'}">
                             <span th:if="${!stat.first}"> → </span>
-                            <span th:text="${step.fromStation}"></span>
-                            <span th:text="'(' + ${step.line} + ')'"></span>
+                            <span th:text="${names.getOrDefault(step.fromStation, step.fromStation)}"></span>
+                            <span th:text="'(' + ${names.getOrDefault(step.line, step.line)} + ')'"></span>
                         </span>
                         <span th:if="${!#lists.isEmpty(route.steps)}">
-                            → <span th:text="${route.steps[route.steps.size()-1].toStation}"></span>
+                            → <span th:with="last=${route.steps[route.steps.size()-1].toStation}"
+                                    th:text="${names.getOrDefault(last, last)}"></span>
                         </span>
                     </div>
                     <div class="step-pills">
@@ -134,7 +135,7 @@
                               th:if="${step.type == 'subway' or step.type == 'bus'}">
                             <span th:if="${!stat.first}" class="pill-arrow">›</span>
                             <span class="pill" th:style="'background:' + ${step.color}"
-                                  th:text="${step.line}"></span>
+                                  th:text="${names.getOrDefault(step.line, step.line)}"></span>
                         </span>
                     </div>
                 </div>
@@ -158,11 +159,12 @@
                         <span th:each="step, stat : ${route.steps}"
                               th:if="${step.type == 'subway' or step.type == 'bus'}">
                             <span th:if="${!stat.first}"> → </span>
-                            <span th:text="${step.fromStation}"></span>
-                            <span th:text="'(' + ${step.line} + ')'"></span>
+                            <span th:text="${names.getOrDefault(step.fromStation, step.fromStation)}"></span>
+                            <span th:text="'(' + ${names.getOrDefault(step.line, step.line)} + ')'"></span>
                         </span>
                         <span th:if="${!#lists.isEmpty(route.steps)}">
-                            → <span th:text="${route.steps[route.steps.size()-1].toStation}"></span>
+                            → <span th:with="last=${route.steps[route.steps.size()-1].toStation}"
+                                    th:text="${names.getOrDefault(last, last)}"></span>
                         </span>
                     </div>
                     <div class="step-pills">
@@ -170,7 +172,7 @@
                               th:if="${step.type == 'subway' or step.type == 'bus'}">
                             <span th:if="${!stat.first}" class="pill-arrow">›</span>
                             <span class="pill" th:style="'background:' + ${step.color}"
-                                  th:text="${step.line}"></span>
+                                  th:text="${names.getOrDefault(step.line, step.line)}"></span>
                         </span>
                     </div>
                 </div>

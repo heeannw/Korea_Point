@@ -10,14 +10,14 @@
 <body class="booking-page">
 <div th:replace="~{fragments/app-header :: header(${lang == 'zh-CN' ? 'zh' : lang}, ${isLoggedIn}, ${currentUserName})}"></div>
 <main class="page" th:with="state=${reservation.applicationStatus}">
-    <ol class="booking-steps"><li><span>1</span><span th:text="#{reservation.request.apply}">예약 신청</span></li>
+    <ol class="booking-steps" th:aria-label="#{reservation.ui.stepsLabel}"><li><span>1</span><span th:text="#{reservation.request.apply}">예약 신청</span></li>
         <li class="active"><span>2</span><span th:text="#{reservation.request.review}">관리자 승인</span></li>
         <li><span>3</span><span th:text="#{reservation.ui.step.payment}">결제</span></li>
         <li><span>4</span><span th:text="#{reservation.ui.step.complete}">예약 확정</span></li></ol>
     <h1 th:text="${#messages.msg('reservation.request.state.' + state)}">승인 대기</h1>
     <p class="notice" th:text="${#messages.msg('reservation.request.guide.' + state)}">아직 예약이 확정되지 않았습니다.</p>
     <section class="panel">
-        <p th:text="${reservation.reservationNo}"></p><h2 th:text="${reservation.placeTitle}"></h2>
+        <p th:text="${reservation.reservationNo}"></p><h2 th:text="${placeTitle ?: reservation.placeTitle}"></h2>
         <dl class="summary-list">
             <div class="summary-row"><dt th:text="#{reservation.form.date}">방문일</dt><dd th:text="${reservation.reservationDate}"></dd></div>
             <div class="summary-row"><dt th:text="#{reservation.form.time}">시간</dt><dd th:text="${reservation.reservationTime}"></dd></div>

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${lang}" lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="_csrf" th:content="${_csrf.token}"/>
   <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-  <title>Taste — KoreaPoint</title>
+  <title th:text="#{tour.food.pageTitle} + ' — KoreaPoint'">Taste — KoreaPoint</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -205,7 +205,7 @@
 
 <div class="body-row">
   <aside class="sidebar">
-    <nav class="mode-tabs" aria-label="맛집 유형">
+    <nav class="mode-tabs" th:aria-label="#{tour.food.modeTabsLabel}" aria-label="맛집 유형">
       <a class="mode-tab" th:classappend="${cafeOnly} ? '' : 'active'"
          th:href="@{/tour/food(lang=${lang}, lat=${userlat}, lon=${userlon}, near=${near})}" id="tabFood">음식점</a>
       <a class="mode-tab" th:classappend="${cafeOnly} ? 'active' : ''"

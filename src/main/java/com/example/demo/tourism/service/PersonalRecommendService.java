@@ -29,6 +29,7 @@ public class PersonalRecommendService {
     private final UserActivityRepository activityRepository;
     private final UserTourPrefRepository tourPrefRepository;
     private final TourismService tourismService;
+    private final RecoReasonText reasonText;
 
     private static final Map<ActivityType, Double> ACTION_WEIGHT = Map.of(
             ActivityType.SAVE, 5.0,
@@ -106,36 +107,51 @@ public class PersonalRecommendService {
         UserTasteProfile p = buildProfile(userId);
         if (p.isEmpty()) return List.of();
 
+        String language = RecoReasonText.language(lang);
+        // 취향 프로필의 구·소분류는 국문이다. 외국어 목록은 주소·소분류가 그 언어라 그대로 맞춰 보면
+        // 구가 하나도 안 맞아, 같은 사람이라도 언어에 따라 추천이 달라졌다. 국문 목록에서 같은 번호로 찾는다.
+        Map<String, TourPlaceDto> korean = new HashMap<>();
+        if (!"ko".equals(language)) {
+            for (TourPlaceDto k : tourismService.allList("ko")) korean.put(k.getId(), k);
+        }
         List<PersonalRecoDto> scored = new ArrayList<>();
-        for (TourPlaceDto place : tourismService.allList(lang == null || lang.isBlank() ? "ko" : lang)) {
+        for (TourPlaceDto place : tourismService.allList(language)) {
             if ("25".equals(place.getType())) continue;   // 여행코스 제외
-            PersonalRecoDto d = scoreOne(place, p);
+            PersonalRecoDto d = scoreOne(place, korean.getOrDefault(place.getId(), place), p, language);
             if (d != null) scored.add(d);
         }
         scored.sort(Comparator.comparingDouble(PersonalRecoDto::score).reversed());
         return scored.subList(0, Math.min(TOP_N, scored.size()));
     }
 
-    private PersonalRecoDto scoreOne(TourPlaceDto x, UserTasteProfile p) {
+    /**
+     * @param x  화면 언어 목록의 장소(이름·소분류 표시에 쓴다)
+     * @param ko 같은 번호의 국문 장소(구·소분류 맞춰 보기에 쓴다). 국문 화면이면 x 와 같다.
+     */
+    private PersonalRecoDto scoreOne(TourPlaceDto x, TourPlaceDto ko, UserTasteProfile p, String lang) {
         String slug = slugOfType(x.getType());
-        String gu = ActivityLogService.areaFromAddr(x.getAddr());
+        String gu = ActivityLogService.areaFromAddr(ko.getAddr());
         String detail = x.getTypeDetailName();
+        String detailKo = ko.getTypeDetailName() != null ? ko.getTypeDetailName() : detail;
 
         double sType   = slug == null   ? 0 : p.typeWeight().getOrDefault(slug, 0.0);
         double sArea   = gu == null     ? 0 : p.areaWeight().getOrDefault(gu, 0.0);
-        double sDetail = detail == null ? 0 : p.detailWeight().getOrDefault(detail, 0.0);
+        // 예전 기록은 소분류가 그 화면 언어로 남아 있어 둘 다 본다.
+        double sDetail = detail == null ? 0 : Math.max(p.detailWeight().getOrDefault(detailKo, 0.0),
+                                                        p.detailWeight().getOrDefault(detail, 0.0));
         double sRecency = 0;
         if (gu != null && gu.equals(p.recentArea())) sRecency += 0.5;
-        if (detail != null && detail.equals(p.recentDetail())) sRecency += 0.5;
+        if (detail != null && (detailKo.equals(p.recentDetail()) || detail.equals(p.recentDetail()))) sRecency += 0.5;
 
         double score = wType * sType + wArea * sArea + wDetail * sDetail + wRecency * sRecency;
         if (score <= 0) return null;
         if (p.seen().contains(x.getId())) score *= seenPenalty;
 
         List<String> reasons = new ArrayList<>();
-        if (sType > 0)   reasons.add(catLabel(slug) + " 선호");
-        if (sArea > 0)   reasons.add(gu);
-        if (sDetail > 0) reasons.add(detail + " 자주 봄");
+        // 근거 태그는 화면 언어로 만든다(RecoReasonText). 국문이면 예전과 같은 "관광지 선호" 꼴.
+        if (sType > 0)   reasons.add(reasonText.likes(slug, lang));
+        if (sArea > 0)   reasons.add(reasonText.area(gu, lang));
+        if (sDetail > 0) reasons.add(reasonText.oftenViewed(detail, lang));
         if (reasons.isEmpty()) return null;
 
         return new PersonalRecoDto(x.getId(), x.getTitle(), x.getType(), slug,
@@ -163,18 +179,6 @@ public class PersonalRecommendService {
             case "28" -> "leisure";
             case "38" -> "shopping";
             default -> null;
-        };
-    }
-
-    static String catLabel(String slug) {
-        if (slug == null) return "관광";
-        return switch (slug) {
-            case "attraction" -> "관광지";
-            case "culture" -> "문화시설";
-            case "leisure" -> "레저·액티비티";
-            case "shopping" -> "쇼핑";
-            case "festival" -> "축제";
-            default -> "관광";
         };
     }
 

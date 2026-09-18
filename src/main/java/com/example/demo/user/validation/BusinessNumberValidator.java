@@ -1,5 +1,6 @@
 package com.example.demo.user.validation;
 
+import com.example.demo.user.exception.UserInputException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -103,14 +104,14 @@ public class BusinessNumberValidator {
     /** 하이픈·공백을 걷어내고 열 자리 숫자와 체크섬까지 확인한다. 외부 호출 없음. */
     public String normalize(String raw) {
         if (raw == null || raw.isBlank()) {
-            throw new IllegalArgumentException("사업자등록번호를 입력해 주세요.");
+            throw new UserInputException("business.error.numberRequired", "사업자등록번호를 입력해 주세요.");
         }
         String digits = raw.replaceAll("[^0-9]", "");
         if (digits.length() != 10) {
-            throw new IllegalArgumentException("사업자등록번호는 숫자 10자리입니다. 다시 확인해 주세요.");
+            throw new UserInputException("business.error.numberDigits", "사업자등록번호는 숫자 10자리입니다. 다시 확인해 주세요.");
         }
         if (!hasValidChecksum(digits)) {
-            throw new IllegalArgumentException("올바르지 않은 사업자등록번호입니다. 다시 확인해 주세요.");
+            throw new UserInputException("business.error.numberInvalid", "올바르지 않은 사업자등록번호입니다. 다시 확인해 주세요.");
         }
         return digits;
     }
@@ -123,21 +124,20 @@ public class BusinessNumberValidator {
      */
     public String normalizeStartDate(String raw) {
         if (raw == null || raw.isBlank()) {
-            throw new IllegalArgumentException("개업일자를 입력해 주세요. 사업자등록증의 개업연월일입니다.");
+            throw new UserInputException("business.error.startDateRequired", "개업일자를 입력해 주세요. 사업자등록증의 개업연월일입니다.");
         }
         String digits = raw.replaceAll("[^0-9]", "");
         if (digits.length() != 8) {
-            throw new IllegalArgumentException(
-                    "개업일자는 숫자 8자리입니다. 2020년 3월 5일이면 20200305 처럼 입력해 주세요.");
+            throw new UserInputException("business.error.startDateDigits", "개업일자는 숫자 8자리입니다. 2020년 3월 5일이면 20200305 처럼 입력해 주세요.");
         }
         LocalDate parsed;
         try {
             parsed = LocalDate.parse(digits, YYYYMMDD);
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("올바르지 않은 개업일자입니다. 다시 확인해 주세요.");
+            throw new UserInputException("business.error.startDateInvalid", "올바르지 않은 개업일자입니다. 다시 확인해 주세요.");
         }
         if (parsed.isAfter(LocalDate.now())) {
-            throw new IllegalArgumentException("개업일자가 미래로 되어 있습니다. 다시 확인해 주세요.");
+            throw new UserInputException("business.error.startDateFuture", "개업일자가 미래로 되어 있습니다. 다시 확인해 주세요.");
         }
         return parsed.format(YYYYMMDD);
     }
@@ -150,7 +150,7 @@ public class BusinessNumberValidator {
      */
     public String normalizeOwnerName(String raw) {
         if (raw == null || raw.isBlank()) {
-            throw new IllegalArgumentException("대표자명을 입력해 주세요. 사업자등록증에 적힌 대로 입력해 주세요.");
+            throw new UserInputException("business.error.ownerNameRequired", "대표자명을 입력해 주세요. 사업자등록증에 적힌 대로 입력해 주세요.");
         }
         return raw.trim();
     }
@@ -244,8 +244,7 @@ public class BusinessNumberValidator {
         // 01=일치, 02=불일치. 셋 중 무엇이 틀렸는지는 알려주지 않으니 안내 문구로 대신한다.
         if (!"01".equals(str(entry.get("valid")))) {
             log.info("국세청 진위확인 불일치 - 번호 {}, 응답 {}", businessNumber, str(entry.get("valid_msg")));
-            throw new IllegalArgumentException(
-                    "사업자등록증의 대표자명 또는 개업일자와 맞지 않습니다. 등록증에 적힌 대로 입력해 주세요.");
+            throw new UserInputException("business.error.mismatch", "사업자등록증의 대표자명 또는 개업일자와 맞지 않습니다. 등록증에 적힌 대로 입력해 주세요.");
         }
 
         if (entry.get("status") instanceof Map<?, ?> status) {
@@ -257,9 +256,9 @@ public class BusinessNumberValidator {
     private void checkOperating(Map<?, ?> status) {
         switch (str(status.get("b_stt_cd"))) {
             case "01" -> { /* 계속사업자 */ }
-            case "02" -> throw new IllegalArgumentException("휴업 중인 사업자등록번호입니다.");
-            case "03" -> throw new IllegalArgumentException("폐업한 사업자등록번호입니다.");
-            default -> throw new IllegalArgumentException("국세청에 등록되지 않은 사업자등록번호입니다.");
+            case "02" -> throw new UserInputException("business.error.suspended", "휴업 중인 사업자등록번호입니다.");
+            case "03" -> throw new UserInputException("business.error.closed", "폐업한 사업자등록번호입니다.");
+            default -> throw new UserInputException("business.error.notRegistered", "국세청에 등록되지 않은 사업자등록번호입니다.");
         }
     }
 
