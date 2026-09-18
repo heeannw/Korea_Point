@@ -2,76 +2,133 @@ package com.example.demo.tourism.config;
 
 import com.example.demo.tourism.dto.TourPlaceDto;
 import com.example.demo.tourism.service.TourPlaceTranslationFiller;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.InputStream;
+import java.net.URI;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * 관광 목록·상세는 항상 KorService2(국문)에서 받고, 국문 외 언어는 여기서 이름·주소만 바꿔 끼운다.
  *
- * <p>표는 빌드 타임 스크립트({@code scripts/tourism/fetch_tour_i18n.py})가 만든
- * {@code tourdata/tourism/tour_i18n_<lang>.json} 이다.
- * TourAPI 언어별 서비스는 국문과 <b>contentId 체계가 완전히 달라</b>(교집합 0) 조인이 불가능해서,
- * 값은 전부 DeepL Free 기계번역이다(이름·주소만). 개요·운영정보는 v1에서 국문을 유지한다.
- * 표에 없는 contentId 는 {@link TourPlaceTranslationFiller} 가 뒤에서 채운다.
- * 채워지기 전까지는 국문 원문을 그대로 둔다.</p>
+ * <p>언어별 공식 서비스(Eng/Jpn/Chs/Fre)를 서버가 직접, 주기적으로 불러 기준표를 만든다.
+ * 다만 이 서비스들은 국문과 contentId 체계가 완전히 달라(부산 기준 교집합 0건, 실측 확인) 이
+ * 표에서 실제로 매칭되는 항목은 거의 없다 — 그래도 정적 파일 대신 관광공사 API를 실시간으로
+ * 쓴다는 원칙은 지킨다. 표에 없는 항목은 {@link TourPlaceTranslationFiller}가 DeepL로 채운다
+ * (이미 실시간이고 DB에 영속돼 있다). 예전엔 이 표를 사람이 빌드 스크립트로 미리 받아 파일로
+ * 커밋해 뒀다({@code scripts/tourism/fetch_tour_i18n.py}, 삭제됨).</p>
  */
 @Component
 public class TourPlaceI18n {
 
     private static final Logger log = LoggerFactory.getLogger(TourPlaceI18n.class);
-    private static final String DIR = "tourdata/tourism/";
+    private static final long REFRESH_MS = 24 * 60 * 60_000L; // 하루
     /** ko 는 기준 언어라 오버레이가 없다. */
-    private static final Map<String, String> RESOURCE_BY_LANG = Map.of(
-            "en", DIR + "tour_i18n_en.json",
-            "ja", DIR + "tour_i18n_ja.json",
-            "zh", DIR + "tour_i18n_zh.json",
-            "fr", DIR + "tour_i18n_fr.json");
+    private static final List<String> LANGS = List.of("en", "ja", "zh", "fr");
+    private static final int MAX_PAGES = 10;
 
     /** contentId -> {"title": "...", "addr": "..."} */
     private record Entry(String title, String addr) { }
 
+    private final TourApiProperties properties;
     private final ObjectMapper objectMapper;
     private final TourPlaceTranslationFiller filler;
-    private Map<String, Map<String, Entry>> byLang = Map.of();
+    private final RestClient restClient = RestClient.create();
+    private volatile Map<String, Map<String, Entry>> byLang = Map.of();
 
-    public TourPlaceI18n(ObjectMapper objectMapper, TourPlaceTranslationFiller filler) {
+    public TourPlaceI18n(TourApiProperties properties, ObjectMapper objectMapper, TourPlaceTranslationFiller filler) {
+        this.properties = properties;
         this.objectMapper = objectMapper;
         this.filler = filler;
     }
 
     @PostConstruct
-    void load() {
+    @Scheduled(fixedRate = REFRESH_MS)
+    void refresh() {
+        if (properties.getServiceKey() == null || properties.getServiceKey().isBlank()) return;
         Map<String, Map<String, Entry>> loaded = new LinkedHashMap<>();
-        RESOURCE_BY_LANG.forEach((lang, resource) -> {
-            Map<String, Entry> table = read(resource);
-            if (!table.isEmpty()) {
-                loaded.put(lang, table);
-                log.info("관광 번역 오버레이 로드: {} ({}건)", lang, table.size());
+        for (String lang : LANGS) {
+            try {
+                Map<String, Entry> table = fetchAreaList(properties.baseUrlFor(lang));
+                if (!table.isEmpty()) {
+                    loaded.put(lang, table);
+                    log.info("관광 번역 오버레이 로드: {} ({}건)", lang, table.size());
+                }
+            } catch (Exception e) {
+                log.warn("관광 번역 오버레이 갱신 실패 [{}]: {}", lang, e.getMessage());
             }
-        });
-        byLang = loaded;
+        }
+        // 전부 실패해도 이전에 성공한 표를 그대로 둔다(비었으면 필러가 국문 채운 채로 물려받는다).
+        if (!loaded.isEmpty()) byLang = loaded;
     }
 
-    private Map<String, Entry> read(String resource) {
-        try (InputStream in = getClass().getClassLoader().getResourceAsStream(resource)) {
-            if (in == null) {
-                log.warn("{} 없음 — 해당 언어 목록은 이름·주소가 국문으로 표시된다. "
-                        + "scripts/fetch_tour_i18n.py 를 실행해 생성하라.", resource);
-                return Map.of();
-            }
-            return objectMapper.readValue(in, new TypeReference<Map<String, Entry>>() { });
-        } catch (Exception e) {
-            log.warn("{} 을 읽지 못했다 — 국문으로 표시된다.", resource, e);
-            return Map.of();
+    /** 부산 areaBasedList2 전체를 언어별 서비스에서 받는다. contentId -> {title, addr}. */
+    private Map<String, Entry> fetchAreaList(String baseUrl) {
+        Map<String, Entry> out = new LinkedHashMap<>();
+        int pageSize = Math.max(1, properties.getDefaultRows());
+        for (int page = 1; page <= MAX_PAGES; page++) {
+            URI uri = UriComponentsBuilder.fromUriString(baseUrl + "/areaBasedList2")
+                    .queryParam("serviceKey", properties.getServiceKey())
+                    .queryParam("MobileOS", properties.getMobileOs())
+                    .queryParam("MobileApp", properties.getMobileApp())
+                    .queryParam("_type", "json")
+                    .queryParam("numOfRows", pageSize)
+                    .queryParam("pageNo", page)
+                    .queryParam("lDongRegnCd", properties.getBusanLegalDongCode())
+                    .queryParam("arrange", "Q")
+                    .build().encode().toUri();
+            JsonNode body = requestBody(uri);
+            addItems(out, body.path("items").path("item"));
+            if ((long) page * pageSize >= body.path("totalCount").asLong(0)) break;
         }
+        return out;
+    }
+
+    private JsonNode requestBody(URI uri) {
+        String raw = restClient.get().uri(uri).retrieve().body(String.class);
+        JsonNode root;
+        try {
+            root = objectMapper.readTree(raw);
+        } catch (Exception e) {
+            throw new RuntimeException("번역 오버레이 응답 파싱 실패", e);
+        }
+        String resultCode = root.path("response").path("header").path("resultCode").asText();
+        if (!"0000".equals(resultCode)) {
+            throw new RuntimeException("TourAPI 오류 " + resultCode + ": "
+                    + root.path("response").path("header").path("resultMsg").asText());
+        }
+        return root.path("response").path("body");
+    }
+
+    private void addItems(Map<String, Entry> out, JsonNode items) {
+        if (items.isArray()) {
+            for (JsonNode item : items) addItem(out, item);
+        } else if (items.isObject()) {
+            addItem(out, items);
+        }
+    }
+
+    private void addItem(Map<String, Entry> out, JsonNode item) {
+        String cid = text(item, "contentid");
+        if (cid == null) return;
+        String addr1 = text(item, "addr1");
+        String addr2 = text(item, "addr2");
+        String addr = addr1 == null ? addr2 : (addr2 == null ? addr1 : addr1 + " " + addr2);
+        out.putIfAbsent(cid, new Entry(text(item, "title"), addr));
+    }
+
+    private String text(JsonNode node, String field) {
+        String v = node.path(field).asText("").trim();
+        return v.isEmpty() ? null : v;
     }
 
     private Entry lookup(String lang, String contentId) {

@@ -88,13 +88,24 @@
 .section-card:last-child{border-bottom:0}
 .section-title{font-size:14px;font-weight:800;color:#111;margin-bottom:12px}
 .section-title small{color:#aaa;font-weight:500;font-size:12px}
-.dp-info-row{padding:0 16px;border-bottom:8px solid #f5f7fa}
+.dp-info-row{padding:0 16px}
 .dp-info-row:empty{display:none}
 .dp-info{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid #f5f7fa;align-items:flex-start}
 .dp-info:last-child{border-bottom:0}
 .dp-info-label{font-size:11px;color:#aaa;font-weight:600;min-width:50px;flex:none;padding-top:1px}
 .dp-info-val{font-size:13px;color:#333;flex:1;line-height:1.5;font-weight:500}
-.dp-desc{font-size:13px;color:#555;line-height:1.75;word-break:keep-all}
+/* 장소 소개는 위 운영정보(dp-info-row)와 한 블록으로 이어 붙인다 — 따로 노는 카드처럼 안 보이게 */
+.dp-desc-block{padding:14px 16px 4px;border-bottom:8px solid #f5f7fa}
+.dp-desc{font-size:13px;color:#555;line-height:1.75;word-break:keep-all;position:relative}
+.dp-desc.collapsed{max-height:96px;overflow:hidden}
+.dp-desc.collapsed::after{content:'';position:absolute;left:0;right:0;bottom:0;height:32px;
+  background:linear-gradient(transparent,#fff)}
+.dp-desc-toggle{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;
+  margin-top:6px;padding:8px 0 2px;background:none;border:0;color:#8a94a3;
+  font:700 12px inherit;cursor:pointer}
+.dp-desc-toggle:hover{color:#555}
+.dp-desc-toggle .dp-desc-caret{font-size:10px;transition:transform .2s}
+.dp-desc-toggle.open .dp-desc-caret{transform:rotate(180deg)}
 .empty-state{text-align:center;padding:36px 16px;color:#aaa;display:flex;flex-direction:column;align-items:center;gap:3px}
 .empty-state strong{display:block;color:#555;font-size:14px;margin:6px 0 2px}
 .outline-btn{display:inline-block;margin-top:12px;padding:9px 18px;border:1.5px solid var(--blue);
