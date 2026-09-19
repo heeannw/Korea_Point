@@ -9,5 +9,7 @@ public enum ActivityType {
     /** 검색어로 조회했다. */
     SEARCH,
     /** 카테고리 칩을 골랐다. */
-    CATEGORY
+    CATEGORY,
+    /** 리뷰를 남겼다. */
+    REVIEW
 }

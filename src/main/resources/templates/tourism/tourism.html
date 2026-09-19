@@ -1268,6 +1268,16 @@
 
     renderDpRating(avg, reviews.length);   // 헤더 별점을 방문자 리뷰 평균으로 갱신
 
+    // 왼쪽 목록(전체·관광지·인기 등)의 카드는 PLACES 배열을 페이지가 처음 열릴 때만 서버에서
+    // 받아 그대로 쓴다. 리뷰를 쓰거나 지워도 그 배열은 자동으로 안 바뀌니, 지금 막 받아온
+    // 평균·개수를 여기서 직접 반영하고 다시 그려야 목록 카운트가 새로고침 없이 바로 바뀐다.
+    const listedPlace = PLACES.find(x => String(x.id) === String(p.id));
+    if (listedPlace) {
+      listedPlace.userRating = avg;
+      listedPlace.userReviewCount = reviews.length;
+      render();
+    }
+
     const tabBtn = document.querySelector('.dp-tab[data-tab="reviews"]');
     if (tabBtn) {
       tabBtn.dataset.baseLabel = tabBtn.dataset.baseLabel || tabBtn.textContent.trim();
@@ -1305,7 +1315,11 @@
         rating: rvRating, text: document.getElementById('rvText').value
       });
       rvFormOpen = false;
-      if (currentDetailPlace) renderReviews(currentDetailPlace);
+      if (currentDetailPlace) {
+        renderReviews(currentDetailPlace);
+        logPlace('REVIEW', currentDetailPlace);
+        loadForYou();   // 리뷰도 취향 신호이니 "나를 위한 추천"을 새로고침 없이 바로 다시 불러온다
+      }
     } catch (e) { alert(I18N.reviews.saveFail); }
   }
 

@@ -8,6 +8,9 @@ import com.example.demo.transport.repository.RouteRepository;
 import com.example.demo.transport.service.TransportNameTranslator;
 import com.example.demo.transport.service.TransportRouteService;
 import com.example.demo.user.util.SecurityUtil;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -37,12 +40,38 @@ public class TransportRouteController {
     @Autowired
     private LocalizedMessages messages;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @ResponseBody
     @GetMapping(value = "/api/kakao/search", produces = "application/json")
     public String kakaoSearch(@RequestParam String query,
                               @RequestParam(required = false) String category,
                               @RequestParam(defaultValue = "4") int size) throws Exception {
-        return transportRouteService.searchKakaoPlaces(query, category, size);
+        String raw = transportRouteService.searchKakaoPlaces(query, category, size);
+        return translatePlaceNames(raw);
+    }
+
+    /**
+     * 카카오 로컬 검색은 언어 파라미터가 없어 항상 국문 장소명만 준다. 경로 결과 카드에서 쓰는
+     * 것과 같은 번역기(TransportNameTranslator)로 자동완성 카드의 이름만 화면 언어로 옮긴다.
+     * 국문 화면이면 옮길 것이 없어 원본을 그대로 돌려준다.
+     */
+    private String translatePlaceNames(String raw) throws Exception {
+        JsonNode root = objectMapper.readTree(raw);
+        JsonNode documents = root.path("documents");
+        if (!documents.isArray() || documents.isEmpty()) return raw;
+
+        List<String> names = new ArrayList<>();
+        documents.forEach(d -> names.add(d.path("place_name").asText("")));
+        Map<String, String> translated = nameTranslator.translateAll(names, CurrentLanguage.get());
+        if (translated.isEmpty()) return raw;
+
+        for (JsonNode d : documents) {
+            String translatedName = translated.get(d.path("place_name").asText(""));
+            if (translatedName != null) ((ObjectNode) d).put("place_name", translatedName);
+        }
+        return objectMapper.writeValueAsString(root);
     }
 
     @ResponseBody

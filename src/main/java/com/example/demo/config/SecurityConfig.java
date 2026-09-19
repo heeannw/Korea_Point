@@ -38,6 +38,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/trip/reservation/**").authenticated()
                 .requestMatchers("/api/transport/history/**").authenticated()
                 .requestMatchers("/api/kakao/**").authenticated()
+                .requestMatchers("/api/points/charge/**").authenticated()
                 .requestMatchers("/tour/**").authenticated()
                 .requestMatchers("/transport/**").authenticated()
                 .requestMatchers("/foodmap/**").authenticated()
@@ -102,7 +103,7 @@ public class SecurityConfig {
             )
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/api/comments/**", "/api/reports/**",
-                        "/api/portone/webhook",
+                        "/api/portone/webhook", "/api/points/webhook",
                         "/api/trip/recommend", "/api/trip/reoptimize")
             );
 

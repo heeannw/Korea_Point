@@ -63,7 +63,7 @@
                     <div class="input-icon">🚩</div>
                     <div class="input-wrap">
                         <input type="text" name="start" id="startInput"
-                               placeholder="Departure (e.g. Seoul Station)"
+                               placeholder="Departure (e.g. Busan Station)" th:placeholder="#{transport.search.startPlaceholder}"
                                th:value="${start}" autocomplete="off">
                         <div class="autocomplete-list" id="startAcList"></div>
                     </div>
@@ -77,7 +77,7 @@
                     <div class="input-icon">🏁</div>
                     <div class="input-wrap">
                         <input type="text" name="end" id="endInput"
-                               placeholder="Destination (e.g. Gangnam Station)"
+                               placeholder="Destination (e.g. Haeundae Station)" th:placeholder="#{transport.search.endPlaceholder}"
                                th:value="${end}" autocomplete="off" required>
                         <div class="autocomplete-list" id="endAcList"></div>
                     </div>

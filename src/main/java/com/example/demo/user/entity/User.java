@@ -72,7 +72,7 @@ public class User {
     @Builder.Default
     private String role = "USER";
 
-    // 사업자 홍보 게시글 작성 시 사용하는 포인트
+    // 마이페이지에서 충전·적립되는 포인트. 사업자는 홍보 게시글 작성에도 이 포인트를 쓴다.
     @Column(nullable = false)
     @Builder.Default
     private int point = 0;

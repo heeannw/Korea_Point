@@ -23,6 +23,7 @@ public class UserService {
             Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{4,20}$");
     private static final Pattern PASSWORD_PATTERN =
             Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,20}$");
+    private static final int SIGNUP_BONUS_POINT = 5000;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -40,7 +41,7 @@ public class UserService {
                                 .name(name)
                                 .profileImage(profileImage)
                                 .nationalityPrompted(false)
-                                .point(0)
+                                .point(SIGNUP_BONUS_POINT)
                                 .build()
                 ));
     }
@@ -65,7 +66,7 @@ public class UserService {
                 .email(requireText(email, "account.error.emailRequired", "이메일을 입력해 주세요."))
                 .nationalityPrompted(false)
                 .role("USER")
-                .point(0)
+                .point(SIGNUP_BONUS_POINT)
                 .build());
     }
 

@@ -79,7 +79,8 @@
     .card-cat{font-size:11px;font-weight:700;margin-bottom:2px}
     .scroll-sentinel{height:40px}
     .card-name{font-size:14px;font-weight:600;margin-bottom:4px;line-height:1.3}
-    .card-meta{font-size:11px;color:var(--gray);display:flex;gap:8px;flex-wrap:wrap}
+    .card-meta{font-size:11px;color:var(--gray);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .stars-s{color:#facc15;font-size:11px}
     .empty{padding:30px 14px;text-align:center;color:var(--gray);font-size:13px;line-height:1.6}
 
     .map-area{flex:1;position:relative;background:#e8f0fe;overflow:hidden}
@@ -659,6 +660,9 @@
           <div class="card-cat" style="color:${cardColorOf(p)}">${cardEmojiOf(p)} ${escapeHtml(catLabel(p))}</div>
           <div class="card-name">${escapeHtml(p.title ?? '-')}</div>
           <div class="card-meta">
+            ${p.userReviewCount
+              ? `<span><span class="stars-s">★</span>${p.userRating.toFixed(1)} (${p.userReviewCount})</span>`
+              : `<span><span class="stars-s">★</span>${p.rating ?? '-'} (${p.user_ratings_total ? (p.user_ratings_total / 1000).toFixed(1) + 'k' : '-'})</span>`}
             ${NEAR_TITLE ? `<span>📍 ${distStr(p.distance)}</span>` : ''}
             <span>${escapeHtml((p.addr ?? '').slice(0, 24))}</span>
           </div>
@@ -978,6 +982,16 @@
     root.innerHTML = `<div class="section-card rv-wrap"><div class="rv-head"><div class="section-title">${T.reviewsTitle} ${titleMeta}</div>${writeBtn}</div>${form}${list}</div>`;
 
     renderDpRating(avg, reviews.length);
+
+    // 왼쪽 목록 카드는 PLACES 배열을 페이지가 처음 열릴 때만 서버에서 받아 그대로 쓴다.
+    // 리뷰를 쓰거나 지워도 그 배열은 자동으로 안 바뀌니, 지금 막 받아온 평균·개수를 여기서
+    // 직접 반영하고 다시 그려야 목록 카운트가 새로고침 없이 바로 바뀐다.
+    const listedPlace = PLACES.find(x => String(x.id) === String(p.id));
+    if (listedPlace) {
+      listedPlace.userRating = avg;
+      listedPlace.userReviewCount = reviews.length;
+      render();
+    }
 
     const tabBtn = document.querySelector('.dp-tab[data-tab="reviews"]');
     if (tabBtn) {

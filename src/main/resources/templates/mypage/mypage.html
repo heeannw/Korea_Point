@@ -40,13 +40,12 @@
                 <p class="login-provider" th:text="${loginProviderName}">Google 로그인</p>
             </div>
         </div>
-        <div class="point-box" th:if="${isOwner}">
-            <span th:text="#{mypage.profile.promoPoint}">홍보 포인트</span>
+        <div class="point-box point-box-link" role="link" tabindex="0"
+             th:data-points-url="@{/ko/mypage/points(lang=${lang})}"
+             onclick="event.preventDefault(); event.stopPropagation(); location.href=this.dataset.pointsUrl;"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); this.click();}">
+            <span th:text="#{mypage.profile.pointBalance}">보유 포인트</span>
             <strong th:text="|${user.point}P|">1000P</strong>
-        </div>
-        <div class="point-box" th:unless="${isOwner}">
-            <span th:text="#{mypage.profile.activityStatus}">활동 상태</span>
-            <strong>ACTIVE</strong>
         </div>
     </a>
 
