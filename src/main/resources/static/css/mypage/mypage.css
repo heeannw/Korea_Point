@@ -285,6 +285,19 @@ h2 {
     font-size: 24px;
 }
 
+.point-box-link {
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+}
+
+.point-box-link:hover,
+.point-box-link:focus-visible {
+    background: #eff6ff;
+    outline: none;
+}
+
 .notice {
     margin: 0 0 18px;
     padding: 14px 16px;

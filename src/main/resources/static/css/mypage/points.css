@@ -1,0 +1,132 @@
+.balance-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.balance-box span {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.balance-box strong {
+    color: #1a7de0;
+    font-size: 30px;
+}
+
+.points-layout {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.section-title {
+    margin: 0 0 16px;
+    font-size: 18px;
+}
+
+.error {
+    margin: 0 0 14px;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.tier-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.tier-option {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.tier-option input {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    margin: 0;
+}
+
+.tier-option.active,
+.tier-option:has(input:checked) {
+    border-color: #3b9eff;
+    background: #f8fbff;
+}
+
+.tier-amount {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.tier-price {
+    font-size: 12px;
+    color: #64748b;
+}
+
+#chargeMessage {
+    min-height: 18px;
+    margin: 10px 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a7de0;
+}
+
+.history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.history-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.history-amount {
+    font-weight: 800;
+}
+
+.history-date {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.status-badge.paid {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.status-badge.failed {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+@media (max-width: 820px) {
+    .points-layout {
+        grid-template-columns: 1fr;
+    }
+}

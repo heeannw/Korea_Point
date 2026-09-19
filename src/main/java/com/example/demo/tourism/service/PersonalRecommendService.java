@@ -32,6 +32,7 @@ public class PersonalRecommendService {
     private final RecoReasonText reasonText;
 
     private static final Map<ActivityType, Double> ACTION_WEIGHT = Map.of(
+            ActivityType.REVIEW, 6.0,
             ActivityType.SAVE, 5.0,
             ActivityType.DETAIL_VIEW, 3.0,
             ActivityType.CATEGORY, 2.0,
