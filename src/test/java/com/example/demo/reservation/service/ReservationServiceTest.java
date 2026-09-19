@@ -19,6 +19,50 @@ import static org.mockito.Mockito.when;
 class ReservationServiceTest {
 
     @Test
+    void lodgingStoresCheckoutAndCalculatesNightsAcrossMonthBoundary() {
+        when(reservationRepository.save(any())).thenAnswer(call -> call.getArgument(0));
+        var form = form(2);
+        form.setContentTypeId("32");
+        form.setReservationDate(LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1));
+        form.setCheckoutDate(form.getReservationDate().plusDays(2));
+        var reservation = service.create(7L, form);
+        assertThat(reservation.getCheckoutDate()).isEqualTo(form.getCheckoutDate());
+        assertThat(reservation.getStayNights()).isEqualTo(2);
+        assertThat(reservation.getStayDays()).isEqualTo(3);
+    }
+
+    @Test
+    void lodgingRejectsMissingSameDayAndEarlierCheckout() {
+        var form = form(2);
+        form.setContentTypeId("32");
+        for (LocalDate end : new LocalDate[]{null, form.getReservationDate(), form.getReservationDate().minusDays(1)}) {
+            form.setCheckoutDate(end);
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.create(7L, form))
+                    .isInstanceOf(InvalidStayDatesException.class);
+        }
+        org.mockito.Mockito.verifyNoInteractions(reservationRepository);
+    }
+
+    @Test
+    void ordinaryVisitDoesNotStoreCheckout() {
+        when(reservationRepository.save(any())).thenAnswer(call -> call.getArgument(0));
+        var form = form(2);
+        form.setCheckoutDate(form.getReservationDate().plusDays(2));
+        assertThat(service.create(7L, form).getCheckoutDate()).isNull();
+    }
+
+    @Test
+    void lodgingEditUsesStoredCategoryAndRequiresValidCheckout() {
+        var reservation = TourReservation.builder().id(3L).userId(7L).contentId("123").contentTypeId("32").build();
+        when(reservationRepository.findLockedById(3L)).thenReturn(Optional.of(reservation));
+        var form = form(2); // Client sends a non-lodging type; stored type still applies.
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.update(3L, 7L, form))
+                .isInstanceOf(InvalidStayDatesException.class);
+        form.setCheckoutDate(form.getReservationDate().plusDays(3));
+        assertThat(service.update(3L, 7L, form).getStayNights()).isEqualTo(3);
+    }
+
+    @Test
     void pastVisitIsAnInputErrorAndDoesNotSaveAnApplication() {
         var form = form(2);
         form.setReservationDate(LocalDate.now());
@@ -31,7 +75,8 @@ class ReservationServiceTest {
     private final TourReservationRepository reservationRepository = mock(TourReservationRepository.class);
     private final ReservationPaymentRepository paymentRepository = mock(ReservationPaymentRepository.class);
     private final PortOneGateway gateway = mock(PortOneGateway.class);
-    private final ReservationService service = new ReservationService(reservationRepository, paymentRepository, mock(ReservationPlacePolicyService.class), gateway);
+    private final com.example.demo.notification.NotificationService notifications = mock(com.example.demo.notification.NotificationService.class);
+    private final ReservationService service = new ReservationService(reservationRepository, paymentRepository, mock(ReservationPlacePolicyService.class), gateway, notifications);
 
     @Test
     void createsPendingApplicationWithoutPayment() {
@@ -42,6 +87,7 @@ class ReservationServiceTest {
 
         assertThat(reservation.getApplicationStatus()).isEqualTo("PENDING");
         assertThat(reservation.getPayment()).isNull();
+        org.mockito.Mockito.verify(notifications).record(reservation, com.example.demo.notification.NotificationType.SUBMITTED);
         org.mockito.Mockito.verifyNoInteractions(paymentRepository);
     }
 

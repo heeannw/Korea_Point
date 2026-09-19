@@ -44,3 +44,34 @@
 .user-menu-logout{border-top:1px solid var(--border,#dbeafe)}
 .user-menu-logout button{color:#ef4444}
 .user-menu-logout button svg{opacity:.9}
+
+/* Shared inbox, including pages with their own header layout. */
+.notification-menu{position:relative;display:inline-flex;flex:none;font-family:"DM Sans","Noto Sans KR",sans-serif}
+.notification-bell{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;padding:8px;border:1px solid #dbe3ee;border-radius:50%;background:#fff;color:#334155;cursor:pointer}
+.notification-bell:hover,.notification-bell[aria-expanded="true"]{color:#1675d1;background:#f0f7ff;border-color:#8abef0}
+.notification-bell svg{width:19px;height:19px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.notification-badge{position:absolute;right:-5px;top:-5px;min-width:18px;height:18px;padding:0 4px;border:2px solid #fff;border-radius:12px;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:14px;text-align:center}
+.notification-menu [hidden]{display:none!important}
+.notification-panel{position:absolute;top:calc(100% + 10px);right:0;width:380px;max-width:calc(100vw - 24px);background:#fff;color:#1e293b;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 12px 35px #0f172a26;z-index:1000;overflow:hidden;text-align:left;letter-spacing:normal;line-height:1.5}
+.notification-panel-head{display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid #eef2f6}
+.notification-panel .notification-panel-head h2{margin:0 auto 0 0;font-size:17px;font-weight:700;line-height:1.4;color:#1e293b}
+.notification-panel button{font:inherit;cursor:pointer}
+.notification-panel .notification-read-all{border:0;background:none;color:#176ab5;font-size:12px;padding:6px}
+.notification-panel button:disabled{opacity:.5;cursor:default}
+.notification-panel .notification-close{border:0;background:none;color:#64748b;font-size:24px;line-height:1;padding:4px 6px}
+.notification-list{list-style:none;padding:0;margin:0;max-height:min(55vh,460px);overflow-y:auto;overscroll-behavior:contain}
+.notification-item{margin:0;padding:0;border-bottom:1px solid #edf1f6}
+.notification-item:last-child{border-bottom:0}
+.notification-item a{display:flex;flex-direction:column;gap:4px;padding:16px 18px;color:#334155;text-decoration:none;white-space:normal;overflow-wrap:anywhere;font-size:13px}
+.notification-item.is-unread{background:#eff6ff;border-left:3px solid #2583df}
+.notification-item a:hover{background:#e7f1fd}
+.notification-item-title{font-size:14px;color:#183755}
+.notification-place{font-weight:600}
+.notification-message{color:#526174}
+.notification-payment{font-size:12px;color:#176ab5}
+.notification-time{font-size:11px;color:#7b8798;margin-top:4px}
+.notification-status{margin:0;padding:14px 18px;font-size:13px;color:#64748b}
+.notification-status:empty{display:none}
+.notification-panel .notification-more{display:block;width:100%;border:0;border-top:1px solid #e2e8f0;background:#fff;color:#176ab5;font-size:13px;padding:12px}
+.notification-menu :is(a,button):focus-visible{outline:3px solid #2583df;outline-offset:-3px}
+@media(max-width:600px){.notification-panel{position:fixed;right:12px;left:12px;width:auto;max-width:none}.notification-bell{width:36px;height:36px}}

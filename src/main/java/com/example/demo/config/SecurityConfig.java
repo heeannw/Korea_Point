@@ -33,6 +33,7 @@ public class SecurityConfig {
                 .requestMatchers("/community/**").authenticated()
                 .requestMatchers("/api/comments/**").authenticated()
                 .requestMatchers("/api/reservations/**").authenticated()
+                .requestMatchers("/api/notifications/**").authenticated()
                 .requestMatchers("/api/reports/**").authenticated()
                 .requestMatchers("/api/trip/plan/**").authenticated()
                 .requestMatchers("/api/trip/reservation/**").authenticated()

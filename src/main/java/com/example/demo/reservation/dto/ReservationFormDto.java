@@ -31,6 +31,13 @@ public class ReservationFormDto {
     @FutureOrPresent
     private LocalDate reservationDate;
 
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate checkoutDate;
+
+    public boolean isLodging() {
+        return "32".equals(contentTypeId) || "80".equals(contentTypeId) || "lodging".equals(contentTypeId);
+    }
+
     @NotBlank
     @Pattern(regexp = "([01]\\d|2[0-3]):[0-5]\\d")
     private String reservationTime;

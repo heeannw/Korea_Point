@@ -20,6 +20,8 @@
     <section class="panel">
         <p th:text="${reservation.reservationNo}"></p><h2 th:text="${placeTitle ?: reservation.placeTitle}"></h2>
         <dl class="summary-list">
+            <div class="summary-row" th:if="${reservation.checkoutDate != null}"><dt th:text="#{reservation.stay.checkout}">체크아웃</dt><dd th:text="${reservation.checkoutDate}"></dd></div>
+            <div class="summary-row" th:if="${reservation.checkoutDate != null}"><dt th:text="#{reservation.stay.label}">숙박 기간</dt><dd th:text="#{reservation.stay.duration(${reservation.stayNights}, ${reservation.stayDays})}"></dd></div>
             <div class="summary-row"><dt th:text="#{reservation.form.date}">방문일</dt><dd th:text="${reservation.reservationDate}"></dd></div>
             <div class="summary-row"><dt th:text="#{reservation.form.time}">시간</dt><dd th:text="${reservation.reservationTime}"></dd></div>
             <div class="summary-row"><dt th:text="#{reservation.payment.people}">인원</dt><dd th:text="${reservation.peopleCount}"></dd></div>

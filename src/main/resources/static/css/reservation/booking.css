@@ -1,4 +1,7 @@
 /* Booking screens: photo-led discovery and a focused checkout. */
+.reservation-calendar-ko .flatpickr-current-month { display: flex; justify-content: center; align-items: center; }
+.reservation-calendar-ko .flatpickr-current-month .numInputWrapper { width: 6ch; flex-shrink: 0; }
+.reservation-calendar-ko .calendar-year-suffix { margin-right: 8px; }
 .booking-page {
     --reservation-ink: #222833;
     --reservation-muted: #727985;
@@ -35,6 +38,9 @@
 .booking-page .btn:hover { box-shadow: none; transform: none; }
 .booking-page .btn.secondary { color: #434c59; border-color: #dfe3e8; }
 .booking-page .btn.secondary:hover { color: var(--reservation-primary-dark); background: #f3f8ff; border-color: #9ec9f5; }
+.booking-page .btn.secondary.place-save-button { flex: 0 0 46px; width: 46px; padding: 0; font-size: 19px; line-height: 1; }
+.booking-page .btn.place-save-button[aria-pressed="true"],
+.booking-page .btn.place-save-button[aria-pressed="true"]:hover { color: #dc3545; border-color: #f1b8bf; background: #fff5f6; }
 .booking-page :is(button,a,input,select,textarea):focus-visible { outline: 3px solid #2187ef; outline-offset: 3px; }
 .booking-browse-layout { display: grid; grid-template-columns: 208px minmax(0,1fr); gap: 38px; align-items: start; }
 .booking-filters { position: sticky; top: 88px; }

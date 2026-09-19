@@ -2,6 +2,7 @@
    fragment: templates/fragments/app-header.html · CSS: /css/common/header-menu.css */
 (function () {
   window.toggleHeaderMenu = function (e, btn) {
+    window.closeHeaderNotifications?.();
     if (e) e.stopPropagation();
     var menu = btn.closest('.user-menu, .lang-menu');
     var pop = menu.querySelector('[role="menu"]');

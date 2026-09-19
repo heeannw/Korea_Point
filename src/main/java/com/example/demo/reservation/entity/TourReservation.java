@@ -53,6 +53,17 @@ public class TourReservation {
     @Column(nullable = false)
     private LocalDate reservationDate;
 
+    private LocalDate checkoutDate;
+
+    public Long getStayNights() {
+        return checkoutDate == null || reservationDate == null ? null
+                : java.time.temporal.ChronoUnit.DAYS.between(reservationDate, checkoutDate);
+    }
+
+    public Long getStayDays() {
+        return getStayNights() == null ? null : getStayNights() + 1;
+    }
+
     @Column(nullable = false, length = 10)
     private String reservationTime;
 

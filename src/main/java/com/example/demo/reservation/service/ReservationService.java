@@ -26,11 +26,13 @@ public class ReservationService {
     private final ReservationPaymentRepository reservationPaymentRepository;
     private final ReservationPlacePolicyService placePolicyService;
     private final PortOneGateway portOneGateway;
+    private final com.example.demo.notification.NotificationService notifications;
 
     @Transactional
     public TourReservation create(Long userId, ReservationFormDto form) {
         placePolicyService.requireApplicationAllowed(form.getContentId());
         requireFutureVisit(form.getReservationDate(), form.getReservationTime());
+        LocalDate checkoutDate = validatedCheckout(form, form.getContentTypeId());
         TourReservation reservation = TourReservation.builder()
                 .userId(userId)
                 .reservationNo(createReservationNo(userId, form))
@@ -39,6 +41,7 @@ public class ReservationService {
                 .placeTitle(form.getPlaceTitle())
                 .language(form.getLang())
                 .reservationDate(form.getReservationDate())
+                .checkoutDate(checkoutDate)
                 .reservationTime(form.getReservationTime())
                 .peopleCount(form.getPeopleCount())
                 .memo(form.getMemo())
@@ -46,7 +49,9 @@ public class ReservationService {
                 .status("승인 대기")
                 .build();
 
-        return tourReservationRepository.save(reservation);
+        TourReservation saved = tourReservationRepository.save(reservation);
+        notifications.record(saved, com.example.demo.notification.NotificationType.SUBMITTED);
+        return saved;
     }
 
     public List<TourReservation> findMyReservations(Long userId) {
@@ -68,7 +73,9 @@ public class ReservationService {
         }
         placePolicyService.requireApplicationAllowed(reservation.getContentId());
         requireFutureVisit(form.getReservationDate(), form.getReservationTime());
+        LocalDate checkoutDate = validatedCheckout(form, reservation.getContentTypeId());
         reservation.setReservationDate(form.getReservationDate());
+        reservation.setCheckoutDate(checkoutDate);
         reservation.setReservationTime(form.getReservationTime());
         reservation.setPeopleCount(form.getPeopleCount());
         reservation.setMemo(form.getMemo());
@@ -79,6 +86,7 @@ public class ReservationService {
         reservation.setReviewNote(null);
         reservation.setPaymentDeadline(null);
         if (reservation.getPayment() != null) reservation.getPayment().setStatus(PaymentStatus.CANCELED);
+        notifications.record(reservation, com.example.demo.notification.NotificationType.SUBMITTED);
         return reservation;
     }
 
@@ -109,6 +117,15 @@ public class ReservationService {
         return tourReservationRepository.findLockedById(id)
                 .filter(reservation -> java.util.Objects.equals(userId, reservation.getUserId()))
                 .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND));
+    }
+
+    private LocalDate validatedCheckout(ReservationFormDto form, String type) {
+        if (!"32".equals(type) && !"80".equals(type) && !"lodging".equals(type)) return null;
+        if (form.getCheckoutDate() == null || form.getReservationDate() == null
+                || !form.getCheckoutDate().isAfter(form.getReservationDate())) {
+            throw new InvalidStayDatesException();
+        }
+        return form.getCheckoutDate();
     }
 
     private void requireFutureVisit(LocalDate date, String time) {

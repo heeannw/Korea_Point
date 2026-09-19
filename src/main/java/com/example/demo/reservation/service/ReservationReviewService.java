@@ -17,6 +17,7 @@ public class ReservationReviewService {
     private final ReservationPaymentRepository payments;
     private final ReservationPlacePolicyRepository policies;
     private final ReservationPlacePolicyService policyService;
+    private final com.example.demo.notification.NotificationService notifications;
 
     @Transactional
     public TourReservation review(Long id, Long adminId, ReservationReviewRequest request) {
@@ -69,6 +70,11 @@ public class ReservationReviewService {
         reservation.setReviewedBy(adminId);
         reservation.setReviewedAt(now);
         reservation.setReviewNote(request.note().trim());
+        notifications.record(reservation, switch (request.decision()) {
+            case APPROVE -> com.example.demo.notification.NotificationType.APPROVED;
+            case REJECT -> com.example.demo.notification.NotificationType.REJECTED;
+            case FREE -> com.example.demo.notification.NotificationType.FREE;
+        });
         return reservation;
     }
 }

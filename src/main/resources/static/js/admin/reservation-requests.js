@@ -20,6 +20,7 @@
                 const form = document.createElement('form'); form.className = 'dashboard-card place-policy-form';
                 form.innerHTML = `<h3>${escape(item.placeTitle)}</h3><p>${escape(item.reservationNo)} · 회원 ID ${escape(item.userId)}</p>
                     <p>${escape(item.reservationDate)} ${escape(item.reservationTime)} · ${item.peopleCount}명</p>
+                    ${item.checkoutDate ? `<p>체크아웃 ${escape(item.checkoutDate)} · ${item.stayNights}박 ${item.stayDays}일</p>` : ''}
                     <p>${escape(item.memo)}</p><strong>${escape(labels[item.state] || item.state)}</strong>
                     <p>${escape(item.reviewNote)}</p>
                     ${item.amount && item.state !== 'PENDING' ? `<p>총 예약금 ${Number(item.amount).toLocaleString('ko-KR')}원</p>` : ''}

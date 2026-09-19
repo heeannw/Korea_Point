@@ -40,7 +40,7 @@ class ReservationPlacePolicyServiceTest {
     void allowedPlaceCreatesApplicationWithoutPaymentButFreePlaceIsBlocked() {
         var reservations = mock(TourReservationRepository.class);
         var payments = mock(ReservationPaymentRepository.class);
-        var service = new ReservationService(reservations, payments, policyService, mock(PortOneGateway.class));
+        var service = new ReservationService(reservations, payments, policyService, mock(PortOneGateway.class), mock(com.example.demo.notification.NotificationService.class));
         var form = new ReservationFormDto(); form.setContentId("123"); form.setPeopleCount(2);
         form.setReservationDate(java.time.LocalDate.now().plusDays(3)); form.setReservationTime("10:00");
         // Spoofed category cannot override the policy bound to the content ID.
@@ -59,7 +59,7 @@ class ReservationPlacePolicyServiceTest {
     void preparationIsBlockedAfterPolicyChanges() {
         var reservations = mock(ReservationService.class);
         var events = mock(ApplicationEventPublisher.class);
-        var service = new ReservationPaymentService(reservations, events, policyService, mock(PortOneGateway.class), mock(PortOneSettings.class), mock(ReservationPaymentRepository.class));
+        var service = new ReservationPaymentService(reservations, events, policyService, mock(PortOneGateway.class), mock(PortOneSettings.class), mock(ReservationPaymentRepository.class), mock(com.example.demo.notification.NotificationService.class));
         var reservation = TourReservation.builder().contentId("123")
                 .reviewStatus(ReservationReviewStatus.APPROVED)
                 .paymentDeadline(java.time.LocalDateTime.now().plusHours(24)).build();
@@ -80,7 +80,7 @@ class ReservationPlacePolicyServiceTest {
         var payments = mock(ReservationPaymentRepository.class);
         var reservation = TourReservation.builder().contentId("123").userId(7L).build();
         when(reservations.findLockedById(1L)).thenReturn(Optional.of(reservation));
-        new ReservationService(reservations, payments, policyService, mock(PortOneGateway.class)).cancel(1L, 7L);
+        new ReservationService(reservations, payments, policyService, mock(PortOneGateway.class), mock(com.example.demo.notification.NotificationService.class)).cancel(1L, 7L);
         assertThat(reservation.getStatus()).isEqualTo("예약 취소");
         verifyNoInteractions(repository);
     }

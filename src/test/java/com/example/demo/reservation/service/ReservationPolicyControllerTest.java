@@ -21,7 +21,19 @@ class ReservationPolicyControllerTest {
     @Mock ReservationPlacePolicyService placePolicyService;
     @Mock ReservationService reservationService;
     @Mock TourApiReservationService tourApiReservationService;
+    @Mock ReservationBrowseService reservationBrowseService;
     @InjectMocks ReservationController controller;
+
+    @Test
+    void placeListUsesReservationFilteringWithSearchAndCategory() throws Exception {
+        when(reservationBrowseService.findPlaces("beach", "tourist_spot", "en", 2, 30))
+                .thenReturn(java.util.List.of());
+        mvc().perform(get("/api/tourapi/places").param("keyword", "beach")
+                        .param("contentTypeId", "tourist_spot").param("lang", "en")
+                        .param("pageNo", "2").param("numOfRows", "30"))
+                .andExpect(status().isOk()).andExpect(content().json("[]"));
+        verify(reservationBrowseService).findPlaces("beach", "tourist_spot", "en", 2, 30);
+    }
 
     /** 실제 앱과 같은 언어 설정(세션에 저장, ?lang= 로 바꿈)으로 컨트롤러를 띄운다. */
     private org.springframework.test.web.servlet.MockMvc mvc() {

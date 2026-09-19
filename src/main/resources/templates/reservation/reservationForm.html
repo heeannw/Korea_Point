@@ -37,7 +37,7 @@
         <h2 class="section-title" th:text="#{reservation.ui.visit}">방문 정보</h2>
         <div class="form-grid">
             <label class="field">
-                <span class="label" th:text="#{reservation.form.date}">예약 날짜</span>
+                <span class="label" th:text="${reservationForm.lodging} ? #{reservation.stay.checkin} : #{reservation.form.date}">예약 날짜</span>
                 <div class="reservation-date-picker" id="reservationDatePicker">
                     <input class="input" type="text" th:field="*{reservationDate}"
                            th:placeholder="#{reservation.form.datePlaceholder}" data-input autocomplete="off">
@@ -46,6 +46,17 @@
                 </div>
                 <span class="error" th:errors="*{reservationDate}"></span>
             </label>
+
+            <label class="field" th:if="${reservationForm.lodging}">
+                <span class="label" th:text="#{reservation.stay.checkout}">체크아웃</span>
+                <div class="reservation-date-picker" id="checkoutDatePicker">
+                    <input class="input" type="text" th:field="*{checkoutDate}" data-input autocomplete="off" required>
+                    <button class="calendar-toggle" type="button" data-toggle th:aria-label="#{reservation.form.openCalendar}">📅</button>
+                </div>
+                <span class="error" th:errors="*{checkoutDate}"></span>
+            </label>
+            <p class="field full" id="stayDuration" th:if="${reservationForm.lodging}" aria-live="polite"
+               th:data-format="#{reservation.stay.duration}" th:data-invalid="#{reservation.stay.invalid}"></p>
 
             <label class="field">
                 <span class="label" th:text="#{reservation.form.time}">예약 시간</span>
@@ -107,21 +118,58 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/zh.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"></script>
 <script th:src="@{/js/common/header-menu.js}"></script>
+<script th:src="@{/js/reservation/stay-dates.js}"></script>
 <script th:inline="javascript">
     const PAGE_LOCALE = /*[[${lang}]]*/ "ko";
     const minReservationDate = /*[[${today}]]*/ "2026-01-01";
     const calendarLocales = {ko: "ko", ja: "ja", "zh-CN": "zh", fr: "fr", en: "default"};
     const calendarFormats = {ko: "Y년 m월 d일", ja: "Y年m月d日", "zh-CN": "Y年m月d日", fr: "d/m/Y", en: "Y-m-d"};
     if (window.flatpickr) {
-        flatpickr("#reservationDatePicker", {
+        const options = {
             wrap: true,
             locale: calendarLocales[PAGE_LOCALE] || "default",
             minDate: minReservationDate,
             dateFormat: "Y-m-d",
             altInput: true,
             altFormat: calendarFormats[PAGE_LOCALE] || "Y-m-d",
-            disableMobile: true
-        });
+            disableMobile: true,
+            onReady: (_, __, picker) => {
+                if (PAGE_LOCALE !== "ko") return;
+                picker.calendarContainer.classList.add("reservation-calendar-ko");
+                const heading = picker.calendarContainer.querySelector(".flatpickr-current-month");
+                const year = heading.querySelector(".numInputWrapper");
+                heading.prepend(year);
+                const suffix = document.createElement("span");
+                suffix.className = "calendar-year-suffix";
+                suffix.textContent = "년";
+                year.after(suffix);
+            }
+        };
+        const checkin = flatpickr("#reservationDatePicker", options);
+        if (document.getElementById("checkoutDatePicker")) {
+            const checkout = flatpickr("#checkoutDatePicker", options);
+            const output = document.getElementById("stayDuration");
+            const update = () => {
+                const start = checkin.input.value;
+                const end = checkout.input.value;
+                const nights = ReservationStayDates.nights(start, end);
+                output.textContent = nights > 0
+                    ? output.dataset.format.replace("{0}", nights).replace("{1}", nights + 1)
+                    : output.dataset.invalid;
+            };
+            const constrainCheckout = () => {
+                const start = checkin.selectedDates[0];
+                if (start) {
+                    const minimum = new Date(start);
+                    minimum.setDate(minimum.getDate() + 1);
+                    checkout.set("minDate", minimum);
+                }
+                update();
+            };
+            checkin.config.onChange.push(constrainCheckout);
+            checkout.config.onChange.push(update);
+            constrainCheckout();
+        }
     }
 function switchLang(lang) {
         const url = new URL(window.location.href);

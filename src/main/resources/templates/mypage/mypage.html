@@ -180,6 +180,7 @@
                     <div>
                         <p class="reservation-no" th:text="${reservation.reservationNo}">KP-00000000-0000</p>
                         <h3 th:text="${reservationTitleById[reservation.id]}">관광지명</h3>
+                        <p th:if="${reservation.checkoutDate != null}" th:text="|${reservation.reservationDate} ~ ${reservation.checkoutDate} · ${#messages.msg('reservation.stay.duration', reservation.stayNights, reservation.stayDays)}|"></p>
                         <p th:text="|${reservation.reservationDate} · ${reservation.reservationTime} · ${reservation.peopleCount}#{mypage.common.peopleSuffix}|">2026-08-12 · 10:00 · 1명</p>
                         <p class="payment-meta" th:if="${reservation.payment != null and reservation.applicationStatus != 'PENDING'}"
                            th:text="|#{mypage.reservation.deposit} ${#numbers.formatInteger(reservation.payment.amount, 3, 'COMMA')}#{mypage.common.wonSuffix} · ${(reservation.payment.status.name() == 'READY') ? #messages.msg('mypage.status.paymentReady') : (reservation.payment.status.name() == 'PAID' ? #messages.msg('mypage.status.paymentPaid') : (reservation.payment.status.name() == 'FAILED' ? #messages.msg('mypage.status.paymentFailed') : (reservation.payment.status.name() == 'CANCELED' ? #messages.msg('mypage.status.paymentCanceled') : (reservation.payment.status.name() == 'REFUNDED' ? #messages.msg('mypage.status.paymentRefunded') : #messages.msg('mypage.status.paymentForfeited')))))}|">예약금 5,000원 · 결제 대기</p>
@@ -199,7 +200,7 @@
                                         th:data-content-id="${reservation.contentId}"
                                         th:data-content-type-id="${reservation.contentTypeId}"
                                         th:data-place-title="${reservationTitleById[reservation.id]}"
-                                        th:data-date="${reservation.reservationDate}"
+                                        th:data-date="${reservation.reservationDate}" th:data-checkout="${reservation.checkoutDate}"
                                         th:data-time="${reservation.reservationTime}"
                                         th:data-people="${reservation.peopleCount}"
                                         th:data-memo="${reservation.memo}"
@@ -410,6 +411,7 @@
                 <span class="label" th:text="#{mypage.modal.reservationDate}">예약 날짜</span>
                 <input class="input" id="editReservationDate" type="date" required>
             </label>
+            <label class="field" id="editCheckoutField" hidden th:data-invalid="#{reservation.stay.invalid}"><span class="label" th:text="#{reservation.stay.checkout}">체크아웃</span><input class="input" id="editCheckoutDate" type="date"></label>
             <label class="field">
                 <span class="label" th:text="#{mypage.modal.reservationTime}">예약 시간</span>
                 <select class="select" id="editReservationTime" required>
@@ -457,7 +459,8 @@
                 <div>
                     <p class="reservation-no" th:text="${reservation.reservationNo}">KP-00000000-0000</p>
                     <h3 th:text="${reservationTitleById[reservation.id]}">관광지명</h3>
-                    <p th:text="|${reservation.reservationDate} · ${reservation.reservationTime} · ${reservation.peopleCount}#{mypage.common.peopleSuffix}|">2026-08-12 · 10:00 · 1명</p>
+                    <p th:if="${reservation.checkoutDate != null}" th:text="|${reservation.reservationDate} ~ ${reservation.checkoutDate} · ${#messages.msg('reservation.stay.duration', reservation.stayNights, reservation.stayDays)}|"></p>
+                        <p th:text="|${reservation.reservationDate} · ${reservation.reservationTime} · ${reservation.peopleCount}#{mypage.common.peopleSuffix}|">2026-08-12 · 10:00 · 1명</p>
                     <p class="payment-meta" th:if="${reservation.payment != null and reservation.applicationStatus != 'PENDING'}"
                        th:text="|#{mypage.reservation.deposit} ${#numbers.formatInteger(reservation.payment.amount, 3, 'COMMA')}#{mypage.common.wonSuffix} · ${(reservation.payment.status.name() == 'READY') ? #messages.msg('mypage.status.paymentReady') : (reservation.payment.status.name() == 'PAID' ? #messages.msg('mypage.status.paymentPaid') : (reservation.payment.status.name() == 'FAILED' ? #messages.msg('mypage.status.paymentFailed') : (reservation.payment.status.name() == 'CANCELED' ? #messages.msg('mypage.status.paymentCanceled') : (reservation.payment.status.name() == 'REFUNDED' ? #messages.msg('mypage.status.paymentRefunded') : #messages.msg('mypage.status.paymentForfeited')))))}|">예약금 5,000원 · 결제 대기</p>
                 </div>
@@ -476,7 +479,7 @@
                                     th:data-content-id="${reservation.contentId}"
                                     th:data-content-type-id="${reservation.contentTypeId}"
                                     th:data-place-title="${reservationTitleById[reservation.id]}"
-                                    th:data-date="${reservation.reservationDate}"
+                                    th:data-date="${reservation.reservationDate}" th:data-checkout="${reservation.checkoutDate}"
                                     th:data-time="${reservation.reservationTime}"
                                     th:data-people="${reservation.peopleCount}"
                                     th:data-memo="${reservation.memo}"
@@ -838,6 +841,11 @@
         document.getElementById('editContentTypeId').value = button.dataset.contentTypeId || '';
         document.getElementById('editPlaceTitle').value = button.dataset.placeTitle || '';
         document.getElementById('editReservationDate').value = button.dataset.date || '';
+        const lodging = ['32', '80', 'lodging'].includes(button.dataset.contentTypeId);
+        document.getElementById('editCheckoutField').hidden = !lodging;
+        document.getElementById('editCheckoutDate').required = lodging;
+        document.getElementById('editCheckoutDate').disabled = !lodging;
+        document.getElementById('editCheckoutDate').value = button.dataset.checkout || '';
         document.getElementById('editReservationTime').value = button.dataset.time || '10:00';
         document.getElementById('editPeopleCount').value = button.dataset.people || '1';
         document.getElementById('editMemo').value = button.dataset.memo || '';
@@ -851,6 +859,11 @@
 
     async function submitReservationEdit(event) {
         event.preventDefault();
+        const checkout = document.getElementById('editCheckoutDate');
+        if (!checkout.disabled && (!checkout.value || checkout.value <= document.getElementById('editReservationDate').value)) {
+            alert(document.getElementById('editCheckoutField').dataset.invalid);
+            return;
+        }
         const id = document.getElementById('editReservationId').value;
         const response = await fetch(`/api/reservations/${id}`, {
             method: 'PATCH',
@@ -860,6 +873,7 @@
                 contentTypeId: document.getElementById('editContentTypeId').value,
                 placeTitle: document.getElementById('editPlaceTitle').value,
                 reservationDate: document.getElementById('editReservationDate').value,
+                checkoutDate: document.getElementById('editCheckoutDate').value || null,
                 reservationTime: document.getElementById('editReservationTime').value,
                 peopleCount: Number(document.getElementById('editPeopleCount').value),
                 memo: document.getElementById('editMemo').value
@@ -867,7 +881,8 @@
         });
         if (!response.ok) {
             const error = await response.json().catch(() => null);
-            alert(error?.code === 'INVALID_VISIT_TIME' ? msg.futureVisit : msg.reservationUpdateFailed);
+            alert(error?.code === 'INVALID_STAY_DATES' ? document.getElementById('editCheckoutField').dataset.invalid
+                : error?.code === 'INVALID_VISIT_TIME' ? msg.futureVisit : msg.reservationUpdateFailed);
             return;
         }
         location.reload();

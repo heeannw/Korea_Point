@@ -14,13 +14,22 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class ReservationPaymentServiceTest {
+    @Test
+    void repeatedPaymentVerificationCreatesOnlyOneNotification() {
+        var reservation = ready();
+        when(gateway.lookup("imp_test")).thenReturn(remote("paid"));
+        service.process(1L, 7L, request());
+        service.process(1L, 7L, request());
+        verify(notifications, times(1)).record(reservation, com.example.demo.notification.NotificationType.CONFIRMED);
+    }
     private final ReservationService reservations = mock(ReservationService.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private final ReservationPlacePolicyService policies = mock(ReservationPlacePolicyService.class);
     private final PortOneGateway gateway = mock(PortOneGateway.class);
     private final ReservationPaymentRepository repository = mock(ReservationPaymentRepository.class);
     private final PortOneSettings settings = mock(PortOneSettings.class);
-    private final ReservationPaymentService service = new ReservationPaymentService(reservations, events, policies, gateway, settings, repository);
+    private final com.example.demo.notification.NotificationService notifications = mock(com.example.demo.notification.NotificationService.class);
+    private final ReservationPaymentService service = new ReservationPaymentService(reservations, events, policies, gateway, settings, repository, notifications);
 
     @Test
     void paidPointPaymentConfirmsAndReturnsCompletionRoute() {
@@ -105,6 +114,7 @@ class ReservationPaymentServiceTest {
         service.process(1L, 7L, request());
         assertThat(reservation.getPayment().getStatus()).isEqualTo(PaymentStatus.READY);
         verifyNoInteractions(events);
+        verifyNoInteractions(notifications);
     }
 
     @Test

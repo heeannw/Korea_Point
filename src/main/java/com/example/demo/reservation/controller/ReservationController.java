@@ -51,6 +51,7 @@ import java.util.Optional;
 public class ReservationController {
 
     private final TourApiReservationService tourApiReservationService;
+    private final com.example.demo.reservation.service.ReservationBrowseService reservationBrowseService;
     private final ReservationService reservationService;
     private final ReservationPaymentService reservationPaymentService;
     private final UserService userService;
@@ -87,10 +88,11 @@ public class ReservationController {
         ReservationFormDto form = new ReservationFormDto();
         form.setLang(lang);
         form.setContentId(contentId);
-        form.setContentTypeId(contentTypeId);
+        form.setContentTypeId(place.getContentTypeId() == null ? contentTypeId : place.getContentTypeId());
         form.setPlaceTitle(resolvePlaceTitle(place, placeTitle));
         form.setReservationDate(LocalDate.now().plusDays(1));
         form.setReservationTime("10:00");
+        if (form.isLodging()) form.setCheckoutDate(form.getReservationDate().plusDays(1));
 
         addSessionModel(model);
         model.addAttribute("place", place);
@@ -123,6 +125,13 @@ public class ReservationController {
         try {
             TourReservation savedReservation = reservationService.create(SecurityUtil.getCurrentUserId(), form);
             return "redirect:/ko/reservation/requests/" + savedReservation.getId();
+        } catch (com.example.demo.reservation.service.InvalidStayDatesException ex) {
+            bindingResult.rejectValue("checkoutDate", "reservation.stay.invalid");
+            addSessionModel(model);
+            model.addAttribute("place", place);
+            model.addAttribute("today", LocalDate.now());
+            model.addAttribute("lang", form.getLang());
+            return "reservation/reservationForm";
         } catch (com.example.demo.reservation.service.InvalidReservationTimeException ex) {
             bindingResult.rejectValue("reservationTime", "reservation.form.futureVisit");
             addSessionModel(model);
@@ -227,6 +236,8 @@ public class ReservationController {
         try {
             TourReservation reservation = reservationService.update(reservationId, SecurityUtil.getCurrentUserId(), form);
             return ResponseEntity.ok(reservation);
+        } catch (com.example.demo.reservation.service.InvalidStayDatesException ex) {
+            return ResponseEntity.badRequest().body(Map.of("code", "INVALID_STAY_DATES"));
         } catch (com.example.demo.reservation.service.InvalidReservationTimeException ex) {
             return ResponseEntity.badRequest().body(Map.of("code", "INVALID_VISIT_TIME"));
         }
@@ -353,8 +364,8 @@ public class ReservationController {
                                                         @RequestParam(defaultValue = "ko") String lang,
                                                         @RequestParam(defaultValue = "1") int pageNo,
                                                         @RequestParam(defaultValue = "12") int numOfRows) {
-        return ResponseEntity.ok(placePolicyService.decorate(tourApiReservationService.findPlaces(
-                keyword, contentTypeId, normalizeReservationLang(lang), pageNo, Math.min(numOfRows, 100))));
+        return ResponseEntity.ok(reservationBrowseService.findPlaces(
+                keyword, contentTypeId, normalizeReservationLang(lang), pageNo, numOfRows));
     }
 
     @GetMapping("/api/tourapi/places/{contentId}")
