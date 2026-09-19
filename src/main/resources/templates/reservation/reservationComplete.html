@@ -25,6 +25,8 @@
 
     <section class="panel">
         <dl class="summary-list">
+            <div class="summary-row" th:if="${reservation.checkoutDate != null}"><dt th:text="#{reservation.stay.checkout}">체크아웃</dt><dd th:text="${reservation.checkoutDate}"></dd></div>
+            <div class="summary-row" th:if="${reservation.checkoutDate != null}"><dt th:text="#{reservation.stay.label}">숙박 기간</dt><dd th:text="#{reservation.stay.duration(${reservation.stayNights}, ${reservation.stayDays})}"></dd></div>
             <div class="summary-row">
                 <dt th:text="#{reservation.summary.reservationNo}">예약번호</dt>
                 <dd th:text="${reservationNo}">KP-00000000-0000</dd>

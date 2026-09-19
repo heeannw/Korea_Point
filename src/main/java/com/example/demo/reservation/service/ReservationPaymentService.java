@@ -23,6 +23,7 @@ public class ReservationPaymentService {
     private final PortOneGateway gateway;
     private final PortOneSettings settings;
     private final ReservationPaymentRepository payments;
+    private final com.example.demo.notification.NotificationService notifications;
 
     public boolean isReady() { return settings.isReady(); }
 
@@ -96,6 +97,7 @@ public class ReservationPaymentService {
         payment.setPaidAt(paidTime);
         payment.setApprovalNo(remote.path("apply_num").asText("").substring(0, Math.min(50, remote.path("apply_num").asText("").length())));
         reservation.setStatus("예약 완료");
+        notifications.record(reservation, com.example.demo.notification.NotificationType.CONFIRMED);
         eventPublisher.publishEvent(new ReservationConfirmedEvent(reservation.getUserId(), reservation.getReservationNo(),
                 reservation.getPlaceTitle(), reservation.getReservationDate(), reservation.getReservationTime(),
                 reservation.getPeopleCount(), payment.getAmount()));

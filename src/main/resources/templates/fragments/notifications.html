@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"><body>
+<div th:fragment="bell" class="notification-menu" id="headerNotifications"
+     th:data-csrf-token="${_csrf != null ? _csrf.token : ''}"
+     th:data-csrf-header="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"
+     th:data-title="#{notification.title}" th:data-empty="#{notification.empty}"
+     th:data-loading="#{notification.loading}" th:data-failed="#{notification.failed}"
+     th:data-count-label="#{notification.unread}" th:data-deadline="#{notification.deadline}"
+     th:data-amount="#{notification.amount}">
+    <button type="button" class="notification-bell" aria-expanded="false" aria-controls="notificationPanel"
+            th:aria-label="#{notification.title}" th:title="#{notification.title}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+        <span class="notification-badge" hidden aria-hidden="true"></span>
+    </button>
+    <section class="notification-panel" id="notificationPanel" hidden role="region" aria-labelledby="notificationHeading">
+        <div class="notification-panel-head">
+            <h2 id="notificationHeading" th:text="#{notification.title}">알림</h2>
+            <button type="button" class="notification-read-all" th:text="#{notification.readAll}">모두 읽음</button>
+            <button type="button" class="notification-close" th:aria-label="#{notification.close}">×</button>
+        </div>
+        <p class="notification-status" role="status" aria-live="polite"></p>
+        <ul class="notification-list"></ul>
+        <button type="button" class="notification-more" hidden th:text="#{notification.more}">더 보기</button>
+    </section>
+    <script th:src="@{/js/common/notifications.js}" defer></script>
+</div>
+</body></html>

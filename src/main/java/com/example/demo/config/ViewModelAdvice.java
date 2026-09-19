@@ -7,6 +7,16 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 @ControllerAdvice
 public class ViewModelAdvice {
 
+    @ModelAttribute("isLoggedIn")
+    public boolean isLoggedIn() {
+        return SecurityUtil.isLoggedIn();
+    }
+
+    @ModelAttribute("currentUserName")
+    public String currentUserName() {
+        return SecurityUtil.getCurrentUserName();
+    }
+
     @ModelAttribute("isAdmin")
     public boolean isAdmin() {
         return SecurityUtil.isAdmin();

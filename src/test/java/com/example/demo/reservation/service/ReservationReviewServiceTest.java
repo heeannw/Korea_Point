@@ -18,7 +18,8 @@ class ReservationReviewServiceTest {
     private final ReservationPaymentRepository payments = mock(ReservationPaymentRepository.class);
     private final ReservationPlacePolicyRepository policies = mock(ReservationPlacePolicyRepository.class);
     private final ReservationPlacePolicyService policyService = mock(ReservationPlacePolicyService.class);
-    private final ReservationReviewService service = new ReservationReviewService(reservations, payments, policies, policyService);
+    private final com.example.demo.notification.NotificationService notifications = mock(com.example.demo.notification.NotificationService.class);
+    private final ReservationReviewService service = new ReservationReviewService(reservations, payments, policies, policyService, notifications);
 
     @Test
     void approvalCreatesOnlyTheReviewedTotalWithDeadline() {
@@ -34,6 +35,7 @@ class ReservationReviewServiceTest {
         assertThat(reservation.getReviewedBy()).isEqualTo(9L);
         assertThat(reservation.getReviewNote()).isEqualTo("Verified total");
         verify(policyService).requireApplicationAllowed("123");
+        verify(notifications).record(reservation, com.example.demo.notification.NotificationType.APPROVED);
     }
 
     @Test
@@ -52,6 +54,7 @@ class ReservationReviewServiceTest {
         var reservation = pending();
         service.review(1L, 9L, new ReservationReviewRequest(REJECT, null, "No availability"));
         assertThat(reservation.getApplicationStatus()).isEqualTo("REJECTED");
+        verify(notifications).record(reservation, com.example.demo.notification.NotificationType.REJECTED);
         assertThat(reservation.isPayable()).isFalse();
         assertThat(reservation.getPayment()).isNull();
         verifyNoInteractions(payments, policies, policyService);
@@ -62,6 +65,7 @@ class ReservationReviewServiceTest {
         var reservation = pending();
         service.review(1L, 9L, new ReservationReviewRequest(FREE, null, "Free admission verified"));
         assertThat(reservation.getApplicationStatus()).isEqualTo("FREE");
+        verify(notifications).record(reservation, com.example.demo.notification.NotificationType.FREE);
         assertThat(reservation.getPayment()).isNull();
         verify(policies).save(argThat(p -> p.getFeeStatus() == PlaceFeeStatus.FREE
                 && !p.isReservationEnabled() && p.getContentId().equals("123") && p.getReviewedBy().equals(9L)));
@@ -90,6 +94,7 @@ class ReservationReviewServiceTest {
         assertThatThrownBy(() -> service.review(1L, 9L, new ReservationReviewRequest(APPROVE, 1000, "Verified")))
                 .isInstanceOf(ResponseStatusException.class);
         verifyNoInteractions(payments);
+        verifyNoInteractions(notifications);
     }
 
     private TourReservation pending() {

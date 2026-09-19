@@ -21,6 +21,7 @@
 <header th:fragment="header(lang, isLoggedIn, currentUserName)">
   <a class="logo" translate="no" th:href="${lang == 'en'} ? @{/en(lang=${lang})} : @{/ko(lang=${lang})}">Korea<span>Point</span></a>
   <div class="header-right">
+    <th:block th:if="${isLoggedIn}"><div th:replace="~{fragments/notifications :: bell}"></div></th:block>
     <div class="user-menu" th:if="${isLoggedIn}">
       <button type="button" class="h-btn user-menu-btn"
               aria-haspopup="true" aria-expanded="false" onclick="toggleHeaderMenu(event, this)">

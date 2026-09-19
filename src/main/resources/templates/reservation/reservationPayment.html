@@ -51,6 +51,8 @@
             <p class="eyebrow small" th:text="#{reservation.payment.summary}">예약 정보</p>
             <h2 th:text="${placeTitle ?: reservation.placeTitle}">장소명</h2><p th:text="${reservation.reviewNote}"></p>
             <dl class="summary-list compact">
+            <div class="summary-row" th:if="${reservation.checkoutDate != null}"><dt th:text="#{reservation.stay.checkout}">체크아웃</dt><dd th:text="${reservation.checkoutDate}"></dd></div>
+            <div class="summary-row" th:if="${reservation.checkoutDate != null}"><dt th:text="#{reservation.stay.label}">숙박 기간</dt><dd th:text="#{reservation.stay.duration(${reservation.stayNights}, ${reservation.stayDays})}"></dd></div>
                 <div class="summary-row"><dt th:text="#{reservation.payment.date}">예약일</dt><dd th:text="${reservation.reservationDate}">2026-09-10</dd></div>
                 <div class="summary-row"><dt th:text="#{reservation.payment.time}">시간</dt><dd th:text="${reservation.reservationTime}">18:00</dd></div>
                 <div class="summary-row"><dt th:text="#{reservation.payment.people}">인원</dt><dd th:text="#{reservation.summary.peopleCount(${reservation.peopleCount})}">2명</dd></div>

@@ -20,10 +20,12 @@ public class AdminReservationReviewController {
 
     public record Item(Long id, Long userId, String reservationNo, String contentId, String placeTitle,
             LocalDate reservationDate, String reservationTime, int peopleCount, String memo,
+            LocalDate checkoutDate, Long stayNights, Long stayDays,
             String state, Integer amount, String reviewNote, LocalDateTime paymentDeadline) {
         static Item of(TourReservation r) {
             return new Item(r.getId(), r.getUserId(), r.getReservationNo(), r.getContentId(), r.getPlaceTitle(),
                     r.getReservationDate(), r.getReservationTime(), r.getPeopleCount(), r.getMemo(),
+                    r.getCheckoutDate(), r.getStayNights(), r.getStayDays(),
                     r.getApplicationStatus(), r.getPayment() == null ? null : r.getPayment().getAmount(),
                     r.getReviewNote(), r.getPaymentDeadline());
         }

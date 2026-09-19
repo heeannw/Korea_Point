@@ -51,8 +51,10 @@ class ReservationRequestViewTest {
                     assertThat(html).doesNotContain("??", "<script>alert");
                     assertThat(html.contains("/ko/reservation/payment/1")).isEqualTo(state.equals("APPROVED"));
                     assertThat(html).contains("&lt;script&gt;alert");
+                    assertThat(html).contains(LocalDate.now().plusDays(5).toString());
+                    if (language.equals("ko")) assertThat(html).contains("2박 3일");
                 }
-                for (String state : new String[]{"PAYMENT_ENABLED", "PAYMENT_DISABLED", "RETURN", "COMPLETE"}) {
+                for (String state : new String[]{"PAYMENT_ENABLED", "PAYMENT_DISABLED", "RETURN", "COMPLETE", "FORM", "BROWSE"}) {
                     String html = mvc.perform(get("/fixture/" + state + "/" + language).locale(Locale.forLanguageTag(language)))
                             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
                     assertThat(html).doesNotContain("??", "apiSecret", "api-key");
@@ -61,6 +63,12 @@ class ReservationRequestViewTest {
                     if (state.equals("PAYMENT_ENABLED")) assertThat(html).contains("https://cdn.iamport.kr/v1/iamport.js");
                     if (state.equals("COMPLETE")) assertThat(html).contains("17,000", "Test place");
                     if (state.equals("COMPLETE") && language.equals("ko")) assertThat(html).contains("결제가 완료되었습니다.");
+                    if (state.equals("FORM")) assertThat(html).contains("checkoutDatePicker", "stayDuration");
+                    if (state.equals("FORM") || state.equals("BROWSE")) {
+                        var output = java.nio.file.Path.of("target", "reservation-ui");
+                        java.nio.file.Files.createDirectories(output);
+                        java.nio.file.Files.writeString(output.resolve(state + "-" + language + ".html"), html);
+                    }
                 }
             }
         } finally {
@@ -74,7 +82,29 @@ class ReservationRequestViewTest {
         String view(@PathVariable String state, @PathVariable String language, Model model) {
             var reservation = TourReservation.builder().id(1L).reservationNo("KP-TEST")
                     .placeTitle("Test place").reservationDate(LocalDate.now().plusDays(3))
+                    .contentTypeId("32").checkoutDate(LocalDate.now().plusDays(5))
                     .reservationTime("10:00").peopleCount(2).reviewNote("<script>alert(1)</script>").build();
+            if (state.equals("FORM") || state.equals("BROWSE")) {
+                var form = new com.example.demo.reservation.dto.ReservationFormDto();
+                form.setContentId("123");
+                form.setContentTypeId("32");
+                form.setPlaceTitle("Hotel");
+                form.setReservationDate(reservation.getReservationDate());
+                form.setCheckoutDate(reservation.getCheckoutDate());
+                model.addAttribute("reservationForm", form);
+                model.addAttribute("lang", language);
+                model.addAttribute("isLoggedIn", true);
+                model.addAttribute("currentUserName", "Test User");
+                model.addAttribute("today", LocalDate.now());
+                model.addAttribute("_csrf", new org.springframework.security.web.csrf.DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "test-token"));
+                if (state.equals("BROWSE")) {
+                    model.addAttribute("hasTourApiKey", true);
+                    model.addAttribute("keyword", "");
+                    model.addAttribute("contentTypeId", "");
+                    return "reservation/reservation";
+                }
+                return "reservation/reservationForm";
+            }
             if (state.equals("CANCELED")) reservation.setStatus("예약 취소");
             else if (state.equals("APPROVED") || state.equals("EXPIRED") || state.startsWith("PAYMENT") || state.equals("RETURN") || state.equals("COMPLETE")) {
                 reservation.setReviewStatus(ReservationReviewStatus.APPROVED);
