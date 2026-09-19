@@ -639,20 +639,41 @@
     const focusId = new URLSearchParams(location.search).get('focus');
     if (!focusId) return;
 
-    const list = window._currentList || PLACES;
-    const idx = list.findIndex(p => String(p.id) === String(focusId));
-    const target = idx >= 0 ? list[idx] : PLACES.find(p => String(p.id) === String(focusId));
+    const target = PLACES.find(p => String(p.id) === String(focusId));
     if (!target) return;
+
+    // 첫 화면은 '인기 TOP 20'만 목록에 올리고 나머지 마커는 지운다. 홈에서 누른 곳이
+    // 그 20곳 밖이면(축제·순위 없는 곳·21위 밖) 왼쪽 선택도 마커도 없이 상세만 열렸다.
+    // 그 장소가 보이는 탭으로 먼저 옮긴 뒤에 고른다 — 맛집 화면도 같은 방식이다.
+    let idx = indexInCurrentList(focusId);
+    if (idx < 0) {
+      const cat = categoryChipFor(target);
+      if (cat) {
+        setCategory(cat, { log: false });   // 누른 건 장소지 카테고리가 아니니 취향으로 기록하지 않는다
+        idx = indexInCurrentList(focusId);
+      }
+    }
 
     if (idx >= 0) {
       selectPlace(idx);
     } else {
-      openDetail(target);
+      openDetail(target);   // 목록에서 빼둔 유형(여행코스)
     }
     if (map && target.lat && target.lng) {
       map.setLevel(Math.min(map.getLevel(), POPULAR_EXPAND_LEVEL));
       map.panTo(new kakao.maps.LatLng(target.lat, target.lng));
     }
+  }
+
+  function indexInCurrentList(id) {
+    return (window._currentList || PLACES).findIndex(p => String(p.id) === String(id));
+  }
+
+  /** 그 장소가 들어 있는 카테고리 칩. 칩이 없는 유형은 인기 추림이 없는 '전체'로 보낸다. */
+  function categoryChipFor(p) {
+    if (String(p.type) === '25') return null;   // 여행코스: getMatchingPlaces 가 목록에서 빼둔 유형
+    const slug = typeSlug(p.type);
+    return document.querySelector('.chip[data-cat="' + slug + '"]') ? slug : 'browse';
   }
 
   function scrollFilter(dir) {
@@ -857,7 +878,7 @@
     return list;
   }
 
-  function setCategory(c) {
+  function setCategory(c, { log = true } = {}) {
     exitCourseMode();
     activeCategory = c;
     if (c === 'festival') activeSort = 'recommended';               // 축제는 D-day 순
@@ -866,7 +887,7 @@
     document.querySelectorAll('.chip').forEach(ch =>
             ch.classList.toggle('active', ch.dataset.cat === c)
     );
-    if (PREF_SLUGS.includes(c)) logActivity({ action: 'CATEGORY', categorySlug: c });
+    if (log && PREF_SLUGS.includes(c)) logActivity({ action: 'CATEGORY', categorySlug: c });
     syncPopAgeRow();
     render();
   }
