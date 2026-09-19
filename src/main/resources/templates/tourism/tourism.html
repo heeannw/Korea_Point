@@ -655,7 +655,7 @@
     }
 
     if (idx >= 0) {
-      selectPlace(idx);
+      selectPlace(idx, { toTop: true });   // 들어가자마자 눈에 보이게 목록 맨 위로
     } else {
       openDetail(target);   // 목록에서 빼둔 유형(여행코스)
     }
@@ -1041,7 +1041,11 @@
     setupScrollSentinel(list.length > visibleCount);
   }
 
-  function selectPlace(idx) {
+  /**
+   * @param opts toTop 이 참이면 그 카드를 목록 맨 위로 올린다. 홈에서 눌러 들어왔을 때 쓴다 —
+   *             한참 아래에 있는 카드는 '보이기만' 해서는 화면 맨 밑에 걸려 눈에 안 띈다.
+   */
+  function selectPlace(idx, opts) {
     const list = window._currentList || PLACES;
     const p = list[idx];
     if (!p) return;
@@ -1059,9 +1063,16 @@
     centerPlaceBesideTourDetail(p);
     setTimeout(() => {
       const card = document.getElementById('card-' + idx);
+      if (!card) return;
       // 목록 맨 아래쪽 카드처럼 거리가 아주 멀면 smooth 스크롤이 몇 초씩 걸리거나
       // 도중에 끊겨 엉뚱한 위치에서 멈춘다 — 즉시 이동으로 확실하게 보여준다.
-      if (card) card.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+      const panel = document.querySelector('.place-list');
+      if (opts && opts.toTop && panel) {
+        // scrollIntoView 대신 목록의 스크롤만 직접 옮긴다. 바깥 요소는 건드리지 않는다.
+        panel.scrollTop += card.getBoundingClientRect().top - panel.getBoundingClientRect().top;
+        return;
+      }
+      card.scrollIntoView({ behavior: 'auto', block: 'nearest' });
     }, 60);
     openDetail(p);
   }
