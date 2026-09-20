@@ -15,15 +15,26 @@
 --   직전 값이 남는다.
 --
 -- 실행
---   docker exec -i korea_point-postgres-1 psql -U postgres -d korea_point \
+--   서버:   sudo -u postgres psql -d koreapoint -v apptz=UTC \
+--             < docs/reseed-community-activity.sql
+--   로컬:   docker exec -i korea_point-postgres-1 psql -U postgres -d korea_point \
 --     -v ON_ERROR_STOP=1 -f - < docs/reseed-community-activity.sql
 
 -- 시간대를 앱에 맞춘다.
---   created_at 은 timestamp without time zone 이고, 앱은 LocalDateTime.now() 로
---   KST 벽시계 값을 그대로 쓴다. 그런데 이 컨테이너의 세션 시간대는 UTC 라
---   NOW() 를 그냥 쓰면 앱이 아는 '지금'보다 아홉 시간 뒤가 된다. 그러면 방금
---   넣은 글이 화면에 '9시간 전'으로 뜨고 일간·NEW 가 어긋난다.
-SET TIME ZONE 'Asia/Seoul';
+--   created_at 은 timestamp without time zone 이고, 앱은 LocalDateTime.now() 가 주는
+--   벽시계 값을 그대로 쓴다. 이 스크립트도 앱과 같은 시간대를 봐야 한다. 다르면 방금
+--   넣은 글이 '9시간 전'이나 '9시간 뒤'로 뜨고 일간·NEW 배지가 어긋난다.
+--
+--   앱이 어느 시간대를 쓰는지는 도는 컴퓨터마다 다르다.
+--     - 로컬(개발자 PC, 한국 시간): 기본값 Asia/Seoul 그대로
+--     - 배포 서버(GCP, UTC):        psql 에 -v apptz=UTC 를 붙인다
+--   확인법: `date -u` 와 `sudo journalctl -u koreapoint -n 3` 의 시각이 같으면 앱은 UTC 다.
+\if :{?apptz}
+\else
+\set apptz 'Asia/Seoul'
+\endif
+SET TIME ZONE :'apptz';
+\echo '기준 시간대:' :apptz
 
 BEGIN;
 

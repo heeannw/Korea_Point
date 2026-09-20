@@ -23,6 +23,7 @@ import org.springframework.web.util.HtmlUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -55,6 +56,9 @@ public class PlaceReviewTranslationFiller {
     private static final int MAX_CHARS = 1_000;
 
     private static final Pattern HANGUL = Pattern.compile("[가-힣]");
+
+    /** 지명 용어집이 있는 언어. 영어 칸은 표(i18n/place-names.json)에 없다. */
+    private static final Set<String> GLOSSARY_LANGS = Set.of("ja", "zh", "fr");
 
     /** 정기 작업 스레드는 앱이 하나를 같이 쓴다. 번역기가 답이 없어도 다른 일이 멈추면 안 된다. */
     private static final int CONNECT_TIMEOUT_MS = 3_000;
@@ -169,12 +173,17 @@ public class PlaceReviewTranslationFiller {
     /**
      * 여러 문장을 한 번에 보낸다. 순서는 보낸 대로 돌아온다. 실패하면 null.
      *
-     * <p>국문 리뷰에 지명이 들어 있는데 용어집을 못 얻었으면 물러난다. 그대로 옮기면
-     * 이기대가 伊基代처럼 나오고, 한 번 저장되면 누가 다시 들여다보기 전까지 남는다.
+     * <p>지명 용어집이 있는 언어(일본어·중국어·불어)에서는, 국문 리뷰에 지명이 들어 있는데
+     * 용어집을 못 얻었으면 물러난다. 그대로 옮기면 이기대가 伊基代처럼 나오고, 한 번
+     * 저장되면 누가 다시 들여다보기 전까지 남는다.
+     *
+     * <p>영어는 표에 칸이 없다. 지명 표는 한자·가나 표기를 정하려고 만든 것이고 로마자는
+     * 번역기가 흔들리지 않는다. 영어까지 용어집을 기다리면 영어 차례에서 막혀 뒤 언어로
+     * 넘어가지 못하고, 15초마다 같은 경고만 남긴다(서버에서 실제로 그랬다).
      */
     private List<Translated> translate(List<String> texts, String lang, boolean sourceKorean) {
         String glossary = null;
-        if (sourceKorean) {
+        if (sourceKorean && GLOSSARY_LANGS.contains(lang)) {
             glossary = placeNames.idFor(lang);
             if (glossary == null && texts.stream().anyMatch(placeNames::mentions)) {
                 log.warn("지명 용어집을 못 얻어 이번 차례는 건너뛴다 ({})", lang);
