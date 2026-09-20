@@ -25,7 +25,7 @@ class CommunitySidebarServiceTest {
 
     private final PostService postService = Mockito.mock(PostService.class);
     private final PostRepository postRepository = Mockito.mock(PostRepository.class);
-    private final CommunityProperties properties = new CommunityProperties(5L, 7, 3, 500, 3, 7, 30, 0.9, 100);
+    private final CommunityProperties properties = new CommunityProperties(5L, 7, 3, 500, 3, 7, 30, 0.9, 100, 500);
 
     private CommunitySidebarService service() {
         return new CommunitySidebarService(postService, postRepository, properties);
