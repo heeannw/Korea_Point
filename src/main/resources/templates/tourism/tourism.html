@@ -358,6 +358,7 @@
       noRating:     /*[[#{tour.detail.noRating}]]*/ 'No visitor ratings yet',
       scoreSuffix:  /*[[#{tour.detail.scoreSuffix}]]*/ '',
       reviewsCount: /*[[#{tour.detail.reviewsCount}]]*/ '{0} reviews',
+      reviewsCountOne: /*[[#{tour.detail.reviewsCountOne}]]*/ '{0} review',
       address:      /*[[#{tour.detail.address}]]*/ 'Address',
       distance:     /*[[#{tour.detail.distance}]]*/ 'Distance',
       score:        /*[[#{tour.detail.score}]]*/ 'Score',
@@ -1237,7 +1238,7 @@
     el.innerHTML = (score > 0 && count > 0)
       ? `<span class="dp-rating-stars">★</span>
          <span class="dp-rating-score">${score.toFixed(1)}</span>
-         <span class="dp-rating-count">${i18nFmt(I18N.detail.reviewsCount, count.toLocaleString())}</span>`
+         <span class="dp-rating-count">${i18nFmt(count === 1 ? I18N.detail.reviewsCountOne : I18N.detail.reviewsCount, count.toLocaleString())}</span>`
       : `<span style="color:#bbb;font-size:11px">${escapeDetail(I18N.detail.noRating)}</span>`;
   }
 
