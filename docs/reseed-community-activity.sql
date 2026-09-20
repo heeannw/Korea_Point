@@ -6,8 +6,9 @@
 --
 -- 무엇을 건드리나
 --   provider='demo' 계정이 쓴 글의 created_at / updated_at / view_count 와
---   거기 달린 댓글의 시각뿐이다. 팀이 실제로 쓴 provider='local' 글과
---   홍보 글(promo_until 로 노출 기간을 산 것)은 손대지 않는다.
+--   거기에 데모 계정이 단 댓글의 시각뿐이다. 팀이나 방문자가 실제로 쓴
+--   provider='local' 글·댓글과 홍보 글(promo_until 로 노출 기간을 산 것)은 손대지 않는다.
+--   다만 실제 댓글도 글이 댓글보다 뒤로 밀리면 순서를 지키려고 글 시각 뒤로 당긴다.
 --
 -- 되돌리기
 --   backup_post_dates_* / backup_comment_dates_* / backup_post_views_* 테이블에
@@ -56,13 +57,18 @@ UPDATE post p
                          ELSE m.new_at + (p.updated_at - p.created_at) END
   FROM remap m WHERE p.id = m.id;
 
--- 댓글은 글과 같은 폭만큼 같이 옮긴다. 안 그러면 글보다 이른 댓글이 생긴다.
+-- 데모 계정이 단 댓글만 글과 같은 폭으로 같이 옮긴다. 안 그러면 글보다 이른 댓글이 생긴다.
+--
+-- 실제 사람이 단 댓글은 건드리지 않는다. 글쓴이만 보고 댓글 전부를 옮기면, 오늘 심사위원이
+-- 데모 글에 단 댓글이 그날 밤 몇 주 전 날짜로 밀린다. 방금 쓴 글이 한 달 전 것으로 보인다.
 UPDATE comments c
    SET created_at = c.created_at + (m.new_at - m.old_at),
        updated_at = CASE WHEN c.updated_at IS NULL THEN NULL
                          ELSE c.updated_at + (m.new_at - m.old_at) END
-  FROM remap m WHERE c.post_id = m.id;
+  FROM remap m, users cu
+ WHERE c.post_id = m.id AND cu.id = c.user_id AND cu.provider = 'demo';
 
+-- 글이 댓글보다 뒤로 밀린 경우만 바로잡는다. 옮기지 않은 실제 댓글도 여기서 순서를 지킨다.
 UPDATE comments c
    SET created_at = GREATEST(LEAST(c.created_at, LOCALTIMESTAMP), p.created_at + INTERVAL '1 minute')
   FROM post p
