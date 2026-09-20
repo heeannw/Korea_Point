@@ -31,6 +31,7 @@ public class ContentReportService {
         validateRequest(request);
         Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
                 .orElseThrow(() -> new MessageArgumentException("community.error.postNotFound", "존재하지 않는 게시글입니다."));
+        validateNotOwnContent(reporterUserId, post.getUser() == null ? null : post.getUser().getId());
         validateDuplicateReport(reporterUserId, ReportTargetType.POST, post.getId());
 
         ContentReport saved = contentReportRepository.save(ContentReport.builder()
@@ -52,6 +53,7 @@ public class ContentReportService {
         if (comment.getDeletedAt() != null) {
             throw new MessageStateException("community.error.deletedCommentReport", "삭제된 댓글은 신고할 수 없습니다.");
         }
+        validateNotOwnContent(reporterUserId, comment.getUser() == null ? null : comment.getUser().getId());
         validateDuplicateReport(reporterUserId, ReportTargetType.COMMENT, comment.getId());
 
         ContentReport saved = contentReportRepository.save(ContentReport.builder()
@@ -71,6 +73,18 @@ public class ContentReportService {
         }
         if (request.getReasonCode() == ContentReportReason.OTHER && normalizeNullable(request.getReasonDetail()) == null) {
             throw new MessageArgumentException("community.error.reportDetailRequired", "기타 사유를 선택한 경우 상세 내용을 입력해 주세요.");
+        }
+    }
+
+    /**
+     * 자기 글·댓글은 신고할 수 없다.
+     *
+     * <p>막지 않으면 관리자 신고함에 자기 글을 신고한 건이 쌓인다. 지우고 싶으면 삭제하면
+     * 되는 일이라 신고로 올 이유가 없고, 장난이나 실수로 들어오면 검토할 사람의 시간만 쓴다.
+     */
+    private void validateNotOwnContent(Long reporterUserId, Long authorUserId) {
+        if (reporterUserId != null && reporterUserId.equals(authorUserId)) {
+            throw new MessageStateException("community.error.selfReport", "자기 글은 신고할 수 없습니다.");
         }
     }
 
