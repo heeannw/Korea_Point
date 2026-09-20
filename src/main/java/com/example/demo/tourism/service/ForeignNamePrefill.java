@@ -4,6 +4,7 @@ import com.example.demo.tourism.client.TourApiClient;
 import com.example.demo.tourism.config.TourPlaceI18n;
 import com.example.demo.tourism.dto.TourPlaceDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -41,6 +42,16 @@ public class ForeignNamePrefill {
     private final TourPlaceI18n placeI18n;
 
     /**
+     * 배포 서버에서만 켠다({@code application-local.properties} 에 한 줄).
+     *
+     * <p>팀원 각자의 컴퓨터에서 켜져 있으면 같은 번역을 사람 수만큼 반복해서
+     * 번역기 한도를 며칠 만에 다 쓴다. 한 번 채운 이름은 서버 DB 에 남고, 개발할 때는
+     * 외국어 이름이 한국어로 보일 뿐 화면은 멀쩡히 돈다.
+     */
+    @Value("${translation.fill.enabled:false}")
+    private boolean enabled;
+
+    /**
      * 부산 장소를 언어별로 훑는다. 공사 표에 이름이 있으면 그것을 쓰고, 없으면 대기열에 오른다
      * (둘 다 {@link TourPlaceI18n} 이 알아서 한다).
      *
@@ -49,6 +60,7 @@ public class ForeignNamePrefill {
      */
     @Scheduled(initialDelay = 60_000, fixedRate = REFRESH_MS)
     public void prefill() {
+        if (!enabled) return;
         try {
             List<TourPlaceDto> places = tourApiClient.findBusanPlaces("ko");
             if (places.isEmpty()) return;

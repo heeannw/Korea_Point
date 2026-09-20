@@ -68,6 +68,13 @@ public class PlaceReviewTranslationFiller {
     @Value("${translation.api.key:}")
     private String apiKey;
 
+    /**
+     * 배포 서버에서만 켠다. 팀원 각자의 컴퓨터에서 켜져 있으면 같은 리뷰를 사람 수만큼
+     * 반복해서 옮겨 번역기 한도를 헛되이 쓴다. 꺼져 있으면 리뷰가 원문 그대로 보인다.
+     */
+    @Value("${translation.fill.enabled:false}")
+    private boolean enabled;
+
     private RestClient client;
 
     private RestClient client() {
@@ -92,7 +99,7 @@ public class PlaceReviewTranslationFiller {
      */
     @Scheduled(fixedDelay = 15_000, initialDelay = 40_000)
     public void fill() {
-        if (apiKey == null || apiKey.isBlank()) return;
+        if (!enabled || apiKey == null || apiKey.isBlank()) return;
         for (int i = 0; i < LANGUAGES.size(); i++) {
             String lang = LANGUAGES.get(Math.floorMod(turn, LANGUAGES.size()));
             try {
