@@ -1,5 +1,6 @@
 package com.example.demo.tourism.controller;
 
+import com.example.demo.config.CurrentLanguage;
 import com.example.demo.tourism.dto.PlaceReviewDto;
 import com.example.demo.tourism.service.PlaceReviewService;
 import com.example.demo.user.util.SecurityUtil;
@@ -25,7 +26,8 @@ public class PlaceReviewController {
     @GetMapping("/{contentId}")
     public List<PlaceReviewDto> list(@PathVariable String contentId) {
         Long viewer = SecurityUtil.isLoggedIn() ? SecurityUtil.getCurrentUserId() : null;
-        return reviewService.list(contentId, viewer);
+        // 언어는 세션에서 읽는다. 화면이 부르는 주소에 lang 을 더하지 않아도 되게.
+        return reviewService.list(contentId, viewer, CurrentLanguage.get());
     }
 
     /** body: { contentId, contentTypeId, rating(1~5), text } */

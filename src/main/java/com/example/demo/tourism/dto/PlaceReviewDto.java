@@ -10,18 +10,24 @@ public record PlaceReviewDto(
         String text,
         String createdAt,
         boolean edited,
-        boolean mine
+        boolean mine,
+        boolean translated
 ) {
-    public static PlaceReviewDto of(PlaceReview r, Long viewerUserId) {
+    /**
+     * @param translatedText 보는 사람의 언어로 옮긴 문장. 없으면 null 이고 원문을 그대로 보여준다.
+     */
+    public static PlaceReviewDto of(PlaceReview r, Long viewerUserId, String translatedText) {
         boolean edited = r.getCreatedAt() != null && r.getUpdatedAt() != null
                 && r.getUpdatedAt().isAfter(r.getCreatedAt());
+        boolean translated = translatedText != null && !translatedText.isBlank();
         return new PlaceReviewDto(
                 r.getId(),
                 r.getUser() != null ? r.getUser().getName() : null,
                 r.getRating(),
-                r.getText(),
+                translated ? translatedText : r.getText(),
                 r.getCreatedAt() != null ? r.getCreatedAt().toString() : null,
                 edited,
-                viewerUserId != null && r.getUser() != null && viewerUserId.equals(r.getUser().getId()));
+                viewerUserId != null && r.getUser() != null && viewerUserId.equals(r.getUser().getId()),
+                translated);
     }
 }

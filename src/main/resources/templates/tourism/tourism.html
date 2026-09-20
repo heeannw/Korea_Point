@@ -378,7 +378,8 @@
       pickRating: /*[[#{tour.reviews.pickRating}]]*/ 'Please pick a rating.',
       saveFail:   /*[[#{tour.reviews.saveFail}]]*/ 'Could not save the review.',
       cancel:     /*[[#{tour.reviews.cancel}]]*/ 'Cancel',
-      edited:     /*[[#{tour.reviews.edited}]]*/ '(edited)'
+      edited:     /*[[#{tour.reviews.edited}]]*/ '(edited)',
+      translated: /*[[#{tour.reviews.translated}]]*/ '(translated)'
     },
     community: {
       loading:    /*[[#{tour.community.loading}]]*/ 'Loading community stories…',
@@ -1282,6 +1283,7 @@
             <span class="review-author">${escapeDetail(r.authorName || I18N.reviews.anonymous)}</span>
             <span class="review-date">${escapeDetail(fmtDate(r.createdAt))}</span>
             ${r.edited ? `<span class="review-edited">${escapeDetail(I18N.reviews.edited)}</span>` : ''}
+            ${r.translated ? `<span class="review-edited">${escapeDetail(I18N.reviews.translated)}</span>` : ''}
             ${r.mine ? `<span class="rv-actions">
               <button type="button" onclick="openReviewForm()">${escapeDetail(I18N.reviews.edit)}</button>
               <button type="button" onclick="deleteReview(${r.id})">${escapeDetail(I18N.reviews.delete)}</button>
