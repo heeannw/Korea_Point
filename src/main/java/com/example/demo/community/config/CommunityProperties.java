@@ -75,6 +75,14 @@ public class CommunityProperties {
      */
     private final int hallOfFameSize;
 
+    /**
+     * 베스트에 오르는 최소 조회수.
+     *
+     * <p>문턱이 없으면 글이 적은 기간에는 조회수 두어 번인 글이 그대로 베스트에 오른다.
+     * 방금 올린 글이 베스트 첫 줄에 뜨면 목록 자체를 못 믿게 된다.
+     */
+    private final int bestMinViews;
+
     public CommunityProperties(
             @Value("${community.promo-category-id:5}") long promoCategoryId,
             @Value("${community.promo-exposure-days:7}") int promoExposureDays,
@@ -84,7 +92,8 @@ public class CommunityProperties {
             @Value("${community.hot-window-days:7}") int hotWindowDays,
             @Value("${community.hot-min-views:30}") int hotMinViews,
             @Value("${community.hot-percentile:0.9}") double hotPercentile,
-            @Value("${community.hall-of-fame-size:100}") int hallOfFameSize) {
+            @Value("${community.hall-of-fame-size:100}") int hallOfFameSize,
+            @Value("${community.best-min-views:500}") int bestMinViews) {
         this.promoCategoryId = promoCategoryId;
         this.promoExposureDays = promoExposureDays;
         this.promoRailSize = promoRailSize;
@@ -94,5 +103,6 @@ public class CommunityProperties {
         this.hotMinViews = hotMinViews;
         this.hotPercentile = hotPercentile;
         this.hallOfFameSize = hallOfFameSize;
+        this.bestMinViews = bestMinViews;
     }
 }

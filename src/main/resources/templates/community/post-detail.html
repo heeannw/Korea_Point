@@ -144,9 +144,12 @@
                 </button>
             </div>
 
-            <!-- 삭제 버튼 (본인 게시글에만 표시) -->
+            <!-- 수정·삭제 (본인 게시글에만 표시) -->
             <div th:if="${currentUserId != null and currentUserId == post.userId}"
-                 class="flex justify-end mt-7 pt-5 border-t border-[#f1f2f4]">
+                 class="flex justify-end items-center gap-3 mt-7 pt-5 border-t border-[#f1f2f4]">
+                <a th:href="@{/community/post/{id}/edit(id=${post.postId})}"
+                   class="px-5 py-2.5 text-[15.5px] text-[#5b6270] border border-[#e8eaed] rounded-md no-underline hover:bg-gray-50 transition-colors"
+                   th:text="#{community.detail.btn.edit}">Edit</a>
                 <form id="deletePostForm" th:action="@{/community/post/{id}/delete(id=${post.postId})}" method="post">
                     <button type="button"
                             onclick="showDeletePostConfirm()"

@@ -77,16 +77,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
                                     Pageable pageable);
 
     /**
-     * 베스트 목록. 기간 안에서 조회수가 많은 순이다.
+     * 베스트 목록. 기간 안에서 조회수가 많은 순이고, 문턱(community.best-min-views)을 넘은 글만 든다.
      *
      * <p>홍보 글은 뺀다 — 돈을 내고 올린 광고가 베스트에 오르면 그건 베스트가 아니다.
      */
     @EntityGraph(attributePaths = {"user", "category"})
     @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL "
             + "AND (p.category IS NULL OR p.category.id <> :excludedCategoryId) "
+            + "AND p.viewCount >= :minViews "
             + "AND (CAST(:since AS LocalDateTime) IS NULL OR p.createdAt >= :since)")
     Page<Post> findBestInPeriod(@Param("excludedCategoryId") Long excludedCategoryId,
                                 @Param("since") LocalDateTime since,
+                                @Param("minViews") int minViews,
                                 Pageable pageable);
 
     /**
@@ -99,9 +101,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @EntityGraph(attributePaths = {"user", "category"})
     @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL "
             + "AND p.category.id = :categoryId "
+            + "AND p.viewCount >= :minViews "
             + "AND (CAST(:since AS LocalDateTime) IS NULL OR p.createdAt >= :since)")
     Page<Post> findBestInPeriodByCategory(@Param("categoryId") Long categoryId,
                                           @Param("since") LocalDateTime since,
+                                          @Param("minViews") int minViews,
                                           Pageable pageable);
 
     /** 불꽃 기준을 잡을 표본. 조회수와 올라온 시각만 있으면 된다. */
