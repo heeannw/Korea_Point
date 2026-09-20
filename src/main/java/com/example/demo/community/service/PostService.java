@@ -9,6 +9,8 @@ import com.example.demo.community.entity.Category;
 import com.example.demo.community.entity.Post;
 import com.example.demo.community.entity.PostPlace;
 import com.example.demo.community.repository.CategoryRepository;
+import com.example.demo.community.entity.CommunityTranslationTarget;
+import com.example.demo.community.repository.CommunityTranslationRepository;
 import com.example.demo.community.repository.PostPlaceRepository;
 import com.example.demo.community.repository.PostRepository;
 import com.example.demo.user.entity.AccountStatus;
@@ -38,6 +40,7 @@ public class PostService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final TranslationService translationService;
+    private final CommunityTranslationRepository translationRepository;
     private final CommunityProperties communityProperties;
     private final HotPostPolicy hotPostPolicy;
 
@@ -105,10 +108,11 @@ public class PostService {
     /** 베스트 목록. 기간 안에서 조회수가 많은 순이며, 전체 보기에서는 홍보 글을 뺀다. */
     @Transactional(readOnly = true)
     public Page<PostDto> getBestPosts(Long categoryId, TrendingPeriod period, Pageable pageable) {
+        int minViews = communityProperties.getBestMinViews();
         Page<Post> found = categoryId == null
                 ? postRepository.findBestInPeriod(
-                        communityProperties.getPromoCategoryId(), period.since(), pageable)
-                : postRepository.findBestInPeriodByCategory(categoryId, period.since(), pageable);
+                        communityProperties.getPromoCategoryId(), period.since(), minViews, pageable)
+                : postRepository.findBestInPeriodByCategory(categoryId, period.since(), minViews, pageable);
         return period == TrendingPeriod.ALL
                 ? withinHallOfFame(found, pageable)
                 : found.map(this::toDto);
@@ -249,6 +253,72 @@ public class PostService {
                 .limit(10)
                 .map(this::toDto)
                 .toList();
+    }
+
+    /**
+     * 고치기 화면에 채울 글. 내 글이 아니면 null 이다.
+     *
+     * <p>번역이 아니라 쓴 사람이 쓴 원문을 돌려준다. 일본어로 보다가 고치기를 누르면
+     * 칸에 번역문이 들어오고, 그대로 저장하면 원문이 번역문으로 덮인다.
+     */
+    @Transactional(readOnly = true)
+    public PostDto getPostForEdit(Long postId, Long userId) {
+        Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
+                .orElseThrow(() -> new MessageArgumentException("community.error.postNotFound", "존재하지 않는 게시글입니다."));
+        if (post.getUser() == null || !post.getUser().getId().equals(userId)) return null;
+
+        PostDto dto = toDto(post);
+        dto.setTitle(post.getTitle());
+        dto.setContent(post.getContent());
+        dto.setPlaces(loadPlaceRefs(postId));
+        return dto;
+    }
+
+    /**
+     * 자기 글 고치기.
+     *
+     * <p>제목·본문·카테고리·붙인 장소를 바꾼다. 붙인 장소는 통째로 갈아 끼운다 — 순서까지
+     * 맞춰 하나씩 비교하는 것보다 지우고 다시 넣는 편이 단순하고, 글 하나에 몇 개뿐이다.
+     *
+     * <p>홍보 글은 카테고리를 건드리지 않는다. 홍보는 포인트를 내고 사는 자리라
+     * 고치기로 옮겨 다니면 결제가 꼬인다. 일반 글을 홍보로 바꾸는 것도 같은 이유로 막는다.
+     *
+     * <p>고치면 옛 번역은 버린다. 영문 칸은 다시 옮겨 채우고, 나머지 언어는
+     * {@code CommunityTranslationFiller} 가 다음 차례에 채운다.
+     */
+    @Transactional
+    public void updatePost(Long postId, Long userId, PostDto.PostCreateRequest req) {
+        Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
+                .orElseThrow(() -> new MessageArgumentException("community.error.postNotFound", "존재하지 않는 게시글입니다."));
+        if (post.getUser() == null || !post.getUser().getId().equals(userId)) {
+            throw new MessageStateException("community.error.noEditPermission", "수정 권한이 없습니다.");
+        }
+        validateCommunityAccess(userRepository.findById(userId)
+                .orElseThrow(() -> new MessageArgumentException("community.error.userNotFound", "존재하지 않는 사용자입니다.")));
+
+        long promoCategoryId = communityProperties.getPromoCategoryId();
+        boolean wasPromo = post.getCategory() != null && promoCategoryId == post.getCategory().getId();
+        if (!wasPromo && req.getCategoryId() != null && promoCategoryId == req.getCategoryId()) {
+            throw new MessageStateException("community.error.promoNotEditable",
+                    "홍보 글은 새로 작성해야 합니다.");
+        }
+        if (!wasPromo && req.getCategoryId() != null) {
+            post.setCategory(categoryRepository.findById(req.getCategoryId())
+                    .orElseThrow(() -> new MessageArgumentException("community.error.categoryNotFound", "존재하지 않는 카테고리입니다.")));
+        }
+
+        post.setTitle(req.getTitle());
+        post.setContent(req.getContent());
+        post.setPlaceContentId(blankToNull(req.getPlaceContentId()));
+        post.setPlaceContentTypeId(blankToNull(req.getPlaceContentTypeId()));
+        post.setPlaceTitle(blankToNull(req.getPlaceTitle()));
+        // 수정 시각은 Post 의 @PreUpdate 가 채운다.
+
+        postPlaceRepository.deleteByPostId(postId);
+        savePlaces(postId, req.getPlaces());
+
+        translationRepository.deleteByTargetTypeAndTargetId(CommunityTranslationTarget.POST, postId);
+        translationService.translatePostAsync(postId, req.getTitle(), req.getContent());
     }
 
     @Transactional

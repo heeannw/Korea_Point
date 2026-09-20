@@ -4,6 +4,7 @@ import com.example.demo.config.LocalizedMessages;
 import com.example.demo.community.service.CommunityTextResolver;
 import com.example.demo.config.CurrentLanguage;
 import com.example.demo.community.dto.PostDto;
+import com.example.demo.config.MessageArgumentException;
 import com.example.demo.community.dto.CommunityListView;
 import com.example.demo.community.dto.TrendingPeriod;
 import com.example.demo.community.service.CommunitySidebarService;
@@ -102,9 +103,22 @@ public class CommunityController {
         return "community/post-list";
     }
 
+    /**
+     * 글 상세.
+     *
+     * <p>지워졌거나 없는 글 번호로 들어오면 목록으로 돌려보낸다. 예전에는 그대로 터져서
+     * 500 화면이 떴는데, 지운 글의 주소는 링크나 방문 기록에 그대로 남아 있어 흔한 길이다.
+     */
     @GetMapping("/post/{id}")
-    public String getPostDetail(@PathVariable Long id, Model model, HttpSession session) {
-        var post = postService.getPostDetail(id, session);
+    public String getPostDetail(@PathVariable Long id, Model model, HttpSession session,
+                                RedirectAttributes redirectAttributes) {
+        PostDto post;
+        try {
+            post = postService.getPostDetail(id, session);
+        } catch (MessageArgumentException e) {
+            redirectAttributes.addFlashAttribute("communityError", messages.of(e));
+            return "redirect:/community/post-list";
+        }
         var comments = commentService.getCommentsByPost(id);
         String lang = CurrentLanguage.get();
         model.addAttribute("post", post);
@@ -151,6 +165,45 @@ public class CommunityController {
             redirectAttributes.addFlashAttribute("pointError", messages.of(exception));
             return "redirect:/community/post/write";
         }
+    }
+
+    /**
+     * 자기 글 고치기 화면. 글쓰기 화면을 그대로 쓰되 내용이 채워진 채로 연다.
+     *
+     * <p>남의 글이면 상세로 돌려보낸다. 주소를 직접 쳐서 들어오는 경우다.
+     */
+    @GetMapping("/post/{id}/edit")
+    public String editForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        if (isCommunitySuspended()) {
+            redirectAttributes.addFlashAttribute("communityError", messages.get("community.error.suspended"));
+            return "redirect:/community/post-list";
+        }
+        PostDto post = postService.getPostForEdit(id, SecurityUtil.getCurrentUserId());
+        if (post == null) {
+            return "redirect:/community/post/" + id;
+        }
+
+        model.addAttribute("categories", communityService.getAllCategories());
+        model.addAttribute("currentUserPoint", userService.findById(SecurityUtil.getCurrentUserId()).getPoint());
+        model.addAttribute("isLoggedIn", SecurityUtil.isLoggedIn());
+        model.addAttribute("currentUserName", SecurityUtil.getCurrentUserName());
+        model.addAttribute("kakaoKey", kakaoKey);
+        model.addAttribute("editPost", post);
+        return "community/post-write";
+    }
+
+    @PostMapping("/post/{id}/edit")
+    public String updatePost(@PathVariable Long id,
+                             @Valid @ModelAttribute PostDto.PostCreateRequest req,
+                             RedirectAttributes redirectAttributes) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        try {
+            postService.updatePost(id, userId, req);
+        } catch (IllegalStateException | IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("pointError", messages.of(exception));
+            return "redirect:/community/post/" + id + "/edit";
+        }
+        return "redirect:/community/post/" + id;
     }
 
     @PostMapping("/post/{id}/delete")

@@ -131,13 +131,14 @@
         </a>
 
         <div>
-            <h1 class="text-[29px] text-[#16181d] pb-6 mb-7 border-b border-[#e8eaed]" style="font-weight:700;" th:text="#{community.write.title}">Write a Post</h1>
+            <h1 class="text-[29px] text-[#16181d] pb-6 mb-7 border-b border-[#e8eaed]" style="font-weight:700;" th:text="${editPost != null} ? #{community.write.titleEdit} : #{community.write.title}">Write a Post</h1>
 
             <!--
                 th:action을 사용하면 thymeleaf-extras-springsecurity6가
                 CSRF 토큰을 hidden input으로 자동 삽입함
             -->
-            <form id="postForm" th:action="@{/community/post/write}" method="post" class="flex flex-col gap-6">
+            <form id="postForm" method="post" class="flex flex-col gap-6"
+                  th:action="${editPost != null} ? @{/community/post/{id}/edit(id=${editPost.postId})} : @{/community/post/write}">
                 <input type="hidden" name="placeContentId" th:value="${placeContentId}"/>
                 <input type="hidden" name="placeContentTypeId" th:value="${placeContentTypeId}"/>
                 <input type="hidden" name="placeTitle" th:value="${placeTitle}"/>
@@ -176,9 +177,10 @@
                     <label class="block text-[15.5px] text-[#5b6270] mb-2" style="font-weight:600;" th:text="#{community.write.label.category}">Category</label>
                     <select name="categoryId" id="categorySelect" required
                             class="w-full px-3.5 py-2.5 border border-[#e8eaed] rounded-md text-[17px] text-[#5b6270] bg-white focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100 cursor-pointer">
-                        <option value="" disabled selected th:text="#{community.write.placeholder.category}">Select a category</option>
+                        <option value="" disabled th:selected="${editPost == null}" th:text="#{community.write.placeholder.category}">Select a category</option>
                         <option th:each="cat : ${categories}"
                                 th:value="${cat.categoryId}"
+                                th:selected="${editPost != null and editPost.categoryId == cat.categoryId}"
                                 th:attr="data-name=${cat.name}"
                                 th:text="${cat.icon + ' ' + (#messages.msgOrNull('community.category.' + cat.categoryId) ?: cat.name)}">Category</option>
                     </select>
@@ -193,6 +195,7 @@
                 <div>
                     <label class="block text-[15.5px] text-[#5b6270] mb-2" style="font-weight:600;" th:text="#{community.write.label.title}">Title</label>
                     <input type="text" name="title" required maxlength="200"
+                           th:value="${editPost != null} ? ${editPost.title} : ''"
                            th:placeholder="#{community.write.placeholder.title}"
                            class="w-full px-5 py-2.5 border border-[#e8eaed] rounded-md text-[17px] text-[#16181d] placeholder:text-[#8b919c] focus:outline-none focus:border-[#3b9eff] focus:ring-2 focus:ring-blue-100"/>
                 </div>
@@ -216,12 +219,12 @@
 
                 <!-- 버튼 -->
                 <div class="flex items-center justify-end gap-3.5 pt-2.5">
-                    <a th:href="@{/community/post-list}"
+                    <a th:href="${editPost != null} ? @{/community/post/{id}(id=${editPost.postId})} : @{/community/post-list}"
                        class="px-6 py-2.5 border border-[#e8eaed] text-[#5b6270] rounded-md text-[17px] no-underline hover:bg-gray-50 transition-colors"
                        style="font-weight:500;" th:text="#{community.write.btn.cancel}">Cancel</a>
                     <button type="submit"
                             class="px-6 py-2.5 bg-[#3b9eff] text-white rounded-md text-[15.5px] hover:bg-[#1a7de0] transition-colors cursor-pointer"
-                            style="font-weight:500;" th:text="#{community.write.btn.submit}">
+                            style="font-weight:500;" th:text="${editPost != null} ? #{community.write.btn.update} : #{community.write.btn.submit}">
                         Publish Post
                     </button>
                 </div>
@@ -383,6 +386,9 @@
         });
     }
 
+    // 고치는 글이면 원문을 에디터에 넣는다(번역문이 아니라 쓴 사람이 쓴 글).
+    const EDIT_CONTENT = /*[[${editPost != null} ? ${editPost.content} : '']]*/ '';
+
     // Quill 에디터 초기화
     const quill = new Quill('#quillEditor', {
         theme: 'snow',
@@ -401,6 +407,11 @@
             }
         }
     });
+
+    // 고치기로 들어왔으면 원문을 에디터에 올린다. 본문에 박힌 장소 카드까지 그대로 살아난다.
+    if (EDIT_CONTENT) {
+        quill.clipboard.dangerouslyPasteHTML(EDIT_CONTENT);
+    }
 
     /*
      * 이미지는 서버에 올리고 본문에는 주소만 남긴다.
