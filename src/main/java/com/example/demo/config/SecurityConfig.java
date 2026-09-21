@@ -111,7 +111,10 @@ public class SecurityConfig {
                         response.getWriter().write("{\"error\":\"로그인이 필요합니다\"}");
                         return;
                     }
-                    response.sendRedirect("/ko");
+                    // 홈으로 돌려보내면 사용자 눈에는 "눌렀는데 아무 일도 안 일어난다" 로 보인다.
+                    // 왜 막혔는지 한 마디도 안 하고 방금 있던 자리로 되돌아오니, 기능이 없어진
+                    // 줄로 안다. 로그인 화면을 띄워서 "로그인하면 된다" 는 게 보이게 한다.
+                    response.sendRedirect("/login?lang=" + currentLanguage(request));
                 })
             )
             .csrf(csrf -> csrf

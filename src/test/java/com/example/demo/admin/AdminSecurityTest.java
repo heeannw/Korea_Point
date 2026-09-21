@@ -110,9 +110,11 @@ class AdminSecurityTest {
 
     @Test
     void unauthenticatedUser_isRedirectedFromAdminPage() throws Exception {
+        // 예전에는 홈(/ko)으로 돌려보냈다. 그러면 사용자 눈에는 눌렀는데 아무 일도 안 일어난 것처럼
+        // 보여서 기능이 없어진 줄로 안다. 지금은 로그인 화면으로 보내 왜 막혔는지가 드러나게 한다.
         mockMvc.perform(get("/admin"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/ko"));
+                .andExpect(redirectedUrl("/login?lang=ko"));
     }
 
     @Test
