@@ -111,10 +111,11 @@ public class SecurityConfig {
                         response.getWriter().write("{\"error\":\"로그인이 필요합니다\"}");
                         return;
                     }
-                    // 홈으로 돌려보내면 사용자 눈에는 "눌렀는데 아무 일도 안 일어난다" 로 보인다.
-                    // 왜 막혔는지 한 마디도 안 하고 방금 있던 자리로 되돌아오니, 기능이 없어진
-                    // 줄로 안다. 로그인 화면을 띄워서 "로그인하면 된다" 는 게 보이게 한다.
-                    response.sendRedirect("/login?lang=" + currentLanguage(request));
+                    // 홈으로 돌려보낸다. 로그인이 필요한 메뉴를 누르는 경우는 홈 화면의
+                    // openLoginWindow 가 먼저 가로채 로그인 팝업을 띄우고, 로그인하면 원래
+                    // 가려던 자리로 되돌려준다(home.html 의 isProtectedHomeLink 참고).
+                    // 여기까지 오는 건 주소를 직접 친 경우뿐이다.
+                    response.sendRedirect("/ko");
                 })
             )
             .csrf(csrf -> csrf

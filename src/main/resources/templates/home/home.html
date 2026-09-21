@@ -1809,7 +1809,10 @@
         const path = url.pathname;
         if (path === "/" || path === "/ko" || path === "/kr" || path.startsWith("/login")) return false;
         if (path.startsWith("/ko/") || path.startsWith("/en/")) return true;
-        return ["/tour", "/transport", "/community", "/foodmap", "/cafe"]
+        // 이 목록은 SecurityConfig 의 authenticated() 목록과 짝이다. 한쪽에만 넣으면 그 메뉴는
+        // 팝업 없이 화면이 통째로 넘어가 버린다(챗봇이 그랬다). 서버에서 막을 주소를 늘릴 때
+        // 여기도 같이 늘려야 한다.
+        return ["/tour", "/transport", "/community", "/foodmap", "/cafe", "/chatbot"]
             .some(prefix => path === prefix || path.startsWith(prefix + "/"));
     }
 
