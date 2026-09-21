@@ -40,6 +40,18 @@ public class SecurityConfig {
                 .requestMatchers("/api/transport/history/**").authenticated()
                 .requestMatchers("/api/kakao/**").authenticated()
                 .requestMatchers("/api/points/charge/**").authenticated()
+                // 아래 규칙은 "적어둔 것만 막고 나머지는 연다"(anyRequest().permitAll()) 구조라,
+                // 새 화면·새 API 는 적어 주지 않으면 조용히 전부 공개된다. 챗봇과 여행/교통/관광
+                // API 가 그렇게 열린 채로 있었다 — 로그인 없이 부를 수 있으니 바깥에서 스크립트로
+                // 계속 때리면 Gemini·번역·관광공사 호출이 그대로 나간다.
+                // (결제 웹훅 /api/portone/webhook · /api/points/webhook 은 밖에서 우리를 부르는
+                //  통로라 여기 넣으면 안 된다. 그 둘은 계속 열어 둔다.)
+                .requestMatchers("/chatbot/**").authenticated()
+                .requestMatchers("/api/trip/**").authenticated()
+                .requestMatchers("/api/transport/**").authenticated()
+                .requestMatchers("/api/tourapi/**").authenticated()
+                .requestMatchers("/api/translate").authenticated()
+                .requestMatchers("/api/reservation-place-policies").authenticated()
                 .requestMatchers("/tour/**").authenticated()
                 .requestMatchers("/transport/**").authenticated()
                 .requestMatchers("/foodmap/**").authenticated()
